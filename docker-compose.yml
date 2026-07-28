@@ -2,7 +2,7 @@ services:
   web:
     build: .
     ports:
-      - "8000:8000"
+      - "8011:8011"
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
       - ./media:/app/media
@@ -12,4 +12,4 @@ services:
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
     command: >
       sh -c "python manage.py migrate --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+             python manage.py runserver 0.0.0.0:8011"
