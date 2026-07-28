@@ -131,3 +131,9 @@ REST_FRAMEWORK = {
     },
     "UNAUTHENTICATED_USER": None,
 }
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    "https://crm.beforth.in,http://localhost:8011,http://127.0.0.1:8011",
+).split(",")
