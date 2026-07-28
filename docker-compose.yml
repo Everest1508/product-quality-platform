@@ -4,15 +4,10 @@ services:
     ports:
       - "8011:8011"
     volumes:
-      - db_data:/app/db.sqlite3
+      - ./db.sqlite3:/app/db.sqlite3
       - ./media:/app/media
     environment:
       - DJANGO_SECRET_KEY=change-me-in-production
       - DJANGO_DEBUG=True
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py runserver 0.0.0.0:8011"
-
-volumes:
-  db_data:
+    command: sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"

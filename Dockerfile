@@ -16,6 +16,8 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
+RUN chmod +x entrypoint.sh
+
 EXPOSE 8011
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8011", "--workers", "3"]
