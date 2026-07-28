@@ -4,7 +4,7 @@ services:
     ports:
       - "8011:8011"
     volumes:
-      - ./db.sqlite3:/app/db.sqlite3
+      - db_data:/app/db.sqlite3
       - ./media:/app/media
     environment:
       - DJANGO_SECRET_KEY=change-me-in-production
@@ -13,3 +13,6 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py runserver 0.0.0.0:8011"
+
+volumes:
+  db_data:
