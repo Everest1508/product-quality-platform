@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
@@ -177,15 +178,21 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
         new_status = request.POST.get("status")
 
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
         if not ticket.can_transition_to(new_status):
             valid = Ticket.VALID_TRANSITIONS.get(ticket.status, [])
-            messages.error(
-                request,
+            msg = (
                 f"Cannot transition from '{ticket.get_status_display()}' to '{new_status}'. "
-                f"Valid: {', '.join(valid)}",
+                f"Valid: {', '.join(valid)}"
             )
+            if is_ajax:
+                return JsonResponse({"ok": False, "error": msg}, status=400)
+            messages.error(request, msg)
         else:
             ticket.transition_to(new_status)
+            if is_ajax:
+                return JsonResponse({"ok": True, "status": ticket.status})
             messages.success(request, f"Status changed to '{ticket.get_status_display()}'.")
 
         if request.headers.get("HX-Request") == "true":

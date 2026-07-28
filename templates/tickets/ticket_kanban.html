@@ -4,59 +4,156 @@
 {% block content %}
 <div class="head" style="margin-bottom:16px;">
   <h1 style="font-size:20px;font-weight:700;">Kanban Board</h1>
-  <div style="display:flex;gap:8px;margin-left:auto;">
+  <div class="head-actions">
     <a href="{% url 'tickets:ticket_list' %}" class="btn" style="font-size:13px;">List view</a>
     <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary" style="font-size:13px;">New ticket</a>
   </div>
 </div>
 
 <div class="toolbar">
-  <form method="get" class="search" action="{% url 'tickets:ticket_kanban' %}">
-    <input type="text" name="q" placeholder="Search tickets..." value="{{ search }}" class="form-input" style="width:220px;" />
+  <form method="get" style="display:flex;gap:8px;align-items:center;">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" name="q" placeholder="Search tickets..." value="{{ search }}" />
+    </div>
     <button type="submit" class="btn btn-sm">Search</button>
   </form>
-  <div class="right">
-    <span class="text-sm text-muted">{{ total }} total</span>
-  </div>
+  <span class="text-sm text-muted" style="margin-left:auto;">{{ total }} total</span>
 </div>
 
-<div class="kanban-board">
+<div class="kanban-board" id="kanban-board">
   {% for col in columns %}
-  <div class="kanban-col">
+  <div class="kanban-col" data-status="{{ col.key }}">
     <div class="kanban-header">
-      {{ col.label }}
+      <span><span class="dot {{ col.key }}"></span>{{ col.label }}</span>
       <span class="kanban-count">{{ col.tickets|length }}</span>
     </div>
-    <div class="kanban-cards">
+    <div class="kanban-cards" data-status="{{ col.key }}">
       {% for ticket in col.tickets %}
-      <div class="kanban-card" data-status="{{ col.key }}">
-        <div class="flex-between" style="margin-bottom:4px;">
-          <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}" class="text-sm font-medium" style="text-decoration:none;color:var(--text);">#{{ ticket.pk }} {{ ticket.title|truncatewords:8 }}</a>
-          <span class="prio {{ ticket.priority }}" style="font-size:11px;"><span class="bar"></span></span>
+      <div class="kanban-card"
+           draggable="true"
+           data-ticket-id="{{ ticket.pk }}"
+           data-status="{{ col.key }}"
+           data-url="{% url 'tickets:ticket_status' pk=ticket.pk %}"
+           data-csrf="{{ csrf_token }}">
+        <div class="card-id">#{{ ticket.pk }}</div>
+        <div class="card-title">
+          <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}">{{ ticket.title|truncatewords:12 }}</a>
         </div>
-        <div class="text-sm text-muted" style="margin-top:4px;">{{ ticket.get_ticket_type_display }}</div>
-        {% if ticket.assigned_to %}
-        <div style="margin-top:8px;">
-          <span class="assignee"><span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</span>
+        <div class="card-meta">
+          <span class="card-type {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
+          <span class="card-priority {{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span>
         </div>
-        {% endif %}
-        <div class="kanban-actions" style="margin-top:8px;">
-          <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}">
-            {% csrf_token %}
-            <select name="status" onchange="this.form.submit()" class="form-input" style="width:100%;padding:4px 8px;font-size:12px;">
-              {% for val, label in status_choices %}
-              <option value="{{ val }}" {% if ticket.status == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </form>
+        <div class="card-footer">
+          {% if ticket.assigned_to %}
+          <span class="card-assignee">
+            <span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>
+            {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
+          </span>
+          {% else %}
+          <span class="text-sm text-muted">Unassigned</span>
+          {% endif %}
+          <span class="card-date">{{ ticket.created_at|timesince }} ago</span>
         </div>
       </div>
       {% endfor %}
       {% if not col.tickets %}
-      <p class="text-sm text-muted" style="text-align:center;padding:24px 0;">No tickets</p>
+      <div class="kanban-empty">No tickets</div>
       {% endif %}
     </div>
   </div>
   {% endfor %}
 </div>
+
+<script>
+(function() {
+  const board = document.getElementById('kanban-board');
+  let draggedCard = null;
+
+  board.addEventListener('dragstart', function(e) {
+    const card = e.target.closest('.kanban-card');
+    if (!card) return;
+    draggedCard = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.ticketId);
+  });
+
+  board.addEventListener('dragend', function(e) {
+    const card = e.target.closest('.kanban-card');
+    if (card) card.classList.remove('dragging');
+    document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+    draggedCard = null;
+  });
+
+  board.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const col = e.target.closest('.kanban-col');
+    if (col) {
+      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+      col.classList.add('drag-over');
+    }
+  });
+
+  board.addEventListener('dragleave', function(e) {
+    const col = e.target.closest('.kanban-col');
+    if (col && !col.contains(e.relatedTarget)) {
+      col.classList.remove('drag-over');
+    }
+  });
+
+  board.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const col = e.target.closest('.kanban-col');
+    if (!col || !draggedCard) return;
+
+    const ticketId = draggedCard.dataset.ticketId;
+    const newStatus = col.dataset.status;
+    const oldStatus = draggedCard.dataset.status;
+    const url = draggedCard.dataset.url;
+    const csrf = draggedCard.dataset.csrf;
+
+    if (newStatus === oldStatus) return;
+
+    const cardsContainer = col.querySelector('.kanban-cards');
+    const empty = cardsContainer.querySelector('.kanban-empty');
+    if (empty) empty.remove();
+    cardsContainer.appendChild(draggedCard);
+    draggedCard.dataset.status = newStatus;
+    col.classList.remove('drag-over');
+
+    document.querySelectorAll('.kanban-col').forEach(c => {
+      const count = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
+      c.querySelector('.kanban-count').textContent = count;
+    });
+
+    document.querySelectorAll('.kanban-col').forEach(c => {
+      const cards = c.querySelector('.kanban-cards');
+      if (cards.querySelectorAll('.kanban-card').length === 0) {
+        if (!cards.querySelector('.kanban-empty')) {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'kanban-empty';
+          emptyDiv.textContent = 'No tickets';
+          cards.appendChild(emptyDiv);
+        }
+      }
+    });
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: 'status=' + encodeURIComponent(newStatus),
+    }).then(function(resp) {
+      if (!resp.ok) {
+        console.error('Failed to update ticket status');
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}
