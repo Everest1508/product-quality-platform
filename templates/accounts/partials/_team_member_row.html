@@ -1,0 +1,38 @@
+<tr id="member-{{ membership.pk }}">
+  <td>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="avatar" style="width:28px;height:28px;font-size:11px;">{{ membership.user.username.0|upper }}</span>
+      <div>
+        <div class="text-sm font-medium">{{ membership.user.get_full_name|default:membership.user.username }}</div>
+        <div class="text-sm text-muted">{{ membership.user.email }}</div>
+      </div>
+    </div>
+  </td>
+  <td>
+    <span class="pill {% if membership.role == 'owner' %}nps{% elif membership.role == 'admin' %}medium{% elif membership.role == 'developer' %}active{% elif membership.role == 'support' %}csat{% else %}closed{% endif %}">
+      {{ membership.get_role_display }}
+    </span>
+  </td>
+  <td class="date">{{ membership.created_at|date:"M d, Y" }}</td>
+  <td>
+    <div class="row-actions">
+      {% if membership.role != 'owner' %}
+      <button hx-get="{% url 'accounts:team_edit' pk=membership.pk %}"
+              hx-target="#member-{{ membership.pk }}"
+              hx-swap="outerHTML"
+              class="btn" style="font-size:11px;padding:3px 8px;">Edit</button>
+      {% endif %}
+      {% if membership.user != request.user and membership.role != 'owner' %}
+      <form method="post" action="{% url 'accounts:team_remove' pk=membership.pk %}"
+            hx-post="{% url 'accounts:team_remove' pk=membership.pk %}"
+            hx-target="#member-{{ membership.pk }}"
+            hx-swap="outerHTML"
+            hx-confirm="Remove {{ membership.user.username }} from the team?"
+            style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="font-size:11px;padding:3px 8px;">Remove</button>
+      </form>
+      {% endif %}
+    </div>
+  </td>
+</tr>

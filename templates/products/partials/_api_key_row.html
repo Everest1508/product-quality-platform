@@ -1,0 +1,22 @@
+<div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+  <div class="flex-between">
+    <span class="text-sm font-medium">{{ api_key.name }}</span>
+    {% if api_key.is_active %}
+    <span class="pill active">Active</span>
+    {% else %}
+    <span class="pill closed">Revoked</span>
+    {% endif %}
+  </div>
+  <div class="text-sm text-muted" style="margin-top:2px;">{{ api_key.prefix }}...</div>
+  {% if api_key.is_active %}
+  <form method="post" action="{% url 'products:api_key_revoke' pk=api_key.pk %}"
+        hx-post="{% url 'products:api_key_revoke' pk=api_key.pk %}"
+        hx-target="closest div"
+        hx-swap="outerHTML"
+        hx-confirm="Revoke this API key?"
+        style="margin-top:4px;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger" style="font-size:11px;padding:2px 8px;">Revoke</button>
+  </form>
+  {% endif %}
+</div>

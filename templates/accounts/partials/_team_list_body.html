@@ -1,0 +1,10 @@
+{% for membership in page %}
+  {% include "accounts/partials/_team_member_row.html" with membership=membership %}
+{% empty %}
+<tr>
+  <td colspan="4" class="empty">
+    <h3>No team members found</h3>
+    <p>{% if search %}Try a different search term.{% else %}Invite teammates to collaborate.{% endif %}</p>
+  </td>
+</tr>
+{% endfor %}

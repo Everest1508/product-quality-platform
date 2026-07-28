@@ -1,0 +1,10 @@
+{% for rule in page %}
+{% include "automation/partials/_rule_row.html" with rule=rule %}
+{% empty %}
+<tr>
+  <td colspan="6" class="empty">
+    <h3>No rules found</h3>
+    <p>{% if search %}Try a different search term.{% else %}Create rules to automatically create tickets from error thresholds.{% endif %}</p>
+  </td>
+</tr>
+{% endfor %}

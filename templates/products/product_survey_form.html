@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% block title %}New Survey — {{ product.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <a href="{% url 'products:product_surveys' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Surveys</a>
+  <h1>New Survey</h1>
+</div>
+<div class="card" style="max-width:640px;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="product" value="{{ product.pk }}">
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required placeholder="e.g. Q1 NPS Survey">
+      {% if form.name.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.name.errors.0 }}</p>{% endif %}
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-input" rows="3" placeholder="Optional description...">{{ form.description.value|default:'' }}</textarea>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Survey Type</label>
+        <select name="survey_type" class="form-input">
+          <option value="nps" {% if form.survey_type.value == "nps" %}selected{% endif %}>Net Promoter Score (NPS)</option>
+          <option value="csat" {% if form.survey_type.value == "csat" %}selected{% endif %}>Customer Satisfaction (CSAT)</option>
+          <option value="ces" {% if form.survey_type.value == "ces" %}selected{% endif %}>Customer Effort Score (CES)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status" class="form-input">
+          <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Draft</option>
+          <option value="active" {% if form.status.value == "active" %}selected{% endif %}>Active</option>
+          <option value="closed" {% if form.status.value == "closed" %}selected{% endif %}>Closed</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button type="submit" class="btn btn-primary">Create Survey</button>
+      <a href="{% url 'products:product_surveys' pk=product.pk %}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

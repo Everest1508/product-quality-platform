@@ -1,0 +1,40 @@
+{% for error in page %}
+<tr>
+  <td onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">
+    <div class="flex-between">
+      <div>
+        <div class="title">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;
+            {% if error.severity == 'critical' or error.severity == 'high' %}background:var(--red);
+            {% elif error.severity == 'medium' %}background:var(--orange);
+            {% elif error.severity == 'low' %}background:var(--blue);
+            {% else %}background:var(--gray);{% endif %}"></span>
+          {{ error.title }}
+        </div>
+        <div class="sub">{{ error.fingerprint|truncatechars:16 }}</div>
+      </div>
+    </div>
+  </td>
+  <td class="text-sm text-muted" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">{{ error.product.name }}</td>
+  <td onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'"><span class="pill {{ error.severity }}">{{ error.severity|upper }}</span></td>
+  <td onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">
+    {% if error.status == 'open' %}<span class="pill open">Open</span>
+    {% elif error.status == 'investigating' %}<span class="pill progress">Investigating</span>
+    {% elif error.status == 'resolved' %}<span class="pill resolved">Resolved</span>
+    {% elif error.status == 'ignored' %}<span class="pill closed">Ignored</span>
+    {% endif %}
+  </td>
+  <td class="text-sm" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">{{ error.occurrence_count }}</td>
+  <td class="date" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">{{ error.last_seen|timesince }} ago</td>
+  <td>
+    <a href="{% url 'errors:error_detail' pk=error.pk %}" class="btn" style="font-size:12px;padding:3px 8px;">View</a>
+  </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="7" class="empty">
+    <h3>No errors found</h3>
+    <p>{% if search %}Try a different search term.{% else %}Errors will appear here once your products start reporting.{% endif %}</p>
+  </td>
+</tr>
+{% endfor %}

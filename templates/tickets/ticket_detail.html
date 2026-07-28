@@ -1,0 +1,101 @@
+{% extends "core/base.html" %}
+
+{% block title %}#{{ ticket.pk }} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>#{{ ticket.pk }} <span class="count">{{ ticket.title }}</span></h1>
+  <div class="head-actions">
+    {% if ticket.product %}
+    <a href="{% url 'products:product_tickets' pk=ticket.product.pk %}" class="btn">← {{ ticket.product.name }} tickets</a>
+    {% else %}
+    <a href="{% url 'tickets:ticket_list' %}" class="btn">← Tickets</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 320px;gap:32px;">
+  <div class="space-y">
+    <div class="card">
+      <div class="flex-between mb-4">
+        <div>
+          <span class="pill {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
+          {% if ticket.product %}
+          <span class="text-sm text-muted" style="margin-left:8px;">{{ ticket.product.name }}</span>
+          {% endif %}
+        </div>
+        <span class="date">Created {{ ticket.created_at|timesince }} ago</span>
+      </div>
+      {% if ticket.description %}
+      <div class="text-sm" style="white-space:pre-wrap;">{{ ticket.description }}</div>
+      {% endif %}
+    </div>
+
+    {% if ticket.linked_error_group %}
+    <div class="card">
+      <div class="text-sm font-medium mb-4">Linked Error</div>
+      {% if ticket.product %}
+      <a href="{% url 'products:product_error_detail' pk=ticket.product.pk error_pk=ticket.linked_error_group.pk %}" class="text-sm" style="color:var(--blue);">
+      {% else %}
+      <a href="{% url 'errors:error_detail' pk=ticket.linked_error_group.pk %}" class="text-sm" style="color:var(--blue);">
+      {% endif %}
+        {{ ticket.linked_error_group.title }}
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="flex-between mb-4">
+        <div class="text-sm font-medium">Comments <span class="text-muted">({{ comments|length }})</span></div>
+      </div>
+      <div id="comment-list" class="space-y" style="border-top:1px solid var(--border);padding-top:12px;">
+        {% include "tickets/partials/_comment_list.html" with comments=comments %}
+      </div>
+      <form method="post" action="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
+            hx-post="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
+            hx-target="#comment-list"
+            hx-swap="innerHTML"
+            hx-on::after-request="this.reset();"
+            style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+        {% csrf_token %}
+        <textarea name="body" class="form-input" rows="3" placeholder="Add a comment..."></textarea>
+        <div style="text-align:right;margin-top:8px;">
+          <button type="submit" class="btn btn-primary">Comment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="space-y">
+    <div class="card">
+      <div class="text-sm font-medium mb-4">Details</div>
+      <div class="space-y">
+        <div class="flex-between">
+          <span class="text-sm text-muted">Status</span>
+          <div id="detail-status">
+            {% include "tickets/partials/_ticket_status.html" with ticket=ticket %}
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+          <span class="text-sm text-muted">Priority</span>
+          <span class="prio {{ ticket.priority }}"><span class="bar"></span>{{ ticket.get_priority_display }}</span>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+          <span class="text-sm text-muted">Assignee</span>
+          <div id="detail-assignee">
+            {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+          <span class="text-sm text-muted">Source</span>
+          <span class="text-sm">{{ ticket.get_source_display }}</span>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+          <span class="text-sm text-muted">Updated</span>
+          <span class="text-sm">{{ ticket.updated_at|timesince }} ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

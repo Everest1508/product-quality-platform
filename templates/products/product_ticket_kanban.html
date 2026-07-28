@@ -1,0 +1,62 @@
+{% extends "core/base.html" %}
+{% block title %}Kanban — {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="head" style="margin-bottom:16px;">
+  <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
+  <h1 style="font-size:20px;font-weight:700;">{{ product.name }} — Kanban</h1>
+  <div style="display:flex;gap:8px;margin-left:auto;">
+    <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="font-size:13px;">New ticket</a>
+  </div>
+</div>
+
+<div class="toolbar">
+  <form method="get" class="search" action="{% url 'products:product_ticket_kanban' pk=product.pk %}">
+    <input type="text" name="q" placeholder="Search tickets..." value="{{ search }}" class="form-input" style="width:220px;" />
+    <button type="submit" class="btn btn-sm">Search</button>
+  </form>
+  <div class="right">
+    <span class="text-sm text-muted">{{ total }} total</span>
+  </div>
+</div>
+
+<div class="kanban-board">
+  {% for col in columns %}
+  <div class="kanban-col">
+    <div class="kanban-header">
+      {{ col.label }}
+      <span class="kanban-count">{{ col.tickets|length }}</span>
+    </div>
+    <div class="kanban-cards">
+      {% for ticket in col.tickets %}
+      <div class="kanban-card" data-status="{{ col.key }}">
+        <div class="flex-between" style="margin-bottom:4px;">
+          <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}" class="text-sm font-medium" style="text-decoration:none;color:var(--text);">#{{ ticket.pk }} {{ ticket.title|truncatewords:8 }}</a>
+          <span class="prio {{ ticket.priority }}" style="font-size:11px;"><span class="bar"></span></span>
+        </div>
+        <div class="text-sm text-muted" style="margin-top:4px;">{{ ticket.get_ticket_type_display }}</div>
+        {% if ticket.assigned_to %}
+        <div style="margin-top:8px;">
+          <span class="assignee"><span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</span>
+        </div>
+        {% endif %}
+        <div class="kanban-actions" style="margin-top:8px;">
+          <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}">
+            {% csrf_token %}
+            <select name="status" onchange="this.form.submit()" class="form-input" style="width:100%;padding:4px 8px;font-size:12px;">
+              {% for val, label in status_choices %}
+              <option value="{{ val }}" {% if ticket.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+      {% if not col.tickets %}
+      <p class="text-sm text-muted" style="text-align:center;padding:24px 0;">No tickets</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

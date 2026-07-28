@@ -1,0 +1,48 @@
+<form method="post" action="{% url 'accounts:team_invite' %}">
+  {% csrf_token %}
+
+  {% if form.errors %}
+  <div style="padding:10px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;margin-bottom:16px;">
+    {% for field, errors in form.errors.items %}
+      {% for error in errors %}
+      <p class="text-sm" style="color:var(--red);">{{ error }}</p>
+      {% endfor %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="grid-2">
+    <div class="form-group">
+      <label>Username</label>
+      {{ form.username }}
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      {{ form.email }}
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="form-group">
+      <label>First name</label>
+      {{ form.first_name }}
+    </div>
+    <div class="form-group">
+      <label>Last name</label>
+      {{ form.last_name }}
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="form-group">
+      <label>Password</label>
+      {{ form.password }}
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      {{ form.role }}
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+    <a href="{% url 'accounts:team_list' %}" class="btn">Cancel</a>
+    <button type="submit" class="btn btn-primary">Add Member</button>
+  </div>
+</form>

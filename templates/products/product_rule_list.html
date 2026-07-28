@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+{% block title %}Automation — {{ product.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Automation Rules <span class="count">{{ page.paginator.count }} total</span></h1>
+  <div class="head-actions">
+    <a href="{% url 'products:product_rule_create' pk=product.pk %}" class="btn btn-primary">New rule</a>
+  </div>
+</div>
+<div class="tabs">
+  <a href="{% url 'products:product_rules' pk=product.pk %}" class="tab {% if not current_active %}active{% endif %}">All</a>
+  <a href="?active=1" class="tab {% if current_active == '1' %}active{% endif %}">Active</a>
+  <a href="?active=0" class="tab {% if current_active == '0' %}active{% endif %}">Inactive</a>
+</div>
+<div class="toolbar">
+  <form method="get" class="search-wrap" style="display:flex;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" name="q" value="{{ search }}" placeholder="Search rules...">
+    {% if current_active %}<input type="hidden" name="active" value="{{ current_active }}">{% endif %}
+    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+  </form>
+  <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
+    <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
+    <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
+    <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
+    <option value="-fired" {% if current_sort == '-fired' %}selected{% endif %}>Most triggered</option>
+  </select>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>Rule</th>
+      <th style="width:140px">Trigger</th>
+      <th style="width:100px">Action</th>
+      <th style="width:90px">Status</th>
+      <th style="width:80px">Fired</th>
+      <th style="width:100px">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% include "products/partials/_product_rule_list_body.html" with page=page %}
+  </tbody>
+</table>
+{% include "core/_pagination.html" with page=page %}
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} rules</footer>
+<script>
+function buildUrl(params){var url=new URL(window.location.href);url.searchParams.delete('page');for(var key in params){url.searchParams.delete(key);if(params[key])url.searchParams.set(key,params[key]);}return url.toString();}
+</script>
+{% endblock %}

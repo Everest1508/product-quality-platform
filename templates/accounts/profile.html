@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}Profile — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Settings</h1>
+</div>
+
+<div class="card" style="max-width:540px;">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+    <span class="avatar" style="width:48px;height:48px;font-size:18px;">{{ request.user.username.0|upper }}</span>
+    <div>
+      <div class="font-medium">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="text-sm text-muted">@{{ request.user.username }}</div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="grid-2">
+      <div class="form-group">
+        <label>First name</label>
+        {{ form.first_name }}
+      </div>
+      <div class="form-group">
+        <label>Last name</label>
+        {{ form.last_name }}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      {{ form.email }}
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Changes</button>
+  </form>
+</div>
+{% endblock %}

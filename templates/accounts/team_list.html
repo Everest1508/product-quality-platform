@@ -1,0 +1,80 @@
+{% extends "core/base.html" %}
+
+{% block title %}Team — PQ Platform{% endblock %}
+
+{% block content %}
+<div x-data="{ open: {% if show_invite_modal %}true{% else %}false{% endif %} }">
+  <div class="head">
+    <h1>Team <span class="count">{{ page.paginator.count }} member{{ page.paginator.count|pluralize }}</span></h1>
+    <div class="head-actions">
+      <button @click="open = true" class="btn btn-primary">Add member</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <a href="{% url 'accounts:team_list' %}" class="tab {% if not current_role %}active{% endif %}">All</a>
+    <a href="?role=owner" class="tab {% if current_role == 'owner' %}active{% endif %}">Owner</a>
+    <a href="?role=admin" class="tab {% if current_role == 'admin' %}active{% endif %}">Admin</a>
+    <a href="?role=developer" class="tab {% if current_role == 'developer' %}active{% endif %}">Developer</a>
+    <a href="?role=support" class="tab {% if current_role == 'support' %}active{% endif %}">Support</a>
+    <a href="?role=viewer" class="tab {% if current_role == 'viewer' %}active{% endif %}">Viewer</a>
+  </div>
+
+  <div class="toolbar">
+    <form method="get" class="search-wrap" style="display:flex;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" name="q" value="{{ search }}" placeholder="Search members...">
+      {% if current_role %}<input type="hidden" name="role" value="{{ current_role }}">{% endif %}
+      {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+    </form>
+    <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
+      <option value="-role" {% if current_sort == '-role' %}selected{% endif %}>Role (high first)</option>
+      <option value="role" {% if current_sort == 'role' %}selected{% endif %}>Role (low first)</option>
+      <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
+      <option value="-joined" {% if current_sort == '-joined' %}selected{% endif %}>Newest first</option>
+      <option value="joined" {% if current_sort == 'joined' %}selected{% endif %}>Oldest first</option>
+    </select>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th style="width:100px">Role</th>
+        <th style="width:120px">Joined</th>
+        <th style="width:80px">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="team-members">
+      {% include "accounts/partials/_team_list_body.html" with page=page %}
+    </tbody>
+  </table>
+
+  {% include "core/_pagination.html" with page=page %}
+
+  <!-- Modal -->
+  <div x-show="open" x-cloak style="display:none;">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;" @click="open = false"></div>
+    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;">
+      <div class="card" style="max-width:420px;width:100%;" @click.outside="open = false">
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;">Add Team Member</h3>
+        <div id="invite-form-container">
+          {% include "accounts/partials/_invite_form.html" with form=form %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function buildUrl(params) {
+  var url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  for (var key in params) {
+    url.searchParams.delete(key);
+    if (params[key]) url.searchParams.set(key, params[key]);
+  }
+  return url.toString();
+}
+</script>
+{% endblock %}

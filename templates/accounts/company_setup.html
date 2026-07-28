@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+
+{% block title %}Company Setup — PQ Platform{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:60px auto;">
+  <div class="card" style="text-align:center;">
+    <div style="width:56px;height:56px;background:var(--blue-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <svg style="width:28px;height:28px;color:var(--blue);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+    </div>
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Set up your company</h2>
+    <p class="text-sm text-muted" style="margin-bottom:24px;">Create your organization to start tracking errors, feedback, and tickets.</p>
+
+    {% if form.errors %}
+    <div style="padding:10px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;margin-bottom:16px;text-align:left;">
+      {% for error in form.name.errors %}
+      <p class="text-sm" style="color:var(--red);">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group" style="text-align:left;">
+        <label>Company Name</label>
+        {{ form.name }}
+        <p class="text-sm text-muted" style="margin-top:4px;">A URL-friendly slug will be auto-generated.</p>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;">Create Company</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

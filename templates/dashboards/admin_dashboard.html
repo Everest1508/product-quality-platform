@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+
+{% block title %}Dashboards — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Dashboard <span class="count">{{ request.company.name }}</span></h1>
+</div>
+
+<div class="grid-4 mb-6">
+  <div class="card stat">
+    <div class="val">{{ member_count }}</div>
+    <div class="label">Team Members</div>
+  </div>
+  <div class="card stat">
+    <div class="val" style="color:var(--red);">{{ open_errors }}</div>
+    <div class="label">Open Errors</div>
+  </div>
+  <div class="card stat">
+    <div class="val" style="color:var(--orange);">{{ open_tickets }}</div>
+    <div class="label">Open Tickets</div>
+  </div>
+  <div class="card stat">
+    <div class="val" style="color:var(--green);">{{ resolved_errors }}</div>
+    <div class="label">Resolved</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="text-sm font-medium mb-4">Team Breakdown</div>
+    {% for role in role_breakdown %}
+    <div class="flex-between" style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+      <span class="text-sm">{{ role.role|title }}</span>
+      <span class="text-sm font-medium">{{ role.count }}</span>
+    </div>
+    {% empty %}
+    <p class="text-sm text-muted" style="text-align:center;padding:20px;">No team members yet.</p>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="text-sm font-medium mb-4">Recent Activity</div>
+    <div style="max-height:300px;overflow-y:auto;">
+      {% for entry in activity %}
+      <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+        <div class="text-sm">{{ entry.title }}</div>
+        <div class="date">{% if entry.actor %}{{ entry.actor.username }} · {% endif %}{{ entry.created_at|timesince }} ago</div>
+      </div>
+      {% empty %}
+      <p class="text-sm text-muted" style="text-align:center;padding:20px;">No activity yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "core/base.html" %}
+{% block title %}{{ error_group.title }} — {{ product.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <a href="{% url 'products:product_errors' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Errors</a>
+  <h1 style="font-size:17px;">{{ error_group.title }}</h1>
+</div>
+<div class="grid-2 mb-6">
+  <div class="card">
+    <div class="flex-between mb-4">
+      <span class="pill {{ error_group.severity }}">{{ error_group.severity|upper }}</span>
+      <span id="error-status-badge">
+        {% if error_group.status == 'open' %}<span class="pill open">Open</span>
+        {% elif error_group.status == 'investigating' %}<span class="pill progress">Investigating</span>
+        {% elif error_group.status == 'resolved' %}<span class="pill resolved">Resolved</span>
+        {% elif error_group.status == 'ignored' %}<span class="pill closed">Ignored</span>{% endif %}
+      </span>
+    </div>
+    <div class="text-sm text-muted mb-4">Fingerprint: {{ error_group.fingerprint }}</div>
+    <div class="text-sm mb-4">Occurrences: <strong>{{ error_group.occurrence_count }}</strong></div>
+    <div class="text-sm mb-4">First seen: {{ error_group.first_seen|date:"M d, Y H:i" }}</div>
+    <div class="text-sm mb-4">Last seen: {{ error_group.last_seen|date:"M d, Y H:i" }}</div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Status</h3>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <form method="post" action="{% url 'errors:error_status' pk=error_group.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="open">
+        <button type="submit" class="btn" style="font-size:12px;">Open</button>
+      </form>
+      <form method="post" action="{% url 'errors:error_status' pk=error_group.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="investigating">
+        <button type="submit" class="btn" style="font-size:12px;">Investigating</button>
+      </form>
+      <form method="post" action="{% url 'errors:error_resolve' pk=error_group.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="font-size:12px;">Resolve</button>
+      </form>
+      <form method="post" action="{% url 'errors:error_ignore' pk=error_group.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="font-size:12px;">Ignore</button>
+      </form>
+    </div>
+  </div>
+</div>
+<h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">Recent Occurrences</h3>
+<table>
+  <thead><tr><th>Time</th><th>Environment</th><th>Page</th><th>User</th></tr></thead>
+  <tbody>
+    {% for occ in occurrences %}
+    <tr>
+      <td class="date">{{ occ.created_at|date:"M d, H:i:s" }}</td>
+      <td class="text-sm">{{ occ.environment }}</td>
+      <td class="text-sm">{{ occ.page|default:"—" }}</td>
+      <td class="text-sm">{{ occ.user_ref|default:"—" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="empty"><p>No occurrences recorded.</p></td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

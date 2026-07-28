@@ -1,0 +1,84 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ product.name }} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>{{ product.name }} <span class="count">{{ product.slug }}</span></h1>
+  <div class="head-actions">
+    <a href="{% url 'products:product_edit' pk=product.pk %}" class="btn">Edit</a>
+    <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" onsubmit="return confirm('Delete this product?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  </div>
+</div>
+
+{% if product.description %}
+<div class="card mb-6">
+  <p class="text-sm">{{ product.description }}</p>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="card" x-data="{ open: false }">
+    <div class="flex-between mb-4">
+      <div class="text-sm font-medium">Versions</div>
+      <button @click="open = true" class="btn" style="font-size:12px;padding:4px 8px;">+ Add</button>
+    </div>
+    <div id="version-list">
+      {% include "products/partials/_version_list.html" with versions=product.versions.all %}
+    </div>
+    <div x-show="open" x-cloak style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <form method="post" action="{% url 'products:version_create' pk=product.pk %}"
+            hx-post="{% url 'products:version_create' pk=product.pk %}"
+            hx-target="#version-list" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" name="version_string" class="form-input" placeholder="e.g. 1.2.0" required style="flex:1;">
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+            <input type="checkbox" name="is_current" value="true" style="width:auto;"> Current
+          </label>
+          <button type="submit" class="btn btn-primary">Add</button>
+          <button type="button" @click="open = false" class="btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between mb-4">
+      <div class="text-sm font-medium">API Keys</div>
+    </div>
+    <div id="api-key-list">
+      {% for key in product.api_keys.all %}
+      {% include "products/partials/_api_key_row.html" with api_key=key %}
+      {% empty %}
+      <p class="text-sm text-muted" style="text-align:center;padding:16px;">No API keys yet.</p>
+      {% endfor %}
+    </div>
+    <div id="api-key-created"></div>
+    <form method="post" action="{% url 'products:api_key_create' pk=product.pk %}"
+          hx-post="{% url 'products:api_key_create' pk=product.pk %}"
+          hx-target="#api-key-created" hx-swap="innerHTML" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+      {% csrf_token %}
+      <div style="display:flex;gap:8px;">
+        <input type="text" name="name" class="form-input" placeholder="Key name" required style="flex:1;">
+        <button type="submit" class="btn btn-primary">Generate</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if is_privileged %}
+<div class="card mt-6">
+  <div class="flex-between mb-4">
+    <div class="text-sm font-medium">Team Access</div>
+  </div>
+  <p class="text-sm text-muted mb-4">Owners and admins have access to all products. Other members need explicit allocation.</p>
+  <div id="product-access-list">
+    {% include "products/partials/_product_access_list.html" with all_members=all_members allocated_ids=allocated_ids product=product is_privileged=is_privileged %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

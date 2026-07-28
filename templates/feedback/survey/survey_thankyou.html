@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+
+{% block title %}Thank You — {{ survey.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:400px;margin:80px auto;text-align:center;">
+  <div class="card">
+    <div style="width:56px;height:56px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <svg style="width:28px;height:28px;color:var(--green);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h2 style="font-size:20px;font-weight:600;">Thank you!</h2>
+    <p class="text-sm text-muted" style="margin-top:8px;">Your response has been recorded. We appreciate your feedback.</p>
+  </div>
+</div>
+{% endblock %}

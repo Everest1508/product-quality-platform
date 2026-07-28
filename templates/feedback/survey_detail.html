@@ -1,0 +1,95 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ survey.name }} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>{{ survey.name }} <span class="count">{{ response_count }} response{{ response_count|pluralize }}</span></h1>
+  <div class="head-actions">
+    <a href="{% url 'feedback:survey_list' %}" class="btn">Back to surveys</a>
+  </div>
+</div>
+
+<div class="grid-4 mb-6">
+  <div class="card stat">
+    <div class="val">{{ response_count }}</div>
+    <div class="label">Responses</div>
+  </div>
+  <div class="card stat">
+    <div class="val">{% if survey.survey_type == 'nps' %}{{ nps_score|default:"—" }}{% else %}{{ avg_score|default:"—" }}{% endif %}</div>
+    <div class="label">{% if survey.survey_type == 'nps' %}NPS Score{% else %}Avg Score{% endif %}</div>
+  </div>
+  <div class="card stat">
+    <div class="val"><span class="pill {{ survey.survey_type }}">{{ survey.get_survey_type_display }}</span></div>
+    <div class="label">Type</div>
+  </div>
+  <div class="card stat">
+    <div class="val"><span class="pill {{ survey.status }}">{{ survey.get_status_display }}</span></div>
+    <div class="label">Status</div>
+  </div>
+</div>
+
+<div class="flex-between mb-6">
+  <div class="card" style="flex:1;margin-right:12px;">
+    <div class="text-sm font-medium mb-4">Public Link</div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'feedback:public_survey' pk=survey.pk %}" class="form-input" style="font-size:12px;" onclick="this.select()">
+      <button type="button" onclick="navigator.clipboard.writeText(this.previousElementSibling.value)" class="btn" style="white-space:nowrap;">Copy</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <form method="post" action="{% url 'feedback:survey_toggle' pk=survey.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn">
+        {% if survey.status == 'draft' %}Activate{% elif survey.status == 'active' %}Close{% else %}Reopen{% endif %}
+      </button>
+    </form>
+    <form method="post" action="{% url 'feedback:survey_delete' pk=survey.pk %}" onsubmit="return confirm('Delete this survey?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  </div>
+</div>
+
+{% if survey.survey_type == 'nps' %}
+<div class="card mb-6">
+  <div class="text-sm font-medium mb-4">NPS Distribution</div>
+  <div style="display:flex;align-items:flex-end;gap:4px;height:100px;">
+    {% for score, count in response_distribution.items %}
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+      <div style="width:100%;border-radius:3px 3px 0 0;
+        {% if score <= 6 %}background:var(--red);
+        {% elif score <= 8 %}background:var(--orange);
+        {% else %}background:var(--green);{% endif %};
+        height:{% widthratio count 1 8 %}px;min-height:{% if count > 0 %}4px{% else %}0px{% endif %};"></div>
+      <span class="date" style="margin-top:4px;">{{ score }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="flex-between" style="margin-top:8px;">
+    <span class="date">Detractors (0-6)</span>
+    <span class="date">Passives (7-8)</span>
+    <span class="date">Promoters (9-10)</span>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="text-sm font-medium mb-4">Recent Responses</div>
+  {% for response in responses %}
+  <div style="padding:10px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+    <div class="flex-between">
+      <span class="font-medium" style="font-size:18px;
+        {% if survey.survey_type == 'nps' %}
+          {% if response.score >= 9 %}color:var(--green);{% elif response.score <= 6 %}color:var(--red);{% else %}color:var(--orange);{% endif %}
+        {% endif %}">{{ response.score }}</span>
+      {% if response.contact_name %}<span class="text-sm">{{ response.contact_name }}</span>{% endif %}
+      <span class="date">{{ response.created_at|timesince }} ago</span>
+    </div>
+    {% if response.comment %}<div class="text-sm text-muted" style="margin-top:4px;">{{ response.comment }}</div>{% endif %}
+  </div>
+  {% empty %}
+  <p class="text-sm text-muted" style="text-align:center;padding:20px;">No responses yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

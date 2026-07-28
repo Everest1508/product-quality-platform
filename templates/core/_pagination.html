@@ -1,0 +1,28 @@
+{% if page.has_other_pages %}
+<div class="pagination" x-data>
+  {% if page.has_previous %}
+  <a href="#" @click.prevent="$el.href=buildPageUrl({{ page.previous_page_number }})" class="btn">Prev</a>
+  {% else %}
+  <span class="btn disabled">Prev</span>
+  {% endif %}
+  {% for num in page.paginator.page_range %}
+    {% if page.number == num %}
+      <span class="btn btn-primary" style="pointer-events:none;">{{ num }}</span>
+    {% elif num == 1 or num == page.paginator.num_pages %}
+      <a href="#" @click.prevent="$el.href=buildPageUrl({{ num }})" class="btn">{{ num }}</a>
+    {% elif num > page.number|add:"-3" and num < page.number|add:"3" %}
+      <a href="#" @click.prevent="$el.href=buildPageUrl({{ num }})" class="btn">{{ num }}</a>
+    {% elif num == page.number|add:"-3" or num == page.number|add:"3" %}
+      <span class="page-info">&hellip;</span>
+    {% endif %}
+  {% endfor %}
+  {% if page.has_next %}
+  <a href="#" @click.prevent="$el.href=buildPageUrl({{ page.next_page_number }})" class="btn">Next</a>
+  {% else %}
+  <span class="btn disabled">Next</span>
+  {% endif %}
+</div>
+<div style="text-align:center;margin-top:8px;">
+  <span class="text-sm text-muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+</div>
+{% endif %}

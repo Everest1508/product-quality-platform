@@ -1,0 +1,84 @@
+{% extends "core/base.html" %}
+
+{% block title %}Errors — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Errors <span class="count">{{ page.paginator.count }} total</span></h1>
+  <div class="head-actions">
+    <a href="{% url 'errors:error_create' %}" class="btn btn-primary" style="font-size:13px;">Report error</a>
+  </div>
+</div>
+
+<div class="tabs">
+  <a href="{% url 'errors:error_list' %}" class="tab {% if not current_status %}active{% endif %}">All</a>
+  <a href="?status=open" class="tab {% if current_status == 'open' %}active{% endif %}">Open</a>
+  <a href="?status=investigating" class="tab {% if current_status == 'investigating' %}active{% endif %}">Investigating</a>
+  <a href="?status=resolved" class="tab {% if current_status == 'resolved' %}active{% endif %}">Resolved</a>
+  <a href="?status=ignored" class="tab {% if current_status == 'ignored' %}active{% endif %}">Ignored</a>
+</div>
+
+<div class="toolbar">
+  <form method="get" class="search-wrap" style="display:flex;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" name="q" value="{{ search }}" placeholder="Search errors...">
+    {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+  </form>
+  <select class="filter-select" onchange="window.location=buildUrl({product:this.value})">
+    <option value="">All products</option>
+    {% for p in products %}
+    <option value="{{ p.pk }}" {% if current_product == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
+    {% endfor %}
+  </select>
+  <select class="filter-select" onchange="window.location=buildUrl({severity:this.value})">
+    <option value="">All severities</option>
+    <option value="critical" {% if current_severity == 'critical' %}selected{% endif %}>Critical</option>
+    <option value="high" {% if current_severity == 'high' %}selected{% endif %}>High</option>
+    <option value="medium" {% if current_severity == 'medium' %}selected{% endif %}>Medium</option>
+    <option value="low" {% if current_severity == 'low' %}selected{% endif %}>Low</option>
+    <option value="info" {% if current_severity == 'info' %}selected{% endif %}>Info</option>
+  </select>
+  <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
+    <option value="-last_seen" {% if current_sort == '-last_seen' %}selected{% endif %}>Most recent</option>
+    <option value="last_seen" {% if current_sort == 'last_seen' %}selected{% endif %}>Least recent</option>
+    <option value="-count" {% if current_sort == '-count' %}selected{% endif %}>Most occurrences</option>
+    <option value="count" {% if current_sort == 'count' %}selected{% endif %}>Least occurrences</option>
+    <option value="-severity" {% if current_sort == '-severity' %}selected{% endif %}>Severity (high first)</option>
+    <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title A-Z</option>
+  </select>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Error</th>
+      <th style="width:110px">Product</th>
+      <th style="width:90px">Severity</th>
+      <th style="width:100px">Status</th>
+      <th style="width:70px">Count</th>
+      <th style="width:100px">Last Seen</th>
+      <th style="width:70px"></th>
+    </tr>
+  </thead>
+  <tbody id="error-list-body">
+    {% include "errors/partials/_error_list_body.html" with page=page %}
+  </tbody>
+</table>
+
+{% include "core/_pagination.html" with page=page %}
+
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} error groups</footer>
+
+<script>
+function buildUrl(params) {
+  var url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  for (var key in params) {
+    url.searchParams.delete(key);
+    if (params[key]) url.searchParams.set(key, params[key]);
+  }
+  return url.toString();
+}
+</script>
+{% endblock %}

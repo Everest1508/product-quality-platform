@@ -1,0 +1,14 @@
+{% for survey in page %}
+<tr>
+  <td onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">
+    <div class="title">{{ survey.name }}</div>
+  </td>
+  <td onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'"><span class="pill {{ survey.survey_type }}">{{ survey.get_survey_type_display }}</span></td>
+  <td onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'"><span class="pill {{ survey.status }}">{{ survey.get_status_display }}</span></td>
+  <td class="text-sm" onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">{{ survey.response_count }}</td>
+  <td class="date" onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">{{ survey.created_at|timesince }} ago</td>
+  <td><a href="{% url 'feedback:survey_detail' pk=survey.pk %}" class="btn" style="font-size:12px;padding:3px 8px;">View</a></td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="empty"><h3>No surveys found</h3><p>{% if search %}Try a different search term.{% else %}Create a survey to start collecting feedback.{% endif %}</p></td></tr>
+{% endfor %}

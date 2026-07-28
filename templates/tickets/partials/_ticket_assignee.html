@@ -1,0 +1,21 @@
+{% if ticket.assigned_to %}
+<span class="assignee">
+  <span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>
+  {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
+</span>
+{% else %}
+<span class="assignee unassigned">Nobody</span>
+{% endif %}
+<form method="post" action="{% url 'tickets:ticket_assign' pk=ticket.pk %}"
+      hx-post="{% url 'tickets:ticket_assign' pk=ticket.pk %}"
+      hx-target="#detail-assignee"
+      hx-swap="innerHTML"
+      style="margin-top:6px;">
+  {% csrf_token %}
+  <select name="assigned_to" class="form-input" style="font-size:12px;padding:4px 6px;" onchange="this.form.requestSubmit()">
+    <option value="">Unassigned</option>
+    {% for member in members %}
+    <option value="{{ member.pk }}" {% if ticket.assigned_to == member %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+    {% endfor %}
+  </select>
+</form>

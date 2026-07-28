@@ -1,0 +1,18 @@
+{% for occ in occurrences %}
+<div style="padding:12px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+  <div class="flex-between">
+    <span class="text-sm font-medium">#{{ occ.pk }}</span>
+    <span class="date">{{ occ.created_at|timesince }} ago</span>
+  </div>
+  <div class="flex-between" style="margin-top:4px;">
+    <span class="pill {{ occ.environment }}">{{ occ.environment }}</span>
+    {% if occ.version %}<span class="text-sm text-muted">{{ occ.version }}</span>{% endif %}
+  </div>
+  {% if occ.user_ref %}<div class="text-sm text-muted" style="margin-top:4px;">User: {{ occ.user_ref }}</div>{% endif %}
+  {% if occ.stacktrace %}
+  <pre style="background:#1a1a2e;color:#e0e0e0;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;margin-top:8px;max-height:300px;">{{ occ.stacktrace }}</pre>
+  {% endif %}
+</div>
+{% empty %}
+<p class="text-sm text-muted" style="text-align:center;padding:20px;">No occurrences recorded.</p>
+{% endfor %}

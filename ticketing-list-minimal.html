@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tickets</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --panel:#fafafa;
+    --border:#e4e4e7;
+    --text:#18181b;
+    --muted:#71717a;
+    --line:#f0f0f1;
+
+    --red:#c0362c;
+    --red-bg:#fbebea;
+    --orange:#a15c07;
+    --orange-bg:#fdf3e2;
+    --blue:#1f5fbf;
+    --blue-bg:#eaf1fc;
+    --green:#177a4c;
+    --green-bg:#e8f5ee;
+    --gray:#71717a;
+    --gray-bg:#f4f4f5;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  .shell{display:grid;grid-template-columns:200px 1fr;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{border-right:1px solid var(--border);padding:20px 12px;}
+  .org{font-weight:600;font-size:14px;padding:0 8px 18px;}
+  .org span{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px;}
+  .nav a{display:flex;align-items:center;justify-content:space-between;padding:7px 8px;border-radius:6px;color:var(--muted);font-size:13.5px;margin-bottom:1px;}
+  .nav a:hover{background:var(--panel);color:var(--text);}
+  .nav a.active{background:var(--panel);color:var(--text);font-weight:500;}
+  .nav .n{font-size:12px;color:var(--muted);}
+  .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#a1a1aa;padding:16px 8px 6px;}
+
+  /* Main */
+  .main{padding:28px 36px;max-width:1100px;}
+  .head{display:flex;align-items:center;margin-bottom:20px;}
+  .head h1{font-size:19px;font-weight:600;margin:0;}
+  .head .count{color:var(--muted);font-weight:400;font-size:14px;margin-left:8px;}
+  .head-actions{margin-left:auto;display:flex;gap:8px;}
+  .btn{border:1px solid var(--border);background:#fff;padding:6px 12px;border-radius:6px;font-size:13.5px;color:var(--text);}
+  .btn:hover{background:var(--panel);}
+  .btn-primary{background:var(--text);color:#fff;border-color:var(--text);}
+  .btn-primary:hover{background:#000;}
+
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+  .tab{padding:8px 4px;margin-right:18px;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;position:relative;top:1px;}
+  .tab.active{color:var(--text);font-weight:500;border-color:var(--text);}
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);}
+  tbody td{padding:11px 10px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  tbody tr:hover{background:var(--panel);}
+  tbody tr{cursor:pointer;}
+
+  .id{color:var(--muted);font-size:13px;white-space:nowrap;}
+  .title{font-weight:500;}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:1px;}
+
+  .pill{display:inline-block;font-size:12px;font-weight:500;padding:3px 8px;border-radius:5px;white-space:nowrap;}
+  .pill.open{background:var(--blue-bg);color:var(--blue);}
+  .pill.progress{background:var(--orange-bg);color:var(--orange);}
+  .pill.resolved{background:var(--green-bg);color:var(--green);}
+  .pill.closed{background:var(--gray-bg);color:var(--gray);}
+
+  .prio{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);}
+  .prio .bar{width:3px;height:13px;border-radius:2px;display:inline-block;}
+  .prio.high .bar{background:var(--red);}
+  .prio.medium .bar{background:var(--orange);}
+  .prio.low .bar{background:var(--gray);}
+
+  .avatar{width:22px;height:22px;border-radius:50%;background:var(--panel);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;justify-content:center;margin-right:6px;vertical-align:middle;}
+  .assignee{display:flex;align-items:center;font-size:13px;color:var(--text);}
+  .unassigned{color:var(--muted);}
+
+  .date{color:var(--muted);font-size:13px;}
+  footer.note{margin-top:18px;color:var(--muted);font-size:12.5px;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <div class="sidebar">
+    <div class="org">Aureole Group<span>ERP workspace</span></div>
+    <div class="nav">
+      <a href="#" class="active">Tickets <span class="n">34</span></a>
+      <a href="#">Errors <span class="n">18</span></a>
+      <a href="#">Feedback</a>
+      <a href="#">Releases</a>
+      <a href="#">Knowledge base</a>
+    </div>
+    <div class="nav-label">Workspace</div>
+    <div class="nav">
+      <a href="#">Products</a>
+      <a href="#">Team</a>
+      <a href="#">Settings</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="head">
+      <h1>Tickets <span class="count">34 total</span></h1>
+      <div class="head-actions">
+        <button class="btn">Filter</button>
+        <button class="btn btn-primary">New ticket</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">All</div>
+      <div class="tab">Open</div>
+      <div class="tab">In progress</div>
+      <div class="tab">Resolved</div>
+      <div class="tab">Assigned to me</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:70px">ID</th>
+          <th>Ticket</th>
+          <th style="width:110px">Status</th>
+          <th style="width:100px">Priority</th>
+          <th style="width:140px">Assignee</th>
+          <th style="width:100px">Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="id">#1042</td>
+          <td>
+            <div class="title">Checkout fails with database timeout</div>
+            <div class="sub">Linked to error PLAT-1042 · checkout-service</div>
+          </td>
+          <td><span class="pill open">Open</span></td>
+          <td><span class="prio high"><span class="bar"></span>High</span></td>
+          <td><span class="assignee"><span class="avatar">BE</span>Backend team</span></td>
+          <td class="date">2m ago</td>
+        </tr>
+        <tr>
+          <td class="id">#1039</td>
+          <td>
+            <div class="title">Invoice save crashes on empty tax field</div>
+            <div class="sub">Reported by 3 customers · billing-module</div>
+          </td>
+          <td><span class="pill progress">In progress</span></td>
+          <td><span class="prio medium"><span class="bar"></span>Medium</span></td>
+          <td><span class="assignee"><span class="avatar">AK</span>Anita K.</span></td>
+          <td class="date">18m ago</td>
+        </tr>
+        <tr>
+          <td class="id">#1036</td>
+          <td>
+            <div class="title">Add bulk export for attendance reports</div>
+            <div class="sub">Feature request · from customer portal</div>
+          </td>
+          <td><span class="pill open">Open</span></td>
+          <td><span class="prio low"><span class="bar"></span>Low</span></td>
+          <td><span class="assignee unassigned">Unassigned</span></td>
+          <td class="date">1h ago</td>
+        </tr>
+        <tr>
+          <td class="id">#1031</td>
+          <td>
+            <div class="title">Login fails intermittently after password reset</div>
+            <div class="sub">auth-service · 45 occurrences</div>
+          </td>
+          <td><span class="pill progress">In progress</span></td>
+          <td><span class="prio medium"><span class="bar"></span>Medium</span></td>
+          <td><span class="assignee"><span class="avatar">RS</span>Ritesh S.</span></td>
+          <td class="date">3h ago</td>
+        </tr>
+        <tr>
+          <td class="id">#1018</td>
+          <td>
+            <div class="title">Report export is slow for large date ranges</div>
+            <div class="sub">reporting-module · low priority</div>
+          </td>
+          <td><span class="pill open">Open</span></td>
+          <td><span class="prio low"><span class="bar"></span>Low</span></td>
+          <td><span class="assignee unassigned">Unassigned</span></td>
+          <td class="date">6h ago</td>
+        </tr>
+        <tr>
+          <td class="id">#0994</td>
+          <td>
+            <div class="title">Session expires and redirects to blank page</div>
+            <div class="sub">auth-service · fixed in v2.1.0</div>
+          </td>
+          <td><span class="pill resolved">Resolved</span></td>
+          <td><span class="prio low"><span class="bar"></span>Low</span></td>
+          <td><span class="assignee"><span class="avatar">JD</span>John D.</span></td>
+          <td class="date">3d ago</td>
+        </tr>
+        <tr>
+          <td class="id">#0971</td>
+          <td>
+            <div class="title">Duplicate invoice numbers on retry</div>
+            <div class="sub">billing-module · closed after fix</div>
+          </td>
+          <td><span class="pill closed">Closed</span></td>
+          <td><span class="prio medium"><span class="bar"></span>Medium</span></td>
+          <td><span class="assignee"><span class="avatar">AK</span>Anita K.</span></td>
+          <td class="date">6d ago</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer class="note">Showing 7 of 34 tickets</footer>
+  </div>
+
+</div>
+
+</body>
+</html>

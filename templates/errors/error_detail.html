@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ error_group.title }} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1 style="font-size:16px;">
+    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;
+      {% if error_group.severity == 'critical' or error_group.severity == 'high' %}background:var(--red);
+      {% elif error_group.severity == 'medium' %}background:var(--orange);
+      {% elif error_group.severity == 'low' %}background:var(--blue);
+      {% else %}background:var(--gray);{% endif %}"></span>
+    {{ error_group.title }}
+  </h1>
+  <div class="head-actions">
+    <a href="{% url 'errors:error_list' %}" class="btn">Back to errors</a>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 280px;gap:32px;">
+  <div class="space-y">
+    <div class="card">
+      <div class="flex-between mb-4">
+        <span class="text-sm text-muted">Fingerprint: <code style="font-size:12px;background:var(--panel);padding:2px 6px;border-radius:4px;">{{ error_group.fingerprint }}</code></span>
+        <span class="text-sm text-muted">{{ error_group.product.name }}</span>
+      </div>
+      <div class="grid-3" style="margin-top:16px;">
+        <div class="stat">
+          <div class="val">{{ error_group.occurrence_count }}</div>
+          <div class="label">Occurrences</div>
+        </div>
+        <div class="stat">
+          <div class="val">{{ error_group.affected_user_count }}</div>
+          <div class="label">Affected Users</div>
+        </div>
+        <div class="stat">
+          <div class="val" style="font-size:14px;">{{ error_group.first_seen|timesince }} ago</div>
+          <div class="label">First Seen</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="text-sm font-medium mb-4">Recent Occurrences</div>
+      <div id="occurrence-list">
+        {% include "errors/partials/_occurrence_list.html" with occurrences=occurrences %}
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y">
+    <div class="card">
+      <div class="text-sm font-medium mb-4">Status</div>
+      <div id="error-detail-status">
+        {% include "errors/partials/_error_status_badge.html" with error_group=error_group %}
+      </div>
+      <form method="post" action="{% url 'errors:error_status' pk=error_group.pk %}"
+            hx-post="{% url 'errors:error_status' pk=error_group.pk %}"
+            hx-target="#error-detail-status"
+            hx-swap="innerHTML"
+            style="margin-top:12px;">
+        {% csrf_token %}
+        <select name="status" class="form-input" style="font-size:12px;" onchange="this.form.requestSubmit()">
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if error_group.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      <div style="display:flex;gap:6px;margin-top:12px;">
+        {% if error_group.status != 'resolved' %}
+        <form method="post" action="{% url 'errors:error_resolve' pk=error_group.pk %}"
+              hx-post="{% url 'errors:error_resolve' pk=error_group.pk %}"
+              hx-target="#error-detail-status" hx-swap="innerHTML" style="flex:1;">
+          {% csrf_token %}
+          <button type="submit" class="btn" style="width:100%;color:var(--green);border-color:var(--green);">Resolve</button>
+        </form>
+        {% endif %}
+        {% if error_group.status != 'ignored' %}
+        <form method="post" action="{% url 'errors:error_ignore' pk=error_group.pk %}"
+              hx-post="{% url 'errors:error_ignore' pk=error_group.pk %}"
+              hx-target="#error-detail-status" hx-swap="innerHTML" style="flex:1;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger" style="width:100%;">Ignore</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

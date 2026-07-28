@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% block title %}{{ ticket.title }} — {{ product.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
+  <h1 style="font-size:17px;">#{{ ticket.pk }} {{ ticket.title }}</h1>
+</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="flex-between mb-4">
+      <span id="ticket-status-badge">
+        {% if ticket.status == 'open' %}<span class="pill open">Open</span>
+        {% elif ticket.status == 'assigned' %}<span class="pill assigned">Assigned</span>
+        {% elif ticket.status == 'in_progress' %}<span class="pill progress">In progress</span>
+        {% elif ticket.status == 'testing' %}<span class="pill testing">Testing</span>
+        {% elif ticket.status == 'resolved' %}<span class="pill resolved">Resolved</span>
+        {% elif ticket.status == 'closed' %}<span class="pill closed">Closed</span>{% endif %}
+      </span>
+      <span class="prio {{ ticket.priority }}"><span class="bar"></span>{{ ticket.get_priority_display }}</span>
+    </div>
+    {% if ticket.description %}<div class="text-sm mb-4">{{ ticket.description|linebreaksbr }}</div>{% endif %}
+    <div class="text-sm text-muted mb-4">Type: {{ ticket.get_ticket_type_display }}</div>
+    <div class="text-sm text-muted mb-4">Created: {{ ticket.created_at|date:"M d, Y H:i" }}</div>
+    <div class="text-sm text-muted mb-4">Updated: {{ ticket.updated_at|timesince }} ago</div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Details</h3>
+    <div class="text-sm mb-4">
+      <span class="text-muted">Assignee:</span>
+      {% if ticket.assigned_to %}
+        <span class="assignee"><span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</span>
+      {% else %}<span class="text-muted">Unassigned</span>{% endif %}
+    </div>
+    <div class="text-sm mb-4"><span class="text-muted">Status:</span>
+      <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <select name="status" onchange="this.form.submit()" class="form-input" style="display:inline;width:auto;padding:4px 8px;font-size:12px;">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if ticket.status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+</div>
+<h3 style="font-size:15px;font-weight:600;margin:24px 0 12px;">Comments</h3>
+<div id="comment-list">
+  {% include "tickets/partials/_comment_list.html" with comments=comments %}
+</div>
+<form method="post" action="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
+      hx-post="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
+      hx-target="#comment-list"
+      hx-swap="innerHTML"
+      hx-on::after-request="this.reset();">
+  {% csrf_token %}
+  <div class="form-group">
+    <textarea name="body" class="form-input" rows="3" placeholder="Add a comment..." required></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Add Comment</button>
+</form>
+{% endblock %}

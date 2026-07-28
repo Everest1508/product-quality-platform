@@ -1,0 +1,11 @@
+<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <h2 class="text-lg font-semibold text-gray-900">{% block page_title %}Dashboard{% endblock %}</h2>
+    </div>
+    <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-500">{{ user.get_full_name|default:user.username }}</span>
+        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+            {{ user.username.0|upper }}
+        </div>
+    </div>
+</header>

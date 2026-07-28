@@ -1,0 +1,9 @@
+{% if raw_key %}
+<div style="padding:12px;background:var(--green-bg);border:1px solid var(--green);border-radius:6px;margin-top:12px;">
+  <p class="text-sm font-medium" style="color:var(--green);margin-bottom:8px;">API key generated. Copy it now — it won't be shown again.</p>
+  <div style="display:flex;gap:8px;">
+    <code style="flex:1;padding:8px;background:#fff;border:1px solid var(--border);border-radius:4px;font-size:12px;word-break:break-all;">{{ raw_key }}</code>
+    <button type="button" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent)" class="btn" style="white-space:nowrap;">Copy</button>
+  </div>
+</div>
+{% endif %}

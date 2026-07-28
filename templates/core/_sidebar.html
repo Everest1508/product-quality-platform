@@ -1,0 +1,50 @@
+  <div class="sidebar">
+    {% if product %}
+    <div class="org">
+      <a href="{% url 'products:product_list' %}" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        All products
+      </a>
+      {{ product.name }}<span>{{ product.error_count|default:0 }} errors · {{ product.ticket_count|default:0 }} tickets</span>
+    </div>
+    <div class="nav">
+      <a href="{% url 'products:product_detail' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_detail' %}active{% endif %}">Overview</a>
+      <a href="{% url 'products:product_errors' pk=product.pk %}" class="{% if 'errors' in request.path and 'product_error' in request.path or request.resolver_match.url_name == 'product_errors' or request.resolver_match.url_name == 'product_error_detail' %}active{% endif %}">
+        Errors{% if product.error_count %}<span class="n">{{ product.error_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'products:product_tickets' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_tickets' or request.resolver_match.url_name == 'product_ticket_create' or request.resolver_match.url_name == 'product_ticket_detail' %}active{% endif %}">
+        Tickets{% if product.ticket_count %}<span class="n">{{ product.ticket_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'products:product_surveys' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_surveys' or request.resolver_match.url_name == 'product_survey_create' %}active{% endif %}">
+        Feedback{% if product.survey_count %}<span class="n">{{ product.survey_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'products:product_rules' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_rules' or request.resolver_match.url_name == 'product_rule_create' %}active{% endif %}">
+        Automation{% if product.rule_count %}<span class="n">{{ product.rule_count }}</span>{% endif %}
+      </a>
+    </div>
+    <div class="nav-label">Workspace</div>
+    <div class="nav">
+      <a href="{% url 'dashboards:admin_dashboard' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
+      <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
+      <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
+      <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
+    </div>
+    {% else %}
+    <div class="org">{{ request.company.name }}<span>{{ request.company_role|title }} workspace</span></div>
+    <div class="nav">
+      <a href="{% url 'dashboards:admin_dashboard' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
+      <a href="{% url 'products:product_list' %}" class="{% if 'products' in request.path %}active{% endif %}">Products</a>
+    </div>
+    <div class="nav-label">Workspace</div>
+    <div class="nav">
+      <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
+      <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
+      <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
+    </div>
+    {% endif %}
+    <div class="sidebar-footer">
+      <a href="{% url 'accounts:logout' %}" onclick="this.closest('form').submit()">
+        Sign out
+      </a>
+    </div>
+  </div>

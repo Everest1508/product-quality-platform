@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if editing %}Edit Product{% else %}New Product{% endif %} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>{% if editing %}Edit Product{% else %}New Product{% endif %}</h1>
+  <div class="head-actions">
+    <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>
+  </div>
+</div>
+
+<div class="card" style="max-width:540px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required>
+      {% if form.name.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.name.errors.0 }}</p>{% endif %}
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-input" rows="3">{{ form.description.value|default:'' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Default Environment</label>
+      <select name="default_environment" class="form-input">
+        <option value="production" {% if form.default_environment.value == "production" %}selected{% endif %}>Production</option>
+        <option value="staging" {% if form.default_environment.value == "staging" %}selected{% endif %}>Staging</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Product{% endif %}</button>
+      <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

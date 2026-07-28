@@ -1,0 +1,87 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if editing %}Edit Rule{% else %}New Rule{% endif %} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>{% if editing %}Edit Rule{% else %}New Automation Rule{% endif %}</h1>
+  <div class="head-actions">
+    <a href="{% url 'automation:rule_list' %}" class="btn">Cancel</a>
+  </div>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Rule Name</label>
+      <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required>
+    </div>
+    <div class="form-group">
+      <label>Product (optional — leave blank for all products)</label>
+      <select name="product" class="form-input">
+        <option value="">All products</option>
+        {% for product in form.fields.product.queryset %}
+        <option value="{{ product.pk }}" {% if form.product.value|stringformat:"d" == product.pk|stringformat:"d" %}selected{% endif %}>{{ product.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Trigger Type</label>
+        <select name="trigger_type" class="form-input">
+          <option value="error_threshold" {% if form.trigger_type.value == "error_threshold" %}selected{% endif %}>Error Threshold</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Severity Filter (optional)</label>
+        <select name="severity" class="form-input">
+          <option value="">All severities</option>
+          <option value="critical" {% if form.severity.value == "critical" %}selected{% endif %}>Critical</option>
+          <option value="high" {% if form.severity.value == "high" %}selected{% endif %}>High</option>
+          <option value="medium" {% if form.severity.value == "medium" %}selected{% endif %}>Medium</option>
+          <option value="low" {% if form.severity.value == "low" %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Threshold Count</label>
+        <input type="number" name="threshold_count" value="{{ form.threshold_count.value|default:'5' }}" class="form-input" min="1" required>
+      </div>
+      <div class="form-group">
+        <label>Window (minutes)</label>
+        <input type="number" name="window_minutes" value="{{ form.window_minutes.value|default:'60' }}" class="form-input" min="1" required>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Action</label>
+        <select name="action" class="form-input">
+          <option value="create_ticket" {% if form.action.value == "create_ticket" %}selected{% endif %}>Create Ticket</option>
+          <option value="notify_only" {% if form.action.value == "notify_only" %}selected{% endif %}>Notify Only</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Assign To (optional)</label>
+        <select name="assign_to" class="form-input">
+          <option value="">Nobody</option>
+          {% for user in form.fields.assign_to.queryset %}
+          <option value="{{ user.pk }}" {% if form.assign_to.value|stringformat:"d" == user.pk|stringformat:"d" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="is_active" value="true" {% if form.is_active.value %}checked{% endif %}>
+        <span>Active</span>
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Rule{% endif %}</button>
+      <a href="{% url 'automation:rule_list' %}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
