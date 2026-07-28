@@ -9,5 +9,5 @@ services:
     environment:
       - DJANGO_SECRET_KEY=change-me-in-production
       - DJANGO_DEBUG=True
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,crm.beforth.in
     command: sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
