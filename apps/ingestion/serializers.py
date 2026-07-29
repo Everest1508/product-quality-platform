@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence, Feedback, IngestedTicket
+from apps.tickets.models import Ticket
 
 
 class ErrorCaptureSerializer(serializers.Serializer):
@@ -125,7 +126,7 @@ class TicketIngestSerializer(serializers.Serializer):
         product = api_key.product
         company = product.company
 
-        ticket = IngestedTicket.objects.create(
+        ingested = IngestedTicket.objects.create(
             product=product,
             company=company,
             title=validated_data["title"],
@@ -135,7 +136,16 @@ class TicketIngestSerializer(serializers.Serializer):
             external_id=validated_data.get("external_id", ""),
             metadata=validated_data.get("metadata"),
         )
-        return {"ticket_id": ticket.id}
+
+        ticket = Ticket.objects.create(
+            product=product,
+            company=company,
+            title=validated_data["title"],
+            description=validated_data.get("description", ""),
+            ticket_type=validated_data.get("ticket_type", "bug"),
+            source=Ticket.Source.AUTO,
+        )
+        return {"ticket_id": ingested.id, "ui_ticket_id": ticket.id}
 
 
 class TicketStatusSerializer(serializers.Serializer):
