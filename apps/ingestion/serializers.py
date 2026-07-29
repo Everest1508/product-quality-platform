@@ -8,18 +8,18 @@ from apps.tickets.models import Ticket
 
 
 class ErrorCaptureSerializer(serializers.Serializer):
-    error_type = serializers.CharField(max_length=255, required=False, default="")
+    error_type = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
     message = serializers.CharField(max_length=1000)
-    stacktrace = serializers.CharField(required=False, default="")
-    environment = serializers.CharField(max_length=20, required=False, default="production")
-    user_ref = serializers.CharField(max_length=255, required=False, default="")
-    page = serializers.CharField(max_length=500, required=False, default="")
-    device = serializers.CharField(max_length=255, required=False, default="")
-    os = serializers.CharField(max_length=100, required=False, default="")
-    browser = serializers.CharField(max_length=100, required=False, default="")
-    version = serializers.CharField(max_length=50, required=False, default="")
-    request_payload = serializers.JSONField(required=False, default=None)
-    extra = serializers.JSONField(required=False, default=dict)
+    stacktrace = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
+    environment = serializers.CharField(max_length=20, required=False, allow_null=True, allow_blank=True, default="production")
+    user_ref = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
+    page = serializers.CharField(max_length=500, required=False, allow_null=True, allow_blank=True, default="")
+    device = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
+    os = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True, default="")
+    browser = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True, default="")
+    version = serializers.CharField(max_length=50, required=False, allow_null=True, allow_blank=True, default="")
+    request_payload = serializers.JSONField(required=False, allow_null=True, default=None)
+    extra = serializers.JSONField(required=False, allow_null=True, default=dict)
 
     def create(self, validated_data):
         api_key = self.context["api_key"]
@@ -27,8 +27,8 @@ class ErrorCaptureSerializer(serializers.Serializer):
         company = product.company
 
         fingerprint = hashlib.sha256(
-            f"{validated_data.get('error_type', '')}:{validated_data['message']}:"
-            f"{validated_data.get('stacktrace', '')[:500]}".encode()
+            f"{validated_data.get('error_type') or ''}:{validated_data['message']}:"
+            f"{(validated_data.get('stacktrace') or '')[:500]}".encode()
         ).hexdigest()[:32]
 
         error_group, created = ErrorGroup.objects.get_or_create(
@@ -37,7 +37,7 @@ class ErrorCaptureSerializer(serializers.Serializer):
             defaults={
                 "company": company,
                 "title": validated_data["message"][:500],
-                "error_type": validated_data.get("error_type", ""),
+                "error_type": validated_data.get("error_type") or "",
             },
         )
 
@@ -58,13 +58,13 @@ class ErrorCaptureSerializer(serializers.Serializer):
             error_group=error_group,
             company=company,
             version=version_obj,
-            environment=validated_data.get("environment", "production"),
-            stacktrace=validated_data.get("stacktrace", ""),
-            user_ref=validated_data.get("user_ref", ""),
-            page=validated_data.get("page", ""),
-            device=validated_data.get("device", ""),
-            os=validated_data.get("os", ""),
-            browser=validated_data.get("browser", ""),
+            environment=validated_data.get("environment") or "production",
+            stacktrace=validated_data.get("stacktrace") or "",
+            user_ref=validated_data.get("user_ref") or "",
+            page=validated_data.get("page") or "",
+            device=validated_data.get("device") or "",
+            os=validated_data.get("os") or "",
+            browser=validated_data.get("browser") or "",
             request_payload=validated_data.get("request_payload"),
             raw_data=validated_data.get("extra"),
         )
@@ -79,11 +79,11 @@ class ErrorCaptureSerializer(serializers.Serializer):
 
 
 class FeedbackSerializer(serializers.Serializer):
-    user_ref = serializers.CharField(max_length=255, required=False, default="")
+    user_ref = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
     rating = serializers.IntegerField(min_value=1, max_value=5)
-    comment = serializers.CharField(required=False, default="")
-    screenshot_url = serializers.URLField(required=False, default="")
-    version = serializers.CharField(max_length=50, required=False, default="")
+    comment = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
+    screenshot_url = serializers.URLField(required=False, allow_null=True, allow_blank=True, default="")
+    version = serializers.CharField(max_length=50, required=False, allow_null=True, allow_blank=True, default="")
 
     def create(self, validated_data):
         api_key = self.context["api_key"]
@@ -102,24 +102,25 @@ class FeedbackSerializer(serializers.Serializer):
             product=product,
             company=company,
             version=version_obj,
-            user_ref=validated_data.get("user_ref", ""),
+            user_ref=validated_data.get("user_ref") or "",
             rating=validated_data["rating"],
-            comment=validated_data.get("comment", ""),
-            screenshot_url=validated_data.get("screenshot_url", ""),
+            comment=validated_data.get("comment") or "",
+            screenshot_url=validated_data.get("screenshot_url") or "",
         )
         return {"feedback_id": feedback.id}
 
 
 class TicketIngestSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=500)
-    description = serializers.CharField(required=False, default="")
+    description = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
     ticket_type = serializers.ChoiceField(
         choices=[("bug", "Bug"), ("feature", "Feature"), ("question", "Question")],
         default="bug",
+        allow_blank=True,
     )
-    user_ref = serializers.CharField(max_length=255, required=False, default="")
-    external_id = serializers.CharField(max_length=255, required=False, default="")
-    metadata = serializers.JSONField(required=False, default=None)
+    user_ref = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
+    external_id = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
+    metadata = serializers.JSONField(required=False, allow_null=True, default=None)
 
     def create(self, validated_data):
         api_key = self.context["api_key"]
@@ -130,10 +131,10 @@ class TicketIngestSerializer(serializers.Serializer):
             product=product,
             company=company,
             title=validated_data["title"],
-            description=validated_data.get("description", ""),
-            ticket_type=validated_data.get("ticket_type", "bug"),
-            user_ref=validated_data.get("user_ref", ""),
-            external_id=validated_data.get("external_id", ""),
+            description=validated_data.get("description") or "",
+            ticket_type=validated_data.get("ticket_type") or "bug",
+            user_ref=validated_data.get("user_ref") or "",
+            external_id=validated_data.get("external_id") or "",
             metadata=validated_data.get("metadata"),
         )
 
@@ -141,8 +142,8 @@ class TicketIngestSerializer(serializers.Serializer):
             product=product,
             company=company,
             title=validated_data["title"],
-            description=validated_data.get("description", ""),
-            ticket_type=validated_data.get("ticket_type", "bug"),
+            description=validated_data.get("description") or "",
+            ticket_type=validated_data.get("ticket_type") or "bug",
             source=Ticket.Source.AUTO,
         )
         return {"ticket_id": ingested.id, "ui_ticket_id": ticket.id}
