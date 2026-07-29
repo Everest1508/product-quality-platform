@@ -27,9 +27,9 @@
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Details</h3>
     <div class="text-sm mb-4">
       <span class="text-muted">Assignee:</span>
-      {% if ticket.assigned_to %}
-        <span class="assignee"><span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</span>
-      {% else %}<span class="text-muted">Unassigned</span>{% endif %}
+      <span id="detail-assignee">
+        {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
+      </span>
     </div>
     <div class="text-sm mb-4"><span class="text-muted">Status:</span>
       <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}" style="display:inline;">
