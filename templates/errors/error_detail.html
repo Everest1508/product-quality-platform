@@ -85,6 +85,14 @@
         {% endif %}
       </div>
     </div>
+
+    <div class="card">
+      <div class="text-sm font-medium mb-4">Actions</div>
+      <form method="post" action="{% url 'errors:error_convert_to_ticket' pk=error_group.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Ticket from Error</button>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

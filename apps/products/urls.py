@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.errors import views as error_views
 from apps.products import views
 
 app_name = "products"
@@ -20,6 +21,7 @@ urlpatterns = [
     path("<int:pk>/errors/", views.ProductErrorListView.as_view(), name="product_errors"),
     path("<int:pk>/errors/create/", views.ProductErrorCreateView.as_view(), name="product_error_create"),
     path("<int:pk>/errors/<int:error_pk>/", views.ProductErrorDetailView.as_view(), name="product_error_detail"),
+    path("<int:pk>/errors/<int:error_pk>/convert-to-ticket/", error_views.ErrorConvertToTicketView.as_view(), name="product_error_convert_to_ticket"),
     path("<int:pk>/tickets/", views.ProductTicketListView.as_view(), name="product_tickets"),
     path("<int:pk>/tickets/kanban/", views.ProductTicketKanbanView.as_view(), name="product_ticket_kanban"),
     path("<int:pk>/tickets/create/", views.ProductTicketCreateView.as_view(), name="product_ticket_create"),

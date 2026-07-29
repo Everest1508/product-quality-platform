@@ -22,7 +22,12 @@
     <div class="text-sm mb-4">Last seen: {{ error_group.last_seen|date:"M d, Y H:i" }}</div>
   </div>
   <div class="card">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Status</h3>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Actions</h3>
+    <form method="post" action="{% url 'products:product_error_convert_to_ticket' pk=product.pk error_pk=error_group.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary" style="font-size:12px;">Create Ticket from Error</button>
+    </form>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;margin-top:16px;">Status</h3>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <form method="post" action="{% url 'errors:error_status' pk=error_group.pk %}">
         {% csrf_token %}

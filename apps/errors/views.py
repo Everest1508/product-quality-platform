@@ -7,6 +7,7 @@ from django.views import View
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.errors.forms import ErrorCreateForm
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence
+from apps.tickets.models import Ticket
 
 
 def _error_redirect(error_group):
@@ -171,3 +172,32 @@ class ErrorCreateView(CompanyMemberRequiredMixin, View):
             url_name, kwargs = _error_redirect(group)
             return redirect(url_name, **kwargs)
         return render(request, "errors/error_form.html", {"form": form})
+
+
+class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=pk,
+            company=request.company,
+        )
+        ticket = Ticket.objects.create(
+            company=request.company,
+            title=f"Error: {error_group.title}",
+            description=(
+                f"Auto-created from error #{error_group.pk}.\n\n"
+                f"Fingerprint: {error_group.fingerprint}\n"
+                f"Severity: {error_group.severity}\n"
+                f"Occurrences: {error_group.occurrence_count}\n"
+                f"Affected users: {error_group.affected_user_count}"
+            ),
+            ticket_type="bug",
+            priority="high" if error_group.severity in ("critical", "high") else "medium",
+            source="manual",
+            created_by=request.user,
+            product=error_group.product,
+            linked_error_group=error_group,
+        )
+        messages.success(request, f"Ticket #{ticket.pk} created from error #{error_group.pk}.")
+        url_name, kwargs = _error_redirect(error_group)
+        return redirect(url_name, **kwargs)

@@ -1,43 +1,43 @@
-<form method="post" action="{% url 'accounts:team_edit' pk=membership.pk %}"
-      hx-post="{% url 'accounts:team_edit' pk=membership.pk %}"
-      hx-target="#member-{{ membership.pk }}"
-      hx-swap="outerHTML">
-  {% csrf_token %}
+<tr id="member-{{ membership.pk }}">
+  <td colspan="4">
+    <form method="post" action="{% url 'accounts:team_edit' pk=membership.pk %}"
+          hx-post="{% url 'accounts:team_edit' pk=membership.pk %}"
+          hx-target="#member-{{ membership.pk }}"
+          hx-swap="outerHTML">
+      {% csrf_token %}
 
-  {% if form.errors %}
-  <div style="padding:10px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;margin-bottom:16px;">
-    {% for field, errors in form.errors.items %}
-      {% for error in errors %}
-      <p class="text-sm" style="color:var(--red);">{{ error }}</p>
-      {% endfor %}
-    {% endfor %}
-  </div>
-  {% endif %}
+      {% if form.errors %}
+      <div style="padding:10px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;margin-bottom:16px;">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+          <p class="text-sm" style="color:var(--red);">{{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
 
-  <div class="grid-2">
-    <div class="form-group">
-      <label>First name</label>
-      {{ form.first_name }}
-    </div>
-    <div class="form-group">
-      <label>Last name</label>
-      {{ form.last_name }}
-    </div>
-  </div>
-  <div class="form-group">
-    <label>Email</label>
-    {{ form.email }}
-  </div>
-  <div class="form-group">
-    <label>Role</label>
-    {{ form.role }}
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
-    <button type="button"
-            hx-get="{% url 'accounts:team_list' %}"
-            hx-target="#team-members"
-            hx-swap="innerHTML"
-            class="btn">Cancel</button>
-    <button type="submit" class="btn btn-primary">Save</button>
-  </div>
-</form>
+      <div class="grid-3" style="align-items:end;">
+        <div class="form-group">
+          <label>First name</label>
+          {{ form.first_name }}
+        </div>
+        <div class="form-group">
+          <label>Last name</label>
+          {{ form.last_name }}
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          {{ form.email }}
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          {{ form.role }}
+        </div>
+        <div style="display:flex;gap:8px;align-items:end;padding-bottom:16px;">
+          <button type="submit" class="btn btn-primary" style="font-size:12px;">Save</button>
+          <a href="{% url 'accounts:team_list' %}" class="btn" style="font-size:12px;text-decoration:none;">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </td>
+</tr>

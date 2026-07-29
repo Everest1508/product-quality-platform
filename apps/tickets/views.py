@@ -196,8 +196,13 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
             messages.success(request, f"Status changed to '{ticket.get_status_display()}'.")
 
         if request.headers.get("HX-Request") == "true":
+            members = User.objects.filter(
+                memberships__company=request.company
+            ).order_by("username")
             return render(request, "tickets/partials/_ticket_status.html", {
                 "ticket": ticket,
+                "status_choices": Ticket.Status.choices,
+                "members": members,
             })
         url_name, kwargs = _ticket_redirect(ticket)
         return redirect(url_name, **kwargs)
@@ -222,8 +227,12 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
         messages.success(request, f"Ticket assigned to {ticket.assigned_to or 'nobody'}.")
 
         if request.headers.get("HX-Request") == "true":
+            members = User.objects.filter(
+                memberships__company=request.company
+            ).order_by("username")
             return render(request, "tickets/partials/_ticket_assignee.html", {
                 "ticket": ticket,
+                "members": members,
             })
         url_name, kwargs = _ticket_redirect(ticket)
         return redirect(url_name, **kwargs)
