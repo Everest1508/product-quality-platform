@@ -9,6 +9,7 @@ from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.products.access import accessible_products, require_product_access
 from apps.products.forms import ProductCreateForm, ProductEditForm, VersionCreateForm
 from apps.products.models import APIKey, Product, ProductAccess, ProductVersion
+from apps.products.webhook import notify_ticket_created
 
 
 PRODUCT_SORT_MAP = {
@@ -332,6 +333,7 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.product = product
             ticket.source = "manual"
             ticket.save()
+            notify_ticket_created(ticket)
             messages.success(request, f"Ticket #{ticket.pk} created.")
             return redirect("products:product_ticket_detail", pk=product.pk, ticket_pk=ticket.pk)
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})

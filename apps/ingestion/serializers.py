@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence, Feedback, IngestedTicket
+from apps.products.webhook import notify_error_captured, notify_feedback_created, notify_ticket_created
 from apps.tickets.models import Ticket
 
 
@@ -69,6 +70,8 @@ class ErrorCaptureSerializer(serializers.Serializer):
             raw_data=validated_data.get("extra"),
         )
 
+        notify_error_captured(error_group, occurrence)
+
         return {
             "error_group_id": error_group.id,
             "occurrence_id": occurrence.id,
@@ -102,11 +105,12 @@ class FeedbackSerializer(serializers.Serializer):
             product=product,
             company=company,
             version=version_obj,
-            user_ref=validated_data.get("user_ref") or "",
+            user_ref=validated_data.get("user_ref", ""),
             rating=validated_data["rating"],
-            comment=validated_data.get("comment") or "",
-            screenshot_url=validated_data.get("screenshot_url") or "",
+            comment=validated_data.get("comment", ""),
+            screenshot_url=validated_data.get("screenshot_url", ""),
         )
+        notify_feedback_created(feedback)
         return {"feedback_id": feedback.id}
 
 
@@ -142,10 +146,11 @@ class TicketIngestSerializer(serializers.Serializer):
             product=product,
             company=company,
             title=validated_data["title"],
-            description=validated_data.get("description") or "",
-            ticket_type=validated_data.get("ticket_type") or "bug",
+            description=validated_data.get("description", ""),
+            ticket_type=validated_data.get("ticket_type", "bug"),
             source=Ticket.Source.AUTO,
         )
+        notify_ticket_created(ticket)
         return {"ticket_id": ingested.id, "ui_ticket_id": ticket.id}
 
 

@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
 from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketEditForm
 from apps.tickets.models import Ticket, TicketComment
 
@@ -137,6 +138,7 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.created_by = request.user
             ticket.source = "manual"
             ticket.save()
+            notify_ticket_created(ticket)
             messages.success(request, f"Ticket #{ticket.pk} created.")
             return redirect("tickets:ticket_detail", pk=ticket.pk)
         return render(request, "tickets/ticket_form.html", {"form": form})
@@ -188,7 +190,9 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
                 return JsonResponse({"ok": False, "error": msg}, status=400)
             messages.error(request, msg)
         else:
+            old_status = ticket.get_status_display()
             ticket.transition_to(new_status)
+            notify_ticket_status_changed(ticket, old_status)
             if is_ajax:
                 return JsonResponse({"ok": True, "status": ticket.status})
             messages.success(request, f"Status changed to '{ticket.get_status_display()}'.")
@@ -222,6 +226,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
                 ticket.status = "open"
 
         ticket.save(update_fields=["assigned_to", "status", "updated_at"])
+        notify_ticket_assigned(ticket)
         messages.success(request, f"Ticket assigned to {ticket.assigned_to or 'nobody'}.")
 
         if request.headers.get("HX-Request") == "true":

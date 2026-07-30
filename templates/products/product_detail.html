@@ -21,6 +21,16 @@
 {% endif %}
 
 <div class="grid-2">
+  <div class="card">
+    <div class="text-sm font-medium mb-4">Discord Webhook</div>
+    {% if product.discord_webhook_url %}
+    <p class="text-sm" style="word-break:break-all;">{{ product.discord_webhook_url }}</p>
+    <p class="text-xs text-muted mt-1">✓ Active</p>
+    {% else %}
+    <p class="text-sm text-muted">Not configured. <a href="{% url 'products:product_edit' pk=product.pk %}" class="link">Add one</a> to get notified about tickets, errors, and feedback.</p>
+    {% endif %}
+  </div>
+
   <div class="card" x-data="{ open: false }">
     <div class="flex-between mb-4">
       <div class="text-sm font-medium">Versions</div>

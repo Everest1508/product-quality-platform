@@ -29,6 +29,11 @@
         <option value="staging" {% if form.default_environment.value == "staging" %}selected{% endif %}>Staging</option>
       </select>
     </div>
+    <div class="form-group">
+      <label>Discord Webhook URL</label>
+      <input type="url" name="discord_webhook_url" value="{{ form.discord_webhook_url.value|default:'' }}" class="form-input" placeholder="https://discord.com/api/webhooks/...">
+      <p style="font-size:11px;color:var(--muted);margin-top:4px;">Get notified about tickets, errors, and feedback in a Discord channel.</p>
+    </div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Product{% endif %}</button>
       <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>

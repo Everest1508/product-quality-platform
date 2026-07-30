@@ -7,7 +7,7 @@ from apps.products.models import Product, ProductVersion
 class ProductCreateForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "description", "default_environment"]
+        fields = ["name", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={
                 "class": "form-input",
@@ -19,6 +19,10 @@ class ProductCreateForm(forms.ModelForm):
                 "placeholder": "Optional description",
             }),
             "default_environment": forms.Select(attrs={"class": "form-input"}),
+            "discord_webhook_url": forms.URLInput(attrs={
+                "class": "form-input",
+                "placeholder": "https://discord.com/api/webhooks/...",
+            }),
         }
 
     def clean_name(self):
@@ -47,7 +51,7 @@ class ProductCreateForm(forms.ModelForm):
 class ProductEditForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "description", "default_environment"]
+        fields = ["name", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
             "description": forms.Textarea(attrs={"class": "form-input", "rows": 3}),
