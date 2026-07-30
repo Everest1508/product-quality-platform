@@ -67,6 +67,7 @@
 
 <script>
 (function() {
+  const ORDER = {open:0, assigned:1, in_progress:2, testing:3, resolved:4, closed:5};
   const board = document.getElementById('kanban-board');
   let draggedCard = null;
 
@@ -116,6 +117,8 @@
 
     if (newStatus === oldStatus) return;
 
+    const oldCol = document.querySelector('.kanban-col[data-status="' + oldStatus + '"] .kanban-cards');
+
     const cardsContainer = col.querySelector('.kanban-cards');
     const empty = cardsContainer.querySelector('.kanban-empty');
     if (empty) empty.remove();
@@ -123,12 +126,12 @@
     draggedCard.dataset.status = newStatus;
     col.classList.remove('drag-over');
 
-    document.querySelectorAll('.kanban-col').forEach(c => {
+    document.querySelectorAll('.kanban-col').forEach(function(c) {
       const count = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
       c.querySelector('.kanban-count').textContent = count;
     });
 
-    document.querySelectorAll('.kanban-col').forEach(c => {
+    document.querySelectorAll('.kanban-col').forEach(function(c) {
       const cards = c.querySelector('.kanban-cards');
       if (cards.querySelectorAll('.kanban-card').length === 0) {
         if (!cards.querySelector('.kanban-empty')) {
@@ -150,7 +153,17 @@
       body: 'status=' + encodeURIComponent(newStatus),
     }).then(function(resp) {
       if (!resp.ok) {
-        console.error('Failed to update ticket status');
+        resp.json().then(function(data) {
+          alert(data.error || 'Cannot move ticket');
+        });
+        if (oldCol) {
+          oldCol.appendChild(draggedCard);
+          draggedCard.dataset.status = oldStatus;
+          document.querySelectorAll('.kanban-col').forEach(function(c) {
+            const count = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
+            c.querySelector('.kanban-count').textContent = count;
+          });
+        }
       }
     });
   });

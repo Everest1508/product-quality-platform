@@ -29,13 +29,13 @@ class Ticket(TenantScopedModel):
         AUTO = "auto", "Automatic"
         PORTAL = "customer_portal", "Customer Portal"
 
-    VALID_TRANSITIONS = {
-        "open": ["assigned", "closed"],
-        "assigned": ["in_progress", "open", "closed"],
-        "in_progress": ["testing", "assigned", "closed"],
-        "testing": ["resolved", "in_progress", "closed"],
-        "resolved": ["closed", "in_progress"],
-        "closed": [],
+    STATUS_ORDER = {
+        "open": 0,
+        "assigned": 1,
+        "in_progress": 2,
+        "testing": 3,
+        "resolved": 4,
+        "closed": 5,
     }
 
     product = models.ForeignKey(
@@ -98,13 +98,23 @@ class Ticket(TenantScopedModel):
         return f"#{self.pk} {self.title}"
 
     def can_transition_to(self, new_status):
-        return new_status in self.VALID_TRANSITIONS.get(self.status, [])
+        current = self.STATUS_ORDER.get(self.status, -1)
+        target = self.STATUS_ORDER.get(new_status, -1)
+        if target == -1:
+            return False
+        if self.status == "closed" and new_status == "open":
+            return True
+        return target > current
+
+    @property
+    def valid_next_statuses(self):
+        return [(v, l) for v, l in Ticket.Status.choices if self.can_transition_to(v)]
 
     def transition_to(self, new_status):
         if not self.can_transition_to(new_status):
             raise ValueError(
                 f"Cannot transition from '{self.status}' to '{new_status}'. "
-                f"Valid transitions: {self.VALID_TRANSITIONS.get(self.status, [])}"
+                f"Only forward transitions and reopen (closed→open) are allowed."
             )
         self.status = new_status
         self.save(update_fields=["status", "updated_at"])

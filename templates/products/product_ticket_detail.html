@@ -35,7 +35,7 @@
       <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}" style="display:inline;">
         {% csrf_token %}
         <select name="status" onchange="this.form.submit()" class="form-input" style="display:inline;width:auto;padding:4px 8px;font-size:12px;">
-          {% for val, label in status_choices %}
+          {% for val, label in ticket.valid_next_statuses %}
           <option value="{{ val }}" {% if ticket.status == val %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>

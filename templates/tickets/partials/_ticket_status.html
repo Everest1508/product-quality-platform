@@ -12,7 +12,7 @@
       style="margin-top:6px;">
   {% csrf_token %}
   <select name="status" class="form-input" style="font-size:12px;padding:4px 6px;" hx-trigger="change" hx-post="{% url 'tickets:ticket_status' pk=ticket.pk %}" hx-target="#detail-status" hx-swap="innerHTML">
-    {% for value, label in status_choices %}
+    {% for value, label in ticket.valid_next_statuses %}
     <option value="{{ value }}" {% if ticket.status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>

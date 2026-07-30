@@ -181,10 +181,9 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
         is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
         if not ticket.can_transition_to(new_status):
-            valid = Ticket.VALID_TRANSITIONS.get(ticket.status, [])
             msg = (
                 f"Cannot transition from '{ticket.get_status_display()}' to '{new_status}'. "
-                f"Valid: {', '.join(valid)}"
+                f"Only forward transitions and reopen (closed→open) are allowed."
             )
             if is_ajax:
                 return JsonResponse({"ok": False, "error": msg}, status=400)
