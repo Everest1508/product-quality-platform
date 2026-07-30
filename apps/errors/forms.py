@@ -1,6 +1,7 @@
 from django import forms
 
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence
+from apps.products.webhook import notify_error_captured
 
 
 class ErrorCreateForm(forms.Form):
@@ -39,11 +40,12 @@ class ErrorCreateForm(forms.Form):
             group.occurrence_count += 1
             group.save(update_fields=["occurrence_count", "last_seen"])
 
-        ErrorOccurrence.objects.create(
+        occurrence = ErrorOccurrence.objects.create(
             company=company,
             error_group=group,
             environment=data.get("environment", "production"),
             stacktrace=data.get("stacktrace", ""),
             page=data.get("page", ""),
         )
+        notify_error_captured(group, occurrence)
         return group

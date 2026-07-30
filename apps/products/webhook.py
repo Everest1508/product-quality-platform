@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 def send_discord_webhook(webhook_url, embed):
     if not webhook_url:
         return
+    webhook_url = webhook_url.strip()
     payload = {"embeds": [embed]}
     data = json.dumps(payload).encode("utf-8")
     req = Request(webhook_url, data=data, method="POST")
@@ -91,7 +92,7 @@ def notify_error_captured(error_group, occurrence):
             {"name": "Environment", "value": occurrence.environment, "inline": True},
             {"name": "Severity", "value": error_group.severity, "inline": True},
             {"name": "Occurrences", "value": str(error_group.occurrence_count), "inline": True},
-            {"name": "Page", "value": occurrence.page or "N/A", "inline": True},
+            {"name": "Page", "value": occurrence.page if occurrence.page else "N/A", "inline": True},
         ],
         "timestamp": occurrence.created_at.isoformat(),
     }
