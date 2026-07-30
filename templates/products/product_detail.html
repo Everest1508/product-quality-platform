@@ -22,12 +22,15 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="text-sm font-medium mb-4">Discord Webhook</div>
+    <div class="flex-between mb-4">
+      <div class="text-sm font-medium">Discord Webhook</div>
+      <a href="{% url 'products:product_edit' pk=product.pk %}" class="btn btn-sm">{% if product.discord_webhook_url %}Edit{% else %}Add{% endif %}</a>
+    </div>
     {% if product.discord_webhook_url %}
-    <p class="text-sm" style="word-break:break-all;">{{ product.discord_webhook_url }}</p>
-    <p class="text-xs text-muted mt-1">✓ Active</p>
+    <p class="text-sm text-muted" style="font-family:monospace;">••••••••••••••••</p>
+    <p class="text-xs" style="color:var(--green);">✓ Active — events will be posted to your Discord channel</p>
     {% else %}
-    <p class="text-sm text-muted">Not configured. <a href="{% url 'products:product_edit' pk=product.pk %}" class="link">Add one</a> to get notified about tickets, errors, and feedback.</p>
+    <p class="text-sm text-muted">Not configured. Get notified about tickets, errors, and feedback in Discord.</p>
     {% endif %}
   </div>
 
