@@ -182,8 +182,7 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
 
         if not ticket.can_transition_to(new_status):
             msg = (
-                f"Cannot transition from '{ticket.get_status_display()}' to '{new_status}'. "
-                f"Only forward transitions and reopen (closed→open) are allowed."
+                f"'{new_status}' is not a valid status."
             )
             if is_ajax:
                 return JsonResponse({"ok": False, "error": msg}, status=400)

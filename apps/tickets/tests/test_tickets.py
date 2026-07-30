@@ -25,11 +25,11 @@ class TicketModelTest(TestCase):
 
     def test_invalid_transition(self):
         ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user, status="closed",
+            company=self.company, title="Test", created_by=self.user,
         )
-        self.assertFalse(ticket.can_transition_to("open"))
+        self.assertFalse(ticket.can_transition_to("bogus"))
         with self.assertRaises(ValueError):
-            ticket.transition_to("open")
+            ticket.transition_to("bogus")
 
     def test_full_lifecycle(self):
         ticket = Ticket.objects.create(
@@ -38,12 +38,6 @@ class TicketModelTest(TestCase):
         for status in ["assigned", "in_progress", "testing", "resolved", "closed"]:
             ticket.transition_to(status)
         self.assertEqual(ticket.status, "closed")
-
-    def test_cannot_transition_closed_to_anything(self):
-        ticket = Ticket.objects.create(
-            company=self.company, title="Test", status="closed",
-        )
-        self.assertEqual(ticket.VALID_TRANSITIONS["closed"], [])
 
 
 class TicketViewTest(TestCase):
@@ -99,14 +93,14 @@ class TicketViewTest(TestCase):
 
     def test_invalid_status_change(self):
         ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user, status="closed",
+            company=self.company, title="Test", created_by=self.user,
         )
         response = self.client.post(
             reverse("tickets:ticket_status", kwargs={"pk": ticket.pk}),
-            {"status": "open"},
+            {"status": "bogus"},
         )
         ticket.refresh_from_db()
-        self.assertEqual(ticket.status, "closed")
+        self.assertEqual(ticket.status, "open")
 
     def test_assign_ticket(self):
         ticket = Ticket.objects.create(
