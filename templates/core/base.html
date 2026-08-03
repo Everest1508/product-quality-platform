@@ -273,6 +273,10 @@ document.addEventListener('alpine:init', () => {
   var pendingForm = null;
 
   window.confirmAction = function(form, message) {
+    if (form.dataset.pqConfirmed === '1') {
+      delete form.dataset.pqConfirmed;
+      return true;
+    }
     pendingForm = form;
     messageEl.textContent = message || 'Are you sure?';
     modal.style.display = 'flex';
@@ -286,7 +290,14 @@ document.addEventListener('alpine:init', () => {
   window.closeConfirmModal = closeConfirmModal;
 
   okBtn.addEventListener('click', function() {
-    if (pendingForm) pendingForm.submit();
+    if (pendingForm) {
+      pendingForm.dataset.pqConfirmed = '1';
+      try {
+        pendingForm.requestSubmit();
+      } catch (e) {
+        pendingForm.submit();
+      }
+    }
   });
   cancelBtn.addEventListener('click', closeConfirmModal);
   modal.addEventListener('click', function(e) {

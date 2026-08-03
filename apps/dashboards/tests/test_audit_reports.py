@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.accounts.models import Company, Membership
 from apps.dashboards.models import ActivityLog
 from apps.dashboards.service import get_summary_report, log_activity
-from apps.products.models import Product
+from apps.products.models import Product, ProductAccess
 
 User = get_user_model()
 
@@ -84,10 +84,18 @@ class ReportsViewTest(TestCase):
         self.assertEqual(response.context["tickets_created"], 1)
         self.assertIn("Ticket #1 created", response.content.decode())
 
-    def test_developer_forbidden(self):
+    def test_developer_sees_own_report(self):
         self.client.login(username="dev", password="pass1234")
+        log_activity(self.company, "ticket_created", "Dev ticket", actor=self.dev,
+                     metadata={"product_id": self.product.pk})
+        log_activity(self.company, "ticket_created", "Owner ticket", actor=self.owner,
+                     metadata={"product_id": self.product.pk})
         response = self.client.get(reverse("dashboards:reports"))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["scope"], "mine")
+        self.assertEqual(response.context["tickets_created"], 1)
+        self.assertIn("Dev ticket", response.content.decode())
+        self.assertNotIn("Owner ticket", response.content.decode())
 
     def test_reports_date_range_param(self):
         self.client.login(username="owner", password="pass1234")
@@ -168,6 +176,38 @@ class SummaryReportServiceTest(TestCase):
         report = get_summary_report(self.company, today, today)
         self.assertEqual(report["errors_ignored"], 1)
         self.assertEqual(report["errors_investigated"], 1)
+
+    def test_summary_scoped_to_non_privileged_user(self):
+        dev = User.objects.create_user("bob", "bob@test.com", "pass1234")
+        Membership.objects.create(user=dev, company=self.company, role="developer")
+        ProductAccess.objects.create(product=self.product, user=dev, company=self.company)
+        other = Product.objects.create(name="Other", slug="other", company=self.company)
+
+        log_activity(self.company, "ticket_created", "By dev",
+                     actor=dev, metadata={"product_id": self.product.pk})
+        log_activity(self.company, "ticket_created", "By alice",
+                     actor=self.user, metadata={"product_id": self.product.pk})
+        log_activity(self.company, "ticket_created", "Dev in hidden product",
+                     actor=dev, metadata={"product_id": other.pk})
+
+        today = timezone.localdate()
+        report = get_summary_report(self.company, today, today, user=dev)
+
+        self.assertEqual(report["scope"], "mine")
+        self.assertEqual(report["tickets_created"], 2)
+        self.assertEqual(report["total_events"], 2)
+        product_slugs = [row["product"].slug for row in report["product_rows"]]
+        self.assertEqual(product_slugs, ["app"])
+        self.assertEqual(report["product_rows"][0]["tickets_created"], 1)
+
+    def test_summary_company_wide_for_owner(self):
+        dev = User.objects.create_user("carol", "carol@test.com", "pass1234")
+        Membership.objects.create(user=dev, company=self.company, role="developer")
+        log_activity(self.company, "ticket_created", "By dev", actor=dev)
+        today = timezone.localdate()
+        report = get_summary_report(self.company, today, today, user=self.user)
+        self.assertEqual(report["scope"], "company")
+        self.assertEqual(report["tickets_created"], 1)
 
 
 class AuditWiringTest(TestCase):

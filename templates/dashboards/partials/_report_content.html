@@ -1,6 +1,6 @@
 {% load event_tags %}
 <div class="text-sm text-muted mb-4" style="display:flex;justify-content:space-between;align-items:center;">
-  <span>Summary for <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong> — {{ total_events }} events</span>
+  <span>Summary for <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong> — {{ total_events }} events{% if scope == 'mine' %} (your activity){% endif %}</span>
 </div>
 
 <div class="grid-4 mb-6">

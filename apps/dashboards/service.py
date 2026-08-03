@@ -368,16 +368,22 @@ def get_user_dashboard_data(user, company):
     return data
 
 
-def get_summary_report(company, start_date, end_date):
+def get_summary_report(company, start_date, end_date, user=None):
     """Aggregate audit-log activity into a summary report for a date range.
 
     Both dates are inclusive. Counts come from ActivityLog entries so the
     report reflects actual events (ticket status changes, resolutions,
     captured/investigated errors, feedback, etc.).
+
+    When ``user`` is a non-privileged member, the report is scoped to their
+    own activity (events they acted on, across the products they can access).
+    Owners and admins always get company-wide reports.
     """
     from datetime import datetime, time
 
+    from apps.accounts.models import Membership
     from apps.dashboards.models import ActivityLog
+    from apps.products.access import accessible_products
     from apps.products.models import Product
 
     day_start = datetime.combine(start_date, time.min)
@@ -387,6 +393,20 @@ def get_summary_report(company, start_date, end_date):
         company=company,
         created_at__range=(day_start, day_end),
     )
+
+    scope = "company"
+    product_ids = None
+    if user is not None:
+        membership = Membership.objects.filter(user=user, company=company).first()
+        privileged = bool(
+            membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
+        )
+        if not privileged:
+            scope = "mine"
+            logs = logs.filter(actor=user)
+            product_ids = list(
+                accessible_products(user, company).values_list("id", flat=True)
+            )
 
     by_type = dict(
         logs.values_list("event_type")
@@ -403,7 +423,11 @@ def get_summary_report(company, start_date, end_date):
     errors_resolved = by_type.get("error_resolved", 0) + transitions_to(error_status_events, "resolved")
     errors_ignored = by_type.get("error_ignored", 0) + transitions_to(error_status_events, "ignored")
 
-    products = list(Product.objects.filter(company=company).order_by("name"))
+    products = list(
+        Product.objects.filter(company=company)
+        .filter(id__in=product_ids) if product_ids is not None else Product.objects.filter(company=company)
+    )
+    products.sort(key=lambda p: p.name)
     product_rows = []
     for product in products:
         p_logs = logs.filter(metadata__product_id=product.id)
@@ -441,6 +465,7 @@ def get_summary_report(company, start_date, end_date):
             current += timedelta(days=1)
 
     return {
+        "scope": scope,
         "start_date": start_date,
         "end_date": end_date,
         "total_events": logs.count(),

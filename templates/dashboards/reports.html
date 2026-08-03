@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="head">
-  <h1>Reports <span class="count">{{ start_date|date:"M j, Y" }} – {{ end_date|date:"M j, Y" }}</span></h1>
+  <h1>Reports <span class="count">{% if scope == 'mine' %}My activity{% else %}Company-wide{% endif %} · {{ start_date|date:"M j, Y" }} – {{ end_date|date:"M j, Y" }}</span></h1>
 </div>
 
 <div class="toolbar" style="align-items:flex-end;">

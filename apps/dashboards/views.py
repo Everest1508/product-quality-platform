@@ -100,7 +100,7 @@ class AuditLogView(CompanyAdminRequiredMixin, View):
         })
 
 
-class ReportsView(CompanyAdminRequiredMixin, View):
+class ReportsView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         today = timezone.localdate()
         start_date = _parse_date(request.GET.get("start_date"), today)
@@ -108,7 +108,7 @@ class ReportsView(CompanyAdminRequiredMixin, View):
         if start_date > end_date:
             start_date, end_date = end_date, start_date
 
-        data = get_summary_report(request.company, start_date, end_date)
+        data = get_summary_report(request.company, start_date, end_date, user=request.user)
         data.update({
             "today": today,
             "yesterday": today - timedelta(days=1),

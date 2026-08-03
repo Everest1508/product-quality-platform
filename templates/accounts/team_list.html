@@ -7,7 +7,9 @@
   <div class="head">
     <h1>Team <span class="count">{{ page.paginator.count }} member{{ page.paginator.count|pluralize }}</span></h1>
     <div class="head-actions">
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
       <button @click="open = true" class="btn btn-primary">Add member</button>
+      {% endif %}
     </div>
   </div>
 

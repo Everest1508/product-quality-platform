@@ -157,6 +157,61 @@ class TeamEditDiscordIdTest(TestCase):
         self.assertEqual(self.member.discord_id, "")
 
 
+class TeamAdminOnlyTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        self.admin = User.objects.create_user("admin", "admin@test.com", "pass1234")
+        self.dev = User.objects.create_user("dev", "dev@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.membership_owner = Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        self.membership_admin = Membership.objects.create(user=self.admin, company=self.company, role="admin")
+        self.membership_dev = Membership.objects.create(user=self.dev, company=self.company, role="developer")
+
+    def test_developer_cannot_invite(self):
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.post(reverse("accounts:team_invite"), {
+            "username": "newbie",
+            "email": "newbie@test.com",
+            "first_name": "New",
+            "last_name": "Bie",
+            "password": "pass1234",
+            "role": "developer",
+        })
+        self.assertEqual(response.status_code, 403)
+
+    def test_developer_cannot_edit_member(self):
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.post(
+            reverse("accounts:team_edit", kwargs={"pk": self.membership_dev.pk}),
+            {"first_name": "Hacked", "last_name": "", "email": "dev@test.com", "discord_id": "", "role": "admin"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.membership_dev.refresh_from_db()
+        self.assertEqual(self.membership_dev.role, "developer")
+
+    def test_developer_cannot_remove_member(self):
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.post(
+            reverse("accounts:team_remove", kwargs={"pk": self.membership_admin.pk})
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Membership.objects.filter(pk=self.membership_admin.pk).exists())
+
+    def test_admin_can_invite_and_edit(self):
+        self.client.login(username="admin", password="pass1234")
+        response = self.client.post(reverse("accounts:team_invite"), {
+            "username": "newbie",
+            "email": "newbie@test.com",
+            "first_name": "New",
+            "last_name": "Bie",
+            "password": "pass1234",
+            "role": "developer",
+        })
+        self.assertRedirects(response, reverse("accounts:team_list"))
+        self.assertTrue(User.objects.filter(username="newbie").exists())
+
+
 class HTMXPartialIsolationTest(TestCase):
     def setUp(self):
         self.client = Client()

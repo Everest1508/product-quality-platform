@@ -16,6 +16,7 @@
   <td class="date">{{ membership.created_at|date:"M d, Y" }}</td>
   <td>
     <div class="row-actions">
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
       {% if membership.role != 'owner' %}
       <button hx-get="{% url 'accounts:team_edit' pk=membership.pk %}"
               hx-target="#member-{{ membership.pk }}"
@@ -27,11 +28,11 @@
             hx-post="{% url 'accounts:team_remove' pk=membership.pk %}"
             hx-target="#member-{{ membership.pk }}"
             hx-swap="outerHTML"
-            hx-confirm="Remove {{ membership.user.username }} from the team?"
             style="display:inline;">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger" style="font-size:11px;padding:3px 8px;">Remove</button>
+        <button type="submit" onclick="return confirmAction(this.form, 'Remove {{ membership.user.username }} from the team?')" class="btn btn-danger" style="font-size:11px;padding:3px 8px;">Remove</button>
       </form>
+      {% endif %}
       {% endif %}
     </div>
   </td>

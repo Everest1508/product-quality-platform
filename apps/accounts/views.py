@@ -8,7 +8,7 @@ from django.views import View
 
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
 from apps.accounts.models import Company, Membership
-from apps.core.mixins import CompanyMemberRequiredMixin, LoginRequiredMixin
+from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.dashboards.service import log_activity
 
 User = get_user_model()
@@ -120,7 +120,7 @@ class TeamListView(CompanyMemberRequiredMixin, View):
         })
 
 
-class TeamInviteView(CompanyMemberRequiredMixin, View):
+class TeamInviteView(CompanyAdminRequiredMixin, View):
     def post(self, request):
         form = TeamCreateMemberForm(request.POST, company=request.company)
 
@@ -152,7 +152,7 @@ class TeamInviteView(CompanyMemberRequiredMixin, View):
         })
 
 
-class TeamRemoveView(CompanyMemberRequiredMixin, View):
+class TeamRemoveView(CompanyAdminRequiredMixin, View):
     def post(self, request, pk):
         membership = Membership.objects.filter(pk=pk, company=request.company).first()
         if not membership:
@@ -181,7 +181,7 @@ class TeamRemoveView(CompanyMemberRequiredMixin, View):
         return redirect("accounts:team_list")
 
 
-class TeamEditView(CompanyMemberRequiredMixin, View):
+class TeamEditView(CompanyAdminRequiredMixin, View):
     def get(self, request, pk):
         membership = Membership.objects.select_related("user").filter(pk=pk, company=request.company).first()
         if not membership:

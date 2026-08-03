@@ -28,8 +28,8 @@
       <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
       <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
       <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
       <a href="{% url 'dashboards:reports' %}" class="{% if 'reports' in request.path %}active{% endif %}">Reports</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
       <a href="{% url 'dashboards:audit_log' %}" class="{% if 'audit' in request.path %}active{% endif %}">Audit log</a>
       {% endif %}
     </div>
@@ -44,8 +44,8 @@
       <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
       <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
       <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
       <a href="{% url 'dashboards:reports' %}" class="{% if 'reports' in request.path %}active{% endif %}">Reports</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
       <a href="{% url 'dashboards:audit_log' %}" class="{% if 'audit' in request.path %}active{% endif %}">Audit log</a>
       {% endif %}
     </div>
