@@ -22,8 +22,8 @@
   button{font-family:inherit;cursor:pointer;}
   input,select,textarea{font-family:inherit;font-size:13.5px;}
 
-  .shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
-  .sidebar{border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;overflow-y:auto;}
+  .shell{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden;}
+  .sidebar{border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;overflow-y:auto;height:100vh;}
   .org{font-weight:600;font-size:14px;padding:0 8px 18px;}
   .org span{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px;}
   .nav a{display:flex;align-items:center;justify-content:space-between;padding:7px 8px;border-radius:6px;color:var(--muted);font-size:13.5px;margin-bottom:1px;}
@@ -35,7 +35,7 @@
   .sidebar-footer a{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;color:var(--muted);font-size:13.5px;}
   .sidebar-footer a:hover{background:var(--panel);color:var(--text);}
 
-  .main{padding:28px 36px;width:100%;min-width:0;overflow-x:hidden;display:flex;flex-direction:column;}
+  .main{padding:28px 36px;width:100%;min-width:0;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;height:100vh;}
   .head{display:flex;align-items:center;margin-bottom:20px;}
   .head h1{font-size:19px;font-weight:600;margin:0;}
   .head .count{color:var(--muted);font-weight:400;font-size:14px;margin-left:8px;}
@@ -157,6 +157,17 @@
   .row-actions{display:flex;gap:4px;}
   .row-actions .btn{padding:3px 8px;font-size:12px;}
 
+  .icon-btn{border:1px solid var(--border);background:#fff;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-family:inherit;}
+  .icon-btn:hover{background:var(--panel);color:var(--text);}
+  .icon-btn-danger:hover{background:var(--red-bg);color:var(--red);border-color:var(--red);}
+  .icon-btn svg{display:block;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:1000;}
+  .modal{background:#fff;border:1px solid var(--border);border-radius:10px;padding:24px;width:90%;max-width:400px;box-shadow:0 8px 30px rgba(0,0,0,.15);}
+  .modal h3{font-size:16px;font-weight:600;margin-bottom:8px;}
+  .modal p{font-size:13.5px;color:var(--muted);margin-bottom:20px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;}
+
   .kanban-board{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-bottom:0;align-items:flex-start;min-height:calc(100vh - 160px);}
   .kanban-col{min-width:260px;flex:1;background:var(--panel);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 160px);transition:background .15s,border-color .15s;}
   .kanban-col.drag-over{background:#f0f7ff;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg);}
@@ -241,6 +252,51 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 {% endif %}
+
+<div id="pq-confirm-modal" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3>Are you sure?</h3>
+    <p id="pq-confirm-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="pq-confirm-cancel">Cancel</button>
+      <button type="button" class="btn btn-danger" id="pq-confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('pq-confirm-modal');
+  var messageEl = document.getElementById('pq-confirm-message');
+  var okBtn = document.getElementById('pq-confirm-ok');
+  var cancelBtn = document.getElementById('pq-confirm-cancel');
+  var pendingForm = null;
+
+  window.confirmAction = function(form, message) {
+    pendingForm = form;
+    messageEl.textContent = message || 'Are you sure?';
+    modal.style.display = 'flex';
+    return false;
+  };
+
+  function closeConfirmModal() {
+    modal.style.display = 'none';
+    pendingForm = null;
+  }
+  window.closeConfirmModal = closeConfirmModal;
+
+  okBtn.addEventListener('click', function() {
+    if (pendingForm) pendingForm.submit();
+  });
+  cancelBtn.addEventListener('click', closeConfirmModal);
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeConfirmModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeConfirmModal();
+  });
+})();
+</script>
 
 </body>
 </html>

@@ -44,7 +44,7 @@
         {% if survey.status == 'draft' %}Activate{% elif survey.status == 'active' %}Close{% else %}Reopen{% endif %}
       </button>
     </form>
-    <form method="post" action="{% url 'feedback:survey_delete' pk=survey.pk %}" onsubmit="return confirm('Delete this survey?')">
+    <form method="post" action="{% url 'feedback:survey_delete' pk=survey.pk %}" onsubmit="return confirmAction(this, 'Delete this survey? This cannot be undone.')">
       {% csrf_token %}
       <button type="submit" class="btn btn-danger">Delete</button>
     </form>

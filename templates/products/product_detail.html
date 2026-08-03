@@ -7,10 +7,14 @@
   <h1>{{ product.name }} <span class="count">{{ product.slug }}</span></h1>
   <div class="head-actions">
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-    <a href="{% url 'products:product_edit' pk=product.pk %}" class="btn">Edit</a>
-    <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" onsubmit="return confirm('Delete this product?')">
+    <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" title="Edit" aria-label="Edit">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+    </a>
+    <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" onsubmit="return confirmAction(this, 'Delete {{ product.name }}? This cannot be undone.')">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Delete</button>
+      <button type="submit" class="icon-btn icon-btn-danger" title="Delete" aria-label="Delete">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
     </form>
     {% endif %}
   </div>

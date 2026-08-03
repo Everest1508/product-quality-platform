@@ -154,7 +154,7 @@
     }).then(function(resp) {
       if (!resp.ok) {
         resp.json().then(function(data) {
-          alert(data.error || 'Cannot move ticket');
+          window.dispatchEvent(new CustomEvent('django-message', { detail: { text: data.error || 'Cannot move ticket', tags: 'error' } }));
         });
         if (oldCol) {
           oldCol.appendChild(draggedCard);

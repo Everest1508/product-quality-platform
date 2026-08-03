@@ -1,4 +1,14 @@
+{% extends "core/base.html" %}
+
 {% load event_tags %}
+
+{% block title %}Reports — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Reports <span class="count">{{ start_date|date:"M j, Y" }} – {{ end_date|date:"M j, Y" }}</span></h1>
+</div>
+
 <div class="toolbar" style="align-items:flex-end;">
   <form method="get" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;"
         hx-get="{% url 'dashboards:reports' %}"
@@ -25,3 +35,4 @@
 <div id="report-content">
   {% include "dashboards/partials/_report_content.html" %}
 </div>
+{% endblock %}
