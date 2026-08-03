@@ -6,7 +6,9 @@
 <div class="head">
   <h1>Products <span class="count">{{ page.paginator.count }} total</span></h1>
   <div class="head-actions">
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
     <a href="{% url 'products:product_create' %}" class="btn btn-primary">New product</a>
+    {% endif %}
   </div>
 </div>
 

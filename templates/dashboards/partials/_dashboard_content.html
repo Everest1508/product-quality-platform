@@ -1,12 +1,4 @@
-{% extends "core/base.html" %}
-
-{% block title %}Dashboards — PQ Platform{% endblock %}
-
-{% block content %}
-<div class="head">
-  <h1>Dashboard <span class="count">{{ request.company.name }}</span></h1>
-</div>
-
+{% if is_privileged %}
 <div class="grid-4 mb-6">
   <div class="card stat">
     <div class="val">{{ member_count }}</div>
@@ -22,10 +14,45 @@
   </div>
   <div class="card stat">
     <div class="val" style="color:var(--green);">{{ resolved_errors }}</div>
-    <div class="label">Resolved</div>
+    <div class="label">Resolved Errors</div>
+  </div>
+</div>
+{% else %}
+<div class="grid-4 mb-6">
+  <div class="card stat">
+    <div class="val">{{ product_cards|length }}</div>
+    <div class="label">My Products</div>
+  </div>
+  <div class="card stat">
+    <div class="val" style="color:var(--red);">{{ open_errors }}</div>
+    <div class="label">Open Errors</div>
+  </div>
+  <div class="card stat">
+    <div class="val" style="color:var(--orange);">{{ open_tickets }}</div>
+    <div class="label">Open Tickets</div>
+  </div>
+  <div class="card stat">
+    <div class="val" style="color:var(--green);">{{ my_work_count }}</div>
+    <div class="label">My Open Tickets</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="mb-6">
+  <div class="text-sm font-medium mb-4">My Products</div>
+  {% include "dashboards/partials/_product_cards.html" %}
+</div>
+
+<div class="grid-2 mb-6">
+  <div class="card">
+    {% include "dashboards/partials/_my_work.html" %}
+  </div>
+  <div class="card">
+    {% include "dashboards/partials/_attention.html" %}
   </div>
 </div>
 
+{% if is_privileged %}
 <div class="grid-2">
   <div class="card">
     <div class="text-sm font-medium mb-4">Team Breakdown</div>
@@ -53,4 +80,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
+{% endif %}

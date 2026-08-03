@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views import View
 
 from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
 from apps.feedback.forms import SurveyCreateForm, SurveyResponseForm
 from apps.feedback.models import SentimentRecord, Survey, SurveyResponse
 from apps.products.models import Product
@@ -71,6 +72,14 @@ class SurveyCreateView(CompanyMemberRequiredMixin, View):
             survey.company = request.company
             survey.created_by = request.user
             survey.save()
+            log_activity(
+                request.company, "survey_created",
+                f"Survey '{survey.name}' created",
+                actor=request.user,
+                target_content_type="survey",
+                target_object_id=survey.pk,
+                metadata={"product_id": survey.product_id},
+            )
             messages.success(request, f"Survey '{survey.name}' created.")
             return redirect("feedback:survey_detail", pk=survey.pk)
         return render(request, "feedback/survey_form.html", {"form": form, "editing": False})
@@ -123,6 +132,15 @@ class SurveyToggleView(CompanyMemberRequiredMixin, View):
         else:
             survey.status = "draft"
         survey.save(update_fields=["status", "updated_at"])
+        log_activity(
+            request.company, "survey_toggled",
+            f"Survey '{survey.name}' status changed",
+            description=survey.get_status_display(),
+            actor=request.user,
+            target_content_type="survey",
+            target_object_id=survey.pk,
+            metadata={"product_id": survey.product_id, "status": survey.status},
+        )
         messages.success(request, f"Survey status changed to '{survey.get_status_display()}'.")
         return redirect("feedback:survey_detail", pk=survey.pk)
 
@@ -132,6 +150,13 @@ class SurveyDeleteView(CompanyMemberRequiredMixin, View):
         survey = get_object_or_404(Survey, pk=pk, company=request.company)
         name = survey.name
         survey.delete()
+        log_activity(
+            request.company, "survey_deleted",
+            f"Survey '{name}' deleted",
+            actor=request.user,
+            target_content_type="survey",
+            target_object_id=pk,
+        )
         messages.success(request, f"Survey '{name}' deleted.")
         return redirect("feedback:survey_list")
 
@@ -155,13 +180,21 @@ class PublicSurveyView(View):
         form = SurveyResponseForm(request.POST)
 
         if form.is_valid():
-            SurveyResponse.objects.create(
+            response = SurveyResponse.objects.create(
                 survey=survey,
                 company=survey.company,
                 score=form.cleaned_data["score"],
                 comment=form.cleaned_data.get("comment", ""),
                 contact_name=form.cleaned_data.get("contact_name", ""),
                 contact_email=form.cleaned_data.get("contact_email", ""),
+            )
+            log_activity(
+                survey.company, "survey_response",
+                f"Survey response received: {response.score}",
+                description=f"Response to '{survey.name}'",
+                target_content_type="survey_response",
+                target_object_id=response.pk,
+                metadata={"survey_id": survey.pk, "product_id": survey.product_id, "score": response.score},
             )
             return render(request, "feedback/survey/survey_thankyou.html", {
                 "survey": survey,

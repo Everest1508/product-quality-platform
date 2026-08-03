@@ -6,6 +6,7 @@ from django.views import View
 from apps.automation.forms import AutoTicketRuleForm
 from apps.automation.models import AutoTicketLog, AutoTicketRule
 from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
 
 
 RULE_SORT_MAP = {
@@ -71,6 +72,14 @@ class RuleCreateView(CompanyMemberRequiredMixin, View):
             rule = form.save(commit=False)
             rule.company = request.company
             rule.save()
+            log_activity(
+                request.company, "rule_created",
+                f"Rule '{rule.name}' created",
+                actor=request.user,
+                target_content_type="rule",
+                target_object_id=rule.pk,
+                metadata={"product_id": rule.product_id},
+            )
             messages.success(request, f"Rule '{rule.name}' created.")
             return redirect("automation:rule_list")
         return render(request, "automation/rule_form.html", {"form": form})
@@ -87,6 +96,14 @@ class RuleEditView(CompanyMemberRequiredMixin, View):
         form = AutoTicketRuleForm(request.POST, instance=rule, company=request.company)
         if form.is_valid():
             form.save()
+            log_activity(
+                request.company, "rule_updated",
+                f"Rule '{rule.name}' updated",
+                actor=request.user,
+                target_content_type="rule",
+                target_object_id=rule.pk,
+                metadata={"product_id": rule.product_id},
+            )
             messages.success(request, f"Rule '{rule.name}' updated.")
             return redirect("automation:rule_list")
         return render(request, "automation/rule_form.html", {"form": form, "editing": True, "rule": rule})
@@ -96,7 +113,16 @@ class RuleDeleteView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         rule = get_object_or_404(AutoTicketRule, pk=pk, company=request.company)
         name = rule.name
+        product_id = rule.product_id
         rule.delete()
+        log_activity(
+            request.company, "rule_deleted",
+            f"Rule '{name}' deleted",
+            actor=request.user,
+            target_content_type="rule",
+            target_object_id=pk,
+            metadata={"product_id": product_id},
+        )
         messages.success(request, f"Rule '{name}' deleted.")
         return redirect("automation:rule_list")
 
@@ -107,6 +133,14 @@ class RuleToggleView(CompanyMemberRequiredMixin, View):
         rule.is_active = not rule.is_active
         rule.save(update_fields=["is_active"])
         status = "enabled" if rule.is_active else "disabled"
+        log_activity(
+            request.company, "rule_toggled",
+            f"Rule '{rule.name}' {status}",
+            actor=request.user,
+            target_content_type="rule",
+            target_object_id=rule.pk,
+            metadata={"product_id": rule.product_id, "is_active": rule.is_active},
+        )
         messages.success(request, f"Rule '{rule.name}' {status}.")
 
         if request.headers.get("HX-Request") == "true":

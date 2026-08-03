@@ -184,3 +184,288 @@ def log_activity(company, event_type, title, description="", actor=None,
         target_object_id=target_object_id,
         metadata=metadata,
     )
+
+
+def _agg_by_product(queryset, key):
+    return {row[key]: row for row in queryset}
+
+
+def _build_product_cards(company, product_ids):
+    from apps.feedback.models import SurveyResponse
+    from apps.ingestion.models import ErrorGroup
+    from apps.products.models import Product
+    from apps.tickets.models import Ticket
+
+    if not product_ids:
+        return []
+
+    error_map = _agg_by_product(
+        ErrorGroup.objects.filter(company=company, product_id__in=product_ids)
+        .exclude(status__in=["resolved", "ignored"])
+        .values("product_id")
+        .annotate(open_errors=Count("id")),
+        "product_id",
+    )
+    critical_map = _agg_by_product(
+        ErrorGroup.objects.filter(
+            company=company,
+            product_id__in=product_ids,
+            severity__in=["critical", "high"],
+        )
+        .exclude(status__in=["resolved", "ignored"])
+        .values("product_id")
+        .annotate(critical_count=Count("id")),
+        "product_id",
+    )
+    ticket_map = _agg_by_product(
+        Ticket.objects.filter(company=company, product_id__in=product_ids)
+        .exclude(status__in=["resolved", "closed"])
+        .values("product_id")
+        .annotate(open_tickets=Count("id")),
+        "product_id",
+    )
+    score_map = _agg_by_product(
+        SurveyResponse.objects.filter(company=company, survey__product_id__in=product_ids)
+        .values("survey__product_id")
+        .annotate(avg_score=Avg("score")),
+        "survey__product_id",
+    )
+    stale_cutoff = timezone.now() - timedelta(days=7)
+    stale_map = _agg_by_product(
+        Ticket.objects.filter(
+            company=company,
+            product_id__in=product_ids,
+            updated_at__lt=stale_cutoff,
+        )
+        .exclude(status__in=["resolved", "closed"])
+        .values("product_id")
+        .annotate(stale_count=Count("id")),
+        "product_id",
+    )
+
+    cards = []
+    for product in Product.objects.filter(id__in=product_ids).order_by("name"):
+        open_errors = error_map.get(product.id, {}).get("open_errors", 0)
+        critical = critical_map.get(product.id, {}).get("critical_count", 0)
+        open_tickets = ticket_map.get(product.id, {}).get("open_tickets", 0)
+        raw_score = score_map.get(product.id, {}).get("avg_score")
+        avg_score = round(raw_score, 1) if raw_score is not None else None
+        stale_count = stale_map.get(product.id, {}).get("stale_count", 0)
+
+        if critical > 0 or (avg_score is not None and avg_score <= 2):
+            health = "critical"
+        elif open_errors > 0 or open_tickets > 0 or stale_count > 0 or (avg_score is not None and avg_score <= 3):
+            health = "warning"
+        else:
+            health = "healthy"
+
+        cards.append({
+            "product": product,
+            "open_errors": open_errors,
+            "open_tickets": open_tickets,
+            "avg_score": avg_score,
+            "stale_count": stale_count,
+            "health": health,
+        })
+    return cards
+
+
+def _build_attention(company, product_ids, is_privileged):
+    from apps.ingestion.models import ErrorGroup
+    from apps.tickets.models import Ticket
+
+    if is_privileged:
+        error_qs = ErrorGroup.objects.filter(company=company)
+        ticket_qs = Ticket.objects.filter(company=company)
+    else:
+        error_qs = ErrorGroup.objects.filter(company=company, product_id__in=product_ids)
+        ticket_qs = Ticket.objects.filter(company=company, product_id__in=product_ids)
+
+    stale_cutoff = timezone.now() - timedelta(days=7)
+
+    return {
+        "critical_errors": list(
+            error_qs.filter(severity__in=["critical", "high"])
+            .exclude(status__in=["resolved", "ignored"])
+            .select_related("product")
+            .order_by("-occurrence_count")[:5]
+        ),
+        "stale_tickets": list(
+            ticket_qs.filter(updated_at__lt=stale_cutoff)
+            .exclude(status__in=["resolved", "closed"])
+            .select_related("product")
+            .order_by("updated_at")[:5]
+        ),
+        "unassigned_tickets": list(
+            ticket_qs.filter(assigned_to__isnull=True)
+            .exclude(status__in=["resolved", "closed"])
+            .select_related("product")
+            .order_by("-updated_at")[:5]
+        ),
+    }
+
+
+def get_user_dashboard_data(user, company):
+    """Personalized dashboard scoped to the products the user can access.
+
+    Owners and admins see company-wide data; other roles only see the
+    products they are explicitly allocated to.
+    """
+    from apps.accounts.models import Membership
+    from apps.products.access import accessible_products
+    from apps.ingestion.models import ErrorGroup
+    from apps.tickets.models import Ticket
+
+    membership = Membership.objects.filter(user=user, company=company).first()
+    is_privileged = bool(
+        membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
+    )
+
+    products = accessible_products(user, company)
+    product_ids = list(products.values_list("id", flat=True))
+
+    if is_privileged:
+        error_scope = ErrorGroup.objects.filter(company=company)
+        ticket_scope = Ticket.objects.filter(company=company)
+    else:
+        error_scope = ErrorGroup.objects.filter(company=company, product_id__in=product_ids)
+        ticket_scope = Ticket.objects.filter(company=company, product_id__in=product_ids)
+
+    open_errors = error_scope.exclude(status__in=["resolved", "ignored"]).count()
+    open_tickets = ticket_scope.exclude(status__in=["resolved", "closed"]).count()
+    resolved_errors = error_scope.filter(status="resolved").count()
+
+    my_work = list(
+        ticket_scope.filter(assigned_to=user)
+        .exclude(status__in=["resolved", "closed"])
+        .select_related("product")
+        .order_by("-updated_at")[:10]
+    )
+    my_work_count = (
+        ticket_scope.filter(assigned_to=user)
+        .exclude(status__in=["resolved", "closed"])
+        .count()
+    )
+
+    attention = _build_attention(company, product_ids, is_privileged)
+
+    data = {
+        "is_privileged": is_privileged,
+        "role": membership.role if membership else None,
+        "product_cards": _build_product_cards(company, product_ids),
+        "open_errors": open_errors,
+        "open_tickets": open_tickets,
+        "resolved_errors": resolved_errors,
+        "my_work": my_work,
+        "my_work_count": my_work_count,
+        "attention": attention,
+        "attention_count": sum(len(items) for items in attention.values()),
+    }
+
+    if is_privileged:
+        data.update(get_admin_dashboard_data(company))
+
+    return data
+
+
+def get_summary_report(company, start_date, end_date):
+    """Aggregate audit-log activity into a summary report for a date range.
+
+    Both dates are inclusive. Counts come from ActivityLog entries so the
+    report reflects actual events (ticket status changes, resolutions,
+    captured/investigated errors, feedback, etc.).
+    """
+    from datetime import datetime, time
+
+    from apps.dashboards.models import ActivityLog
+    from apps.products.models import Product
+
+    day_start = datetime.combine(start_date, time.min)
+    day_end = datetime.combine(end_date, time.max)
+
+    logs = ActivityLog.objects.filter(
+        company=company,
+        created_at__range=(day_start, day_end),
+    )
+
+    by_type = dict(
+        logs.values_list("event_type")
+        .annotate(count=Count("id"))
+        .order_by("event_type")
+    )
+
+    ticket_status_events = logs.filter(event_type="ticket_status_changed")
+    error_status_events = logs.filter(event_type="error_status_changed")
+
+    def transitions_to(qs, to_status):
+        return qs.filter(metadata__to=to_status).count()
+
+    errors_resolved = by_type.get("error_resolved", 0) + transitions_to(error_status_events, "resolved")
+    errors_ignored = by_type.get("error_ignored", 0) + transitions_to(error_status_events, "ignored")
+
+    products = list(Product.objects.filter(company=company).order_by("name"))
+    product_rows = []
+    for product in products:
+        p_logs = logs.filter(metadata__product_id=product.id)
+        p_status = p_logs.filter(event_type="ticket_status_changed")
+        product_rows.append({
+            "product": product,
+            "tickets_created": p_logs.filter(event_type="ticket_created").count(),
+            "tickets_resolved": p_status.filter(metadata__to="resolved").count(),
+            "errors_captured": p_logs.filter(event_type__in=["error_captured", "error_created"]).count(),
+            "errors_resolved": p_logs.filter(event_type__in=["error_resolved"]).count()
+                + p_logs.filter(event_type="error_status_changed", metadata__to="resolved").count(),
+            "feedback": p_logs.filter(event_type__in=["feedback_received", "survey_response"]).count(),
+        })
+
+    daily = []
+    span_days = (end_date - start_date).days + 1
+    if span_days <= 92:
+        current = start_date
+        while current <= end_date:
+            d_start = datetime.combine(current, time.min)
+            d_end = datetime.combine(current, time.max)
+            day_logs = logs.filter(created_at__range=(d_start, d_end))
+            d_status = day_logs.filter(event_type="ticket_status_changed")
+            daily.append({
+                "date": current,
+                "tickets_created": day_logs.filter(event_type="ticket_created").count(),
+                "tickets_resolved": d_status.filter(metadata__to="resolved").count(),
+                "tickets_closed": d_status.filter(metadata__to="closed").count(),
+                "errors_captured": day_logs.filter(event_type__in=["error_captured", "error_created"]).count(),
+                "errors_resolved": day_logs.filter(event_type__in=["error_resolved"]).count()
+                    + day_logs.filter(event_type="error_status_changed", metadata__to="resolved").count(),
+                "feedback": day_logs.filter(event_type__in=["feedback_received", "survey_response"]).count(),
+                "total": day_logs.count(),
+            })
+            current += timedelta(days=1)
+
+    return {
+        "start_date": start_date,
+        "end_date": end_date,
+        "total_events": logs.count(),
+        "by_type": by_type,
+        "tickets_created": by_type.get("ticket_created", 0),
+        "tickets_status_changed": ticket_status_events.count(),
+        "tickets_resolved": transitions_to(ticket_status_events, "resolved"),
+        "tickets_closed": transitions_to(ticket_status_events, "closed"),
+        "tickets_in_progress": transitions_to(ticket_status_events, "in_progress"),
+        "tickets_assigned": transitions_to(ticket_status_events, "assigned") + by_type.get("ticket_assigned", 0),
+        "errors_captured": by_type.get("error_captured", 0) + by_type.get("error_created", 0),
+        "errors_resolved": errors_resolved,
+        "errors_ignored": errors_ignored,
+        "errors_investigated": errors_resolved + errors_ignored,
+        "feedback_received": by_type.get("feedback_received", 0),
+        "survey_responses": by_type.get("survey_response", 0),
+        "members_joined": by_type.get("member_joined", 0),
+        "members_removed": by_type.get("member_removed", 0),
+        "products_created": by_type.get("product_created", 0),
+        "rules_created": by_type.get("rule_created", 0),
+        "api_keys_created": by_type.get("api_key_created", 0),
+        "product_rows": product_rows,
+        "daily": daily,
+        "recent": list(
+            logs.select_related("actor")
+            .order_by("-created_at")[:25]
+        ),
+    }

@@ -6,11 +6,13 @@ from urllib.error import URLError
 logger = logging.getLogger(__name__)
 
 
-def send_discord_webhook(webhook_url, embed):
+def send_discord_webhook(webhook_url, embed, content=""):
     if not webhook_url:
         return
     webhook_url = webhook_url.strip()
     payload = {"embeds": [embed]}
+    if content:
+        payload["content"] = content
     data = json.dumps(payload).encode("utf-8")
     req = Request(webhook_url, data=data, method="POST")
     req.add_header("Content-Type", "application/json")
@@ -21,6 +23,12 @@ def send_discord_webhook(webhook_url, embed):
     except URLError as e:
         logger.warning("Discord webhook failed: %s", e)
         return False
+
+
+def _mention(user):
+    if user and getattr(user, "discord_id", "").strip():
+        return f"<@{user.discord_id.strip()}>"
+    return None
 
 
 def notify_ticket_created(ticket):
@@ -43,7 +51,9 @@ def notify_ticket_created(ticket):
         "fields": fields,
         "timestamp": ticket.created_at.isoformat(),
     }
-    send_discord_webhook(product.discord_webhook_url, embed)
+    mention = _mention(ticket.assigned_to)
+    content = f"{mention} you have been assigned ticket #{ticket.pk}: {ticket.title}" if mention else ""
+    send_discord_webhook(product.discord_webhook_url, embed, content=content)
 
 
 def notify_ticket_status_changed(ticket, old_status):
@@ -77,7 +87,9 @@ def notify_ticket_assigned(ticket):
         ],
         "timestamp": ticket.updated_at.isoformat(),
     }
-    send_discord_webhook(product.discord_webhook_url, embed)
+    mention = _mention(ticket.assigned_to)
+    content = f"{mention} you have been assigned ticket #{ticket.pk}: {ticket.title}" if mention else ""
+    send_discord_webhook(product.discord_webhook_url, embed, content=content)
 
 
 def notify_error_captured(error_group, occurrence):

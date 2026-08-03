@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
-from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
 from apps.products.access import accessible_products, require_product_access
 from apps.products.forms import ProductCreateForm, ProductEditForm, VersionCreateForm
 from apps.products.models import APIKey, Product, ProductAccess, ProductVersion
@@ -51,7 +52,7 @@ class ProductListView(CompanyMemberRequiredMixin, View):
         })
 
 
-class ProductCreateView(CompanyMemberRequiredMixin, View):
+class ProductCreateView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         form = ProductCreateForm()
         return render(request, "products/product_form.html", {"form": form, "editing": False})
@@ -60,6 +61,14 @@ class ProductCreateView(CompanyMemberRequiredMixin, View):
         form = ProductCreateForm(request.POST, company=request.company)
         if form.is_valid():
             product = form.save()
+            log_activity(
+                request.company, "product_created",
+                f"Product '{product.name}' created",
+                description=product.description[:200],
+                actor=request.user,
+                target_content_type="product",
+                target_object_id=product.pk,
+            )
             messages.success(request, f"Product '{product.name}' created.")
             return redirect("products:product_detail", pk=product.pk)
         return render(request, "products/product_form.html", {"form": form, "editing": False})
@@ -89,7 +98,7 @@ class ProductDetailView(CompanyMemberRequiredMixin, View):
         })
 
 
-class ProductEditView(CompanyMemberRequiredMixin, View):
+class ProductEditView(CompanyAdminRequiredMixin, View):
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
@@ -102,17 +111,31 @@ class ProductEditView(CompanyMemberRequiredMixin, View):
         form = ProductEditForm(request.POST, instance=product)
         if form.is_valid():
             form.save()
+            log_activity(
+                request.company, "product_updated",
+                f"Product '{product.name}' updated",
+                actor=request.user,
+                target_content_type="product",
+                target_object_id=product.pk,
+            )
             messages.success(request, f"Product '{product.name}' updated.")
             return redirect("products:product_detail", pk=product.pk)
         return render(request, "products/product_form.html", {"form": form, "editing": True, "product": product})
 
 
-class ProductDeleteView(CompanyMemberRequiredMixin, View):
+class ProductDeleteView(CompanyAdminRequiredMixin, View):
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         name = product.name
         product.delete()
+        log_activity(
+            request.company, "product_deleted",
+            f"Product '{name}' deleted",
+            actor=request.user,
+            target_content_type="product",
+            target_object_id=product.pk,
+        )
         messages.success(request, f"Product '{name}' deleted.")
         return redirect("products:product_list")
 
@@ -123,6 +146,14 @@ class APIKeyCreateView(CompanyMemberRequiredMixin, View):
         require_product_access(request, product)
         name = request.POST.get("name", "default")
         api_key, raw_key = APIKey.create_key(product=product, name=name)
+        log_activity(
+            request.company, "api_key_created",
+            f"API key '{name}' created for {product.name}",
+            actor=request.user,
+            target_content_type="api_key",
+            target_object_id=api_key.pk,
+            metadata={"product_id": product.pk},
+        )
         return render(request, "products/partials/_api_key_created.html", {
             "raw_key": raw_key,
             "api_key": api_key,
@@ -135,6 +166,14 @@ class APIKeyRevokeView(CompanyMemberRequiredMixin, View):
         api_key.is_active = False
         api_key.revoked_at = timezone.now()
         api_key.save(update_fields=["is_active", "revoked_at"])
+        log_activity(
+            request.company, "api_key_revoked",
+            f"API key '{api_key.name}' revoked",
+            actor=request.user,
+            target_content_type="api_key",
+            target_object_id=api_key.pk,
+            metadata={"product_id": api_key.product_id},
+        )
         messages.success(request, f"API key '{api_key.name}' revoked.")
 
         if request.headers.get("HX-Request") == "true":
@@ -154,6 +193,14 @@ class VersionCreateView(CompanyMemberRequiredMixin, View):
             if version.is_current:
                 product.versions.filter(is_current=True).update(is_current=False)
             version.save()
+            log_activity(
+                request.company, "version_added",
+                f"Version '{version.version_string}' added to {product.name}",
+                actor=request.user,
+                target_content_type="version",
+                target_object_id=version.pk,
+                metadata={"product_id": product.pk, "is_current": version.is_current},
+            )
             messages.success(request, f"Version '{version.version_string}' added.")
 
         if request.headers.get("HX-Request") == "true":
@@ -167,8 +214,17 @@ class VersionDeleteView(CompanyMemberRequiredMixin, View):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         version = get_object_or_404(product.versions, pk=version_pk)
+        version_string = version.version_string
         version.delete()
-        messages.success(request, f"Version '{version.version_string}' deleted.")
+        log_activity(
+            request.company, "version_removed",
+            f"Version '{version_string}' removed from {product.name}",
+            actor=request.user,
+            target_content_type="version",
+            target_object_id=version_pk,
+            metadata={"product_id": product.pk},
+        )
+        messages.success(request, f"Version '{version_string}' deleted.")
 
         if request.headers.get("HX-Request") == "true":
             versions = product.versions.all()
@@ -334,6 +390,15 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.source = "manual"
             ticket.save()
             notify_ticket_created(ticket)
+            log_activity(
+                request.company, "ticket_created",
+                f"Ticket #{ticket.pk} created",
+                description=ticket.title,
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": product.pk},
+            )
             messages.success(request, f"Ticket #{ticket.pk} created.")
             return redirect("products:product_ticket_detail", pk=product.pk, ticket_pk=ticket.pk)
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
@@ -411,6 +476,14 @@ class ProductSurveyCreateView(CompanyMemberRequiredMixin, View):
             survey.created_by = request.user
             survey.product = product
             survey.save()
+            log_activity(
+                request.company, "survey_created",
+                f"Survey '{survey.name}' created for {product.name}",
+                actor=request.user,
+                target_content_type="survey",
+                target_object_id=survey.pk,
+                metadata={"product_id": product.pk},
+            )
             messages.success(request, f"Survey '{survey.name}' created.")
             return redirect("products:product_surveys", pk=product.pk)
         return render(request, "products/product_survey_form.html", {"form": form, "product": product})
@@ -465,6 +538,14 @@ class ProductRuleCreateView(CompanyMemberRequiredMixin, View):
             rule.company = request.company
             rule.product = product
             rule.save()
+            log_activity(
+                request.company, "rule_created",
+                f"Rule '{rule.name}' created",
+                actor=request.user,
+                target_content_type="rule",
+                target_object_id=rule.pk,
+                metadata={"product_id": product.pk},
+            )
             messages.success(request, f"Rule '{rule.name}' created.")
             return redirect("products:product_rules", pk=product.pk)
         return render(request, "products/product_rule_form.html", {"form": form, "product": product})
@@ -508,6 +589,14 @@ class ProductAccessAddView(CompanyMemberRequiredMixin, View):
             company=request.company,
         )
         if created:
+            log_activity(
+                request.company, "access_granted",
+                f"{target_user.username} granted access to {product.name}",
+                actor=request.user,
+                target_content_type="product_access",
+                target_object_id=obj.pk,
+                metadata={"product_id": product.pk, "user_id": target_user.pk},
+            )
             messages.success(request, f"{target_user.username} now has access to {product.name}.")
         else:
             messages.info(request, f"{target_user.username} already has access.")
@@ -530,9 +619,20 @@ class ProductAccessRemoveView(CompanyMemberRequiredMixin, View):
         require_product_access(request, product)
         _require_privileged(request)
 
+        from django.contrib.auth import get_user_model
+        user_pk = int(user_pk)
+        target_user = get_object_or_404(get_user_model(), pk=user_pk)
         ProductAccess.objects.filter(
             product=product, user_id=user_pk, company=request.company
         ).delete()
+        log_activity(
+            request.company, "access_revoked",
+            f"{target_user.username} access to {product.name} removed",
+            actor=request.user,
+            target_content_type="product_access",
+            target_object_id=None,
+            metadata={"product_id": product.pk, "user_id": user_pk},
+        )
         messages.success(request, "Access removed.")
 
         if request.headers.get("HX-Request") == "true":

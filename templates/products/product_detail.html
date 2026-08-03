@@ -6,11 +6,13 @@
 <div class="head">
   <h1>{{ product.name }} <span class="count">{{ product.slug }}</span></h1>
   <div class="head-actions">
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
     <a href="{% url 'products:product_edit' pk=product.pk %}" class="btn">Edit</a>
     <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" onsubmit="return confirm('Delete this product?')">
       {% csrf_token %}
       <button type="submit" class="btn btn-danger">Delete</button>
     </form>
+    {% endif %}
   </div>
 </div>
 

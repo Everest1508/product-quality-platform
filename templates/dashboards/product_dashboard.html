@@ -6,86 +6,11 @@
 <div class="head">
   <h1>{{ product.name }} <span class="count">Dashboard</span></h1>
   <div class="head-actions">
-    <a href="{% url 'dashboards:admin_dashboard' %}" class="btn">Overview</a>
+    <a href="{% url 'dashboards:index' %}" class="btn">Overview</a>
   </div>
 </div>
 
-<div class="grid-4 mb-6">
-  <div class="card stat">
-    <div class="val">{{ total_errors }}</div>
-    <div class="label">Errors ({{ open_errors }} open)</div>
-  </div>
-  <div class="card stat">
-    <div class="val">{{ total_tickets }}</div>
-    <div class="label">Tickets ({{ open_tickets }} open)</div>
-  </div>
-  <div class="card stat">
-    <div class="val {% if avg_score >= 4 %}style="color:var(--green);"{% elif avg_score <= 2 %}style="color:var(--red);"{% endif %}">{{ avg_score|default:"—" }}</div>
-    <div class="label">Avg Survey Score</div>
-  </div>
-  <div class="card stat">
-    <div class="val {% if uptime_percentage >= 99 %}style="color:var(--green);"{% elif uptime_percentage >= 95 %}style="color:var(--orange);"{% else %}style="color:var(--red);"{% endif %}">
-      {{ uptime_percentage|default:"—" }}{% if uptime_percentage %}%{% endif %}
-    </div>
-    <div class="label">Uptime</div>
-  </div>
-</div>
-
-<div class="grid-2 mb-6">
-  <div class="card">
-    <div class="text-sm font-medium mb-4">Errors (Last 30 Days)</div>
-    <div style="display:flex;align-items:flex-end;gap:1px;height:100px;">
-      {% for day in errors_by_day %}
-      <div style="flex:1;">
-        <div style="width:100%;background:var(--red);border-radius:2px 2px 0 0;height:{% widthratio day.count 1 5 %}px;min-height:{% if day.count > 0 %}2px{% else %}0px{% endif %};"></div>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="flex-between" style="margin-top:6px;">
-      <span class="date">30 days ago</span>
-      <span class="date">Today</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="text-sm font-medium mb-4">Ticket Burn-down</div>
-    <div style="display:flex;align-items:flex-end;gap:1px;height:100px;">
-      {% for day in ticket_burndown %}
-      <div style="flex:1;">
-        <div style="width:100%;background:var(--orange);border-radius:2px 2px 0 0;height:{% widthratio day.open 1 5 %}px;min-height:{% if day.open > 0 %}2px{% else %}0px{% endif %};"></div>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="flex-between" style="margin-top:6px;">
-      <span class="date">30 days ago</span>
-      <span class="date">Today</span>
-    </div>
-  </div>
-</div>
-
-<div class="grid-2">
-  <div class="card">
-    <div class="text-sm font-medium mb-4">Error Severity</div>
-    {% for item in errors_by_severity %}
-    <div class="flex-between" style="padding:6px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <span class="text-sm pill {{ item.severity }}">{{ item.severity|upper }}</span>
-      <span class="text-sm font-medium">{{ item.count }}</span>
-    </div>
-    {% empty %}
-    <p class="text-sm text-muted" style="text-align:center;padding:20px;">No errors yet.</p>
-    {% endfor %}
-  </div>
-
-  <div class="card">
-    <div class="text-sm font-medium mb-4">Ticket Status</div>
-    {% for item in tickets_by_status %}
-    <div class="flex-between" style="padding:6px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <span class="text-sm">{{ item.status|title }}</span>
-      <span class="text-sm font-medium">{{ item.count }}</span>
-    </div>
-    {% empty %}
-    <p class="text-sm text-muted" style="text-align:center;padding:20px;">No tickets yet.</p>
-    {% endfor %}
-  </div>
+<div id="product-dashboard-content">
+  {% include "dashboards/partials/_product_dashboard_content.html" %}
 </div>
 {% endblock %}

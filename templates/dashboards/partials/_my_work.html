@@ -1,0 +1,25 @@
+<div class="text-sm font-medium mb-4">My Work</div>
+{% for t in my_work %}
+<div class="flex-between" style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+  <div style="min-width:0;">
+    <div class="text-sm truncate">
+      <a href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}" style="color:inherit;">#{{ t.pk }} {{ t.title|truncatechars:42 }}</a>
+    </div>
+    <div class="date">{% if t.product %}{{ t.product.name }} · {% endif %}{{ t.updated_at|timesince }} ago</div>
+  </div>
+  <div>
+    {% if t.status == 'open' %}<span class="pill open">Open</span>
+    {% elif t.status == 'assigned' %}<span class="pill assigned">Assigned</span>
+    {% elif t.status == 'in_progress' %}<span class="pill progress">In progress</span>
+    {% elif t.status == 'testing' %}<span class="pill testing">Testing</span>
+    {% endif %}
+  </div>
+</div>
+{% empty %}
+<p class="text-sm text-muted" style="text-align:center;padding:20px;">No tickets assigned to you right now.</p>
+{% endfor %}
+{% if my_work_count > 10 %}
+<div style="margin-top:8px;text-align:center;">
+  <a href="{% url 'tickets:ticket_list' %}?assigned=me" class="text-sm" style="color:var(--blue);">View all {{ my_work_count }} of my tickets</a>
+</div>
+{% endif %}

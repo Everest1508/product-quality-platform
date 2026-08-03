@@ -48,4 +48,15 @@ class ErrorCreateForm(forms.Form):
             page=data.get("page", ""),
         )
         notify_error_captured(group, occurrence)
+        if created:
+            from apps.dashboards.service import log_activity
+            log_activity(
+                company, "error_created",
+                f"Error #{group.pk} created",
+                description=group.title,
+                actor=user,
+                target_content_type="error",
+                target_object_id=group.pk,
+                metadata={"product_id": product.id, "severity": group.severity},
+            )
         return group

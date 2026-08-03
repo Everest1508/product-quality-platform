@@ -1,0 +1,35 @@
+{% if product_cards %}
+<div class="grid-3">
+  {% for card in product_cards %}
+  <a href="{% url 'dashboards:product_dashboard' product_pk=card.product.pk %}" class="card" style="display:block;text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.08)';this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='none';this.style.transform='none';">
+    <div class="flex-between mb-4">
+      <div class="title">{{ card.product.name }}</div>
+      {% if card.health == 'healthy' %}<span class="pill active">Healthy</span>
+      {% elif card.health == 'warning' %}<span class="pill progress">Warning</span>
+      {% else %}<span class="pill critical">Critical</span>{% endif %}
+    </div>
+    <div class="grid-3" style="text-align:center;gap:8px;">
+      <div class="stat">
+        <div class="val" style="font-size:16px;">{{ card.open_errors }}</div>
+        <div class="label">Errors</div>
+      </div>
+      <div class="stat">
+        <div class="val" style="font-size:16px;">{{ card.open_tickets }}</div>
+        <div class="label">Tickets</div>
+      </div>
+      <div class="stat">
+        <div class="val" style="font-size:16px;">{{ card.avg_score|default:"—" }}</div>
+        <div class="label">CSAT</div>
+      </div>
+    </div>
+    {% if card.stale_count %}
+    <div class="date" style="margin-top:8px;">{{ card.stale_count }} stale ticket{{ card.stale_count|pluralize }}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-muted" style="text-align:center;padding:24px;border:2px dashed var(--border);border-radius:8px;">
+  You don't have access to any products yet. Contact an admin to be granted access.
+</p>
+{% endif %}

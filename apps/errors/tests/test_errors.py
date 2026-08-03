@@ -136,3 +136,42 @@ class ErrorStatusChangeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.error.refresh_from_db()
         self.assertEqual(self.error.status, "resolved")
+
+
+class ErrorDeleteTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        self.member = User.objects.create_user("member", "member@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.member, company=self.company, role="developer")
+        self.product = Product.objects.create(name="App", slug="app", company=self.company)
+        self.error = ErrorGroup.objects.create(
+            product=self.product, company=self.company,
+            fingerprint="abc123", title="Doomed error", severity="high", status="open",
+        )
+
+    def test_admin_can_delete_error(self):
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(reverse("errors:error_delete", kwargs={"pk": self.error.pk}))
+        self.assertRedirects(response, reverse("products:product_errors", kwargs={"pk": self.product.pk}))
+        self.assertEqual(ErrorGroup.objects.count(), 0)
+
+    def test_non_admin_cannot_delete_error(self):
+        self.client.login(username="member", password="pass1234")
+        response = self.client.post(reverse("errors:error_delete", kwargs={"pk": self.error.pk}))
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(ErrorGroup.objects.count(), 1)
+
+    def test_delete_other_tenant_error(self):
+        other_company = Company.objects.create(name="Other", slug="other")
+        other_product = Product.objects.create(name="B", slug="b", company=other_company)
+        other_error = ErrorGroup.objects.create(
+            product=other_product, company=other_company,
+            fingerprint="xyz", title="Not yours", severity="low", status="open",
+        )
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(reverse("errors:error_delete", kwargs={"pk": other_error.pk}))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(ErrorGroup.objects.count(), 2)

@@ -157,3 +157,34 @@ class TicketViewTest(TestCase):
         Ticket.objects.create(company=self.company, title="Closed", status="closed")
         response = self.client.get(reverse("tickets:ticket_list") + "?status=open")
         self.assertEqual(len(response.context["page"].object_list), 1)
+
+
+class TicketDeleteTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        self.member = User.objects.create_user("member", "member@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.member, company=self.company, role="developer")
+        self.ticket = Ticket.objects.create(company=self.company, title="Doomed", created_by=self.owner)
+
+    def test_admin_can_delete_ticket(self):
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": self.ticket.pk}))
+        self.assertRedirects(response, reverse("tickets:ticket_list"))
+        self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_non_admin_cannot_delete_ticket(self):
+        self.client.login(username="member", password="pass1234")
+        response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": self.ticket.pk}))
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Ticket.objects.count(), 1)
+
+    def test_delete_other_tenant_ticket(self):
+        other = Company.objects.create(name="Other", slug="other")
+        other_ticket = Ticket.objects.create(company=other, title="Not yours")
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": other_ticket.pk}))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Ticket.objects.count(), 2)

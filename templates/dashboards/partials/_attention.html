@@ -1,0 +1,43 @@
+<div class="text-sm font-medium mb-4">Needs Attention</div>
+{% if attention.critical_errors %}
+<div class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Critical Errors</div>
+{% for e in attention.critical_errors %}
+<div class="flex-between" style="padding:6px 0;">
+  <div class="text-sm truncate" style="min-width:0;">
+    <a href="{% if e.product %}{% url 'products:product_error_detail' pk=e.product.pk error_pk=e.pk %}{% else %}{% url 'errors:error_detail' pk=e.pk %}{% endif %}" style="color:inherit;">{{ e.title|truncatechars:42 }}</a>
+    {% if e.product %}<span class="text-muted"> · {{ e.product.name }}</span>{% endif %}
+  </div>
+  <span class="pill {{ e.severity }}">{{ e.severity|upper }}</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if attention.stale_tickets %}
+<div class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.04em;margin-top:10px;margin-bottom:4px;">Stale Tickets</div>
+{% for t in attention.stale_tickets %}
+<div class="flex-between" style="padding:6px 0;">
+  <div class="text-sm truncate" style="min-width:0;">
+    <a href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}" style="color:inherit;">#{{ t.pk }} {{ t.title|truncatechars:42 }}</a>
+    {% if t.product %}<span class="text-muted"> · {{ t.product.name }}</span>{% endif %}
+  </div>
+  <span class="pill info">{{ t.updated_at|timesince }} ago</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if attention.unassigned_tickets %}
+<div class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.04em;margin-top:10px;margin-bottom:4px;">Unassigned Tickets</div>
+{% for t in attention.unassigned_tickets %}
+<div class="flex-between" style="padding:6px 0;">
+  <div class="text-sm truncate" style="min-width:0;">
+    <a href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}" style="color:inherit;">#{{ t.pk }} {{ t.title|truncatechars:42 }}</a>
+    {% if t.product %}<span class="text-muted"> · {{ t.product.name }}</span>{% endif %}
+  </div>
+  <span class="pill open">Unassigned</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if not attention.critical_errors and not attention.stale_tickets and not attention.unassigned_tickets %}
+<p class="text-sm text-muted" style="text-align:center;padding:20px;">All caught up. Nothing needs attention.</p>
+{% endif %}

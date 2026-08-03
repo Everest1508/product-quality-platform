@@ -1,0 +1,62 @@
+{% extends "core/base.html" %}
+
+{% block title %}Audit Log — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Audit log <span class="count">{{ page.paginator.count }} events</span></h1>
+</div>
+
+<div class="toolbar">
+  <form method="get" class="search-wrap" style="display:flex;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" name="q" value="{{ search }}" placeholder="Search events...">
+    {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+    {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
+    {% if current_from %}<input type="hidden" name="from" value="{{ current_from }}">{% endif %}
+    {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
+  </form>
+  <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
+    <option value="">All event types</option>
+    {% for value, label in event_types %}
+    <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select class="filter-select" onchange="window.location=buildUrl({actor:this.value})">
+    <option value="">Any member</option>
+    {% for member in members %}
+    <option value="{{ member.pk }}" {% if current_actor == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+    {% endfor %}
+  </select>
+  <input type="date" class="filter-select" style="padding:7px 10px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
+  <input type="date" class="filter-select" style="padding:7px 10px;" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:150px">Time</th>
+      <th style="width:180px">Event</th>
+      <th>Details</th>
+      <th style="width:180px">Actor</th>
+    </tr>
+  </thead>
+  <tbody id="audit-log-body">
+    {% include "dashboards/partials/_audit_log_rows.html" with page=page %}
+  </tbody>
+</table>
+
+{% include "core/_pagination.html" with page=page %}
+
+<script>
+function buildUrl(params) {
+  var url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  for (var key in params) {
+    url.searchParams.delete(key);
+    if (params[key]) url.searchParams.set(key, params[key]);
+  }
+  return url.toString();
+}
+</script>
+{% endblock %}

@@ -32,6 +32,11 @@
       <label>Email</label>
       {{ form.email }}
     </div>
+    <div class="form-group">
+      <label>Discord ID</label>
+      {{ form.discord_id }}
+      <div class="text-sm text-muted" style="margin-top:4px;">Used to mention you in Discord webhook notifications when a ticket is assigned to you. Enable Developer Mode in Discord, right-click your name, and select "Copy User ID".</div>
+    </div>
     <button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Changes</button>
   </form>
 </div>

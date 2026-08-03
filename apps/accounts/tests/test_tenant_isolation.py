@@ -114,6 +114,49 @@ class SignupAndCompanyFlowTest(TestCase):
         self.assertEqual(membership.role, Membership.Role.OWNER)
 
 
+class TeamEditDiscordIdTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        self.member = User.objects.create_user("dev", "dev@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.membership_owner = Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        self.membership_dev = Membership.objects.create(user=self.member, company=self.company, role="developer")
+        self.client.login(username="owner", password="pass1234")
+
+    def test_team_edit_updates_discord_id(self):
+        response = self.client.post(
+            reverse("accounts:team_edit", kwargs={"pk": self.membership_dev.pk}),
+            {
+                "first_name": "Dev",
+                "last_name": "Team",
+                "email": "dev@test.com",
+                "discord_id": "987654321098765432",
+                "role": "developer",
+            },
+        )
+        self.assertRedirects(response, reverse("accounts:team_list"))
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.discord_id, "987654321098765432")
+
+    def test_team_edit_can_clear_discord_id(self):
+        self.member.discord_id = "123456789012345678"
+        self.member.save()
+        response = self.client.post(
+            reverse("accounts:team_edit", kwargs={"pk": self.membership_dev.pk}),
+            {
+                "first_name": "Dev",
+                "last_name": "Team",
+                "email": "dev@test.com",
+                "discord_id": "",
+                "role": "developer",
+            },
+        )
+        self.assertRedirects(response, reverse("accounts:team_list"))
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.discord_id, "")
+
+
 class HTMXPartialIsolationTest(TestCase):
     def setUp(self):
         self.client = Client()

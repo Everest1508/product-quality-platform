@@ -3,6 +3,7 @@ import hashlib
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.dashboards.service import log_activity
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence, Feedback, IngestedTicket
 from apps.products.webhook import notify_error_captured, notify_feedback_created, notify_ticket_created
 from apps.tickets.models import Ticket
@@ -72,6 +73,20 @@ class ErrorCaptureSerializer(serializers.Serializer):
 
         notify_error_captured(error_group, occurrence)
 
+        log_activity(
+            company, "error_captured",
+            f"Error captured: {error_group.title[:120]}",
+            description=f"{occurrence.environment} · {occurrence.page or 'N/A'}",
+            target_content_type="error",
+            target_object_id=error_group.id,
+            metadata={
+                "product_id": product.id,
+                "occurrence_id": occurrence.id,
+                "severity": error_group.severity,
+                "created": created,
+            },
+        )
+
         return {
             "error_group_id": error_group.id,
             "occurrence_id": occurrence.id,
@@ -111,6 +126,14 @@ class FeedbackSerializer(serializers.Serializer):
             screenshot_url=validated_data.get("screenshot_url", ""),
         )
         notify_feedback_created(feedback)
+        log_activity(
+            company, "feedback_received",
+            f"Feedback received ({feedback.rating}/5)",
+            description=feedback.comment[:200] or "No comment",
+            target_content_type="feedback",
+            target_object_id=feedback.id,
+            metadata={"product_id": product.id, "rating": feedback.rating},
+        )
         return {"feedback_id": feedback.id}
 
 
@@ -151,6 +174,14 @@ class TicketIngestSerializer(serializers.Serializer):
             source=Ticket.Source.AUTO,
         )
         notify_ticket_created(ticket)
+        log_activity(
+            company, "ticket_created",
+            f"Ticket #{ticket.id} created",
+            description=validated_data["title"],
+            target_content_type="ticket",
+            target_object_id=ticket.id,
+            metadata={"product_id": product.id, "source": "auto"},
+        )
         return {"ticket_id": ingested.id, "ui_ticket_id": ticket.id}
 
 

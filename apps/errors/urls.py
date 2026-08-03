@@ -12,4 +12,5 @@ urlpatterns = [
     path("<int:pk>/ignore/", views.ErrorIgnoreView.as_view(), name="error_ignore"),
     path("<int:pk>/resolve/", views.ErrorResolveView.as_view(), name="error_resolve"),
     path("<int:pk>/convert-to-ticket/", views.ErrorConvertToTicketView.as_view(), name="error_convert_to_ticket"),
+    path("<int:pk>/delete/", views.ErrorDeleteView.as_view(), name="error_delete"),
 ]

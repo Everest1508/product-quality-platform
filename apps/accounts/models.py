@@ -3,6 +3,8 @@ from django.db import models
 
 
 class User(AbstractUser):
+    discord_id = models.CharField(max_length=64, blank=True, default="", help_text="Discord user snowflake ID, used to mention the user in webhook notifications.")
+
     class Meta(AbstractUser.Meta):
         swappable = "AUTH_USER_MODEL"
 

@@ -1,0 +1,27 @@
+{% load event_tags %}
+<div class="toolbar" style="align-items:flex-end;">
+  <form method="get" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;"
+        hx-get="{% url 'dashboards:reports' %}"
+        hx-target="#report-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">
+    <div class="form-group" style="margin:0;">
+      <label>From</label>
+      <input type="date" name="start_date" class="form-input" value="{{ start_date|date:'Y-m-d' }}">
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>To</label>
+      <input type="date" name="end_date" class="form-input" value="{{ end_date|date:'Y-m-d' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Generate report</button>
+  </form>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <a href="{% url 'dashboards:reports' %}" class="btn" style="font-size:12px;">Today</a>
+    <a href="{% url 'dashboards:reports' %}?start_date={{ yesterday|date:'Y-m-d' }}&end_date={{ yesterday|date:'Y-m-d' }}" class="btn" style="font-size:12px;">Yesterday</a>
+    <a href="{% url 'dashboards:reports' %}?start_date={{ week_ago|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}" class="btn" style="font-size:12px;">Last 7 days</a>
+  </div>
+</div>
+
+<div id="report-content">
+  {% include "dashboards/partials/_report_content.html" %}
+</div>

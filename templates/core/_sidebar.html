@@ -24,15 +24,19 @@
     </div>
     <div class="nav-label">Workspace</div>
     <div class="nav">
-      <a href="{% url 'dashboards:admin_dashboard' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
+      <a href="{% url 'dashboards:index' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
       <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
       <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
       <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+      <a href="{% url 'dashboards:reports' %}" class="{% if 'reports' in request.path %}active{% endif %}">Reports</a>
+      <a href="{% url 'dashboards:audit_log' %}" class="{% if 'audit' in request.path %}active{% endif %}">Audit log</a>
+      {% endif %}
     </div>
     {% else %}
     <div class="org">{{ request.company.name }}<span>{{ request.company_role|title }} workspace</span></div>
     <div class="nav">
-      <a href="{% url 'dashboards:admin_dashboard' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
+      <a href="{% url 'dashboards:index' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
       <a href="{% url 'products:product_list' %}" class="{% if 'products' in request.path %}active{% endif %}">Products</a>
     </div>
     <div class="nav-label">Workspace</div>
@@ -40,6 +44,10 @@
       <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
       <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
       <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+      <a href="{% url 'dashboards:reports' %}" class="{% if 'reports' in request.path %}active{% endif %}">Reports</a>
+      <a href="{% url 'dashboards:audit_log' %}" class="{% if 'audit' in request.path %}active{% endif %}">Audit log</a>
+      {% endif %}
     </div>
     {% endif %}
     <div class="sidebar-footer">

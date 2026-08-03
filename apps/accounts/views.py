@@ -9,6 +9,7 @@ from django.views import View
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
 from apps.accounts.models import Company, Membership
 from apps.core.mixins import CompanyMemberRequiredMixin, LoginRequiredMixin
+from apps.dashboards.service import log_activity
 
 User = get_user_model()
 
@@ -45,7 +46,7 @@ class LogoutView(View):
 
 class DashboardView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        return redirect("dashboards:admin_dashboard")
+        return redirect("dashboards:index")
 
 
 class CompanySetupView(LoginRequiredMixin, View):
@@ -125,6 +126,14 @@ class TeamInviteView(CompanyMemberRequiredMixin, View):
 
         if form.is_valid():
             membership = form.save()
+            log_activity(
+                request.company, "member_joined",
+                f"{membership.user.username} joined the team",
+                description=f"Added as {membership.get_role_display()}",
+                actor=request.user,
+                target_content_type="membership",
+                target_object_id=membership.pk,
+            )
             messages.success(request, f"{membership.user.username} added as {membership.get_role_display()}.")
             return redirect("accounts:team_list")
 
@@ -158,6 +167,13 @@ class TeamRemoveView(CompanyMemberRequiredMixin, View):
 
         username = membership.user.username
         membership.delete()
+        log_activity(
+            request.company, "member_removed",
+            f"{username} removed from team",
+            actor=request.user,
+            target_content_type="membership",
+            target_object_id=pk,
+        )
         messages.success(request, f"{username} removed from team.")
 
         if request.headers.get("HX-Request") == "true":
@@ -175,6 +191,7 @@ class TeamEditView(CompanyMemberRequiredMixin, View):
             "first_name": membership.user.first_name,
             "last_name": membership.user.last_name,
             "email": membership.user.email,
+            "discord_id": membership.user.discord_id,
             "role": membership.role,
         })
         if request.headers.get("HX-Request") == "true":
@@ -190,7 +207,18 @@ class TeamEditView(CompanyMemberRequiredMixin, View):
             return redirect("accounts:team_list")
         form = TeamEditForm(request.POST, membership=membership)
         if form.is_valid():
+            old_role = membership.role
             membership = form.save()
+            if membership.role != old_role:
+                log_activity(
+                    request.company, "member_role_changed",
+                    f"{membership.user.username} role changed",
+                    description=f"{old_role} → {membership.role}",
+                    actor=request.user,
+                    target_content_type="membership",
+                    target_object_id=membership.pk,
+                    metadata={"from": old_role, "to": membership.role},
+                )
             messages.success(request, f"{membership.user.username} updated.")
             if request.headers.get("HX-Request") == "true":
                 return render(request, "accounts/partials/_team_member_row.html", {

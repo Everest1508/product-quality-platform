@@ -20,7 +20,21 @@
   </td>
   <td class="text-sm" onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'">{{ error.occurrence_count }}</td>
   <td class="date" onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'">{{ error.last_seen|timesince }} ago</td>
-  <td><a href="{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}" class="btn" style="font-size:12px;padding:3px 8px;">View</a></td>
+  <td>
+    <div class="row-actions">
+      <a href="{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}" class="btn" title="View" aria-label="View" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+      <form method="post" action="{% url 'errors:error_delete' pk=error.pk %}" onsubmit="return confirm('Delete error #{{ error.pk }}?')" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" title="Delete" aria-label="Delete" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </td>
 </tr>
 {% empty %}
 <tr><td colspan="6" class="empty"><h3>No errors found</h3><p>{% if search %}Try a different search term.{% else %}Errors will appear here once your product starts reporting.{% endif %}</p></td></tr>

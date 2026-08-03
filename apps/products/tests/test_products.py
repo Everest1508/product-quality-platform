@@ -53,6 +53,54 @@ class ProductCRUDTest(TestCase):
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
 
 
+class ProductAdminOnlyTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        self.member = User.objects.create_user("dev", "dev@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.member, company=self.company, role="developer")
+
+    def test_non_admin_cannot_create_product(self):
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.get(reverse("products:product_create"))
+        self.assertEqual(response.status_code, 403)
+        response = self.client.post(reverse("products:product_create"), {
+            "name": "Hax",
+            "default_environment": "production",
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Product.objects.count(), 0)
+
+    def test_non_admin_cannot_edit_product(self):
+        product = Product.objects.create(name="App", slug="app", company=self.company)
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.post(reverse("products:product_edit", kwargs={"pk": product.pk}), {
+            "name": "Hacked",
+            "default_environment": "production",
+        })
+        self.assertEqual(response.status_code, 403)
+        product.refresh_from_db()
+        self.assertEqual(product.name, "App")
+
+    def test_non_admin_cannot_delete_product(self):
+        product = Product.objects.create(name="App", slug="app", company=self.company)
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.post(reverse("products:product_delete", kwargs={"pk": product.pk}))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Product.objects.filter(pk=product.pk).exists())
+
+    def test_owner_can_create_product(self):
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(reverse("products:product_create"), {
+            "name": "My App",
+            "default_environment": "production",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Product.objects.filter(slug="my-app", company=self.company).exists())
+
+
 class APIKeyTest(TestCase):
     def setUp(self):
         self.client = Client()

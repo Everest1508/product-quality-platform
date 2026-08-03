@@ -9,7 +9,9 @@
   <td class="text-sm" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.api_keys.count }}</td>
   <td><a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn" style="font-size:12px;padding:4px 8px;">View</a></td>
   <td>
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
     <a href="{% url 'products:product_edit' pk=product.pk %}" class="btn" style="font-size:12px;padding:3px 8px;">Edit</a>
+    {% endif %}
   </td>
 </tr>
 {% empty %}

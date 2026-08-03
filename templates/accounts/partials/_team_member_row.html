@@ -4,7 +4,7 @@
       <span class="avatar" style="width:28px;height:28px;font-size:11px;">{{ membership.user.username.0|upper }}</span>
       <div>
         <div class="text-sm font-medium">{{ membership.user.get_full_name|default:membership.user.username }}</div>
-        <div class="text-sm text-muted">{{ membership.user.email }}</div>
+        <div class="text-sm text-muted">{{ membership.user.email }}{% if membership.user.discord_id %} · <span class="text-sm text-muted">@{{ membership.user.discord_id }}</span>{% endif %}</div>
       </div>
     </div>
   </td>

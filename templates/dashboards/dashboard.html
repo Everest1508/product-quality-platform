@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}
+
+{% block title %}Dashboard — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Dashboard <span class="count">{{ request.company.name }}</span></h1>
+</div>
+
+<div id="dashboard-content">
+  {% include "dashboards/partials/_dashboard_content.html" %}
+</div>
+{% endblock %}

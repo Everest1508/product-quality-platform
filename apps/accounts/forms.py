@@ -156,6 +156,10 @@ class TeamEditForm(forms.Form):
         "class": "form-input",
         "placeholder": "Email",
     }))
+    discord_id = forms.CharField(max_length=64, required=False, widget=forms.TextInput(attrs={
+        "class": "form-input",
+        "placeholder": "e.g. 123456789012345678",
+    }))
     role = forms.ChoiceField(
         choices=[(r.value, r.label) for r in Membership.Role if r.value != "owner"],
         widget=forms.Select(attrs={"class": "form-input"}),
@@ -178,7 +182,8 @@ class TeamEditForm(forms.Form):
         user.first_name = self.cleaned_data.get("first_name", "")
         user.last_name = self.cleaned_data.get("last_name", "")
         user.email = self.cleaned_data["email"]
-        user.save(update_fields=["first_name", "last_name", "email"])
+        user.discord_id = self.cleaned_data.get("discord_id", "")
+        user.save(update_fields=["first_name", "last_name", "email", "discord_id"])
         new_role = self.cleaned_data["role"]
         if self.membership.role != new_role:
             self.membership.role = new_role
@@ -189,7 +194,7 @@ class TeamEditForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email"]
+        fields = ["first_name", "last_name", "email", "discord_id"]
         widgets = {
             "first_name": forms.TextInput(attrs={
                 "class": "form-input",
@@ -199,5 +204,9 @@ class ProfileForm(forms.ModelForm):
             }),
             "email": forms.EmailInput(attrs={
                 "class": "form-input",
+            }),
+            "discord_id": forms.TextInput(attrs={
+                "class": "form-input",
+                "placeholder": "e.g. 123456789012345678",
             }),
         }

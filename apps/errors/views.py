@@ -4,7 +4,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
 from apps.errors.forms import ErrorCreateForm
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence
 from apps.tickets.models import Ticket
@@ -105,8 +106,18 @@ class ErrorStatusView(CompanyMemberRequiredMixin, View):
         new_status = request.POST.get("status")
         valid_choices = [c[0] for c in ErrorGroup.STATUS_CHOICES]
         if new_status in valid_choices:
+            old_status = error_group.status
             error_group.status = new_status
             error_group.save(update_fields=["status"])
+            log_activity(
+                request.company, "error_status_changed",
+                f"Error #{error_group.pk} status changed",
+                description=f"{old_status} → {new_status}",
+                actor=request.user,
+                target_content_type="error",
+                target_object_id=error_group.pk,
+                metadata={"product_id": error_group.product_id, "from": old_status, "to": new_status},
+            )
             messages.success(request, f"Status changed to '{new_status}'.")
 
         if request.headers.get("HX-Request") == "true":
@@ -126,6 +137,15 @@ class ErrorIgnoreView(CompanyMemberRequiredMixin, View):
         )
         error_group.status = "ignored"
         error_group.save(update_fields=["status"])
+        log_activity(
+            request.company, "error_ignored",
+            f"Error #{error_group.pk} ignored",
+            description=error_group.title,
+            actor=request.user,
+            target_content_type="error",
+            target_object_id=error_group.pk,
+            metadata={"product_id": error_group.product_id},
+        )
         messages.success(request, "Error group ignored.")
 
         if request.headers.get("HX-Request") == "true":
@@ -145,6 +165,15 @@ class ErrorResolveView(CompanyMemberRequiredMixin, View):
         )
         error_group.status = "resolved"
         error_group.save(update_fields=["status"])
+        log_activity(
+            request.company, "error_resolved",
+            f"Error #{error_group.pk} resolved",
+            description=error_group.title,
+            actor=request.user,
+            target_content_type="error",
+            target_object_id=error_group.pk,
+            metadata={"product_id": error_group.product_id},
+        )
         messages.success(request, "Error group resolved.")
 
         if request.headers.get("HX-Request") == "true":
@@ -198,6 +227,42 @@ class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
             product=error_group.product,
             linked_error_group=error_group,
         )
+        log_activity(
+            request.company, "ticket_created",
+            f"Ticket #{ticket.pk} created from error #{error_group.pk}",
+            description=ticket.title,
+            actor=request.user,
+            target_content_type="ticket",
+            target_object_id=ticket.pk,
+            metadata={"product_id": error_group.product_id, "error_group_id": error_group.pk},
+        )
         messages.success(request, f"Ticket #{ticket.pk} created from error #{error_group.pk}.")
         url_name, kwargs = _error_redirect(error_group)
         return redirect(url_name, **kwargs)
+
+
+class ErrorDeleteView(CompanyAdminRequiredMixin, View):
+    def post(self, request, pk):
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=pk,
+            company=request.company,
+        )
+        error_id = error_group.pk
+        product_id = error_group.product_id
+        title = error_group.title
+        error_group.delete()
+        log_activity(
+            request.company, "error_deleted",
+            f"Error #{error_id} deleted",
+            description=title,
+            actor=request.user,
+            target_content_type="error",
+            target_object_id=error_id,
+            metadata={"product_id": product_id},
+        )
+        messages.success(request, f"Error #{error_id} deleted.")
+
+        if product_id:
+            return redirect("products:product_errors", pk=product_id)
+        return redirect("errors:error_list")

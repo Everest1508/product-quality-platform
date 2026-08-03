@@ -5,7 +5,8 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
 from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketEditForm
 from apps.tickets.models import Ticket, TicketComment
@@ -139,6 +140,15 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.source = "manual"
             ticket.save()
             notify_ticket_created(ticket)
+            log_activity(
+                request.company, "ticket_created",
+                f"Ticket #{ticket.pk} created",
+                description=ticket.title,
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id},
+            )
             messages.success(request, f"Ticket #{ticket.pk} created.")
             return redirect("tickets:ticket_detail", pk=ticket.pk)
         return render(request, "tickets/ticket_form.html", {"form": form})
@@ -190,9 +200,19 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
                 return JsonResponse({"ok": False, "error": msg}, status=400)
             messages.error(request, msg)
         else:
-            old_status = ticket.get_status_display()
+            old_value = ticket.status
+            old_display = ticket.get_status_display()
             ticket.transition_to(new_status)
-            notify_ticket_status_changed(ticket, old_status)
+            notify_ticket_status_changed(ticket, old_display)
+            log_activity(
+                request.company, "ticket_status_changed",
+                f"Ticket #{ticket.pk} status changed",
+                description=f"{old_display} → {ticket.get_status_display()}",
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id, "from": old_value, "to": ticket.status},
+            )
             if is_ajax:
                 return JsonResponse({"ok": True, "status": ticket.status})
             messages.success(request, f"Status changed to '{ticket.get_status_display()}'.")
@@ -227,6 +247,18 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
 
         ticket.save(update_fields=["assigned_to", "status", "updated_at"])
         notify_ticket_assigned(ticket)
+        log_activity(
+            request.company, "ticket_assigned",
+            f"Ticket #{ticket.pk} assigned",
+            description=f"Assigned to {ticket.assigned_to or 'nobody'}",
+            actor=request.user,
+            target_content_type="ticket",
+            target_object_id=ticket.pk,
+            metadata={
+                "product_id": ticket.product_id,
+                "assigned_to": ticket.assigned_to_id,
+            },
+        )
         messages.success(request, f"Ticket assigned to {ticket.assigned_to or 'nobody'}.")
 
         if request.headers.get("HX-Request") == "true":
@@ -253,6 +285,15 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
                 author=request.user,
                 body=form.cleaned_data["body"],
             )
+            log_activity(
+                request.company, "ticket_commented",
+                f"Comment on ticket #{ticket.pk}",
+                description=form.cleaned_data["body"][:200],
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id},
+            )
             messages.success(request, "Comment added.")
 
         if request.headers.get("HX-Request") == "true":
@@ -262,3 +303,26 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             })
         url_name, kwargs = _ticket_redirect(ticket)
         return redirect(url_name, **kwargs)
+
+
+class TicketDeleteView(CompanyAdminRequiredMixin, View):
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        ticket_id = ticket.pk
+        product_id = ticket.product_id
+        title = ticket.title
+        ticket.delete()
+        log_activity(
+            request.company, "ticket_deleted",
+            f"Ticket #{ticket_id} deleted",
+            description=title,
+            actor=request.user,
+            target_content_type="ticket",
+            target_object_id=ticket_id,
+            metadata={"product_id": product_id},
+        )
+        messages.success(request, f"Ticket #{ticket_id} deleted.")
+
+        if product_id:
+            return redirect("products:product_tickets", pk=product_id)
+        return redirect("tickets:ticket_list")

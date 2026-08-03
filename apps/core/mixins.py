@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin as DjangoLoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect
 
 
@@ -15,6 +15,13 @@ class CompanyMemberRequiredMixin(LoginRequiredMixin):
         if not request.company:
             return redirect("accounts:company_setup")
         return response
+
+
+class CompanyAdminRequiredMixin(CompanyMemberRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.company_role not in ("owner", "admin"):
+            return HttpResponseForbidden("Only company admins can perform this action.")
+        return super().dispatch(request, *args, **kwargs)
 
 
 class HTMXRequiredMixin:
