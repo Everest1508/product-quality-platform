@@ -6,7 +6,7 @@
         Errors
         {% if product.error_count %}<span class="n">{{ product.error_count }}</span>{% endif %}
       </a>
-      <a href="{% url 'products:product_tickets' pk=product.pk %}" class="{% if '/tickets' in request.path %}active{% endif %}">
+      <a href="{% url 'products:product_board' pk=product.pk %}" class="{% if '/tickets' in request.path %}active{% endif %}">
         Tickets
         {% if product.ticket_count %}<span class="n">{{ product.ticket_count }}</span>{% endif %}
       </a>

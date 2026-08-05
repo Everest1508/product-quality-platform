@@ -2,7 +2,7 @@
 {% block title %}New Ticket — {{ product.name }}{% endblock %}
 {% block content %}
 <div class="head">
-  <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
+  <a href="{% url 'products:product_board' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
   <h1>New Ticket</h1>
 </div>
 <div class="card" style="max-width:640px;">
@@ -36,9 +36,23 @@
         </select>
       </div>
     </div>
+    <div class="form-group">
+      <label>Assignees <span class="text-sm text-muted">(hold Ctrl to select multiple)</span></label>
+      <select name="assignees" class="form-input" multiple size="4">
+        {% for member in form.fields.assignees.queryset %}
+        <option value="{{ member.pk }}" {% if member.pk|stringformat:"d" in form.assignees.value %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+        {% endfor %}
+      </select>
+      {% if form.assignees.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.assignees.errors.0 }}</p>{% endif %}
+    </div>
+    <div class="form-group">
+      <label>Deadline <span class="text-sm text-muted">(optional)</span></label>
+      <input type="datetime-local" name="deadline" value="{{ form.deadline.value|date:'Y-m-d\TH:i' }}" class="form-input">
+      {% if form.deadline.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.deadline.errors.0 }}</p>{% endif %}
+    </div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button type="submit" class="btn btn-primary">Create Ticket</button>
-      <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn">Cancel</a>
+      <a href="{% url 'products:product_board' pk=product.pk %}" class="btn">Cancel</a>
     </div>
   </form>
 </div>

@@ -108,9 +108,10 @@ class TicketViewTest(TestCase):
         )
         response = self.client.post(
             reverse("tickets:ticket_assign", kwargs={"pk": ticket.pk}),
-            {"assigned_to": self.user.pk},
+            {"assignees": [self.user.pk]},
         )
         ticket.refresh_from_db()
+        self.assertEqual(list(ticket.assignees.all()), [self.user])
         self.assertEqual(ticket.assigned_to, self.user)
         self.assertEqual(ticket.status, "assigned")
 
@@ -119,38 +120,81 @@ class TicketViewTest(TestCase):
             company=self.company, title="Test", created_by=self.user,
             assigned_to=self.user, status="assigned",
         )
+        ticket.assignees.set([self.user])
         response = self.client.post(
             reverse("tickets:ticket_assign", kwargs={"pk": ticket.pk}),
-            {"assigned_to": ""},
+            {"assignees": []},
         )
         ticket.refresh_from_db()
+        self.assertEqual(list(ticket.assignees.all()), [])
         self.assertIsNone(ticket.assigned_to)
         self.assertEqual(ticket.status, "open")
 
-    def test_add_comment(self):
+    def test_multi_assign_ticket(self):
+        other = User.objects.create_user("bob", "bob@test.com", "pass1234")
+        Membership.objects.create(user=other, company=self.company, role="developer")
         ticket = Ticket.objects.create(
             company=self.company, title="Test", created_by=self.user,
         )
         response = self.client.post(
-            reverse("tickets:ticket_comment", kwargs={"pk": ticket.pk}),
-            {"body": "This is a comment"},
+            reverse("tickets:ticket_assign", kwargs={"pk": ticket.pk}),
+            {"assignees": [self.user.pk, other.pk]},
         )
-        self.assertEqual(TicketComment.objects.count(), 1)
-        comment = TicketComment.objects.first()
-        self.assertEqual(comment.body, "This is a comment")
-        self.assertEqual(comment.author, self.user)
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.assignees.count(), 2)
+        self.assertEqual(ticket.assigned_to, self.user)
 
-    def test_htmx_comment(self):
+    def test_overdue_property(self):
+        from django.utils import timezone
+        from datetime import timedelta
         ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user,
+            company=self.company, title="Late", created_by=self.user,
+            deadline=timezone.now() - timedelta(hours=1), status="in_progress",
         )
-        response = self.client.post(
-            reverse("tickets:ticket_comment", kwargs={"pk": ticket.pk}),
-            {"body": "HTMX comment"},
-            HTTP_HX_REQUEST="true",
-        )
+        self.assertTrue(ticket.is_overdue)
+        ticket.status = "resolved"
+        ticket.save(update_fields=["status", "updated_at"])
+        self.assertFalse(ticket.is_overdue)
+
+    def test_create_ticket_with_assignees_and_deadline(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        bob = User.objects.create_user("bob", "bob@test.com", "pass1234")
+        Membership.objects.create(user=bob, company=self.company, role="developer")
+        deadline = timezone.now() + timedelta(days=2)
+        response = self.client.post(reverse("tickets:ticket_create"), {
+            "title": "With deadline",
+            "ticket_type": "bug",
+            "priority": "high",
+            "product": self.product.pk,
+            "assignees": [self.user.pk, bob.pk],
+            "deadline": deadline.isoformat(),
+        })
+        self.assertEqual(response.status_code, 302)
+        ticket = Ticket.objects.get(title="With deadline")
+        self.assertEqual(ticket.assignees.count(), 2)
+        self.assertEqual(ticket.deadline, deadline)
+
+    def test_kanban_is_default(self):
+        response = self.client.get("/tickets/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("HTMX comment", response.content.decode())
+        self.assertTemplateUsed(response, "tickets/ticket_kanban.html")
+
+    def test_kanban_filters_overdue(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        Ticket.objects.create(
+            company=self.company, title="Late", created_by=self.user,
+            deadline=timezone.now() - timedelta(hours=1), status="in_progress",
+        )
+        Ticket.objects.create(
+            company=self.company, title="On time", created_by=self.user, status="open",
+        )
+        response = self.client.get(reverse("tickets:ticket_board") + "?overdue=1")
+        total = 0
+        for col in response.context["columns"]:
+            total += len(col["tickets"])
+        self.assertEqual(total, 1)
 
     def test_filter_by_status(self):
         Ticket.objects.create(company=self.company, title="Open", status="open")
@@ -172,7 +216,7 @@ class TicketDeleteTest(TestCase):
     def test_admin_can_delete_ticket(self):
         self.client.login(username="owner", password="pass1234")
         response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": self.ticket.pk}))
-        self.assertRedirects(response, reverse("tickets:ticket_list"))
+        self.assertRedirects(response, reverse("tickets:ticket_board"))
         self.assertEqual(Ticket.objects.count(), 0)
 
     def test_non_admin_cannot_delete_ticket(self):

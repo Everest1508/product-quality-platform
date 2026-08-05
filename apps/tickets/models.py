@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.core.models import TenantScopedModel
 
@@ -72,6 +73,16 @@ class Ticket(TenantScopedModel):
         blank=True,
         related_name="assigned_tickets",
     )
+    assignees = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="tickets_assigned",
+        blank=True,
+    )
+    deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Optional due date. Overdue tickets are highlighted.",
+    )
     linked_error_group = models.ForeignKey(
         "ingestion.ErrorGroup",
         on_delete=models.SET_NULL,
@@ -95,11 +106,26 @@ class Ticket(TenantScopedModel):
     def valid_next_statuses(self):
         return [(v, l) for v, l in Ticket.Status.choices if self.can_transition_to(v)]
 
+    @property
+    def is_overdue(self):
+        return bool(
+            self.deadline
+            and self.status not in (Ticket.Status.RESOLVED, Ticket.Status.CLOSED)
+            and self.deadline < timezone.now()
+        )
+
     def transition_to(self, new_status):
         if not self.can_transition_to(new_status):
             raise ValueError(f"'{new_status}' is not a valid status.")
         self.status = new_status
         self.save(update_fields=["status", "updated_at"])
+
+    def set_assignees(self, users):
+        """Replace the assignee set and keep the primary ``assigned_to`` in sync."""
+        self.assignees.set(users)
+        primary = self.assignees.order_by("pk").first()
+        self.assigned_to = primary
+        self.save(update_fields=["assigned_to", "updated_at"])
 
 
 class TicketComment(TenantScopedModel):

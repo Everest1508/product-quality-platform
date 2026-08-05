@@ -24,14 +24,17 @@
     </span>
   </td>
   <td onclick="window.location='{% url 'tickets:ticket_detail' pk=ticket.pk %}'">
-    {% if ticket.assigned_to %}
-    <span class="assignee">
-      <span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>
-      {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
+    {% if ticket.assignees.all %}
+    <span class="assignee-list" style="display:flex;gap:4px;">
+      {% for a in ticket.assignees.all|slice:":3" %}
+      <span class="avatar avatar-sm" title="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);">{{ a.username.0|upper }}</span>
+      {% endfor %}
+      {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
     </span>
     {% else %}
     <span class="assignee unassigned">Unassigned</span>
     {% endif %}
+    {% if ticket.is_overdue %}<span class="pill overdue" style="margin-left:6px;">Overdue</span>{% endif %}
   </td>
   <td class="date" onclick="window.location='{% url 'tickets:ticket_detail' pk=ticket.pk %}'">{{ ticket.updated_at|timesince }} ago</td>
   <td>

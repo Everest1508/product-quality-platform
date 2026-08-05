@@ -12,7 +12,7 @@
       <a href="{% url 'products:product_errors' pk=product.pk %}" class="{% if 'errors' in request.path and 'product_error' in request.path or request.resolver_match.url_name == 'product_errors' or request.resolver_match.url_name == 'product_error_detail' %}active{% endif %}">
         Errors{% if product.error_count %}<span class="n">{{ product.error_count }}</span>{% endif %}
       </a>
-      <a href="{% url 'products:product_tickets' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_tickets' or request.resolver_match.url_name == 'product_ticket_create' or request.resolver_match.url_name == 'product_ticket_detail' %}active{% endif %}">
+      <a href="{% url 'products:product_board' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_board' or request.resolver_match.url_name == 'product_ticket_kanban' or request.resolver_match.url_name == 'product_tickets' or request.resolver_match.url_name == 'product_ticket_create' or request.resolver_match.url_name == 'product_ticket_detail' %}active{% endif %}">
         Tickets{% if product.ticket_count %}<span class="n">{{ product.ticket_count }}</span>{% endif %}
       </a>
       <a href="{% url 'products:product_surveys' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_surveys' or request.resolver_match.url_name == 'product_survey_create' %}active{% endif %}">
@@ -25,6 +25,7 @@
     <div class="nav-label">Workspace</div>
     <div class="nav">
       <a href="{% url 'dashboards:index' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
+      <a href="{% url 'tickets:ticket_board' %}" class="{% if request.resolver_match.url_name == 'ticket_board' or request.resolver_match.url_name == 'ticket_kanban' or request.resolver_match.url_name == 'ticket_list' or request.resolver_match.url_name == 'ticket_create' or request.resolver_match.url_name == 'ticket_detail' %}active{% endif %}">Tickets</a>
       <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
       <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
       <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>

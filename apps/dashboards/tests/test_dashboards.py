@@ -137,6 +137,7 @@ class UserDashboardServiceTest(TestCase):
             company=self.company, product=self.product_a,
             title="Mine", status="in_progress", assigned_to=self.dev,
         )
+        assigned.assignees.set([self.dev])
         Ticket.objects.create(
             company=self.company, product=self.product_b,
             title="Not mine", status="open", assigned_to=self.owner,

@@ -7,9 +7,9 @@
   <h1>#{{ ticket.pk }} <span class="count">{{ ticket.title }}</span></h1>
   <div class="head-actions">
     {% if ticket.product %}
-    <a href="{% url 'products:product_tickets' pk=ticket.product.pk %}" class="btn">← {{ ticket.product.name }} tickets</a>
+    <a href="{% url 'products:product_board' pk=ticket.product.pk %}" class="btn">← {{ ticket.product.name }} tickets</a>
     {% else %}
-    <a href="{% url 'tickets:ticket_list' %}" class="btn">← Tickets</a>
+    <a href="{% url 'tickets:ticket_board' %}" class="btn">← Tickets</a>
     {% endif %}
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
     <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
@@ -95,6 +95,12 @@
             {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
           </div>
         </div>
+        {% if ticket.deadline %}
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+          <span class="text-sm text-muted">Deadline</span>
+          <span class="text-sm{% if ticket.is_overdue %} overdue-text{% endif %}">{{ ticket.deadline|date:"M d, Y H:i" }}{% if ticket.is_overdue %} — overdue{% endif %}</span>
+        </div>
+        {% endif %}
         <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
           <span class="text-sm text-muted">Source</span>
           <span class="text-sm">{{ ticket.get_source_display }}</span>

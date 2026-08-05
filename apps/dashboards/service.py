@@ -297,7 +297,7 @@ def _build_attention(company, product_ids, is_privileged):
             .order_by("updated_at")[:5]
         ),
         "unassigned_tickets": list(
-            ticket_qs.filter(assigned_to__isnull=True)
+            ticket_qs.filter(assignees__isnull=True)
             .exclude(status__in=["resolved", "closed"])
             .select_related("product")
             .order_by("-updated_at")[:5]
@@ -336,13 +336,13 @@ def get_user_dashboard_data(user, company):
     resolved_errors = error_scope.filter(status="resolved").count()
 
     my_work = list(
-        ticket_scope.filter(assigned_to=user)
+        ticket_scope.filter(assignees=user)
         .exclude(status__in=["resolved", "closed"])
         .select_related("product")
         .order_by("-updated_at")[:10]
     )
     my_work_count = (
-        ticket_scope.filter(assigned_to=user)
+        ticket_scope.filter(assignees=user)
         .exclude(status__in=["resolved", "closed"])
         .count()
     )

@@ -317,9 +317,18 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
             qs = qs.filter(priority=priority)
         assigned = request.GET.get("assigned")
         if assigned == "me":
-            qs = qs.filter(assigned_to=request.user)
+            qs = qs.filter(assignees=request.user)
         elif assigned == "unassigned":
-            qs = qs.filter(assigned_to__isnull=True)
+            qs = qs.filter(assignees__isnull=True)
+        elif assigned:
+            qs = qs.filter(assignees__id=assigned)
+        overdue = request.GET.get("overdue")
+        if overdue:
+            from django.utils import timezone
+            qs = qs.filter(
+                deadline__isnull=False,
+                deadline__lt=timezone.now(),
+            ).exclude(status__in=["resolved", "closed"])
         search = request.GET.get("q", "").strip()
         if search:
             qs = qs.filter(title__icontains=search)
@@ -340,12 +349,14 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
             "page": page, "product": product, "members": members,
             "current_status": status, "current_type": ticket_type,
             "current_priority": priority, "current_assigned": assigned,
+            "current_overdue": overdue,
             "search": search, "current_sort": sort,
         })
 
 
 class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
+        from django.utils import timezone
         from apps.tickets.models import Ticket
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
@@ -355,15 +366,50 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
         if search:
             qs = qs.filter(title__icontains=search)
 
+        ticket_type = request.GET.get("type")
+        if ticket_type:
+            qs = qs.filter(ticket_type=ticket_type)
+
+        priority = request.GET.get("priority")
+        if priority:
+            qs = qs.filter(priority=priority)
+
+        assigned = request.GET.get("assigned")
+        if assigned == "me":
+            qs = qs.filter(assignees=request.user)
+        elif assigned == "unassigned":
+            qs = qs.filter(assignees__isnull=True)
+        elif assigned:
+            qs = qs.filter(assignees__id=assigned)
+
+        overdue = request.GET.get("overdue")
+        if overdue:
+            qs = qs.filter(
+                deadline__isnull=False,
+                deadline__lt=timezone.now(),
+            ).exclude(status__in=["resolved", "closed"])
+
         columns = []
         for status_val, status_label in Ticket.Status.choices:
             col_qs = qs.filter(status=status_val).order_by("-priority", "-created_at")
             columns.append({"key": status_val, "label": status_label, "tickets": col_qs})
 
+        members = (
+            __import__("django.contrib.auth", fromlist=["get_user_model"])
+            .get_user_model()
+            .objects.filter(memberships__company=request.company)
+            .order_by("username")
+        )
+
         return render(request, "products/product_ticket_kanban.html", {
             "product": product,
             "columns": columns,
+            "members": members,
             "search": search,
+            "current_type": ticket_type,
+            "current_priority": priority,
+            "current_assigned": assigned,
+            "current_overdue": overdue,
             "total": qs.count(),
             "status_choices": Ticket.Status.choices,
         })
@@ -389,6 +435,7 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.product = product
             ticket.source = "manual"
             ticket.save()
+            ticket.set_assignees(form.cleaned_data["assignees"])
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",

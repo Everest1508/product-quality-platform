@@ -2,7 +2,7 @@
 {% block title %}{{ ticket.title }} — {{ product.name }}{% endblock %}
 {% block content %}
 <div class="head">
-  <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
+  <a href="{% url 'products:product_board' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
   <h1 style="font-size:17px;">#{{ ticket.pk }} {{ ticket.title }}</h1>
   <div class="head-actions">
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
@@ -42,6 +42,12 @@
         {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
       </span>
     </div>
+    {% if ticket.deadline %}
+    <div class="text-sm mb-4">
+      <span class="text-muted">Deadline:</span>
+      <span class="{% if ticket.is_overdue %}overdue-text{% endif %}">{{ ticket.deadline|date:"M d, Y H:i" }}{% if ticket.is_overdue %} — overdue{% endif %}</span>
+    </div>
+    {% endif %}
     <div class="text-sm mb-4"><span class="text-muted">Status:</span>
       <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}" style="display:inline;">
         {% csrf_token %}

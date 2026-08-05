@@ -5,7 +5,7 @@
     <div class="text-sm truncate">
       <a href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}" style="color:inherit;">#{{ t.pk }} {{ t.title|truncatechars:42 }}</a>
     </div>
-    <div class="date">{% if t.product %}{{ t.product.name }} · {% endif %}{{ t.updated_at|timesince }} ago</div>
+    <div class="date">{% if t.product %}{{ t.product.name }} · {% endif %}{{ t.updated_at|timesince }} ago{% if t.is_overdue %} · <span class="overdue-text">overdue</span>{% endif %}</div>
   </div>
   <div>
     {% if t.status == 'open' %}<span class="pill open">Open</span>
@@ -13,6 +13,7 @@
     {% elif t.status == 'in_progress' %}<span class="pill progress">In progress</span>
     {% elif t.status == 'testing' %}<span class="pill testing">Testing</span>
     {% endif %}
+    {% if t.is_overdue %}<span class="pill overdue">Overdue</span>{% endif %}
   </div>
 </div>
 {% empty %}
@@ -20,6 +21,6 @@
 {% endfor %}
 {% if my_work_count > 10 %}
 <div style="margin-top:8px;text-align:center;">
-  <a href="{% url 'tickets:ticket_list' %}?assigned=me" class="text-sm" style="color:var(--blue);">View all {{ my_work_count }} of my tickets</a>
+  <a href="{% url 'tickets:ticket_board' %}?assigned=me" class="text-sm" style="color:var(--blue);">View all {{ my_work_count }} of my tickets</a>
 </div>
 {% endif %}

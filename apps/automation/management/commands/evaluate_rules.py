@@ -89,6 +89,8 @@ class Command(BaseCommand):
                         assigned_to=rule.assign_to,
                         linked_error_group=eg,
                     )
+                    if rule.assign_to:
+                        ticket.assignees.set([rule.assign_to])
                     self.stdout.write(
                         self.style.SUCCESS(
                             f"Created ticket #{ticket.pk} for error group #{eg.pk} "

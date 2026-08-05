@@ -31,6 +31,22 @@ def _mention(user):
     return None
 
 
+def _assignee_names(ticket):
+    assignees = list(ticket.assignees.all())
+    if not assignees and ticket.assigned_to:
+        assignees = [ticket.assigned_to]
+    return assignees
+
+
+def _mention_all(users):
+    mentions = [m for m in (_mention(u) for u in users) if m]
+    return " ".join(mentions)
+
+
+def _format_names(users):
+    return ", ".join(u.get_full_name() or u.username for u in users) or "Nobody"
+
+
 def notify_ticket_created(ticket):
     product = ticket.product
     if not product or not product.discord_webhook_url:
@@ -43,16 +59,17 @@ def notify_ticket_created(ticket):
     ]
     if ticket.created_by:
         fields.append({"name": "Created by", "value": ticket.created_by.get_full_name() or ticket.created_by.username, "inline": True})
-    if ticket.assigned_to:
-        fields.append({"name": "Assigned to", "value": ticket.assigned_to.get_full_name() or ticket.assigned_to.username, "inline": True})
+    assignees = _assignee_names(ticket)
+    if assignees:
+        fields.append({"name": "Assigned to", "value": _format_names(assignees), "inline": True})
     embed = {
         "title": f"Ticket #{ticket.pk} Created",
         "color": 0x5865F2,
         "fields": fields,
         "timestamp": ticket.created_at.isoformat(),
     }
-    mention = _mention(ticket.assigned_to)
-    content = f"{mention} you have been assigned ticket #{ticket.pk}: {ticket.title}" if mention else ""
+    mentions = _mention_all(assignees)
+    content = f"{mentions} you have been assigned ticket #{ticket.pk}: {ticket.title}" if mentions else ""
     send_discord_webhook(product.discord_webhook_url, embed, content=content)
 
 

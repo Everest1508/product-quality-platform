@@ -1,8 +1,12 @@
-{% if ticket.assigned_to %}
-<span class="assignee">
-  <span class="avatar">{{ ticket.assigned_to.username.0|upper }}</span>
-  {{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}
-</span>
+{% if ticket.assignees.all %}
+<div class="assignee-list" style="display:flex;flex-wrap:wrap;gap:6px;">
+  {% for a in ticket.assignees.all %}
+  <span class="assignee">
+    <span class="avatar">{{ a.username.0|upper }}</span>
+    {{ a.get_full_name|default:a.username }}
+  </span>
+  {% endfor %}
+</div>
 {% else %}
 <span class="assignee unassigned">Nobody</span>
 {% endif %}
@@ -10,12 +14,15 @@
       hx-post="{% url 'tickets:ticket_assign' pk=ticket.pk %}"
       hx-target="#detail-assignee"
       hx-swap="innerHTML"
-      style="margin-top:6px;">
+      style="margin-top:8px;">
   {% csrf_token %}
-  <select name="assigned_to" class="form-input" style="font-size:12px;padding:4px 6px;" hx-trigger="change" hx-post="{% url 'tickets:ticket_assign' pk=ticket.pk %}" hx-target="#detail-assignee" hx-swap="innerHTML">
-    <option value="">Unassigned</option>
+  <div style="display:flex;flex-wrap:wrap;gap:4px 12px;">
     {% for member in members %}
-    <option value="{{ member.pk }}" {% if ticket.assigned_to_id == member.pk %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
+      <input type="checkbox" name="assignees" value="{{ member.pk }}" {% if member in ticket.assignees.all %}checked{% endif %}>
+      {{ member.get_full_name|default:member.username }}
+    </label>
     {% endfor %}
-  </select>
+  </div>
+  <button type="submit" class="btn btn-sm" style="margin-top:8px;">Save assignees</button>
 </form>

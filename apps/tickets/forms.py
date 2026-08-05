@@ -6,7 +6,8 @@ from apps.tickets.models import Ticket
 class TicketCreateForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ["title", "description", "ticket_type", "priority", "product"]
+        fields = ["title", "description", "ticket_type", "priority", "product",
+                  "assignees", "deadline"]
         widgets = {
             "title": forms.TextInput(attrs={
                 "class": "form-input",
@@ -20,27 +21,51 @@ class TicketCreateForm(forms.ModelForm):
             "ticket_type": forms.Select(attrs={"class": "form-input"}),
             "priority": forms.Select(attrs={"class": "form-input"}),
             "product": forms.Select(attrs={"class": "form-input"}),
+            "assignees": forms.SelectMultiple(attrs={
+                "class": "form-input",
+                "size": 6,
+            }),
+            "deadline": forms.DateTimeInput(attrs={
+                "class": "form-input",
+                "type": "datetime-local",
+            }),
         }
 
     def __init__(self, *args, company=None, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
+            from django.contrib.auth import get_user_model
             from apps.products.models import Product
             self.fields["product"].queryset = Product.objects.filter(company=company)
+            self.fields["assignees"].queryset = (
+                get_user_model().objects.filter(memberships__company=company).order_by("username")
+            )
         else:
             self.fields["product"].queryset = Ticket._meta.get_field("product").remote_field.model.objects.none()
+            self.fields["assignees"].queryset = (
+                Ticket._meta.get_field("assignees").remote_field.model.objects.none()
+            )
 
 
 class TicketEditForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ["title", "description", "ticket_type", "priority", "status"]
+        fields = ["title", "description", "ticket_type", "priority", "status",
+                  "assignees", "deadline"]
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-input"}),
             "description": forms.Textarea(attrs={"class": "form-input", "rows": 5}),
             "ticket_type": forms.Select(attrs={"class": "form-input"}),
             "priority": forms.Select(attrs={"class": "form-input"}),
             "status": forms.Select(attrs={"class": "form-input"}),
+            "assignees": forms.SelectMultiple(attrs={
+                "class": "form-input",
+                "size": 6,
+            }),
+            "deadline": forms.DateTimeInput(attrs={
+                "class": "form-input",
+                "type": "datetime-local",
+            }),
         }
 
 

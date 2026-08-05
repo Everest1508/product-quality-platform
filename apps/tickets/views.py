@@ -3,10 +3,12 @@ from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views import View
 
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
+from apps.products.models import Product
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
 from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketEditForm
 from apps.tickets.models import Ticket, TicketComment
@@ -51,11 +53,24 @@ class TicketListView(CompanyMemberRequiredMixin, View):
         if priority:
             qs = qs.filter(priority=priority)
 
+        product_id = request.GET.get("product")
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+
         assigned = request.GET.get("assigned")
         if assigned == "me":
-            qs = qs.filter(assigned_to=request.user)
+            qs = qs.filter(assignees=request.user)
         elif assigned == "unassigned":
-            qs = qs.filter(assigned_to__isnull=True)
+            qs = qs.filter(assignees__isnull=True)
+        elif assigned:
+            qs = qs.filter(assignees__id=assigned)
+
+        overdue = request.GET.get("overdue")
+        if overdue:
+            qs = qs.filter(
+                deadline__isnull=False,
+                deadline__lt=timezone.now(),
+            ).exclude(status__in=["resolved", "closed"])
 
         search = request.GET.get("q", "").strip()
         if search:
@@ -71,6 +86,7 @@ class TicketListView(CompanyMemberRequiredMixin, View):
         members = User.objects.filter(
             memberships__company=request.company
         ).order_by("username")
+        products = Product.objects.filter(company=request.company).order_by("name")
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_ticket_list_body.html", {
@@ -80,10 +96,13 @@ class TicketListView(CompanyMemberRequiredMixin, View):
         return render(request, "tickets/ticket_list.html", {
             "page": page,
             "members": members,
+            "products": products,
             "current_status": status,
             "current_type": ticket_type,
             "current_priority": priority,
             "current_assigned": assigned,
+            "current_overdue": overdue,
+            "current_product": product_id,
             "search": search,
             "current_sort": sort,
             "status_choices": Ticket.Status.choices,
@@ -106,6 +125,25 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
         if priority:
             qs = qs.filter(priority=priority)
 
+        product_id = request.GET.get("product")
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+
+        assigned = request.GET.get("assigned")
+        if assigned == "me":
+            qs = qs.filter(assignees=request.user)
+        elif assigned == "unassigned":
+            qs = qs.filter(assignees__isnull=True)
+        elif assigned:
+            qs = qs.filter(assignees__id=assigned)
+
+        overdue = request.GET.get("overdue")
+        if overdue:
+            qs = qs.filter(
+                deadline__isnull=False,
+                deadline__lt=timezone.now(),
+            ).exclude(status__in=["resolved", "closed"])
+
         columns = []
         for status_val, status_label in Ticket.Status.choices:
             col_qs = qs.filter(status=status_val).order_by("-priority", "-created_at")
@@ -114,13 +152,18 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
         members = User.objects.filter(
             memberships__company=request.company
         ).order_by("username")
+        products = Product.objects.filter(company=request.company).order_by("name")
 
         return render(request, "tickets/ticket_kanban.html", {
             "columns": columns,
             "members": members,
+            "products": products,
             "search": search,
             "current_type": ticket_type,
             "current_priority": priority,
+            "current_product": product_id,
+            "current_assigned": assigned,
+            "current_overdue": overdue,
             "total": qs.count(),
             "status_choices": Ticket.Status.choices,
         })
@@ -139,6 +182,7 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.created_by = request.user
             ticket.source = "manual"
             ticket.save()
+            ticket.set_assignees(form.cleaned_data["assignees"])
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",
@@ -233,33 +277,45 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
 class TicketAssignView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
-        user_id = request.POST.get("assigned_to")
+        assignee_ids = request.POST.getlist("assignees")
 
-        if user_id:
-            assignee = get_object_or_404(User, pk=user_id, memberships__company=request.company)
-            ticket.assigned_to = assignee
+        old_assignees = set(ticket.assignees.values_list("pk", flat=True))
+
+        if assignee_ids:
+            assignees = User.objects.filter(
+                pk__in=assignee_ids,
+                memberships__company=request.company,
+            )
+            ticket.set_assignees(assignees)
             if ticket.status == "open":
                 ticket.status = "assigned"
+                ticket.save(update_fields=["status", "updated_at"])
         else:
-            ticket.assigned_to = None
+            ticket.set_assignees([])
             if ticket.status == "assigned":
                 ticket.status = "open"
+                ticket.save(update_fields=["status", "updated_at"])
 
-        ticket.save(update_fields=["assigned_to", "status", "updated_at"])
+        new_assignees = set(ticket.assignees.values_list("pk", flat=True))
+        names = ", ".join(
+            ticket.assignees.order_by("username").values_list("username", flat=True)
+        ) or "nobody"
         notify_ticket_assigned(ticket)
         log_activity(
             request.company, "ticket_assigned",
             f"Ticket #{ticket.pk} assigned",
-            description=f"Assigned to {ticket.assigned_to or 'nobody'}",
+            description=f"Assigned to {names}",
             actor=request.user,
             target_content_type="ticket",
             target_object_id=ticket.pk,
             metadata={
                 "product_id": ticket.product_id,
-                "assigned_to": ticket.assigned_to_id,
+                "assigned_to": ",".join(map(str, sorted(new_assignees))),
+                "from": ",".join(map(str, sorted(old_assignees))),
+                "to": ",".join(map(str, sorted(new_assignees))),
             },
         )
-        messages.success(request, f"Ticket assigned to {ticket.assigned_to or 'nobody'}.")
+        messages.success(request, f"Ticket assigned to {names}.")
 
         if request.headers.get("HX-Request") == "true":
             members = User.objects.filter(
@@ -324,5 +380,5 @@ class TicketDeleteView(CompanyAdminRequiredMixin, View):
         messages.success(request, f"Ticket #{ticket_id} deleted.")
 
         if product_id:
-            return redirect("products:product_tickets", pk=product_id)
-        return redirect("tickets:ticket_list")
+            return redirect("products:product_board", pk=product_id)
+        return redirect("tickets:ticket_board")
