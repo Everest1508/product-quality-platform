@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/", views.TicketDetailView.as_view(), name="ticket_detail"),
     path("<int:pk>/status/", views.TicketStatusView.as_view(), name="ticket_status"),
     path("<int:pk>/assign/", views.TicketAssignView.as_view(), name="ticket_assign"),
+    path("<int:pk>/deadline/", views.TicketDeadlineView.as_view(), name="ticket_deadline"),
     path("<int:pk>/comment/", views.TicketCommentView.as_view(), name="ticket_comment"),
     path("<int:pk>/delete/", views.TicketDeleteView.as_view(), name="ticket_delete"),
 ]

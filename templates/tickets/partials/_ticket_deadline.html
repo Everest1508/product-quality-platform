@@ -1,0 +1,19 @@
+{% if ticket.deadline %}
+<div class="text-sm{% if ticket.is_overdue %} overdue-text{% endif %}">{{ ticket.deadline|date:"M d, Y H:i" }}{% if ticket.is_overdue %} — overdue{% endif %}</div>
+{% else %}
+<div class="text-sm text-muted">No deadline</div>
+{% endif %}
+<form method="post" action="{% url 'tickets:ticket_deadline' pk=ticket.pk %}"
+      hx-post="{% url 'tickets:ticket_deadline' pk=ticket.pk %}"
+      hx-target="#detail-deadline"
+      hx-swap="innerHTML"
+      style="margin-top:6px;">
+  {% csrf_token %}
+  <input type="datetime-local" name="deadline" class="form-input" style="font-size:12px;padding:4px 6px;width:max-content;max-width:100%;"
+         value="{{ ticket.deadline|date:'Y-m-d\TH:i' }}"
+         hx-trigger="change"
+         hx-post="{% url 'tickets:ticket_deadline' pk=ticket.pk %}"
+         hx-target="#detail-deadline"
+         hx-swap="innerHTML">
+  {% if deadline_error %}<div style="color:var(--red);font-size:11px;margin-top:4px;">{{ deadline_error.0 }}</div>{% endif %}
+</form>

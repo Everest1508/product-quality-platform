@@ -202,6 +202,51 @@ class TicketViewTest(TestCase):
         response = self.client.get(reverse("tickets:ticket_list") + "?status=open")
         self.assertEqual(len(response.context["page"].object_list), 1)
 
+    def test_set_deadline(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        ticket = Ticket.objects.create(
+            company=self.company, title="Test", created_by=self.user,
+        )
+        deadline = timezone.now() + timedelta(days=2)
+        response = self.client.post(
+            reverse("tickets:ticket_deadline", kwargs={"pk": ticket.pk}),
+            {"deadline": deadline.isoformat()},
+        )
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.deadline, deadline)
+
+    def test_clear_deadline(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        ticket = Ticket.objects.create(
+            company=self.company, title="Test", created_by=self.user,
+            deadline=timezone.now() + timedelta(days=2),
+        )
+        response = self.client.post(
+            reverse("tickets:ticket_deadline", kwargs={"pk": ticket.pk}),
+            {"deadline": ""},
+        )
+        ticket.refresh_from_db()
+        self.assertIsNone(ticket.deadline)
+
+    def test_deadline_htmx(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        ticket = Ticket.objects.create(
+            company=self.company, title="Test", created_by=self.user,
+        )
+        deadline = timezone.now() + timedelta(days=1)
+        response = self.client.post(
+            reverse("tickets:ticket_deadline", kwargs={"pk": ticket.pk}),
+            {"deadline": deadline.isoformat()},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tickets/partials/_ticket_deadline.html")
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.deadline, deadline)
+
 
 class TicketDeleteTest(TestCase):
     def setUp(self):

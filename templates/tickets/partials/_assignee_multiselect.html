@@ -1,0 +1,114 @@
+<style>
+  [x-cloak]{display:none!important;}
+  .assignee-dd{position:relative;min-width:220px;}
+  .assignee-dd__native{display:none;}
+  .assignee-dd__trigger{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:13.5px;color:var(--text);min-height:38px;text-align:left;}
+  .assignee-dd__trigger:focus-within,.assignee-dd.open .assignee-dd__trigger{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg);}
+  .assignee-dd__trigger svg{margin-left:auto;flex-shrink:0;color:var(--muted);transition:transform .15s;}
+  .assignee-dd.open .assignee-dd__trigger svg{transform:rotate(180deg);}
+  .assignee-dd__chips{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0;}
+  .assignee-dd__chip{display:inline-flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;}
+  .assignee-dd__chip button{border:none;background:none;padding:0;margin:0;line-height:1;color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;}
+  .assignee-dd__chip button:hover{color:var(--red);}
+  .assignee-dd__placeholder{color:var(--muted);flex:1;min-width:0;}
+  .assignee-dd__panel{position:absolute;z-index:60;top:calc(100% + 4px);left:0;min-width:240px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.10);overflow:hidden;}
+  .assignee-dd__search{width:100%;padding:8px 10px;border:none;border-bottom:1px solid var(--border);font-size:13.5px;color:var(--text);background:#fff;outline:none;}
+  .assignee-dd__search:focus{box-shadow:inset 0 -2px 0 0 var(--blue);}
+  .assignee-dd__list{max-height:200px;overflow-y:auto;padding:4px 0;}
+  .assignee-dd__option{display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:13.5px;color:var(--text);cursor:pointer;}
+  .assignee-dd__option:hover{background:var(--panel);}
+  .assignee-dd__option input{accent-color:var(--blue);cursor:pointer;flex-shrink:0;}
+  .assignee-dd__option span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .assignee-dd__empty{padding:12px 10px;color:var(--muted);font-size:13px;text-align:center;}
+</style>
+
+<div class="assignee-dd" x-data="assigneeDD({ autoSubmit: {% if auto_submit %}true{% else %}false{% endif %} })" @click.outside="open = false">
+  <select name="assignees" multiple class="assignee-dd__native" x-ref="select">
+    {% if assignees_qs %}
+      {% for member in assignees_qs %}
+      <option value="{{ member.pk }}" {% if member.pk|stringformat:"d" in selected_ids %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      {% endfor %}
+    {% else %}
+      {% for member in form.fields.assignees.queryset %}
+      <option value="{{ member.pk }}" {% if member.pk|stringformat:"d" in form.assignees.value %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      {% endfor %}
+    {% endif %}
+  </select>
+
+  <div class="assignee-dd__trigger" :class="{ 'open': open }" @click="open = !open" role="button" tabindex="0" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+    <div class="assignee-dd__chips" x-show="selected.size > 0">
+      <template x-for="opt in selectedOptions" :key="opt.id">
+        <span class="assignee-dd__chip">
+          <span x-text="opt.name"></span>
+          <button type="button" @click.stop="toggle(opt.id)" aria-label="Remove assignee">×</button>
+        </span>
+      </template>
+    </div>
+    <span class="assignee-dd__placeholder" x-show="selected.size === 0">Select assignees...</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+
+  <div class="assignee-dd__panel" x-show="open" x-cloak>
+    <input class="assignee-dd__search" type="text" x-model="search" placeholder="Search assignees...">
+    <div class="assignee-dd__list">
+      <template x-for="opt in filtered" :key="opt.id">
+        <label class="assignee-dd__option" @click.prevent="toggle(opt.id)">
+          <input type="checkbox" :checked="isSelected(opt.id)" :value="opt.id">
+          <span x-text="opt.name"></span>
+        </label>
+      </template>
+      <div class="assignee-dd__empty" x-show="filtered.length === 0">No assignees match your search</div>
+    </div>
+  </div>
+</div>
+
+{% if form.assignees.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.assignees.errors.0 }}</p>{% endif %}
+
+<script>
+(function() {
+  if (window.assigneeDD) return;
+  window.assigneeDD = function(config) {
+    config = config || {};
+    return {
+      open: false,
+      search: '',
+      options: [],
+      selected: new Set(),
+      autoSubmit: !!config.autoSubmit,
+      init() {
+        var select = this.$refs.select;
+        if (!select) return;
+        for (var i = 0; i < select.options.length; i++) {
+          var o = select.options[i];
+          this.options.push({ id: o.value, name: o.textContent.trim() });
+          if (o.selected) this.selected.add(o.value);
+        }
+      },
+      get filtered() {
+        var q = this.search.toLowerCase();
+        return this.options.filter(function(o) { return o.name.toLowerCase().indexOf(q) !== -1; });
+      },
+      get selectedOptions() {
+        var self = this;
+        return this.options.filter(function(o) { return self.selected.has(o.id); });
+      },
+      isSelected(id) { return this.selected.has(id); },
+      toggle(id) {
+        if (this.selected.has(id)) {
+          this.selected.delete(id);
+        } else {
+          this.selected.add(id);
+        }
+        var select = this.$refs.select;
+        for (var i = 0; i < select.options.length; i++) {
+          select.options[i].selected = this.selected.has(select.options[i].value);
+        }
+        if (this.autoSubmit) {
+          var form = this.$el.closest('form');
+          if (form && form.requestSubmit) form.requestSubmit();
+        }
+      }
+    };
+  };
+})();
+</script>

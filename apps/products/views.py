@@ -467,6 +467,7 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
         return render(request, "products/product_ticket_detail.html", {
             "product": product, "ticket": ticket, "comments": comments,
             "comment_form": TicketCommentForm(), "members": members,
+            "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": __import__("apps.tickets.models", fromlist=["Ticket"]).Ticket.Status.choices,
         })
 

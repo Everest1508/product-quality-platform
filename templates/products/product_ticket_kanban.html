@@ -3,9 +3,9 @@
 
 {% block content %}
 <div class="head" style="margin-bottom:16px;">
-  <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
   <h1 style="font-size:20px;font-weight:700;">{{ product.name }} — Kanban</h1>
   <div class="head-actions">
+    <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="font-size:13px;">List view</a>
     <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="font-size:13px;">New ticket</a>
   </div>
 </div>

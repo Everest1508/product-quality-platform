@@ -1,5 +1,5 @@
 {% if ticket.assignees.all %}
-<div class="assignee-list" style="display:flex;flex-wrap:wrap;gap:6px;">
+<div class="assignee-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
   {% for a in ticket.assignees.all %}
   <span class="assignee">
     <span class="avatar">{{ a.username.0|upper }}</span>
@@ -16,13 +16,7 @@
       hx-swap="innerHTML"
       style="margin-top:8px;">
   {% csrf_token %}
-  <div style="display:flex;flex-wrap:wrap;gap:4px 12px;">
-    {% for member in members %}
-    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
-      <input type="checkbox" name="assignees" value="{{ member.pk }}" {% if member in ticket.assignees.all %}checked{% endif %}>
-      {{ member.get_full_name|default:member.username }}
-    </label>
-    {% endfor %}
-  </div>
-  <button type="submit" class="btn btn-sm" style="margin-top:8px;">Save assignees</button>
+  {% with assignees_qs=members selected_ids=assignee_selected_ids auto_submit=True %}
+  {% include "tickets/partials/_assignee_multiselect.html" %}
+  {% endwith %}
 </form>

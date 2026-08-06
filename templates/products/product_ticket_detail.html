@@ -42,12 +42,12 @@
         {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
       </span>
     </div>
-    {% if ticket.deadline %}
     <div class="text-sm mb-4">
       <span class="text-muted">Deadline:</span>
-      <span class="{% if ticket.is_overdue %}overdue-text{% endif %}">{{ ticket.deadline|date:"M d, Y H:i" }}{% if ticket.is_overdue %} — overdue{% endif %}</span>
+      <span id="detail-deadline">
+        {% include "tickets/partials/_ticket_deadline.html" with ticket=ticket %}
+      </span>
     </div>
-    {% endif %}
     <div class="text-sm mb-4"><span class="text-muted">Status:</span>
       <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}" style="display:inline;">
         {% csrf_token %}

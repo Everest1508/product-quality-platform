@@ -10,7 +10,7 @@ from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMix
 from apps.dashboards.service import log_activity
 from apps.products.models import Product
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
-from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketEditForm
+from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
 from apps.tickets.models import Ticket, TicketComment
 
 User = get_user_model()
@@ -225,6 +225,7 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             "comments": comments,
             "comment_form": comment_form,
             "members": members,
+            "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": Ticket.Status.choices,
         })
 
@@ -324,6 +325,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
             return render(request, "tickets/partials/_ticket_assignee.html", {
                 "ticket": ticket,
                 "members": members,
+                "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             })
         url_name, kwargs = _ticket_redirect(ticket)
         return redirect(url_name, **kwargs)
@@ -356,6 +358,43 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             comments = ticket.comments.select_related("author").all()
             return render(request, "tickets/partials/_comment_list.html", {
                 "comments": comments,
+            })
+        url_name, kwargs = _ticket_redirect(ticket)
+        return redirect(url_name, **kwargs)
+
+
+class TicketDeadlineView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        form = TicketDeadlineForm(request.POST)
+
+        if form.is_valid():
+            old_deadline = ticket.deadline
+            ticket.deadline = form.cleaned_data["deadline"]
+            ticket.save(update_fields=["deadline", "updated_at"])
+            log_activity(
+                request.company, "ticket_deadline_changed",
+                f"Ticket #{ticket.pk} deadline changed",
+                description=(
+                    f"from {old_deadline:%Y-%m-%d %H:%M} to {ticket.deadline:%Y-%m-%d %H:%M}"
+                    if old_deadline and ticket.deadline
+                    else f"{ticket.deadline:%Y-%m-%d %H:%M}" if ticket.deadline else "Deadline cleared"
+                ),
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={
+                    "product_id": ticket.product_id,
+                    "from": old_deadline.isoformat() if old_deadline else None,
+                    "to": ticket.deadline.isoformat() if ticket.deadline else None,
+                },
+            )
+            messages.success(request, "Deadline updated.")
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "tickets/partials/_ticket_deadline.html", {
+                "ticket": ticket,
+                "deadline_error": form.errors.get("deadline"),
             })
         url_name, kwargs = _ticket_redirect(ticket)
         return redirect(url_name, **kwargs)

@@ -69,6 +69,18 @@ class TicketEditForm(forms.ModelForm):
         }
 
 
+class TicketDeadlineForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ["deadline"]
+        widgets = {
+            "deadline": forms.DateTimeInput(attrs={
+                "class": "form-input",
+                "type": "datetime-local",
+            }),
+        }
+
+
 class TicketCommentForm(forms.Form):
     body = forms.CharField(
         widget=forms.Textarea(attrs={

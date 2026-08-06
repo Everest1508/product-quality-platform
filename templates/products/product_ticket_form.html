@@ -37,13 +37,8 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Assignees <span class="text-sm text-muted">(hold Ctrl to select multiple)</span></label>
-      <select name="assignees" class="form-input" multiple size="4">
-        {% for member in form.fields.assignees.queryset %}
-        <option value="{{ member.pk }}" {% if member.pk|stringformat:"d" in form.assignees.value %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-        {% endfor %}
-      </select>
-      {% if form.assignees.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.assignees.errors.0 }}</p>{% endif %}
+      <label>Assignees</label>
+      {% include "tickets/partials/_assignee_multiselect.html" %}
     </div>
     <div class="form-group">
       <label>Deadline <span class="text-sm text-muted">(optional)</span></label>
