@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.paginator import Paginator
@@ -49,6 +50,21 @@ class DashboardView(CompanyMemberRequiredMixin, View):
         return redirect("dashboards:index")
 
 
+class CompanySwitchView(LoginRequiredMixin, View):
+    def post(self, request):
+        company_id = request.POST.get("company_id")
+        membership = Membership.objects.filter(
+            user=request.user,
+            company_id=company_id,
+        ).first()
+        if not membership:
+            messages.error(request, "Workspace not found.")
+        else:
+            request.session[settings.ACTIVE_COMPANY_SESSION_KEY] = membership.company_id
+            messages.success(request, f"Switched to {membership.company.name}.")
+        return redirect("accounts:dashboard")
+
+
 class CompanySetupView(LoginRequiredMixin, View):
     def get(self, request):
         if request.company:
@@ -59,11 +75,12 @@ class CompanySetupView(LoginRequiredMixin, View):
         form = CompanyCreateForm(request.POST)
         if form.is_valid():
             company = form.save()
-            Membership.objects.create(
+            membership = Membership.objects.create(
                 user=request.user,
                 company=company,
                 role=Membership.Role.OWNER,
             )
+            request.session[settings.ACTIVE_COMPANY_SESSION_KEY] = membership.company_id
             messages.success(request, f"Company '{company.name}' created.")
             return redirect("accounts:dashboard")
         return render(request, "accounts/company_setup.html", {"form": form})
@@ -105,9 +122,18 @@ class TeamListView(CompanyMemberRequiredMixin, View):
 
         form = TeamCreateMemberForm(company=request.company)
 
+        all_memberships = Membership.objects.filter(company=request.company)
+        total_count = all_memberships.count()
+        owner_admin_count = all_memberships.filter(role__in=["owner", "admin"]).count()
+        developer_count = all_memberships.filter(role="developer").count()
+        support_viewer_count = all_memberships.filter(role__in=["support", "viewer"]).count()
+        view_mode = request.GET.get("view", "grid")
+
         if request.headers.get("HX-Request") == "true":
             return render(request, "accounts/partials/_team_list_body.html", {
                 "page": page,
+                "memberships": page,
+                "view_mode": view_mode,
             })
 
         return render(request, "accounts/team_list.html", {
@@ -117,6 +143,11 @@ class TeamListView(CompanyMemberRequiredMixin, View):
             "search": search,
             "current_role": role,
             "current_sort": sort,
+            "view_mode": view_mode,
+            "total_count": total_count,
+            "owner_admin_count": owner_admin_count,
+            "developer_count": developer_count,
+            "support_viewer_count": support_viewer_count,
         })
 
 

@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from apps.accounts.models import Membership
 
 
@@ -10,12 +12,16 @@ class CurrentCompanyMiddleware:
         request.company_role = None
 
         if request.user.is_authenticated:
-            membership = (
+            memberships = list(
                 Membership.objects.select_related("company")
                 .filter(user=request.user)
-                .first()
             )
-            if membership:
+            if memberships:
+                active_id = request.session.get(settings.ACTIVE_COMPANY_SESSION_KEY)
+                membership = next(
+                    (m for m in memberships if m.company_id == active_id),
+                    memberships[0],
+                )
                 request.company = membership.company
                 request.company_role = membership.role
 

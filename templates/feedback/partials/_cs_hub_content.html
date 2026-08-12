@@ -1,0 +1,206 @@
+<!-- Top Stat Cards -->
+<div class="grid-4 mb-6">
+  <div class="card stat-card">
+    <div class="flex-between mb-4">
+      <div class="stat-label">Total Responses</div>
+      <div class="stat-icon blue">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+    </div>
+    <div class="stat-val">{{ total_responses }}</div>
+    <div class="stat-foot">customer responses collected</div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="flex-between mb-4">
+      <div class="stat-label">Overall Average CSAT</div>
+      <div class="stat-icon green">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+    </div>
+    <div class="stat-val" style="color:{% if avg_all and avg_all >= 4.0 %}var(--green){% elif avg_all and avg_all >= 3.0 %}var(--orange){% elif avg_all %}var(--red){% else %}var(--muted){% endif %};">
+      {{ avg_all|default:"—" }} <small style="font-size:14px;color:var(--muted);">/ 5.0</small>
+    </div>
+    <div class="stat-foot">
+      {% if avg_all and avg_all >= 4.0 %}
+        <span class="pill active">Excellent Rating</span>
+      {% elif avg_all and avg_all >= 3.0 %}
+        <span class="pill progress">Moderate Rating</span>
+      {% elif avg_all %}
+        <span class="pill critical">Needs Attention</span>
+      {% else %}
+        <span class="text-muted">No rating data yet</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="flex-between mb-4">
+      <div class="stat-label">Active Surveys</div>
+      <div class="stat-icon purple">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+    </div>
+    <div class="stat-val">{{ active_surveys.count }}</div>
+    <div class="stat-foot">live feedback channels</div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="flex-between mb-4">
+      <div class="stat-label">Sentiment Records</div>
+      <div class="stat-icon orange">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      </div>
+    </div>
+    <div class="stat-val">{{ sentiment_records|length }}</div>
+    <div class="stat-foot">tracked sentiment logs</div>
+  </div>
+</div>
+
+<!-- Product CSAT Breakdown -->
+<div class="card mb-6">
+  <div class="flex-between mb-4">
+    <div>
+      <h2 style="font-size:15px;font-weight:600;margin:0;">Product Satisfaction Breakdown</h2>
+      <p class="text-sm text-muted" style="margin:2px 0 0;">Satisfaction averages, survey volume, and response counts by product</p>
+    </div>
+    <span class="count-badge">{{ product_stats|length }} Products</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th style="width:120px;text-align:center;">Surveys</th>
+        <th style="width:120px;text-align:center;">Responses</th>
+        <th style="width:140px;text-align:center;">Avg Score</th>
+        <th style="width:180px;">Satisfaction Meter</th>
+        <th style="width:100px;text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for stat in product_stats %}
+      <tr>
+        <td onclick="window.location='{% url 'dashboards:product_dashboard' product_pk=stat.product.pk %}'">
+          <div class="font-medium" style="font-size:14px;color:var(--text);">{{ stat.product.name }}</div>
+          <span class="text-sm text-muted"><code>{{ stat.product.slug }}</code></span>
+        </td>
+        <td style="text-align:center;">
+          <span class="font-medium text-sm">{{ stat.survey_count }}</span>
+        </td>
+        <td style="text-align:center;">
+          <span class="font-medium text-sm">{{ stat.response_count }}</span>
+        </td>
+        <td style="text-align:center;">
+          {% if stat.avg_score %}
+            <span class="font-medium" style="font-size:15px;color:{% if stat.avg_score >= 4.0 %}var(--green){% elif stat.avg_score >= 3.0 %}var(--orange){% else %}var(--red){% endif %};">
+              {{ stat.avg_score }} <small style="font-size:12px;color:var(--muted);">/ 5.0</small>
+            </span>
+          {% else %}
+            <span class="text-muted text-sm">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if stat.avg_score %}
+            <div class="meter {% if stat.avg_score >= 4.0 %}healthy{% elif stat.avg_score >= 3.0 %}warning{% else %}critical{% endif %}" style="height:7px;border-radius:4px;">
+              <i style="width:{% widthratio stat.avg_score 5 100 %}%;{% if stat.avg_score >= 4.0 %}background:var(--green);{% elif stat.avg_score >= 3.0 %}background:var(--orange);{% else %}background:var(--red);{% endif %}"></i>
+            </div>
+          {% else %}
+            <span class="text-sm text-muted" style="font-style:italic;">No responses</span>
+          {% endif %}
+        </td>
+        <td style="text-align:right;">
+          <a href="{% url 'dashboards:product_dashboard' product_pk=stat.product.pk %}" class="btn btn-sm" style="font-size:12px;padding:4px 8px;">Dashboard</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="empty" style="text-align:center;padding:32px;">
+          <p class="text-sm text-muted">No products with survey data yet.</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Grid 2: Active Surveys & Sentiment Log -->
+<div class="grid-2">
+  <!-- Active Surveys -->
+  <div class="card">
+    <div class="flex-between mb-4">
+      <div>
+        <h2 style="font-size:15px;font-weight:600;margin:0;">Active Feedback Surveys</h2>
+        <p class="text-sm text-muted" style="margin:2px 0 0;">Surveys currently open for customer responses</p>
+      </div>
+      <a href="{% url 'feedback:survey_create' %}" class="btn btn-sm btn-primary" style="font-size:12px;gap:4px;">+ New Survey</a>
+    </div>
+
+    {% if active_surveys %}
+    <div>
+      {% for survey in active_surveys %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div style="min-width:0;flex:1;padding-right:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <a href="{% url 'feedback:survey_detail' pk=survey.pk %}" class="font-medium text-sm" style="color:var(--text);text-decoration:none;">{{ survey.name }}</a>
+            <span class="pill {{ survey.survey_type }}">{{ survey.get_survey_type_display }}</span>
+          </div>
+          <div class="text-sm text-muted" style="margin-top:2px;">
+            Product: <b>{{ survey.product.name }}</b> &middot; {{ survey.response_count }} response{{ survey.response_count|pluralize }}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <a href="{% url 'feedback:survey_detail' pk=survey.pk %}" class="btn btn-sm" style="font-size:12px;">View</a>
+          <a href="{% url 'feedback:public_survey' pk=survey.pk %}" target="_blank" class="icon-btn" title="Open Public Link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:36px 16px;">
+      <p class="text-sm text-muted" style="margin-bottom:12px;">No active surveys currently running.</p>
+      <a href="{% url 'feedback:survey_create' %}" class="btn btn-sm btn-primary">Create Your First Survey</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Sentiment Records -->
+  <div class="card">
+    <div class="flex-between mb-4">
+      <div>
+        <h2 style="font-size:15px;font-weight:600;margin:0;">Recent Sentiment Insights</h2>
+        <p class="text-sm text-muted" style="margin:2px 0 0;">Latest customer sentiment logs & feedback records</p>
+      </div>
+      <span class="count-badge">{{ sentiment_records|length }} Logs</span>
+    </div>
+
+    {% if sentiment_records %}
+    <div style="max-height:360px;overflow-y:auto;">
+      {% for rec in sentiment_records %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-medium text-sm" style="color:var(--text);">{{ rec.product.name }}</span>
+            <span class="text-sm text-muted" style="font-size:11px;background:var(--panel);border:1px solid var(--border);padding:1px 6px;border-radius:4px;">{{ rec.source }}</span>
+          </div>
+          <div class="text-sm text-muted" style="margin-top:2px;">
+            Recorded {{ rec.recorded_at|timesince }} ago
+          </div>
+        </div>
+        <div>
+          <span class="pill {% if rec.score >= 0.5 %}active{% elif rec.score >= 0.0 %}medium{% else %}critical{% endif %}">
+            Score: {{ rec.score }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:36px 16px;">
+      <p class="text-sm text-muted">No sentiment records logged yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>

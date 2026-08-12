@@ -3,54 +3,82 @@
 {% block title %}{% if editing %}Edit Survey{% else %}New Survey{% endif %} — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>{% if editing %}Edit Survey{% else %}New Survey{% endif %}</h1>
+<nav class="breadcrumbs">
+  <a href="{% url 'feedback:survey_list' %}">Feedback Surveys</a>
+  <span class="sep">/</span>
+  <span class="current">{% if editing %}Edit Survey{% else %}New Survey{% endif %}</span>
+</nav>
+
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>{% if editing %}Edit Survey{% else %}New Survey{% endif %}</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Configure customer feedback collection surveys.</p>
+  </div>
   <div class="head-actions">
     <a href="{% url 'feedback:survey_list' %}" class="btn">Cancel</a>
   </div>
 </div>
 
-<div class="card" style="max-width:640px;">
+<div class="card form-card">
+  <div class="form-card-head">
+    <div class="stat-icon green">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </div>
+    <div>
+      <h2>{% if editing %}Edit Survey{% else %}Create Feedback Survey{% endif %}</h2>
+      <p>Gather CSAT, NPS, or CES ratings from your application users.</p>
+    </div>
+  </div>
+
   <form method="post">
     {% csrf_token %}
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required placeholder="e.g. Q1 NPS Survey">
-      {% if form.name.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.name.errors.0 }}</p>{% endif %}
-    </div>
-    <div class="form-group">
-      <label>Description</label>
-      <textarea name="description" class="form-input" rows="3" placeholder="Optional description...">{{ form.description.value|default:'' }}</textarea>
-    </div>
-    <div class="grid-2">
+    
+    <div class="form-section">
+      <div class="form-section-label">General Information</div>
       <div class="form-group">
-        <label>Survey Type</label>
-        <select name="survey_type" class="form-input">
-          <option value="nps" {% if form.survey_type.value == "nps" %}selected{% endif %}>Net Promoter Score (NPS)</option>
-          <option value="csat" {% if form.survey_type.value == "csat" %}selected{% endif %}>Customer Satisfaction (CSAT)</option>
-          <option value="ces" {% if form.survey_type.value == "ces" %}selected{% endif %}>Customer Effort Score (CES)</option>
-        </select>
+        <label>Survey Name</label>
+        <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required placeholder="e.g. Post-Checkout CSAT Survey" autofocus>
+        {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
       </div>
-      <div class="form-group">
-        <label>Product</label>
-        <select name="product" class="form-input">
-          {% for product in form.fields.product.queryset %}
-          <option value="{{ product.pk }}" {% if form.product.value|stringformat:"d" == product.pk|stringformat:"d" %}selected{% endif %}>{{ product.name }}</option>
-          {% endfor %}
-        </select>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Description</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="Optional internal notes about this survey...">{{ form.description.value|default:'' }}</textarea>
       </div>
     </div>
-    <div class="form-group">
-      <label>Status</label>
-      <select name="status" class="form-input">
-        <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Draft</option>
-        <option value="active" {% if form.status.value == "active" %}selected{% endif %}>Active</option>
-        <option value="closed" {% if form.status.value == "closed" %}selected{% endif %}>Closed</option>
-      </select>
+
+    <div class="form-section">
+      <div class="form-section-label">Configuration &amp; Target</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Survey Type</label>
+          <select name="survey_type" class="form-input">
+            <option value="nps" {% if form.survey_type.value == "nps" %}selected{% endif %}>Net Promoter Score (NPS)</option>
+            <option value="csat" {% if form.survey_type.value == "csat" %}selected{% endif %}>Customer Satisfaction (CSAT)</option>
+            <option value="ces" {% if form.survey_type.value == "ces" %}selected{% endif %}>Customer Effort Score (CES)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Target Product</label>
+          <select name="product" class="form-input">
+            {% for product in form.fields.product.queryset %}
+            <option value="{{ product.pk }}" {% if form.product.value|stringformat:"d" == product.pk|stringformat:"d" %}selected{% endif %}>{{ product.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Status</label>
+        <select name="status" class="form-input">
+          <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Draft</option>
+          <option value="active" {% if form.status.value == "active" %}selected{% endif %}>Active</option>
+          <option value="closed" {% if form.status.value == "closed" %}selected{% endif %}>Closed</option>
+        </select>
+      </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:20px;">
-      <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Survey{% endif %}</button>
+
+    <div class="form-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
       <a href="{% url 'feedback:survey_list' %}" class="btn">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Survey{% endif %}</button>
     </div>
   </form>
 </div>

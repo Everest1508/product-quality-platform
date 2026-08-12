@@ -1,12 +1,10 @@
 {% if product_cards %}
 <div class="grid-3">
   {% for card in product_cards %}
-  <a href="{% url 'dashboards:product_dashboard' product_pk=card.product.pk %}" class="card" style="display:block;text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.08)';this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='none';this.style.transform='none';">
+  <a href="{% url 'dashboards:product_dashboard' product_pk=card.product.pk %}" class="card product-card health-{{ card.health }}">
     <div class="flex-between mb-4">
-      <div class="title">{{ card.product.name }}</div>
-      {% if card.health == 'healthy' %}<span class="pill active">Healthy</span>
-      {% elif card.health == 'warning' %}<span class="pill progress">Warning</span>
-      {% else %}<span class="pill critical">Critical</span>{% endif %}
+      <div class="product-name">{{ card.product.name }}</div>
+      <span class="health-dot {{ card.health }}" title="{{ card.health|title }}"></span>
     </div>
     <div class="grid-3" style="text-align:center;gap:8px;">
       <div class="stat">

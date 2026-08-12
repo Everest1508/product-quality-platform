@@ -3,42 +3,61 @@
 {% block title %}Audit Log — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Audit log <span class="count">{{ page.paginator.count }} events</span></h1>
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>Audit Log <span class="count">{{ page.paginator.count }} event{{ page.paginator.count|pluralize }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Chronological system activity feed, security actions, and team audit logs.</p>
+  </div>
 </div>
 
-<div class="toolbar">
-  <form method="get" class="search-wrap" style="display:flex;">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" name="q" value="{{ search }}" placeholder="Search events...">
-    {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
-    {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
-    {% if current_from %}<input type="hidden" name="from" value="{{ current_from }}">{% endif %}
-    {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
-  </form>
-  <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
-    <option value="">All event types</option>
-    {% for value, label in event_types %}
-    <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-  </select>
-  <select class="filter-select" onchange="window.location=buildUrl({actor:this.value})">
-    <option value="">Any member</option>
-    {% for member in members %}
-    <option value="{{ member.pk }}" {% if current_actor == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-    {% endfor %}
-  </select>
-  <input type="date" class="filter-select" style="padding:7px 10px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
-  <input type="date" class="filter-select" style="padding:7px 10px;" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
+    <form method="get" class="search-wrap" style="display:flex;max-width:280px;width:100%;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" name="q" value="{{ search }}" placeholder="Search event titles...">
+      {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+      {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
+      {% if current_from %}<input type="hidden" name="from" value="{{ current_from }}">{% endif %}
+      {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
+    </form>
+
+    <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
+      <option value="">All event types</option>
+      {% for value, label in event_types %}
+      <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select class="filter-select" onchange="window.location=buildUrl({actor:this.value})">
+      <option value="">Any member</option>
+      {% for member in members %}
+      <option value="{{ member.pk }}" {% if current_actor == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span class="text-sm text-muted" style="font-size:12px;">From</span>
+      <input type="date" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span class="text-sm text-muted" style="font-size:12px;">To</span>
+      <input type="date" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
+    </div>
+    {% if search or current_type or current_actor or current_from or current_to %}
+    <a href="{% url 'dashboards:audit_log' %}" class="btn btn-sm" style="font-size:12px;color:var(--red);">Clear</a>
+    {% endif %}
+  </div>
 </div>
 
 <table>
   <thead>
     <tr>
-      <th style="width:150px">Time</th>
-      <th style="width:180px">Event</th>
-      <th>Details</th>
-      <th style="width:180px">Actor</th>
+      <th style="width:160px">Timestamp</th>
+      <th style="width:180px">Event Type</th>
+      <th>Details & Description</th>
+      <th style="width:170px">Actor</th>
     </tr>
   </thead>
   <tbody id="audit-log-body">
@@ -47,6 +66,8 @@
 </table>
 
 {% include "core/_pagination.html" with page=page %}
+
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} audit log events</footer>
 
 <script>
 function buildUrl(params) {

@@ -26,11 +26,11 @@
   <select name="assignees" multiple class="assignee-dd__native" x-ref="select">
     {% if assignees_qs %}
       {% for member in assignees_qs %}
-      <option value="{{ member.pk }}" {% if member.pk|stringformat:"d" in selected_ids %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      <option value="{{ member.pk }}" {% if member.pk in selected_ids or member.pk|stringformat:"s" in selected_ids or member.pk|stringformat:"d" in selected_ids %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
       {% endfor %}
     {% else %}
       {% for member in form.fields.assignees.queryset %}
-      <option value="{{ member.pk }}" {% if member.pk|stringformat:"d" in form.assignees.value %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      <option value="{{ member.pk }}" {% if member in form.instance.assignees.all or member.pk in assignee_selected_ids or member.pk|stringformat:"s" in assignee_selected_ids or member.pk|stringformat:"d" in assignee_selected_ids or member.pk|stringformat:"s" in form.assignees.value %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
       {% endfor %}
     {% endif %}
   </select>

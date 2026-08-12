@@ -198,6 +198,45 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
         return render(request, "tickets/ticket_form.html", {"form": form})
 
 
+class TicketEditView(CompanyMemberRequiredMixin, View):
+    def get(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        form = TicketEditForm(instance=ticket)
+        assignee_selected_ids = [str(a.pk) for a in ticket.assignees.all()]
+        return render(request, "tickets/ticket_form.html", {
+            "form": form,
+            "ticket": ticket,
+            "editing": True,
+            "assignee_selected_ids": assignee_selected_ids,
+        })
+
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        form = TicketEditForm(request.POST, instance=ticket)
+        if form.is_valid():
+            ticket = form.save()
+            ticket.set_assignees(form.cleaned_data["assignees"])
+            log_activity(
+                request.company, "ticket_updated",
+                f"Ticket #{ticket.pk} updated",
+                description=ticket.title,
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id},
+            )
+            messages.success(request, f"Ticket #{ticket.pk} updated.")
+            url_name, kwargs = _ticket_redirect(ticket)
+            return redirect(url_name, **kwargs)
+        assignee_selected_ids = request.POST.getlist("assignees")
+        return render(request, "tickets/ticket_form.html", {
+            "form": form,
+            "ticket": ticket,
+            "editing": True,
+            "assignee_selected_ids": assignee_selected_ids,
+        })
+
+
 class TicketDetailView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         ticket = get_object_or_404(
@@ -227,7 +266,35 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             "members": members,
             "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": Ticket.Status.choices,
+            "priority_choices": Ticket.Priority.choices,
         })
+
+
+class TicketPriorityView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        new_priority = request.POST.get("priority")
+        if new_priority in dict(Ticket.Priority.choices):
+            old_priority = ticket.get_priority_display()
+            ticket.priority = new_priority
+            ticket.save(update_fields=["priority", "updated_at"])
+            log_activity(
+                request.company, "ticket_priority_changed",
+                f"Ticket #{ticket.pk} priority changed to {ticket.get_priority_display()}",
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id, "from": old_priority, "to": ticket.get_priority_display()},
+            )
+            messages.success(request, f"Priority updated to {ticket.get_priority_display()}.")
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "tickets/partials/_ticket_priority.html", {
+                "ticket": ticket,
+                "priority_choices": Ticket.Priority.choices,
+            })
+        url_name, kwargs = _ticket_redirect(ticket)
+        return redirect(url_name, **kwargs)
 
 
 class TicketStatusView(CompanyMemberRequiredMixin, View):

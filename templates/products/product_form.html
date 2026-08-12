@@ -3,6 +3,18 @@
 {% block title %}{% if editing %}Edit Product{% else %}New Product{% endif %} — PQ Platform{% endblock %}
 
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  {% if editing %}
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">Edit</span>
+  {% else %}
+  <span class="current">New Product</span>
+  {% endif %}
+</nav>
+
 <div class="head">
   <h1>{% if editing %}Edit Product{% else %}New Product{% endif %}</h1>
   <div class="head-actions">
@@ -10,34 +22,82 @@
   </div>
 </div>
 
-<div class="card" style="max-width:540px;">
-  <form method="post">
-    {% csrf_token %}
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required>
-      {% if form.name.errors %}<p style="color:var(--red);font-size:12px;margin-top:4px;">{{ form.name.errors.0 }}</p>{% endif %}
+<div class="card form-card">
+  <div class="form-card-head">
+    <div class="stat-icon blue">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.5v7L12 21 3 15.5v-7L12 3Z"/><path d="M3.5 8.5 12 13l8.5-4.5"/><path d="M12 13v8"/></svg>
     </div>
-    <div class="form-group">
-      <label>Description</label>
-      <textarea name="description" class="form-input" rows="3">{{ form.description.value|default:'' }}</textarea>
+    <div>
+      <h2>{% if editing %}Edit {{ product.name|default:"Product" }}{% else %}Register a new product{% endif %}</h2>
+      <p>{% if editing %}Update product details and integrations.{% else %}Start tracking errors, tickets, and feedback for your application.{% endif %}</p>
     </div>
-    <div class="form-group">
-      <label>Default Environment</label>
-      <select name="default_environment" class="form-input">
-        <option value="production" {% if form.default_environment.value == "production" %}selected{% endif %}>Production</option>
-        <option value="staging" {% if form.default_environment.value == "staging" %}selected{% endif %}>Staging</option>
-      </select>
+  </div>
+
+  <div class="form-grid">
+    <div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-section">
+          <div class="form-section-label">Product Info</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" placeholder="My App" required autofocus>
+              {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+              <label>Default Environment</label>
+              <select name="default_environment" class="form-input">
+                <option value="production" {% if form.default_environment.value == "production" %}selected{% endif %}>Production</option>
+                <option value="staging" {% if form.default_environment.value == "staging" %}selected{% endif %}>Staging</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Description</label>
+            <textarea name="description" class="form-input" rows="3" placeholder="Optional description">{{ form.description.value|default:'' }}</textarea>
+            <p class="field-hint">Shown on the product dashboard so teammates know what this product is.</p>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-label">Notifications</div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Discord Webhook URL</label>
+            <input type="password" name="discord_webhook_url" value="{{ form.discord_webhook_url.value|default:'' }}" class="form-input" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+            <p class="field-hint">Get notified about tickets, errors, and feedback in a Discord channel. Can be added later.</p>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>
+          <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Product{% endif %}</button>
+        </div>
+      </form>
     </div>
-    <div class="form-group">
-      <label>Discord Webhook URL</label>
-      <input type="password" name="discord_webhook_url" value="{{ form.discord_webhook_url.value|default:'' }}" class="form-input" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
-      <p style="font-size:11px;color:var(--muted);margin-top:4px;">Get notified about tickets, errors, and feedback in a Discord channel.</p>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:20px;">
-      <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Product{% endif %}</button>
-      <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>
-    </div>
-  </form>
+
+    <aside class="form-aside">
+      <div class="form-aside-title">What this product gives you</div>
+      <ul>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          Error tracking with severity triage
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2c0 .5-.4 1-.9 1.2a1.6 1.6 0 0 0 0 4.6c.5.2.9.7.9 1.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2c0-.5.4-1 .9-1.2a1.6 1.6 0 0 0 0-4.6C3.4 9.5 3 9 3 8.5Z"/><path d="M9 6v12"/></svg>
+          Ticketing with kanban workflow
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.7 8l6 .8-4.4 4.1 1.1 5.9L12 15.9l-5.4 2.9 1.1-5.9L3.3 8.8l6-.8Z"/></svg>
+          CSAT &amp; NPS surveys
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8L9 4l-3 8H2"/></svg>
+          Discord alerts for all of the above
+        </li>
+      </ul>
+      <div class="form-aside-note">Teammate access and more webhooks can be added later from the product page.</div>
+    </aside>
+  </div>
 </div>
 {% endblock %}

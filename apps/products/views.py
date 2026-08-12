@@ -40,15 +40,33 @@ class ProductListView(CompanyMemberRequiredMixin, View):
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
 
+        product_ids = [p.pk for p in page.object_list]
+        from apps.dashboards.service import _build_product_cards
+        cards_by_id = {c["product"].pk: c for c in _build_product_cards(request.company, product_ids)}
+
+        for p in page.object_list:
+            p.card_data = cards_by_id.get(p.pk, {
+                "product": p, "open_errors": 0, "open_tickets": 0,
+                "avg_score": None, "stale_count": 0, "health": "healthy"
+            })
+            p.version_cnt = getattr(p, "version_count", p.versions.count())
+            p.api_key_cnt = p.api_keys.count()
+
+        view_mode = request.GET.get("view", "grid")
+
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_list_body.html", {
                 "page": page,
+                "products": page.object_list,
+                "view_mode": view_mode,
             })
 
         return render(request, "products/product_list.html", {
             "page": page,
+            "products": page.object_list,
             "search": search,
             "current_sort": sort,
+            "view_mode": view_mode,
         })
 
 
@@ -76,8 +94,10 @@ class ProductCreateView(CompanyAdminRequiredMixin, View):
 
 class ProductDetailView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
+        from apps.core.context_processors import _attach_product_counts
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         from django.contrib.auth import get_user_model
         User = get_user_model()
         all_members = User.objects.filter(memberships__company=request.company).order_by("username")

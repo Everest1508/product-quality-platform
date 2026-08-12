@@ -1,52 +1,104 @@
 <div class="grid-4 mb-6">
-  <div class="card stat">
-    <div class="val">{{ total_errors }}</div>
-    <div class="label">Errors ({{ open_errors }} open)</div>
-  </div>
-  <div class="card stat">
-    <div class="val">{{ total_tickets }}</div>
-    <div class="label">Tickets ({{ open_tickets }} open)</div>
-  </div>
-  <div class="card stat">
-    <div class="val {% if avg_score >= 4 %}style="color:var(--green);"{% elif avg_score <= 2 %}style="color:var(--red);"{% endif %}">{{ avg_score|default:"—" }}</div>
-    <div class="label">Avg Survey Score</div>
-  </div>
-  <div class="card stat">
-    <div class="val {% if uptime_percentage >= 99 %}style="color:var(--green);"{% elif uptime_percentage >= 95 %}style="color:var(--orange);"{% else %}style="color:var(--red);"{% endif %}">
-      {{ uptime_percentage|default:"—" }}{% if uptime_percentage %}%{% endif %}
+  <div class="card stat-card">
+    <div class="stat-top">
+      <div class="stat-label">Errors</div>
+      <div class="stat-icon red">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      </div>
     </div>
-    <div class="label">Uptime</div>
+    <div class="stat-val">{{ total_errors }}<small>/{{ open_errors }} open</small></div>
+    <div class="stat-foot"><b>{{ resolved_errors }}</b> resolved</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-top">
+      <div class="stat-label">Tickets</div>
+      <div class="stat-icon orange">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2c0 .5-.4 1-.9 1.2a1.6 1.6 0 0 0 0 4.6c.5.2.9.7.9 1.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2c0-.5.4-1 .9-1.2a1.6 1.6 0 0 0 0-4.6C3.4 9.5 3 9 3 8.5Z"/><path d="M9 6v12"/></svg>
+      </div>
+    </div>
+    <div class="stat-val">{{ total_tickets }}<small>/{{ open_tickets }} open</small></div>
+    <div class="stat-foot">lifetime for this product</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-top">
+      <div class="stat-label">Avg Survey Score</div>
+      <div class="stat-icon blue">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.7 8l6 .8-4.4 4.1 1.1 5.9L12 15.9l-5.4 2.9 1.1-5.9L3.3 8.8l6-.8Z"/></svg>
+      </div>
+    </div>
+    <div class="stat-val">{{ avg_score|default:"—" }}</div>
+    <div class="stat-foot"><b>{{ total_responses }}</b> response{{ total_responses|pluralize }} collected</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-top">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-icon green">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8L9 4l-3 8H2"/></svg>
+      </div>
+    </div>
+    <div class="stat-val" style="{% if uptime_percentage is not None %}{% if uptime_percentage >= 99 %}color:var(--green);{% elif uptime_percentage >= 95 %}color:var(--orange);{% else %}color:var(--red);{% endif %}{% endif %}">{{ uptime_percentage|default:"—" }}{% if uptime_percentage is not None %}%{% endif %}</div>
+    <div class="stat-foot">estimated from critical errors</div>
   </div>
 </div>
 
 <div class="grid-2 mb-6">
   <div class="card">
-    <div class="text-sm font-medium mb-4">Errors (Last 30 Days)</div>
-    <div style="display:flex;align-items:flex-end;gap:1px;height:100px;">
-      {% for day in errors_by_day %}
-      <div style="flex:1;">
-        <div style="width:100%;background:var(--red);border-radius:2px 2px 0 0;height:{% widthratio day.count 1 5 %}px;min-height:{% if day.count > 0 %}2px{% else %}0px{% endif %};"></div>
+    <div class="flex-between mb-4">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);">Error Occurrences</div>
+        <div class="text-sm text-muted" style="font-size:12px;margin-top:2px;">Last 30 days daily capture trend</div>
       </div>
-      {% endfor %}
+      <div class="chart-meta">
+        <span class="dot" style="background:linear-gradient(180deg, #f87171 0%, #dc2626 100%);"></span>
+        <span>occurrences</span>
+      </div>
     </div>
-    <div class="flex-between" style="margin-top:6px;">
-      <span class="date">30 days ago</span>
-      <span class="date">Today</span>
+    <div class="chart-container">
+      <div class="chart-lines">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div class="chart">
+        {% for day in errors_by_day %}
+        <div class="bar errors" style="height:{% widthratio day.count errors_by_day_max 100 %}%;" data-tooltip="{{ day.date|date:'M d, Y' }} &middot; <b>{{ day.count }}</b> occurrence{{ day.count|pluralize }}"></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="chart-axis">
+      <span>30d ago</span>
+      <span>15d ago</span>
+      <span>Today</span>
     </div>
   </div>
 
   <div class="card">
-    <div class="text-sm font-medium mb-4">Ticket Burn-down</div>
-    <div style="display:flex;align-items:flex-end;gap:1px;height:100px;">
-      {% for day in ticket_burndown %}
-      <div style="flex:1;">
-        <div style="width:100%;background:var(--orange);border-radius:2px 2px 0 0;height:{% widthratio day.open 1 5 %}px;min-height:{% if day.open > 0 %}2px{% else %}0px{% endif %};"></div>
+    <div class="flex-between mb-4">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);">Ticket Burn-down</div>
+        <div class="text-sm text-muted" style="font-size:12px;margin-top:2px;">Last 30 days open backlog trend</div>
       </div>
-      {% endfor %}
+      <div class="chart-meta">
+        <span class="dot" style="background:linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);"></span>
+        <span>open tickets</span>
+      </div>
     </div>
-    <div class="flex-between" style="margin-top:6px;">
-      <span class="date">30 days ago</span>
-      <span class="date">Today</span>
+    <div class="chart-container">
+      <div class="chart-lines">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div class="chart">
+        {% for day in ticket_burndown %}
+        <div class="bar burn" style="height:{% widthratio day.open ticket_burndown_max 100 %}%;" data-tooltip="{{ day.date|date:'M d, Y' }} &middot; <b>{{ day.open }}</b> open ticket{{ day.open|pluralize }}"></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="chart-axis">
+      <span>30d ago</span>
+      <span>15d ago</span>
+      <span>Today</span>
     </div>
   </div>
 </div>
@@ -55,9 +107,12 @@
   <div class="card">
     <div class="text-sm font-medium mb-4">Error Severity</div>
     {% for item in errors_by_severity %}
-    <div class="flex-between" style="padding:6px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <span class="text-sm pill {{ item.severity }}">{{ item.severity|upper }}</span>
-      <span class="text-sm font-medium">{{ item.count }}</span>
+    <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+      <div class="flex-between" style="margin-bottom:5px;">
+        <span class="text-sm">{{ item.severity|title }}</span>
+        <span class="text-sm font-medium">{{ item.count }}</span>
+      </div>
+      <div class="meter {{ item.severity }}"><i style="width:{% widthratio item.count errors_by_severity_max 100 %}%;"></i></div>
     </div>
     {% empty %}
     <p class="text-sm text-muted" style="text-align:center;padding:20px;">No errors yet.</p>
@@ -67,9 +122,12 @@
   <div class="card">
     <div class="text-sm font-medium mb-4">Ticket Status</div>
     {% for item in tickets_by_status %}
-    <div class="flex-between" style="padding:6px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <span class="text-sm">{{ item.status|title }}</span>
-      <span class="text-sm font-medium">{{ item.count }}</span>
+    <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+      <div class="flex-between" style="margin-bottom:5px;">
+        <span class="text-sm">{{ item.status|title }}</span>
+        <span class="text-sm font-medium">{{ item.count }}</span>
+      </div>
+      <div class="meter {{ item.status }}"><i style="width:{% widthratio item.count tickets_by_status_max 100 %}%;"></i></div>
     </div>
     {% empty %}
     <p class="text-sm text-muted" style="text-align:center;padding:20px;">No tickets yet.</p>

@@ -231,3 +231,64 @@ class HTMXPartialIsolationTest(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertNotIn("bob", content)
+
+
+class CompanySwitchTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.company_a = Company.objects.create(name="Alpha", slug="alpha")
+        self.company_b = Company.objects.create(name="Beta", slug="beta")
+        self.company_c = Company.objects.create(name="Gamma", slug="gamma")
+
+        self.user = User.objects.create_user("alice", "alice@test.com", "pass1234")
+        Membership.objects.create(user=self.user, company=self.company_a, role="owner")
+        Membership.objects.create(user=self.user, company=self.company_b, role="developer")
+
+    def test_session_persists_active_company_after_switch(self):
+        self.client.login(username="alice", password="pass1234")
+        self.assertIsNone(self.client.session.get("active_company_id"))
+
+        response = self.client.post(
+            reverse("accounts:company_switch"),
+            {"company_id": self.company_b.pk},
+        )
+        self.assertRedirects(response, reverse("accounts:dashboard"), fetch_redirect_response=False)
+        self.assertEqual(self.client.session["active_company_id"], self.company_b.pk)
+
+    def test_middleware_uses_session_company(self):
+        self.client.login(username="alice", password="pass1234")
+        session = self.client.session
+        session["active_company_id"] = self.company_b.pk
+        session.save()
+
+        response = self.client.get(reverse("accounts:team_list"))
+        self.assertEqual(response.status_code, 200)
+        for m in response.context["memberships"]:
+            self.assertEqual(m.company, self.company_b)
+
+    def test_switch_to_unrelated_company_is_rejected(self):
+        self.client.login(username="alice", password="pass1234")
+        self.client.post(
+            reverse("accounts:company_switch"),
+            {"company_id": self.company_c.pk},
+        )
+        self.assertNotIn("active_company_id", self.client.session)
+
+    def test_middleware_falls_back_when_session_company_invalid(self):
+        self.client.login(username="alice", password="pass1234")
+        session = self.client.session
+        session["active_company_id"] = self.company_c.pk
+        session.save()
+
+        response = self.client.get(reverse("accounts:team_list"))
+        self.assertEqual(response.status_code, 200)
+        for m in response.context["memberships"]:
+            self.assertEqual(m.company, self.company_b)
+
+    def test_sidebar_renders_company_switcher(self):
+        self.client.login(username="alice", password="pass1234")
+        response = self.client.get(reverse("accounts:team_list"))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("org-switch", content)
+        self.assertIn(reverse("accounts:company_switch"), content)

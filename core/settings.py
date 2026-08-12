@@ -66,6 +66,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.product_context",
+                "apps.core.context_processors.workspace_context",
             ],
         },
     },
@@ -106,6 +107,9 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/login/"
+
+# The active workspace is stored in the session under this key.
+ACTIVE_COMPANY_SESSION_KEY = "active_company_id"
 
 # django-allauth
 SITE_ID = 1

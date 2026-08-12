@@ -4,25 +4,33 @@
 
 {% block content %}
 <div x-data="{ open: {% if show_invite_modal %}true{% else %}false{% endif %} }">
-  <div class="head">
-    <h1>Team <span class="count">{{ page.paginator.count }} member{{ page.paginator.count|pluralize }}</span></h1>
+  <!-- Header -->
+  <div class="head" style="margin-bottom:16px;">
+    <div>
+      <h1>Team <span class="count">{{ page.paginator.count }} member{{ page.paginator.count|pluralize }}</span></h1>
+    </div>
     <div class="head-actions">
       {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-      <button @click="open = true" class="btn btn-primary">Add member</button>
+      <button @click="open = true" class="btn btn-primary" style="gap:6px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add member
+      </button>
       {% endif %}
     </div>
   </div>
 
-  <div class="tabs">
+  <!-- Role Tabs -->
+  <div class="tabs" style="margin-bottom:16px;">
     <a href="{% url 'accounts:team_list' %}" class="tab {% if not current_role %}active{% endif %}">All</a>
-    <a href="?role=owner" class="tab {% if current_role == 'owner' %}active{% endif %}">Owner</a>
-    <a href="?role=admin" class="tab {% if current_role == 'admin' %}active{% endif %}">Admin</a>
-    <a href="?role=developer" class="tab {% if current_role == 'developer' %}active{% endif %}">Developer</a>
-    <a href="?role=support" class="tab {% if current_role == 'support' %}active{% endif %}">Support</a>
-    <a href="?role=viewer" class="tab {% if current_role == 'viewer' %}active{% endif %}">Viewer</a>
+    <a href="?role=owner{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'owner' %}active{% endif %}">Owner</a>
+    <a href="?role=admin{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'admin' %}active{% endif %}">Admin</a>
+    <a href="?role=developer{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'developer' %}active{% endif %}">Developer</a>
+    <a href="?role=support{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'support' %}active{% endif %}">Support</a>
+    <a href="?role=viewer{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'viewer' %}active{% endif %}">Viewer</a>
   </div>
 
-  <div class="toolbar">
+  <!-- Toolbar -->
+  <div class="toolbar" style="margin-bottom:16px;">
     <form method="get" class="search-wrap" style="display:flex;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       <input type="text" name="q" value="{{ search }}" placeholder="Search members...">
@@ -42,24 +50,27 @@
     <thead>
       <tr>
         <th>User</th>
-        <th style="width:100px">Role</th>
-        <th style="width:120px">Joined</th>
-        <th style="width:80px">Actions</th>
+        <th style="width:120px">Role</th>
+        <th style="width:140px">Joined</th>
+        <th style="width:110px;text-align:right;">Actions</th>
       </tr>
     </thead>
     <tbody id="team-members">
-      {% include "accounts/partials/_team_list_body.html" with page=page %}
+      {% include "accounts/partials/_team_list_body.html" with page=page memberships=page %}
     </tbody>
   </table>
 
   {% include "core/_pagination.html" with page=page %}
 
-  <!-- Modal -->
+  <!-- Invite Modal -->
   <div x-show="open" x-cloak style="display:none;">
     <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;" @click="open = false"></div>
     <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;">
-      <div class="card" style="max-width:420px;width:100%;" @click.outside="open = false">
-        <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;">Add Team Member</h3>
+      <div class="card" style="max-width:440px;width:100%;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.15);" @click.outside="open = false">
+        <div class="flex-between mb-4">
+          <h3 style="font-size:16px;font-weight:600;margin:0;">Add Team Member</h3>
+          <button type="button" @click="open = false" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;">&times;</button>
+        </div>
         <div id="invite-form-container">
           {% include "accounts/partials/_invite_form.html" with form=form %}
         </div>

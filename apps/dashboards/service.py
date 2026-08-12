@@ -156,12 +156,16 @@ def get_product_dashboard_data(company, product):
         "open_errors": open_errors,
         "resolved_errors": resolved_errors,
         "errors_by_severity": errors_by_severity,
+        "errors_by_severity_max": max(1, max((r["count"] for r in errors_by_severity), default=0)),
         "errors_by_day": errors_by_day,
+        "errors_by_day_max": max(1, max((d["count"] for d in errors_by_day), default=0)),
         "error_status_breakdown": error_status_breakdown,
         "total_tickets": total_tickets,
         "open_tickets": open_tickets,
         "tickets_by_status": tickets_by_status,
+        "tickets_by_status_max": max(1, max((r["count"] for r in tickets_by_status), default=0)),
         "ticket_burndown": ticket_burndown,
+        "ticket_burndown_max": max(1, max((d["open"] for d in ticket_burndown), default=0)),
         "survey_count": surveys.count(),
         "total_responses": total_responses,
         "avg_score": round(avg_score, 1) if avg_score else None,
@@ -349,6 +353,7 @@ def get_user_dashboard_data(user, company):
 
     attention = _build_attention(company, product_ids, is_privileged)
 
+    now = timezone.now()
     data = {
         "is_privileged": is_privileged,
         "role": membership.role if membership else None,
@@ -356,6 +361,8 @@ def get_user_dashboard_data(user, company):
         "open_errors": open_errors,
         "open_tickets": open_tickets,
         "resolved_errors": resolved_errors,
+        "errors_last_7d": error_scope.filter(first_seen__gte=now - timedelta(days=7)).count(),
+        "tickets_last_7d": ticket_scope.filter(created_at__gte=now - timedelta(days=7)).count(),
         "my_work": my_work,
         "my_work_count": my_work_count,
         "attention": attention,

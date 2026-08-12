@@ -1,9 +1,13 @@
-<div class="text-sm font-medium mb-4">Needs Attention</div>
+<div class="flex-between mb-4">
+  <div class="text-sm font-medium">Needs Attention</div>
+  {% if attention_count %}<span class="count-badge">{{ attention_count }}</span>{% endif %}
+</div>
 {% if attention.critical_errors %}
 <div class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Critical Errors</div>
 {% for e in attention.critical_errors %}
 <div class="flex-between" style="padding:6px 0;">
   <div class="text-sm truncate" style="min-width:0;">
+    <span class="dot-sev critical"></span>
     <a href="{% if e.product %}{% url 'products:product_error_detail' pk=e.product.pk error_pk=e.pk %}{% else %}{% url 'errors:error_detail' pk=e.pk %}{% endif %}" style="color:inherit;">{{ e.title|truncatechars:42 }}</a>
     {% if e.product %}<span class="text-muted"> · {{ e.product.name }}</span>{% endif %}
   </div>
@@ -17,6 +21,7 @@
 {% for t in attention.stale_tickets %}
 <div class="flex-between" style="padding:6px 0;">
   <div class="text-sm truncate" style="min-width:0;">
+    <span class="dot-sev stale"></span>
     <a href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}" style="color:inherit;">#{{ t.pk }} {{ t.title|truncatechars:42 }}</a>
     {% if t.product %}<span class="text-muted"> · {{ t.product.name }}</span>{% endif %}
   </div>
@@ -30,6 +35,7 @@
 {% for t in attention.unassigned_tickets %}
 <div class="flex-between" style="padding:6px 0;">
   <div class="text-sm truncate" style="min-width:0;">
+    <span class="dot-sev unassigned"></span>
     <a href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}" style="color:inherit;">#{{ t.pk }} {{ t.title|truncatechars:42 }}</a>
     {% if t.product %}<span class="text-muted"> · {{ t.product.name }}</span>{% endif %}
   </div>

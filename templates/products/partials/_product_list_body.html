@@ -1,34 +1,132 @@
-{% for product in page %}
-<tr>
-  <td onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">
-    <div class="title">{{ product.name }}</div>
-    {% if product.description %}<div class="sub">{{ product.description|truncatewords:12 }}</div>{% endif %}
-  </td>
-  <td class="text-sm text-muted" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.slug }}</td>
-  <td class="text-sm" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.versions.count }}</td>
-  <td class="text-sm" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.api_keys.count }}</td>
-  <td><a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn" style="font-size:12px;padding:4px 8px;">View</a></td>
-  <td>
-    <div class="row-actions">
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-      <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" title="Edit" aria-label="Edit">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-      </a>
-      <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" onsubmit="return confirmAction(this, 'Delete {{ product.name }}? This cannot be undone.')">
-        {% csrf_token %}
-        <button type="submit" class="icon-btn icon-btn-danger" title="Delete" aria-label="Delete">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        </button>
-      </form>
-      {% endif %}
+{% if view_mode == 'table' %}
+<table>
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th style="width:120px">Slug</th>
+      <th style="width:90px">Errors</th>
+      <th style="width:90px">Tickets</th>
+      <th style="width:90px">Versions</th>
+      <th style="width:90px">API Keys</th>
+      <th style="width:100px">Dashboard</th>
+      <th style="width:60px"></th>
+    </tr>
+  </thead>
+  <tbody id="product-list-body">
+    {% for product in page %}
+    <tr>
+      <td onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">
+        <div class="flex-align gap-2">
+          <span class="health-dot {{ product.card_data.health }}" title="{{ product.card_data.health|title }}"></span>
+          <div>
+            <div class="title">{{ product.name }}</div>
+            {% if product.description %}<div class="sub">{{ product.description|truncatewords:10 }}</div>{% endif %}
+          </div>
+        </div>
+      </td>
+      <td class="text-sm text-muted" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">
+        <code>{{ product.slug }}</code>
+      </td>
+      <td class="text-sm font-medium" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.card_data.open_errors }}</td>
+      <td class="text-sm font-medium" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.card_data.open_tickets }}</td>
+      <td class="text-sm" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.version_cnt }}</td>
+      <td class="text-sm" onclick="window.location='{% url 'products:product_detail' pk=product.pk %}'">{{ product.api_key_cnt }}</td>
+      <td><a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn btn-sm" style="font-size:12px;padding:4px 8px;">View</a></td>
+      <td>
+        <div class="row-actions">
+          {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+          <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" title="Edit" aria-label="Edit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </a>
+          <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" onsubmit="return confirmAction(this, 'Delete {{ product.name }}? This cannot be undone.')">
+            {% csrf_token %}
+            <button type="submit" class="icon-btn icon-btn-danger" title="Delete" aria-label="Delete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="8" class="empty">
+        <h3>No products found</h3>
+        <p>{% if search %}Try a different search term.{% else %}Add a product to start tracking errors and feedback.{% endif %}</p>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+{% if products %}
+<div class="grid-3 mb-6">
+  {% for product in products %}
+  <div class="product-item-card">
+    <div>
+      <div class="card-head">
+        <a href="{% url 'products:product_detail' pk=product.pk %}" class="card-title">
+          <span class="health-dot {{ product.card_data.health }}" title="Health: {{ product.card_data.health|title }}"></span>
+          {{ product.name }}
+        </a>
+        <span class="card-slug">{{ product.slug }}</span>
+      </div>
+
+      <p class="card-desc">
+        {% if product.description %}
+          {{ product.description }}
+        {% else %}
+          <span style="font-style:italic;opacity:0.7;">No description provided.</span>
+        {% endif %}
+      </p>
+
+      <div class="stat-mini-grid">
+        <div class="stat-cell">
+          <div class="v">{{ product.card_data.open_errors }}</div>
+          <div class="l">Errors</div>
+        </div>
+        <div class="stat-cell">
+          <div class="v">{{ product.card_data.open_tickets }}</div>
+          <div class="l">Tickets</div>
+        </div>
+        <div class="stat-cell">
+          <div class="v">{{ product.version_cnt }}</div>
+          <div class="l">Versions</div>
+        </div>
+        <div class="stat-cell">
+          <div class="v">{{ product.api_key_cnt }}</div>
+          <div class="l">API Keys</div>
+        </div>
+      </div>
     </div>
-  </td>
-</tr>
-{% empty %}
-<tr>
-  <td colspan="6" class="empty">
-    <h3>No products found</h3>
-    <p>{% if search %}Try a different search term.{% else %}Add a product to start tracking errors and feedback.{% endif %}</p>
-  </td>
-</tr>
-{% endfor %}
+
+    <div class="card-actions">
+      <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn btn-sm" style="font-size:12px;gap:4px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Dashboard
+      </a>
+      <div class="row-actions" style="align-items:center;">
+        <a href="{% url 'products:product_detail' pk=product.pk %}" class="btn btn-sm" style="font-size:12px;gap:4px;">Details &rarr;</a>
+        {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+        <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" title="Edit" aria-label="Edit">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        </a>
+        <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" style="display:inline;" onsubmit="return confirmAction(this, 'Delete {{ product.name }}? This cannot be undone.')">
+          {% csrf_token %}
+          <button type="submit" class="icon-btn icon-btn-danger" title="Delete" aria-label="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:48px 24px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:24px;">
+  <h3 style="font-size:16px;font-weight:600;margin-bottom:6px;">No products found</h3>
+  <p class="text-sm text-muted">{% if search %}Try a different search term.{% else %}Add a product to start tracking errors and feedback.{% endif %}</p>
+</div>
+{% endif %}
+{% endif %}

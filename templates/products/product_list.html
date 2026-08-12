@@ -7,41 +7,45 @@
   <h1>Products <span class="count">{{ page.paginator.count }} total</span></h1>
   <div class="head-actions">
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-    <a href="{% url 'products:product_create' %}" class="btn btn-primary">New product</a>
+    <a href="{% url 'products:product_create' %}" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New product
+    </a>
     {% endif %}
   </div>
 </div>
 
-<div class="toolbar">
-  <form method="get" class="search-wrap" style="display:flex;">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" name="q" value="{{ search }}" placeholder="Search products...">
-    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
-  </form>
-  <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
-    <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
-    <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>Name Z-A</option>
-    <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
-    <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
-    <option value="-versions" {% if current_sort == '-versions' %}selected{% endif %}>Most versions</option>
-  </select>
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:10px;flex:1;">
+    <form method="get" class="search-wrap" style="display:flex;max-width:320px;width:100%;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" name="q" value="{{ search }}" placeholder="Search products...">
+      {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+      {% if view_mode %}<input type="hidden" name="view" value="{{ view_mode }}">{% endif %}
+    </form>
+
+    <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
+      <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
+      <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>Name Z-A</option>
+      <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
+      <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
+      <option value="-versions" {% if current_sort == '-versions' %}selected{% endif %}>Most versions</option>
+    </select>
+  </div>
+
+  <div class="view-toggle">
+    <button type="button" class="{% if view_mode != 'table' %}active{% endif %}" onclick="window.location=buildUrl({view:'grid'})" title="Grid View">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </button>
+    <button type="button" class="{% if view_mode == 'table' %}active{% endif %}" onclick="window.location=buildUrl({view:'table'})" title="Table View">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </button>
+  </div>
 </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Product</th>
-      <th style="width:120px">Slug</th>
-      <th style="width:100px">Versions</th>
-      <th style="width:100px">API Keys</th>
-      <th style="width:100px">Dashboard</th>
-      <th style="width:60px"></th>
-    </tr>
-  </thead>
-  <tbody id="product-list-body">
-    {% include "products/partials/_product_list_body.html" with page=page %}
-  </tbody>
-</table>
+<div id="product-list-container">
+  {% include "products/partials/_product_list_body.html" with page=page products=products view_mode=view_mode %}
+</div>
 
 {% include "core/_pagination.html" with page=page %}
 

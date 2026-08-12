@@ -5,30 +5,34 @@
 {% block title %}Reports — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Reports <span class="count">{% if scope == 'mine' %}My activity{% else %}Company-wide{% endif %} · {{ start_date|date:"M j, Y" }} – {{ end_date|date:"M j, Y" }}</span></h1>
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>Reports <span class="count">{% if scope == 'mine' %}My Activity{% else %}Company-Wide{% endif %} &middot; {{ start_date|date:"M j, Y" }} – {{ end_date|date:"M j, Y" }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Audit logs, resolution metrics, and activity breakdowns over time.</p>
+  </div>
 </div>
 
-<div class="toolbar" style="align-items:flex-end;">
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <form method="get" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;"
         hx-get="{% url 'dashboards:reports' %}"
         hx-target="#report-content"
         hx-swap="innerHTML"
         hx-push-url="true">
     <div class="form-group" style="margin:0;">
-      <label>From</label>
-      <input type="date" name="start_date" class="form-input" value="{{ start_date|date:'Y-m-d' }}">
+      <label style="font-size:12px;font-weight:500;margin-bottom:4px;display:block;">From</label>
+      <input type="date" name="start_date" class="form-input" value="{{ start_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;">
     </div>
     <div class="form-group" style="margin:0;">
-      <label>To</label>
-      <input type="date" name="end_date" class="form-input" value="{{ end_date|date:'Y-m-d' }}">
+      <label style="font-size:12px;font-weight:500;margin-bottom:4px;display:block;">To</label>
+      <input type="date" name="end_date" class="form-input" value="{{ end_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;">
     </div>
-    <button type="submit" class="btn btn-primary">Generate report</button>
+    <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">Generate report</button>
   </form>
-  <div style="margin-left:auto;display:flex;gap:8px;">
-    <a href="{% url 'dashboards:reports' %}" class="btn" style="font-size:12px;">Today</a>
-    <a href="{% url 'dashboards:reports' %}?start_date={{ yesterday|date:'Y-m-d' }}&end_date={{ yesterday|date:'Y-m-d' }}" class="btn" style="font-size:12px;">Yesterday</a>
-    <a href="{% url 'dashboards:reports' %}?start_date={{ week_ago|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}" class="btn" style="font-size:12px;">Last 7 days</a>
+
+  <div style="display:flex;gap:6px;align-items:center;">
+    <a href="{% url 'dashboards:reports' %}" class="btn btn-sm">Today</a>
+    <a href="{% url 'dashboards:reports' %}?start_date={{ yesterday|date:'Y-m-d' }}&end_date={{ yesterday|date:'Y-m-d' }}" class="btn btn-sm">Yesterday</a>
+    <a href="{% url 'dashboards:reports' %}?start_date={{ week_ago|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}" class="btn btn-sm">Last 7 days</a>
   </div>
 </div>
 

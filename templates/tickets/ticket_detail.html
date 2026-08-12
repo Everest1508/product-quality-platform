@@ -3,6 +3,16 @@
 {% block title %}#{{ ticket.pk }} — PQ Platform{% endblock %}
 
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'tickets:ticket_board' %}">Tickets</a>
+  <span class="sep">/</span>
+  {% if ticket.product %}
+  <a href="{% url 'products:product_detail' pk=ticket.product.pk %}">{{ ticket.product.name }}</a>
+  <span class="sep">/</span>
+  {% endif %}
+  <span class="current">#{{ ticket.pk }}</span>
+</nav>
+
 <div class="head">
   <h1>#{{ ticket.pk }} <span class="count">{{ ticket.title }}</span></h1>
   <div class="head-actions">
@@ -11,6 +21,10 @@
     {% else %}
     <a href="{% url 'tickets:ticket_board' %}" class="btn">← Tickets</a>
     {% endif %}
+    <a href="{% url 'tickets:ticket_edit' pk=ticket.pk %}" class="btn" style="font-size:13px;display:inline-flex;align-items:center;gap:6px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+      Edit Ticket
+    </a>
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
     <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
       {% csrf_token %}
@@ -87,7 +101,9 @@
         </div>
         <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
           <span class="text-sm text-muted">Priority</span>
-          <span class="prio {{ ticket.priority }}"><span class="bar"></span>{{ ticket.get_priority_display }}</span>
+          <div id="detail-priority">
+            {% include "tickets/partials/_ticket_priority.html" with ticket=ticket priority_choices=priority_choices %}
+          </div>
         </div>
         <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
           <span class="text-sm text-muted">Assignee</span>

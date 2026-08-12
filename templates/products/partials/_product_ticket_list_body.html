@@ -1,35 +1,47 @@
 {% for ticket in page %}
-<tr>
-  <td class="id" onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'">#{{ ticket.pk }}</td>
-  <td onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'">
-    <div class="title">{{ ticket.title }}</div>
-    <div class="sub">{% if ticket.linked_error_group %}Linked to error · {% endif %}{{ ticket.get_ticket_type_display }}</div>
+<tr onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'" style="cursor:pointer;" class="clickable-row">
+  <td class="id" style="font-weight:600;color:var(--muted);white-space:nowrap;">#{{ ticket.pk }}</td>
+  <td>
+    <div class="title" style="font-size:13.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;">
+      {{ ticket.title }}
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </div>
+    <div class="sub" style="font-size:12px;color:var(--muted);margin-top:2px;">
+      <span class="card-type {{ ticket.ticket_type }}" style="font-size:11px;padding:1px 6px;border-radius:4px;display:inline-block;">{{ ticket.get_ticket_type_display }}</span>
+      {% if ticket.linked_error_group %} &middot; Linked to error{% endif %}
+    </div>
   </td>
-  <td onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'">
+  <td>
     {% if ticket.status == 'open' %}<span class="pill open">Open</span>
     {% elif ticket.status == 'assigned' %}<span class="pill assigned">Assigned</span>
     {% elif ticket.status == 'in_progress' %}<span class="pill progress">In progress</span>
     {% elif ticket.status == 'testing' %}<span class="pill testing">Testing</span>
     {% elif ticket.status == 'resolved' %}<span class="pill resolved">Resolved</span>
-    {% elif ticket.status == 'closed' %}<span class="pill closed">Closed</span>{% endif %}
+    {% elif ticket.status == 'closed' %}<span class="pill closed">Closed</span>
+    {% endif %}
   </td>
-  <td onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'">
-    <span class="prio {{ ticket.priority }}"><span class="bar"></span>{{ ticket.get_priority_display }}</span>
-  </td>
-  <td onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'">
-    {% if ticket.assignees.all %}
-    <span class="assignee-list" style="display:flex;gap:4px;">
-      {% for a in ticket.assignees.all|slice:":3" %}
-      <span class="avatar avatar-sm" title="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);">{{ a.username.0|upper }}</span>
-      {% endfor %}
-      {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
-    </span>
-    {% else %}<span class="assignee unassigned">Unassigned</span>{% endif %}
-    {% if ticket.is_overdue %}<span class="pill overdue" style="margin-left:6px;">Overdue</span>{% endif %}
-  </td>
-  <td class="date" onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'">{{ ticket.updated_at|timesince }} ago</td>
   <td>
-    <div class="row-actions">
+    <span class="card-priority {{ ticket.priority }}" style="font-size:12px;display:inline-flex;align-items:center;gap:5px;">
+      <span class="dot" style="width:7px;height:7px;border-radius:50%;display:inline-block;"></span>
+      {{ ticket.get_priority_display }}
+    </span>
+  </td>
+  <td>
+    {% if ticket.assignees.all %}
+    <div class="card-assignees" style="display:flex;align-items:center;">
+      {% for a in ticket.assignees.all|slice:":3" %}
+      <span class="avatar avatar-sm" data-tooltip="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);margin-right:-4px;border:2px solid #fff;">{{ a.username.0|upper }}</span>
+      {% endfor %}
+      {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm" style="margin-left:4px;">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
+    </div>
+    {% else %}
+    <span class="text-sm text-muted" style="font-size:12px;">Unassigned</span>
+    {% endif %}
+    {% if ticket.is_overdue %}<span class="overdue-badge" style="margin-left:6px;">Overdue</span>{% endif %}
+  </td>
+  <td class="date" style="font-size:12.5px;color:var(--muted);white-space:nowrap;">{{ ticket.updated_at|timesince }} ago</td>
+  <td onclick="event.stopPropagation();" style="text-align:right;">
+    <div class="row-actions" style="display:inline-flex;gap:4px;">
       <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}" class="btn" title="Edit" aria-label="Edit" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
       </a>
@@ -45,5 +57,10 @@
   </td>
 </tr>
 {% empty %}
-<tr><td colspan="7" class="empty"><h3>No tickets found</h3><p>{% if search %}Try a different search term.{% else %}Create a ticket to start tracking work.{% endif %}</p></td></tr>
+<tr>
+  <td colspan="7" class="empty" style="text-align:center;padding:40px 20px;">
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:4px;">No tickets found</h3>
+    <p class="text-sm text-muted">{% if search %}Try a different search term.{% else %}Create a ticket to start tracking work.{% endif %}</p>
+  </td>
+</tr>
 {% endfor %}

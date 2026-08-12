@@ -1,4 +1,7 @@
-<div class="text-sm font-medium mb-4">My Work</div>
+<div class="flex-between mb-4">
+  <div class="text-sm font-medium">My Work</div>
+  <span class="count-badge">{{ my_work_count }}</span>
+</div>
 {% for t in my_work %}
 <div class="flex-between" style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
   <div style="min-width:0;">

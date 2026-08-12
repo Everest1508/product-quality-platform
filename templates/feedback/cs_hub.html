@@ -1,68 +1,26 @@
 {% extends "core/base.html" %}
 
-{% block title %}CS Hub — PQ Platform{% endblock %}
+{% block title %}Customer Success Hub — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Customer Success Hub</h1>
-</div>
-
-<div class="grid-3 mb-6">
-  <div class="card stat">
-    <div class="val">{{ total_responses }}</div>
-    <div class="label">Total Responses</div>
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>Customer Success Hub</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Track customer satisfaction ratings, survey responses, and sentiment insights across products.</p>
   </div>
-  <div class="card stat">
-    <div class="val">{{ avg_all|default:"—" }}</div>
-    <div class="label">Avg Score (All)</div>
-  </div>
-  <div class="card stat">
-    <div class="val">{{ active_surveys.count }}</div>
-    <div class="label">Active Surveys</div>
+  <div class="head-actions" style="display:flex;gap:8px;">
+    <a href="{% url 'feedback:survey_list' %}" class="btn" style="gap:6px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Manage Surveys
+    </a>
+    <a href="{% url 'feedback:survey_create' %}" class="btn btn-primary" style="gap:6px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New survey
+    </a>
   </div>
 </div>
 
-<div class="card mb-6">
-  <div class="text-sm font-medium mb-4">Product Breakdown</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th style="width:80px;text-align:right;">Surveys</th>
-        <th style="width:90px;text-align:right;">Responses</th>
-        <th style="width:90px;text-align:right;">Avg Score</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for stat in product_stats %}
-      <tr onclick="window.location='{% url 'dashboards:product_dashboard' product_pk=stat.product.pk %}'">
-        <td class="font-medium">{{ stat.product.name }}</td>
-        <td class="text-sm" style="text-align:right;">{{ stat.survey_count }}</td>
-        <td class="text-sm" style="text-align:right;">{{ stat.response_count }}</td>
-        <td style="text-align:right;" class="text-sm font-medium">{{ stat.avg_score|default:"—" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="4" class="empty"><p>No products with survey data yet.</p></td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div id="cs-hub-container">
+  {% include "feedback/partials/_cs_hub_content.html" %}
 </div>
-
-{% if active_surveys %}
-<div class="card">
-  <div class="text-sm font-medium mb-4">Active Surveys</div>
-  {% for survey in active_surveys %}
-  <a href="{% url 'feedback:survey_detail' pk=survey.pk %}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-    <div>
-      <span class="font-medium text-sm">{{ survey.name }}</span>
-      <span class="text-sm text-muted" style="margin-left:8px;">{{ survey.product.name }}</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span class="text-sm text-muted">{{ survey.response_count }} responses</span>
-      <span class="pill {{ survey.survey_type }}">{{ survey.get_survey_type_display }}</span>
-    </div>
-  </a>
-  {% endfor %}
-</div>
-{% endif %}
 {% endblock %}

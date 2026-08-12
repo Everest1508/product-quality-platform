@@ -1,43 +1,78 @@
 {% extends "core/base.html" %}
 
-{% block title %}Profile — PQ Platform{% endblock %}
+{% block title %}Settings — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Settings</h1>
-</div>
-
-<div class="card" style="max-width:540px;">
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);">
-    <span class="avatar" style="width:48px;height:48px;font-size:18px;">{{ request.user.username.0|upper }}</span>
+<div style="max-width:800px;width:100%;margin:0 auto;padding-bottom:40px;">
+  <!-- Head Header -->
+  <div class="head" style="margin-bottom:24px;">
     <div>
-      <div class="font-medium">{{ request.user.get_full_name|default:request.user.username }}</div>
-      <div class="text-sm text-muted">@{{ request.user.username }}</div>
+      <h1>Settings</h1>
+      <p class="text-sm text-muted" style="margin-top:4px;">Manage your profile details, email address, and notification preferences.</p>
     </div>
   </div>
 
-  <form method="post">
-    {% csrf_token %}
-    <div class="grid-2">
-      <div class="form-group">
-        <label>First name</label>
-        {{ form.first_name }}
+  <!-- User Profile Summary Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:20px;width:100%;">
+    <div style="display:flex;align-items:center;gap:16px;min-width:0;">
+      <div class="avatar" style="width:52px;height:52px;font-size:20px;font-weight:600;flex-shrink:0;">{{ request.user.username.0|upper }}</div>
+      <div style="min-width:0;">
+        <div style="font-size:16px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </div>
+        <div class="text-sm text-muted" style="margin-top:2px;">
+          @{{ request.user.username }} &middot; <span class="pill {% if request.company_role == 'owner' %}nps{% elif request.company_role == 'admin' %}medium{% elif request.company_role == 'developer' %}active{% else %}closed{% endif %}">{{ request.company_role|title }}</span>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Last name</label>
-        {{ form.last_name }}
+    </div>
+    <div class="text-sm text-muted" style="text-align:right;flex-shrink:0;">
+      Company: <b style="color:var(--text);">{{ request.company.name }}</b>
+    </div>
+  </div>
+
+  <!-- Main Settings Form -->
+  <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:28px;width:100%;">
+    <form method="post">
+      {% csrf_token %}
+
+      <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <h3 style="font-size:15px;font-weight:600;margin-bottom:4px;">Personal Information</h3>
+        <p class="text-sm text-muted">Update your display name and primary contact email.</p>
       </div>
-    </div>
-    <div class="form-group">
-      <label>Email</label>
-      {{ form.email }}
-    </div>
-    <div class="form-group">
-      <label>Discord ID</label>
-      {{ form.discord_id }}
-      <div class="text-sm text-muted" style="margin-top:4px;">Used to mention you in Discord webhook notifications when a ticket is assigned to you. Enable Developer Mode in Discord, right-click your name, and select "Copy User ID".</div>
-    </div>
-    <button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Changes</button>
-  </form>
+
+      <div class="grid-2 mb-4" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">First name</label>
+          {{ form.first_name }}
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Last name</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="form-group mb-6">
+        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Email address</label>
+        {{ form.email }}
+      </div>
+
+      <div style="margin-bottom:20px;padding-top:16px;padding-bottom:16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <h3 style="font-size:15px;font-weight:600;margin-bottom:4px;">Notification Integrations</h3>
+        <p class="text-sm text-muted">Link external accounts for ticket assignment and alert mentions.</p>
+      </div>
+
+      <div class="form-group mb-6">
+        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Discord User ID</label>
+        {{ form.discord_id }}
+        <div class="text-sm text-muted" style="margin-top:6px;line-height:1.4;">
+          Used to mention you in Discord webhook alerts when a ticket is assigned to you. Enable <b>Developer Mode</b> in Discord settings, right-click your avatar, and choose <i>"Copy User ID"</i>.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;padding-top:20px;border-top:1px solid var(--border);">
+        <button type="submit" class="btn btn-primary" style="padding:9px 20px;">Save Changes</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

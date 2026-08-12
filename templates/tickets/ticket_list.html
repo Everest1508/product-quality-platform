@@ -3,15 +3,27 @@
 {% block title %}Tickets — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Tickets <span class="count">{{ page.paginator.count }} total</span></h1>
-  <div class="head-actions">
-    <a href="{% url 'tickets:ticket_board' %}" class="btn" style="font-size:13px;">Kanban</a>
-    <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary">New ticket</a>
+<nav class="breadcrumbs">
+  <a href="{% url 'tickets:ticket_board' %}">Tickets</a>
+  <span class="sep">/</span>
+  <span class="current">List View</span>
+</nav>
+
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>Tickets <span class="count">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Filterable table list of company tickets.</p>
+  </div>
+  <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
+    <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
+      <a href="{% url 'tickets:ticket_board' %}" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
+      <a href="{% url 'tickets:ticket_list' %}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
+    </div>
+    <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>
 </div>
 
-<div class="tabs">
+<div class="tabs" style="margin-bottom:20px;">
   <a href="{% url 'tickets:ticket_list' %}" class="tab {% if not current_status and not current_assigned %}active{% endif %}">All</a>
   <a href="?status=open" class="tab {% if current_status == 'open' %}active{% endif %}">Open</a>
   <a href="?status=in_progress" class="tab {% if current_status == 'in_progress' %}active{% endif %}">In progress</a>
@@ -20,69 +32,83 @@
   <a href="?assigned=unassigned" class="tab {% if current_assigned == 'unassigned' %}active{% endif %}">Unassigned</a>
 </div>
 
-<div class="toolbar">
-  <form method="get" class="search-wrap" style="display:flex;">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" name="q" value="{{ search }}" placeholder="Search tickets...">
-    {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
-    {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
-    {% if current_priority %}<input type="hidden" name="priority" value="{{ current_priority }}">{% endif %}
-    {% if current_assigned %}<input type="hidden" name="assigned" value="{{ current_assigned }}">{% endif %}
-    {% if current_product %}<input type="hidden" name="product" value="{{ current_product }}">{% endif %}
-    {% if current_overdue %}<input type="hidden" name="overdue" value="{{ current_overdue }}">{% endif %}
-    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
-  </form>
-  <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
-    <option value="">All types</option>
-    <option value="bug" {% if current_type == 'bug' %}selected{% endif %}>Bug</option>
-    <option value="feature" {% if current_type == 'feature' %}selected{% endif %}>Feature</option>
-    <option value="question" {% if current_type == 'question' %}selected{% endif %}>Question</option>
-  </select>
-  <select class="filter-select" onchange="window.location=buildUrl({priority:this.value})">
-    <option value="">All priorities</option>
-    <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
-    <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
-    <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
-    <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
-  </select>
-  <select class="filter-select" onchange="window.location=buildUrl({product:this.value})">
-    <option value="">All products</option>
-    {% for product in products %}
-    <option value="{{ product.pk }}" {% if current_product|stringformat:"s" == product.pk|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
-    {% endfor %}
-  </select>
-  <select class="filter-select" onchange="window.location=buildUrl({assigned:this.value})">
-    <option value="">All assignees</option>
-    <option value="me" {% if current_assigned == 'me' %}selected{% endif %}>Assigned to me</option>
-    <option value="unassigned" {% if current_assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
-    {% for member in members %}
-    <option value="{{ member.pk }}" {% if current_assigned == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-    {% endfor %}
-  </select>
-  <label class="filter-check">
-    <input type="checkbox" onchange="window.location=buildUrl({overdue:this.checked ? '1' : ''})" {% if current_overdue %}checked{% endif %}>
-    Overdue
-  </label>
-  <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
-    <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
-    <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
-    <option value="-updated" {% if current_sort == '-updated' %}selected{% endif %}>Recently updated</option>
-    <option value="updated" {% if current_sort == 'updated' %}selected{% endif %}>Least recently updated</option>
-    <option value="-priority" {% if current_sort == '-priority' %}selected{% endif %}>Priority (high first)</option>
-    <option value="priority" {% if current_sort == 'priority' %}selected{% endif %}>Priority (low first)</option>
-  </select>
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
+    <form method="get" class="search-wrap" style="display:flex;max-width:260px;width:100%;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" name="q" value="{{ search }}" placeholder="Search tickets...">
+      {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+      {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+      {% if current_priority %}<input type="hidden" name="priority" value="{{ current_priority }}">{% endif %}
+      {% if current_assigned %}<input type="hidden" name="assigned" value="{{ current_assigned }}">{% endif %}
+      {% if current_product %}<input type="hidden" name="product" value="{{ current_product }}">{% endif %}
+      {% if current_overdue %}<input type="hidden" name="overdue" value="{{ current_overdue }}">{% endif %}
+      {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+    </form>
+
+    <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
+      <option value="">All types</option>
+      <option value="bug" {% if current_type == 'bug' %}selected{% endif %}>Bug</option>
+      <option value="feature" {% if current_type == 'feature' %}selected{% endif %}>Feature</option>
+      <option value="question" {% if current_type == 'question' %}selected{% endif %}>Question</option>
+    </select>
+
+    <select class="filter-select" onchange="window.location=buildUrl({priority:this.value})">
+      <option value="">All priorities</option>
+      <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
+      <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
+      <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
+      <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
+    </select>
+
+    <select class="filter-select" onchange="window.location=buildUrl({product:this.value})">
+      <option value="">All products</option>
+      {% for product in products %}
+      <option value="{{ product.pk }}" {% if current_product|stringformat:"s" == product.pk|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
+      {% endfor %}
+    </select>
+
+    <select class="filter-select" onchange="window.location=buildUrl({assigned:this.value})">
+      <option value="">All assignees</option>
+      <option value="me" {% if current_assigned == 'me' %}selected{% endif %}>Assigned to me</option>
+      <option value="unassigned" {% if current_assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
+      {% for member in members %}
+      <option value="{{ member.pk }}" {% if current_assigned == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      {% endfor %}
+    </select>
+
+    <label class="filter-check">
+      <input type="checkbox" onchange="window.location=buildUrl({overdue:this.checked ? '1' : ''})" {% if current_overdue %}checked{% endif %}>
+      Overdue Only
+    </label>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;">
+    <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
+      <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
+      <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
+      <option value="-updated" {% if current_sort == '-updated' %}selected{% endif %}>Recently updated</option>
+      <option value="updated" {% if current_sort == 'updated' %}selected{% endif %}>Least recently updated</option>
+      <option value="-priority" {% if current_sort == '-priority' %}selected{% endif %}>Priority (high first)</option>
+      <option value="priority" {% if current_sort == 'priority' %}selected{% endif %}>Priority (low first)</option>
+    </select>
+
+    {% if search or current_status or current_type or current_priority or current_product or current_assigned or current_overdue or current_sort %}
+    <a href="{% url 'tickets:ticket_list' %}" class="btn btn-sm" style="font-size:12px;color:var(--red);">Clear</a>
+    {% endif %}
+  </div>
 </div>
 
 <table>
   <thead>
     <tr>
       <th style="width:70px">ID</th>
-      <th>Ticket</th>
-      <th style="width:110px">Status</th>
-      <th style="width:100px">Priority</th>
-      <th style="width:140px">Assignee</th>
-      <th style="width:100px">Updated</th>
-      <th style="width:70px"></th>
+      <th>Ticket Details</th>
+      <th style="width:120px">Status</th>
+      <th style="width:110px">Priority</th>
+      <th style="width:150px">Assignees</th>
+      <th style="width:120px">Updated</th>
+      <th style="width:80px;text-align:right;">Actions</th>
     </tr>
   </thead>
   <tbody id="ticket-list-body">

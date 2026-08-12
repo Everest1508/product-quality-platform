@@ -3,6 +3,16 @@
 {% block title %}{{ error_group.title }} — PQ Platform{% endblock %}
 
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'errors:error_list' %}">Errors</a>
+  <span class="sep">/</span>
+  {% if error_group.product %}
+  <a href="{% url 'products:product_detail' pk=error_group.product.pk %}">{{ error_group.product.name }}</a>
+  <span class="sep">/</span>
+  {% endif %}
+  <span class="current">Error #{{ error_group.pk }}</span>
+</nav>
+
 <div class="head">
   <h1 style="font-size:16px;">
     <span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;

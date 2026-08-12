@@ -2,48 +2,64 @@
 {% block title %}Kanban — {{ product.name }}{% endblock %}
 
 {% block content %}
-<div class="head" style="margin-bottom:16px;">
-  <h1 style="font-size:20px;font-weight:700;">{{ product.name }} — Kanban</h1>
-  <div class="head-actions">
-    <a href="{% url 'products:product_tickets' pk=product.pk %}" class="btn" style="font-size:13px;">List view</a>
-    <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="font-size:13px;">New ticket</a>
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>{{ product.name }} — Kanban Board <span class="count">{{ total }} ticket{{ total|pluralize }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Drag-and-drop status workflow board for {{ product.name }}.</p>
+  </div>
+  <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
+    <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
+      <a href="{% url 'products:product_board' pk=product.pk %}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
+      <a href="{% url 'products:product_tickets' pk=product.pk %}" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
+    </div>
+    <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>
 </div>
 
-<div class="toolbar">
-  <form method="get" style="display:flex;gap:8px;align-items:center;">
-    <div class="search-wrap">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input type="text" name="q" placeholder="Search tickets..." value="{{ search }}" />
-    </div>
-    <button type="submit" class="btn btn-sm">Search</button>
-  </form>
-  <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
-    <option value="">All types</option>
-    <option value="bug" {% if current_type == 'bug' %}selected{% endif %}>Bug</option>
-    <option value="feature" {% if current_type == 'feature' %}selected{% endif %}>Feature</option>
-    <option value="question" {% if current_type == 'question' %}selected{% endif %}>Question</option>
-  </select>
-  <select class="filter-select" onchange="window.location=buildUrl({priority:this.value})">
-    <option value="">All priorities</option>
-    <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
-    <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
-    <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
-    <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
-  </select>
-  <select class="filter-select" onchange="window.location=buildUrl({assigned:this.value})">
-    <option value="">All assignees</option>
-    <option value="me" {% if current_assigned == 'me' %}selected{% endif %}>Assigned to me</option>
-    <option value="unassigned" {% if current_assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
-    {% for member in members %}
-    <option value="{{ member.pk }}" {% if current_assigned == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-    {% endfor %}
-  </select>
-  <label class="filter-check">
-    <input type="checkbox" onchange="window.location=buildUrl({overdue:this.checked ? '1' : ''})" {% if current_overdue %}checked{% endif %}>
-    Overdue
-  </label>
-  <span class="text-sm text-muted" style="margin-left:auto;">{{ total }} total</span>
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
+    <form method="get" class="search-wrap" style="display:flex;max-width:260px;width:100%;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" name="q" value="{{ search }}" placeholder="Search tickets...">
+      {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+      {% if current_priority %}<input type="hidden" name="priority" value="{{ current_priority }}">{% endif %}
+      {% if current_assigned %}<input type="hidden" name="assigned" value="{{ current_assigned }}">{% endif %}
+      {% if current_overdue %}<input type="hidden" name="overdue" value="{{ current_overdue }}">{% endif %}
+    </form>
+
+    <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
+      <option value="">All types</option>
+      <option value="bug" {% if current_type == 'bug' %}selected{% endif %}>Bug</option>
+      <option value="feature" {% if current_type == 'feature' %}selected{% endif %}>Feature</option>
+      <option value="question" {% if current_type == 'question' %}selected{% endif %}>Question</option>
+    </select>
+
+    <select class="filter-select" onchange="window.location=buildUrl({priority:this.value})">
+      <option value="">All priorities</option>
+      <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
+      <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
+      <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
+      <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
+    </select>
+
+    <select class="filter-select" onchange="window.location=buildUrl({assigned:this.value})">
+      <option value="">All assignees</option>
+      <option value="me" {% if current_assigned == 'me' %}selected{% endif %}>Assigned to me</option>
+      <option value="unassigned" {% if current_assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
+      {% for member in members %}
+      <option value="{{ member.pk }}" {% if current_assigned == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+      {% endfor %}
+    </select>
+
+    <label class="filter-check">
+      <input type="checkbox" onchange="window.location=buildUrl({overdue:this.checked ? '1' : ''})" {% if current_overdue %}checked{% endif %}>
+      Overdue Only
+    </label>
+  </div>
+
+  {% if search or current_type or current_priority or current_assigned or current_overdue %}
+  <a href="{% url 'products:product_board' pk=product.pk %}" class="btn btn-sm" style="font-size:12px;color:var(--red);">Clear filters</a>
+  {% endif %}
 </div>
 
 <script>
@@ -75,30 +91,29 @@ function buildUrl(params) {
            data-csrf="{{ csrf_token }}">
         <div class="card-id">
           #{{ ticket.pk }}
-          {% if ticket.is_overdue %}<span class="overdue-badge">OVERDUE</span>{% endif %}
         </div>
         <div class="card-title">
-          <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}">{{ ticket.title|truncatewords:12 }}</a>
+          <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}">{{ ticket.title }}</a>
         </div>
         <div class="card-meta">
           <span class="card-type {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
           <span class="card-priority {{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span>
+          {% if ticket.is_overdue %}<span class="overdue-badge">Overdue</span>{% endif %}
         </div>
         <div class="card-footer">
           {% if ticket.assignees.all %}
-          <span class="card-assignees" title="{% for a in ticket.assignees.all %}{{ a.get_full_name|default:a.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+          <div class="card-assignees">
             {% for a in ticket.assignees.all|slice:":3" %}
-            <span class="avatar avatar-sm" style="background:var(--accent-soft);color:var(--accent);">{{ a.username.0|upper }}</span>
+            <span class="avatar avatar-sm" data-tooltip="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);margin-right:-4px;border:2px solid #fff;">{{ a.username.0|upper }}</span>
             {% endfor %}
-            {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
-          </span>
+            {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm" style="margin-left:4px;">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
+          </div>
           {% else %}
-          <span class="text-sm text-muted">Unassigned</span>
+          <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
           {% endif %}
           {% if ticket.deadline %}
-          <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" title="Due {{ ticket.deadline|date:'Y-m-d H:i' }}">due {{ ticket.deadline|date:'m-d H:i' }}</span>
+          <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" data-tooltip="Due {{ ticket.deadline|date:'Y-m-d H:i' }}">due {{ ticket.deadline|date:'m-d H:i' }}</span>
           {% endif %}
-          <span class="card-date">{{ ticket.created_at|timesince }} ago</span>
         </div>
       </div>
       {% endfor %}
@@ -112,7 +127,6 @@ function buildUrl(params) {
 
 <script>
 (function() {
-  const ORDER = {open:0, assigned:1, in_progress:2, testing:3, resolved:4, closed:5};
   const board = document.getElementById('kanban-board');
   let draggedCard = null;
 
