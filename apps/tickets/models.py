@@ -90,6 +90,13 @@ class Ticket(TenantScopedModel):
         blank=True,
         related_name="tickets",
     )
+    milestone = models.ForeignKey(
+        "products.ProductMilestone",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tickets",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -114,11 +121,17 @@ class Ticket(TenantScopedModel):
             and self.deadline < timezone.now()
         )
 
-    def transition_to(self, new_status):
+    def transition_to(self, new_status, actor=None):
         if not self.can_transition_to(new_status):
             raise ValueError(f"'{new_status}' is not a valid status.")
         self.status = new_status
         self.save(update_fields=["status", "updated_at"])
+        if new_status in (Ticket.Status.RESOLVED, Ticket.Status.CLOSED):
+            try:
+                from apps.dsr.service import auto_log_ticket_dsr
+                auto_log_ticket_dsr(self, actor=actor)
+            except Exception:
+                pass
 
     def set_assignees(self, users):
         """Replace the assignee set and keep the primary ``assigned_to`` in sync."""

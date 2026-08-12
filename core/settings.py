@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.automation",
     "apps.feedback",
     "apps.dashboards",
+    "apps.dsr",
 ]
 
 MIDDLEWARE = [

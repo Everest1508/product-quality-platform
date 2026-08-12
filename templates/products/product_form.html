@@ -67,7 +67,35 @@
             <input type="password" name="discord_webhook_url" value="{{ form.discord_webhook_url.value|default:'' }}" class="form-input" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
             <p class="field-hint">Get notified about tickets, errors, and feedback in a Discord channel. Can be added later.</p>
           </div>
+        <div class="form-section">
+          <div class="form-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Project Milestones (Completion Dates)</span>
+            <button type="button" class="btn btn-sm" onclick="addMilestoneRow()" style="font-size:11.5px;padding:2px 8px;">+ Add Flow Node</button>
+          </div>
+          <div id="milestone-form-container" style="display:flex;flex-direction:column;gap:10px;">
+            <div class="milestone-form-row grid-2" style="gap:10px;">
+              <div class="form-group" style="margin:0;">
+                <input type="text" name="milestone_title" class="form-input" placeholder="Phase 1: MVP Release">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <input type="date" name="milestone_date" class="form-input">
+              </div>
+            </div>
+          </div>
+          <p class="field-hint" style="margin-top:8px;">Define target release milestones with completion dates. They will render as a visual flowchart roadmap on your product dashboard.</p>
         </div>
+
+        <script>
+        function addMilestoneRow() {
+          var container = document.getElementById('milestone-form-container');
+          if (!container) return;
+          var div = document.createElement('div');
+          div.className = 'milestone-form-row grid-2';
+          div.style.gap = '10px';
+          div.innerHTML = '<div class="form-group" style="margin:0;"><input type="text" name="milestone_title" class="form-input" placeholder="Next Phase Title"></div><div class="form-group" style="margin:0;"><input type="date" name="milestone_date" class="form-input"></div>';
+          container.appendChild(div);
+        }
+        </script>
 
         <div class="form-actions">
           <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>

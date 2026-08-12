@@ -1,0 +1,83 @@
+<tr id="dsr-row-{{ entry.pk }}" class="{% if entry.is_auto_logged %}dsr-auto-row{% endif %}">
+  <td style="width:40px;text-align:center;color:var(--muted);font-size:12px;font-weight:500;">
+    {{ forloop.counter|default:"•" }}
+  </td>
+  <td style="min-width:240px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      {% if entry.is_auto_logged %}
+      <span class="pill" style="font-size:10px;padding:1px 6px;background:var(--blue-bg);color:var(--blue);font-weight:700;letter-spacing:0.02em;" title="Auto-captured ticket completion">AUTO</span>
+      {% else %}
+      <span class="pill" style="font-size:10px;padding:1px 6px;background:var(--panel);color:var(--muted);font-weight:500;">MANUAL</span>
+      {% endif %}
+      
+      {% if entry.ticket %}
+      <a href="{% url 'tickets:ticket_detail' pk=entry.ticket.pk %}" class="link" style="font-weight:500;font-size:13.5px;color:var(--text);" title="View ticket details">
+        {{ entry.task_name }}
+      </a>
+      {% else %}
+      <input type="text" name="task_name" value="{{ entry.task_name }}" class="sheet-input" style="font-weight:500;"
+             hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+             hx-trigger="change delay:400ms"
+             hx-target="#dsr-row-{{ entry.pk }}"
+             hx-swap="outerHTML">
+      {% endif %}
+    </div>
+  </td>
+  <td style="width:150px;">
+    <select name="category" class="sheet-select category-select {{ entry.category }}"
+            hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+            hx-trigger="change"
+            hx-target="#dsr-row-{{ entry.pk }}"
+            hx-swap="outerHTML">
+      {% for val, label in category_choices %}
+      <option value="{{ val }}" {% if entry.category == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td style="width:100px;font-size:12.5px;color:var(--muted);">
+    {% if entry.created_time %}{{ entry.created_time|date:"H:i" }}{% else %}—{% endif %}
+  </td>
+  <td style="width:100px;font-size:12.5px;color:var(--muted);">
+    {% if entry.completed_time %}{{ entry.completed_time|date:"H:i" }}{% else %}—{% endif %}
+  </td>
+  <td style="width:110px;font-size:12.5px;font-weight:600;color:var(--text);">
+    {{ entry.time_taken_formatted }}
+  </td>
+  <td style="width:110px;">
+    <div style="display:flex;align-items:center;gap:4px;">
+      <input type="number" step="0.25" min="0" max="24" name="hours_spent" value="{{ entry.hours_spent }}" class="sheet-input num-input" style="width:55px;"
+             hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+             hx-trigger="change delay:300ms"
+             hx-target="#dsr-row-{{ entry.pk }}"
+             hx-swap="outerHTML">
+      <span style="font-size:11px;color:var(--muted);font-weight:500;">hrs</span>
+    </div>
+  </td>
+  <td style="width:130px;">
+    <select name="status" class="sheet-select status-select {{ entry.status }}"
+            hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+            hx-trigger="change"
+            hx-target="#dsr-row-{{ entry.pk }}"
+            hx-swap="outerHTML">
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if entry.status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td style="min-width:180px;">
+    <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add remarks..." class="sheet-input"
+           hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+           hx-trigger="change delay:400ms"
+           hx-target="#dsr-row-{{ entry.pk }}"
+           hx-swap="outerHTML">
+  </td>
+  <td style="width:45px;text-align:center;">
+    <button type="button" class="btn-icon text-muted" title="Delete entry"
+            hx-post="{% url 'dsr:dsr_delete' pk=entry.pk %}"
+            hx-confirm="Delete DSR entry?"
+            hx-target="#dsr-content"
+            hx-swap="innerHTML">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+  </td>
+</tr>

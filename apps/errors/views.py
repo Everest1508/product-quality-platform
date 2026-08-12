@@ -97,10 +97,11 @@ class ErrorDetailView(CompanyMemberRequiredMixin, View):
 
 
 class ErrorStatusView(CompanyMemberRequiredMixin, View):
-    def post(self, request, pk):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
         error_group = get_object_or_404(
             ErrorGroup,
-            pk=pk,
+            pk=target_pk,
             company=request.company,
         )
         new_status = request.POST.get("status")
@@ -129,10 +130,11 @@ class ErrorStatusView(CompanyMemberRequiredMixin, View):
 
 
 class ErrorIgnoreView(CompanyMemberRequiredMixin, View):
-    def post(self, request, pk):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
         error_group = get_object_or_404(
             ErrorGroup,
-            pk=pk,
+            pk=target_pk,
             company=request.company,
         )
         error_group.status = "ignored"
@@ -157,10 +159,11 @@ class ErrorIgnoreView(CompanyMemberRequiredMixin, View):
 
 
 class ErrorResolveView(CompanyMemberRequiredMixin, View):
-    def post(self, request, pk):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
         error_group = get_object_or_404(
             ErrorGroup,
-            pk=pk,
+            pk=target_pk,
             company=request.company,
         )
         error_group.status = "resolved"
@@ -204,10 +207,11 @@ class ErrorCreateView(CompanyMemberRequiredMixin, View):
 
 
 class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
-    def post(self, request, pk):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
         error_group = get_object_or_404(
             ErrorGroup,
-            pk=pk,
+            pk=target_pk,
             company=request.company,
         )
         ticket = Ticket.objects.create(
@@ -242,10 +246,11 @@ class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
 
 
 class ErrorDeleteView(CompanyAdminRequiredMixin, View):
-    def post(self, request, pk):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
         error_group = get_object_or_404(
             ErrorGroup,
-            pk=pk,
+            pk=target_pk,
             company=request.company,
         )
         error_id = error_group.pk

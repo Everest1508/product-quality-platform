@@ -33,6 +33,53 @@ class Product(TenantScopedModel):
         return f"{self.company.name} / {self.name}"
 
 
+class ProductMilestone(TenantScopedModel):
+    class Status(models.TextChoices):
+        UPCOMING = "upcoming", "Upcoming"
+        IN_PROGRESS = "in_progress", "In Progress"
+        COMPLETED = "completed", "Completed"
+        OVERDUE = "overdue", "Overdue"
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="milestones",
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+    target_date = models.DateField()
+    order = models.PositiveIntegerField(default=1)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.UPCOMING,
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta(TenantScopedModel.Meta):
+        ordering = ["order", "target_date"]
+
+    def __str__(self):
+        return f"{self.product.name} - Phase {self.order}: {self.title}"
+
+    @property
+    def is_past_due(self):
+        from django.utils import timezone
+        if self.status != self.Status.COMPLETED and self.target_date < timezone.localdate():
+            return True
+        return False
+
+    @property
+    def computed_status(self):
+        if self.status == self.Status.COMPLETED:
+            return self.Status.COMPLETED
+        if self.is_past_due:
+            return self.Status.OVERDUE
+        return self.status
+
+
 class ProductAccess(TenantScopedModel):
     product = models.ForeignKey(
         Product,

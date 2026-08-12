@@ -31,4 +31,7 @@ urlpatterns = [
     path("<int:pk>/surveys/create/", views.ProductSurveyCreateView.as_view(), name="product_survey_create"),
     path("<int:pk>/rules/", views.ProductRuleListView.as_view(), name="product_rules"),
     path("<int:pk>/rules/create/", views.ProductRuleCreateView.as_view(), name="product_rule_create"),
+    path("<int:pk>/milestones/add/", views.ProductMilestoneAddView.as_view(), name="milestone_add"),
+    path("milestones/<int:pk>/toggle/", views.ProductMilestoneToggleView.as_view(), name="milestone_toggle"),
+    path("milestones/<int:pk>/delete/", views.ProductMilestoneDeleteView.as_view(), name="milestone_delete"),
 ]

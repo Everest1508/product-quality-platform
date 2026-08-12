@@ -12,6 +12,7 @@ urlpatterns = [
     path("automation/", include("apps.automation.urls")),
     path("feedback/", include("apps.feedback.urls")),
     path("dashboards/", include("apps.dashboards.urls")),
+    path("dsr/", include("apps.dsr.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

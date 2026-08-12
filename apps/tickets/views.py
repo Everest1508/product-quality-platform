@@ -314,7 +314,7 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
         else:
             old_value = ticket.status
             old_display = ticket.get_status_display()
-            ticket.transition_to(new_status)
+            ticket.transition_to(new_status, actor=request.user)
             notify_ticket_status_changed(ticket, old_display)
             log_activity(
                 request.company, "ticket_status_changed",

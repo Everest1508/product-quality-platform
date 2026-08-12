@@ -1,0 +1,220 @@
+<div class="grid-3 mb-6" style="gap:16px;">
+  <!-- Hours Logged Card -->
+  <div class="card" style="padding:16px 20px;display:flex;flex-direction:column;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Total Hours Logged</span>
+      <div class="stat-icon blue" style="width:32px;height:32px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:6px;">
+      <span style="font-size:24px;font-weight:700;color:var(--text);line-height:1;">{{ total_hours }}</span>
+      <span style="font-size:13px;color:var(--muted);font-weight:500;">/ 8.0 hrs goal</span>
+    </div>
+    <div style="margin-top:12px;">
+      <div style="height:6px;width:100%;background:var(--line);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:{{ progress_percent }}%;background:{% if progress_percent >= 100 %}var(--green){% elif progress_percent >= 50 %}var(--blue){% else %}var(--orange){% endif %};border-radius:3px;transition:width 0.3s ease;"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px;">
+        <span>{{ progress_percent }}% achieved</span>
+        {% if progress_percent >= 100 %}
+        <span class="pill green" style="font-size:10px;padding:1px 6px;">Target Met</span>
+        {% else %}
+        <span>Goal: 8.0h</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tasks Completed Card -->
+  <div class="card" style="padding:16px 20px;display:flex;flex-direction:column;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Tasks Completed</span>
+      <div class="stat-icon green" style="width:32px;height:32px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:24px;font-weight:700;color:var(--green);line-height:1;">{{ completed_count }} <span style="font-size:14px;font-weight:500;color:var(--text);">completed</span></div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px;">
+        <span class="pill" style="font-size:10px;padding:1px 6px;background:var(--blue-bg);color:var(--blue);font-weight:600;">{{ auto_logged_count }} AUTO</span>
+        <span>from tickets</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Active Employee Profile Card -->
+  <div class="card" style="padding:16px 20px;display:flex;flex-direction:column;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Report Profile</span>
+      <span class="pill" style="font-size:11px;background:var(--panel);color:var(--muted);">{{ selected_date|date:"N j, Y" }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:4px;">
+      <span class="avatar" style="width:40px;height:40px;font-size:16px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(37,99,235,0.2);display:inline-flex;align-items:center;justify-content:center;border-radius:50%;">
+        {{ target_user.username.0|upper }}
+      </span>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);">{{ target_user.get_full_name|default:target_user.username }}</div>
+        <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:2px;">
+          <span>@{{ target_user.username }}</span>
+          {% if target_user == request.user %}
+          <span class="pill blue" style="font-size:10px;padding:0 5px;">You</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card sheet-card mb-6" style="padding:0;overflow:hidden;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+  <div class="sheet-header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;color:var(--text);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span>Daily Work Spreadsheet — {{ selected_date|date:"M j, Y" }}</span>
+    </div>
+
+    <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span><strong style="color:var(--text);">{{ entries.count }}</strong> entries</span>
+      <span>•</span>
+
+      <button type="button" class="btn btn-sm" onclick="copyDsrSummary()" style="font-size:12px;padding:4px 10px;display:inline-flex;align-items:center;gap:5px;" title="Copy DSR summary to clipboard for Slack / Teams">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="copy-btn-text">Copy DSR Text</span>
+      </button>
+
+      <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+            hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+            hx-target="#dsr-content"
+            hx-swap="innerHTML"
+            style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-primary"
+                style="font-size:12px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Entry
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <textarea id="hidden-dsr-summary" style="display:none;">{{ copy_summary_text }}</textarea>
+
+  <div class="sheet-table-wrapper" style="overflow-x:auto;">
+    <table class="sheet-table">
+      <thead>
+        <tr>
+          <th style="width:40px;text-align:center;">#</th>
+          <th style="min-width:240px;">Task / Ticket Title</th>
+          <th style="width:150px;">Category</th>
+          <th style="width:100px;">Started</th>
+          <th style="width:100px;">Finished</th>
+          <th style="width:110px;">Time Taken</th>
+          <th style="width:110px;">Hours Spent</th>
+          <th style="width:130px;">Status</th>
+          <th style="min-width:180px;">Remarks / Notes</th>
+          <th style="width:45px;text-align:center;"></th>
+        </tr>
+      </thead>
+      <tbody id="dsr-table-body">
+        {% if entries %}
+          {% for entry in entries %}
+            {% include "dsr/partials/_dsr_row.html" with entry=entry category_choices=category_choices status_choices=status_choices forloop=forloop %}
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="10" style="padding:40px 16px;text-align:center;color:var(--muted);">
+              <div style="max-width:360px;margin:0 auto;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:0.6;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p style="font-size:13.5px;font-weight:500;color:var(--text);margin-bottom:4px;">No work logged for this date yet</p>
+                <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">When tickets are marked <strong>Resolved</strong> or <strong>Closed</strong>, they automatically appear here with duration metrics.</p>
+                <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+                      hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+                      hx-target="#dsr-content"
+                      hx-swap="innerHTML">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-primary">+ Add First Entry</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if is_privileged and team_overview %}
+<div class="card mb-6" style="padding:16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Team Daily DSR Overview — {{ selected_date|date:"M j, Y" }}</span>
+    </div>
+    <span class="text-sm text-muted">Admin Oversight</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Team Member</th>
+          <th>Total Hours</th>
+          <th style="min-width:160px;">Daily Target Progress</th>
+          <th>Completed Tasks</th>
+          <th>Entries</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in team_overview %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="avatar avatar-sm">{{ item.member.username.0|upper }}</span>
+              <span style="font-weight:500;">{{ item.member.get_full_name|default:item.member.username }}</span>
+            </div>
+          </td>
+          <td>
+            <span style="font-weight:600;color:{% if item.total_hours >= 8 %}var(--green){% elif item.total_hours > 0 %}var(--blue){% else %}var(--muted){% endif %};">
+              {{ item.total_hours }} hrs
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="height:6px;flex:1;background:var(--line);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:{{ item.progress_percent }}%;background:{% if item.progress_percent >= 100 %}var(--green){% elif item.progress_percent >= 50 %}var(--blue){% else %}var(--orange){% endif %};border-radius:3px;"></div>
+              </div>
+              <span style="font-size:11px;color:var(--muted);width:32px;text-align:right;">{{ item.progress_percent }}%</span>
+            </div>
+          </td>
+          <td>
+            <span class="pill green" style="font-size:11px;">{{ item.completed_count }} completed</span>
+          </td>
+          <td>{{ item.total_entries }} entries</td>
+          <td>
+            <a href="{% url 'dsr:dsr_sheet' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ item.member.pk }}" class="btn btn-sm">Inspect DSR &rarr;</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<script>
+function copyDsrSummary() {
+  var textEl = document.getElementById('hidden-dsr-summary');
+  var btnText = document.getElementById('copy-btn-text');
+  if (!textEl || !btnText) return;
+  
+  navigator.clipboard.writeText(textEl.value).then(function() {
+    btnText.textContent = 'Copied!';
+    setTimeout(function() {
+      btnText.textContent = 'Copy DSR Text';
+    }, 2500);
+  }).catch(function() {
+    alert('Failed to copy. Please select and copy text manually.');
+  });
+}
+</script>

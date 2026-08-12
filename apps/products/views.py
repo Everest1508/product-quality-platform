@@ -70,6 +70,30 @@ class ProductListView(CompanyMemberRequiredMixin, View):
         })
 
 
+def _process_form_milestones(product, request_post):
+    titles = request_post.getlist("milestone_title")
+    dates = request_post.getlist("milestone_date")
+    if not titles or not dates:
+        return
+    from datetime import datetime
+    from apps.products.models import ProductMilestone
+    for idx, (title, target_date_str) in enumerate(zip(titles, dates), 1):
+        t = title.strip()
+        if t and target_date_str:
+            try:
+                dt = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                dt = timezone.localdate()
+            ProductMilestone.objects.create(
+                company=product.company,
+                product=product,
+                title=t,
+                target_date=dt,
+                order=idx,
+                status=ProductMilestone.Status.UPCOMING,
+            )
+
+
 class ProductCreateView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         form = ProductCreateForm()
@@ -79,6 +103,7 @@ class ProductCreateView(CompanyAdminRequiredMixin, View):
         form = ProductCreateForm(request.POST, company=request.company)
         if form.is_valid():
             product = form.save()
+            _process_form_milestones(product, request.POST)
             log_activity(
                 request.company, "product_created",
                 f"Product '{product.name}' created",
@@ -108,10 +133,12 @@ class ProductDetailView(CompanyMemberRequiredMixin, View):
         ).values_list("role", flat=True).first() in (Membership.Role.OWNER, Membership.Role.ADMIN)
         versions = product.versions.all()
         api_keys = product.api_keys.all()
+        milestones = product.milestones.all()
         return render(request, "products/product_detail.html", {
             "product": product,
             "versions": versions,
             "api_keys": api_keys,
+            "milestones": milestones,
             "all_members": all_members,
             "allocated_ids": allocated_ids,
             "is_privileged": is_privileged,
@@ -131,6 +158,7 @@ class ProductEditView(CompanyAdminRequiredMixin, View):
         form = ProductEditForm(request.POST, instance=product)
         if form.is_valid():
             form.save()
+            _process_form_milestones(product, request.POST)
             log_activity(
                 request.company, "product_updated",
                 f"Product '{product.name}' updated",
@@ -713,5 +741,86 @@ class ProductAccessRemoveView(CompanyMemberRequiredMixin, View):
                 "all_members": all_members,
                 "allocated_ids": allocated_ids,
                 "is_privileged": True,
+            })
+        return redirect("products:product_detail", pk=product.pk)
+
+
+class ProductMilestoneAddView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk, company=request.company)
+        require_product_access(request, product)
+
+        title = request.POST.get("title", "").strip()
+        target_date_str = request.POST.get("target_date", "")
+        order = request.POST.get("order", "1")
+
+        if title and target_date_str:
+            try:
+                from datetime import datetime
+                target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+                order_num = int(order)
+            except ValueError:
+                target_date = timezone.localdate()
+                order_num = 1
+
+            from apps.products.models import ProductMilestone
+            ProductMilestone.objects.create(
+                company=request.company,
+                product=product,
+                title=title,
+                target_date=target_date,
+                order=order_num,
+                status=ProductMilestone.Status.UPCOMING,
+            )
+            messages.success(request, f"Milestone '{title}' added to flowchart.")
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "products/partials/_milestone_tree.html", {
+                "product": product,
+                "milestones": product.milestones.all(),
+            })
+        return redirect("products:product_detail", pk=product.pk)
+
+
+class ProductMilestoneToggleView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        from apps.products.models import ProductMilestone
+        milestone = get_object_or_404(ProductMilestone, pk=pk, company=request.company)
+        require_product_access(request, milestone.product)
+
+        if milestone.status == ProductMilestone.Status.UPCOMING:
+            milestone.status = ProductMilestone.Status.IN_PROGRESS
+        elif milestone.status == ProductMilestone.Status.IN_PROGRESS:
+            milestone.status = ProductMilestone.Status.COMPLETED
+            milestone.completed_at = timezone.now()
+        elif milestone.status == ProductMilestone.Status.OVERDUE:
+            milestone.status = ProductMilestone.Status.COMPLETED
+            milestone.completed_at = timezone.now()
+        else:
+            milestone.status = ProductMilestone.Status.UPCOMING
+            milestone.completed_at = None
+
+        milestone.save()
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "products/partials/_milestone_tree.html", {
+                "product": milestone.product,
+                "milestones": milestone.product.milestones.all(),
+            })
+        return redirect("products:product_detail", pk=milestone.product.pk)
+
+
+class ProductMilestoneDeleteView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        from apps.products.models import ProductMilestone
+        milestone = get_object_or_404(ProductMilestone, pk=pk, company=request.company)
+        require_product_access(request, milestone.product)
+        product = milestone.product
+        milestone.delete()
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "products/partials/_milestone_tree.html", {
+                "product": product,
+                "milestones": product.milestones.all(),
             })
         return redirect("products:product_detail", pk=product.pk)
