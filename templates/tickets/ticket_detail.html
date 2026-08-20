@@ -25,7 +25,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
       Edit Ticket
     </a>
-    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+    {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
     <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
       {% csrf_token %}
       <button type="submit" class="btn btn-danger" title="Delete ticket" aria-label="Delete ticket" style="display:inline-flex;align-items:center;gap:6px;">

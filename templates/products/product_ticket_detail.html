@@ -5,7 +5,7 @@
   <a href="{% url 'products:product_board' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
   <h1 style="font-size:17px;">#{{ ticket.pk }} {{ ticket.title }}</h1>
   <div class="head-actions">
-    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+    {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
     <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
       {% csrf_token %}
       <button type="submit" class="btn btn-danger" title="Delete ticket" aria-label="Delete ticket" style="display:inline-flex;align-items:center;gap:6px;">

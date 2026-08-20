@@ -1,12 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
-from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.products.models import Product
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
@@ -175,7 +175,12 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
         return render(request, "tickets/ticket_form.html", {"form": form})
 
     def post(self, request):
-        form = TicketCreateForm(request.POST, company=request.company)
+        product = None
+        product_id = request.POST.get("product")
+        if product_id:
+            from apps.products.models import Product
+            product = Product.objects.filter(pk=product_id, company=request.company).first()
+        form = TicketCreateForm(request.POST, company=request.company, product=product)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.company = request.company
@@ -250,6 +255,9 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
         members = User.objects.filter(
             memberships__company=request.company
         ).order_by("username")
+        if ticket.product:
+            from apps.products.access import product_users
+            members = product_users(ticket.product, request.company)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_ticket_detail_content.html", {
@@ -389,6 +397,9 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
             members = User.objects.filter(
                 memberships__company=request.company
             ).order_by("username")
+            if ticket.product:
+                from apps.products.access import product_users
+                members = product_users(ticket.product, request.company)
             return render(request, "tickets/partials/_ticket_assignee.html", {
                 "ticket": ticket,
                 "members": members,
@@ -467,9 +478,11 @@ class TicketDeadlineView(CompanyMemberRequiredMixin, View):
         return redirect(url_name, **kwargs)
 
 
-class TicketDeleteView(CompanyAdminRequiredMixin, View):
+class TicketDeleteView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
+            return HttpResponseForbidden("You can only delete tickets you created.")
         ticket_id = ticket.pk
         product_id = ticket.product_id
         title = ticket.title
@@ -488,3 +501,33 @@ class TicketDeleteView(CompanyAdminRequiredMixin, View):
         if product_id:
             return redirect("products:product_board", pk=product_id)
         return redirect("tickets:ticket_board")
+
+
+class TicketBulkDeleteView(CompanyMemberRequiredMixin, View):
+    def post(self, request):
+        ticket_ids = request.POST.getlist("ticket_ids[]")
+        if not ticket_ids:
+            return JsonResponse({"error": "No tickets selected."}, status=400)
+        deleted = 0
+        for tid in ticket_ids:
+            try:
+                ticket = Ticket.objects.get(pk=tid, company=request.company)
+            except (Ticket.DoesNotExist, ValueError):
+                continue
+            if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
+                continue
+            ticket_id = ticket.pk
+            product_id = ticket.product_id
+            title = ticket.title
+            ticket.delete()
+            log_activity(
+                request.company, "ticket_deleted",
+                f"Ticket #{ticket_id} deleted",
+                description=title,
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket_id,
+                metadata={"product_id": product_id},
+            )
+            deleted += 1
+        return JsonResponse({"deleted": deleted})

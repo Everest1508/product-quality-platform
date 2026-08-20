@@ -26,6 +26,7 @@ urlpatterns = [
     path("<int:pk>/tickets/kanban/", views.ProductTicketKanbanView.as_view(), name="product_ticket_kanban"),
     path("<int:pk>/tickets/list/", views.ProductTicketListView.as_view(), name="product_tickets"),
     path("<int:pk>/tickets/create/", views.ProductTicketCreateView.as_view(), name="product_ticket_create"),
+    path("<int:pk>/tickets/bulk-delete/", views.ProductTicketBulkDeleteView.as_view(), name="product_ticket_bulk_delete"),
     path("<int:pk>/tickets/<int:ticket_pk>/", views.ProductTicketDetailView.as_view(), name="product_ticket_detail"),
     path("<int:pk>/surveys/", views.ProductSurveyListView.as_view(), name="product_surveys"),
     path("<int:pk>/surveys/create/", views.ProductSurveyCreateView.as_view(), name="product_survey_create"),

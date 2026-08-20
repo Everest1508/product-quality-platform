@@ -1,5 +1,8 @@
 {% for ticket in page %}
 <tr onclick="window.location='{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}'" style="cursor:pointer;" class="clickable-row">
+  <td onclick="event.stopPropagation();" style="width:30px;text-align:center;">
+    <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}">
+  </td>
   <td class="id" style="font-weight:600;color:var(--muted);white-space:nowrap;">#{{ ticket.pk }}</td>
   <td>
     <div class="title" style="font-size:13.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;">
@@ -45,7 +48,7 @@
       <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}" class="btn" title="Edit" aria-label="Edit" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
       </a>
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+      {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
       <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger" title="Delete" aria-label="Delete" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">
@@ -58,7 +61,7 @@
 </tr>
 {% empty %}
 <tr>
-  <td colspan="7" class="empty" style="text-align:center;padding:40px 20px;">
+  <td colspan="8" class="empty" style="text-align:center;padding:40px 20px;">
     <h3 style="font-size:16px;font-weight:600;margin-bottom:4px;">No tickets found</h3>
     <p class="text-sm text-muted">{% if search %}Try a different search term.{% else %}Create a ticket to start tracking work.{% endif %}</p>
   </td>

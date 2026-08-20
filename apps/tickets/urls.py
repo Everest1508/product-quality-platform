@@ -9,6 +9,7 @@ urlpatterns = [
     path("kanban/", views.TicketKanbanView.as_view(), name="ticket_kanban"),
     path("list/", views.TicketListView.as_view(), name="ticket_list"),
     path("create/", views.TicketCreateView.as_view(), name="ticket_create"),
+    path("bulk-delete/", views.TicketBulkDeleteView.as_view(), name="ticket_bulk_delete"),
     path("<int:pk>/", views.TicketDetailView.as_view(), name="ticket_detail"),
     path("<int:pk>/edit/", views.TicketEditView.as_view(), name="ticket_edit"),
     path("<int:pk>/priority/", views.TicketPriorityView.as_view(), name="ticket_priority"),

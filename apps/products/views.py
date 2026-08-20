@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
@@ -389,6 +390,8 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
         page = paginator.get_page(request.GET.get("page", 1))
 
         members = User.objects.filter(memberships__company=request.company).order_by("username")
+        from apps.products.access import product_users
+        members = product_users(product, request.company)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_ticket_list_body.html", {"page": page})
@@ -448,6 +451,8 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
             .objects.filter(memberships__company=request.company)
             .order_by("username")
         )
+        from apps.products.access import product_users
+        members = product_users(product, request.company)
 
         return render(request, "products/product_ticket_kanban.html", {
             "product": product,
@@ -468,14 +473,14 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(company=request.company, initial={"product": product})
+        form = TicketCreateForm(company=request.company, product=product, initial={"product": product})
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(request.POST, company=request.company)
+        form = TicketCreateForm(request.POST, company=request.company, product=product)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.company = request.company
@@ -499,6 +504,38 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
 
+class ProductTicketBulkDeleteView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        from apps.tickets.models import Ticket
+        product = get_object_or_404(Product, pk=pk, company=request.company)
+        require_product_access(request, product)
+        ticket_ids = request.POST.getlist("ticket_ids[]")
+        if not ticket_ids:
+            return JsonResponse({"error": "No tickets selected."}, status=400)
+        deleted = 0
+        for tid in ticket_ids:
+            try:
+                ticket = Ticket.objects.get(pk=tid, company=request.company, product=product)
+            except (Ticket.DoesNotExist, ValueError):
+                continue
+            if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
+                continue
+            ticket_id = ticket.pk
+            title = ticket.title
+            ticket.delete()
+            log_activity(
+                request.company, "ticket_deleted",
+                f"Ticket #{ticket_id} deleted",
+                description=title,
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket_id,
+                metadata={"product_id": product.pk},
+            )
+            deleted += 1
+        return JsonResponse({"deleted": deleted})
+
+
 class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk, ticket_pk):
         from apps.tickets.forms import TicketCommentForm
@@ -512,6 +549,8 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
         members = __import__("django.contrib.auth", fromlist=["get_user_model"]).get_user_model().objects.filter(
             memberships__company=request.company
         ).order_by("username")
+        from apps.products.access import product_users
+        members = product_users(product, request.company)
         return render(request, "products/product_ticket_detail.html", {
             "product": product, "ticket": ticket, "comments": comments,
             "comment_form": TicketCommentForm(), "members": members,

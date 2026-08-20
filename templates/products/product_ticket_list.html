@@ -8,6 +8,10 @@
     <p class="text-sm text-muted" style="margin-top:4px;">Filterable table list of tickets for {{ product.name }}.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
+    <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Delete Tickets</button>
+    <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "products:product_ticket_bulk_delete" pk=product.pk %}')">
+      Delete Selected (<span id="bulk-delete-count">0</span>)
+    </button>
     <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
       <a href="{% url 'products:product_board' pk=product.pk %}" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
       <a href="{% url 'products:product_tickets' pk=product.pk %}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
@@ -87,6 +91,7 @@
 <table>
   <thead>
     <tr>
+      <th class="ticket-select-th" style="width:30px;text-align:center;"><input type="checkbox" id="select-all-tickets"></th>
       <th style="width:70px">ID</th>
       <th>Ticket Details</th>
       <th style="width:120px">Status</th>

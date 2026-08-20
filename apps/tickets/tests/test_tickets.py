@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 
 from apps.accounts.models import Company, Membership
-from apps.products.models import Product
+from apps.products.models import Product, ProductAccess
 from apps.tickets.models import Ticket, TicketComment
 
 User = get_user_model()
@@ -161,6 +161,7 @@ class TicketViewTest(TestCase):
         from datetime import timedelta
         bob = User.objects.create_user("bob", "bob@test.com", "pass1234")
         Membership.objects.create(user=bob, company=self.company, role="developer")
+        ProductAccess.objects.create(user=bob, product=self.product, company=self.company)
         deadline = timezone.now() + timedelta(days=2)
         response = self.client.post(reverse("tickets:ticket_create"), {
             "title": "With deadline",
@@ -264,7 +265,14 @@ class TicketDeleteTest(TestCase):
         self.assertRedirects(response, reverse("tickets:ticket_board"))
         self.assertEqual(Ticket.objects.count(), 0)
 
-    def test_non_admin_cannot_delete_ticket(self):
+    def test_creator_can_delete_own_ticket(self):
+        self.client.login(username="member", password="pass1234")
+        ticket = Ticket.objects.create(company=self.company, title="My ticket", created_by=self.member)
+        response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": ticket.pk}))
+        self.assertRedirects(response, reverse("tickets:ticket_board"))
+        self.assertEqual(Ticket.objects.count(), 1)
+
+    def test_non_creator_cannot_delete_others_ticket(self):
         self.client.login(username="member", password="pass1234")
         response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": self.ticket.pk}))
         self.assertEqual(response.status_code, 403)

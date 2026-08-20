@@ -3,7 +3,16 @@
   <p class="text-sm font-medium" style="color:var(--green);margin-bottom:8px;">API key generated. Copy it now — it won't be shown again.</p>
   <div style="display:flex;gap:8px;">
     <code style="flex:1;padding:8px;background:#fff;border:1px solid var(--border);border-radius:4px;font-size:12px;word-break:break-all;">{{ raw_key }}</code>
-    <button type="button" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent)" class="btn" style="white-space:nowrap;">Copy</button>
+    <button type="button" onclick="copyApiKey(this)" class="btn" style="white-space:nowrap;">Copy</button>
   </div>
 </div>
+<script>
+function copyApiKey(btn) {
+  var key = btn.previousElementSibling.textContent;
+  navigator.clipboard.writeText(key).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+</script>
 {% endif %}

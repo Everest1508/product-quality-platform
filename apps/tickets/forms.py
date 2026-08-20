@@ -31,15 +31,19 @@ class TicketCreateForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, company=None, **kwargs):
+    def __init__(self, *args, company=None, product=None, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
             from django.contrib.auth import get_user_model
             from apps.products.models import Product
             self.fields["product"].queryset = Product.objects.filter(company=company)
-            self.fields["assignees"].queryset = (
-                get_user_model().objects.filter(memberships__company=company).order_by("username")
-            )
+            if product:
+                from apps.products.access import product_users
+                self.fields["assignees"].queryset = product_users(product, company)
+            else:
+                self.fields["assignees"].queryset = (
+                    get_user_model().objects.filter(memberships__company=company).order_by("username")
+                )
         else:
             self.fields["product"].queryset = Ticket._meta.get_field("product").remote_field.model.objects.none()
             self.fields["assignees"].queryset = (

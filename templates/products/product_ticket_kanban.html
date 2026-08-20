@@ -8,6 +8,10 @@
     <p class="text-sm text-muted" style="margin-top:4px;">Drag-and-drop status workflow board for {{ product.name }}.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
+    <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Delete Tickets</button>
+    <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "products:product_ticket_bulk_delete" pk=product.pk %}')">
+      Delete Selected (<span id="bulk-delete-count">0</span>)
+    </button>
     <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
       <a href="{% url 'products:product_board' pk=product.pk %}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
       <a href="{% url 'products:product_tickets' pk=product.pk %}" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
@@ -90,7 +94,18 @@ function buildUrl(params) {
            data-url="{% url 'tickets:ticket_status' pk=ticket.pk %}"
            data-csrf="{{ csrf_token }}">
         <div class="card-id">
-          #{{ ticket.pk }}
+          <span style="display:flex;align-items:center;gap:4px;">
+            <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}" onclick="event.stopPropagation();" style="cursor:pointer;">
+            #{{ ticket.pk }}
+          </span>
+          {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
+          <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" onclick="event.stopPropagation();" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="kanban-delete-btn" title="Delete" aria-label="Delete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </form>
+          {% endif %}
         </div>
         <div class="card-title">
           <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}">{{ ticket.title }}</a>
