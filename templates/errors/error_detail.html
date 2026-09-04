@@ -4,13 +4,13 @@
 
 {% block content %}
 <nav class="breadcrumbs">
-  <a href="{% url 'errors:error_list' %}">Errors</a>
+  <a href="{% url 'errors:error_list' %}">All errors</a>
   <span class="sep">/</span>
   {% if error_group.product %}
-  <a href="{% url 'products:product_detail' pk=error_group.product.pk %}">{{ error_group.product.name }}</a>
+  <a href="{% url 'products:product_errors' pk=error_group.product.pk %}">{{ error_group.product.name }}</a>
   <span class="sep">/</span>
   {% endif %}
-  <span class="current">Error #{{ error_group.pk }}</span>
+  <span class="current">#{{ error_group.pk }}</span>
 </nav>
 
 <div class="head">
@@ -22,9 +22,6 @@
       {% else %}background:var(--gray);{% endif %}"></span>
     {{ error_group.title }}
   </h1>
-  <div class="head-actions">
-    <a href="{% url 'errors:error_list' %}" class="btn">Back to errors</a>
-  </div>
 </div>
 
 <div class="grid-2" style="grid-template-columns:1fr 280px;gap:32px;">
@@ -34,7 +31,7 @@
         <span class="text-sm text-muted">Fingerprint: <code style="font-size:12px;background:var(--panel);padding:2px 6px;border-radius:4px;">{{ error_group.fingerprint }}</code></span>
         <span class="text-sm text-muted">{{ error_group.product.name }}</span>
       </div>
-      <div class="grid-3" style="margin-top:16px;">
+      <div class="grid-4" style="margin-top:16px;">
         <div class="stat">
           <div class="val">{{ error_group.occurrence_count }}</div>
           <div class="label">Occurrences</div>
@@ -44,8 +41,12 @@
           <div class="label">Affected Users</div>
         </div>
         <div class="stat">
-          <div class="val" style="font-size:14px;">{{ error_group.first_seen|timesince }} ago</div>
-          <div class="label">First Seen</div>
+          <div class="val" style="font-size:14px;" title="{{ error_group.first_seen|date:'M j, Y, H:i' }}">{{ error_group.first_seen|timesince }} ago</div>
+          <div class="label">First seen</div>
+        </div>
+        <div class="stat">
+          <div class="val" style="font-size:14px;" title="{{ error_group.last_seen|date:'M j, Y, H:i' }}">{{ error_group.last_seen|timesince }} ago</div>
+          <div class="label">Last seen</div>
         </div>
       </div>
     </div>

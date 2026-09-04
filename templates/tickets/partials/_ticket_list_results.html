@@ -1,0 +1,20 @@
+{% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }} · every product</span>{% endif %}
+<table>
+  <thead>
+    <tr>
+      <th class="ticket-select-th" style="width:30px;text-align:center;"><input type="checkbox" id="select-all-tickets"></th>
+      <th style="width:70px">ID</th>
+      <th>Ticket Details</th>
+      <th style="width:120px">Status</th>
+      <th style="width:110px">Priority</th>
+      <th style="width:150px">Assignees</th>
+      <th style="width:120px">Updated</th>
+      <th style="width:80px;text-align:right;">Actions</th>
+    </tr>
+  </thead>
+  <tbody id="ticket-list-body">
+    {% include "tickets/partials/_ticket_list_body.html" with page=page %}
+  </tbody>
+</table>
+{% include "core/_pagination.html" with page=page hx_target="ticket-results" %}
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} tickets</footer>

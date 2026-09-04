@@ -28,6 +28,9 @@ def _parse_date(value, default):
 class DashboardView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         data = get_user_dashboard_data(request.user, request.company)
+        hour = timezone.localtime().hour
+        data["today"] = timezone.localdate()
+        data["greeting"] = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "dashboards/partials/_dashboard_content.html", data)

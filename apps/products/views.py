@@ -355,123 +355,67 @@ class ProductErrorCreateView(CompanyMemberRequiredMixin, View):
 
 class ProductTicketListView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
-        from apps.accounts.models import User
+        from apps.products.access import product_users
+        from apps.tickets.models import Ticket
+        from apps.tickets.views import apply_ticket_filters, sort_tickets
+
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         _attach_product_counts(product)
-        qs = product.tickets.select_related("assigned_to", "created_by")
 
+        qs = product.tickets.select_related("assigned_to", "created_by")
+        qs, ctx = apply_ticket_filters(request, qs)
         status = request.GET.get("status")
         if status:
             qs = qs.filter(status=status)
-        ticket_type = request.GET.get("type")
-        if ticket_type:
-            qs = qs.filter(ticket_type=ticket_type)
-        priority = request.GET.get("priority")
-        if priority:
-            qs = qs.filter(priority=priority)
-        assigned = request.GET.get("assigned")
-        if assigned == "me":
-            qs = qs.filter(assignees=request.user)
-        elif assigned == "unassigned":
-            qs = qs.filter(assignees__isnull=True)
-        elif assigned:
-            qs = qs.filter(assignees__id=assigned)
-        overdue = request.GET.get("overdue")
-        if overdue:
-            from django.utils import timezone
-            qs = qs.filter(
-                deadline__isnull=False,
-                deadline__lt=timezone.now(),
-            ).exclude(status__in=["resolved", "closed"])
-        search = request.GET.get("q", "").strip()
-        if search:
-            qs = qs.filter(title__icontains=search)
-
-        sort = request.GET.get("sort", "-created")
-        sort_map = {"created": "created_at", "-created": "-created_at", "updated": "updated_at", "-updated": "-updated_at", "priority": "priority", "-priority": "-priority", "title": "title", "-title": "-title"}
-        qs = qs.order_by(sort_map.get(sort, "-created_at"))
+        qs = sort_tickets(request, qs, default=("-created_at",))
 
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
 
-        members = User.objects.filter(memberships__company=request.company).order_by("username")
-        from apps.products.access import product_users
-        members = product_users(product, request.company)
-
         if request.headers.get("HX-Request") == "true":
-            return render(request, "products/partials/_product_ticket_list_body.html", {"page": page})
+            return render(request, "products/partials/_product_ticket_list_results.html",
+                          {"page": page, "product": product})
 
         return render(request, "products/product_ticket_list.html", {
-            "page": page, "product": product, "members": members,
-            "current_status": status, "current_type": ticket_type,
-            "current_priority": priority, "current_assigned": assigned,
-            "current_overdue": overdue,
-            "search": search, "current_sort": sort,
+            **ctx,
+            "page": page, "product": product,
+            "members": product_users(product, request.company),
+            "current_status": status,
+            "status_choices": Ticket.Status.choices,
         })
 
 
 class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
-        from django.utils import timezone
+        from apps.products.access import product_users
         from apps.tickets.models import Ticket
+        from apps.tickets.views import apply_ticket_filters, sort_tickets
+
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         _attach_product_counts(product)
+
         qs = product.tickets.select_related("assigned_to", "created_by")
+        qs, ctx = apply_ticket_filters(request, qs)
+        qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
 
-        search = request.GET.get("q", "").strip()
-        if search:
-            qs = qs.filter(title__icontains=search)
+        columns = [
+            {"key": v, "label": label, "tickets": list(qs.filter(status=v))}
+            for v, label in Ticket.Status.choices
+        ]
+        total = sum(len(c["tickets"]) for c in columns)
 
-        ticket_type = request.GET.get("type")
-        if ticket_type:
-            qs = qs.filter(ticket_type=ticket_type)
-
-        priority = request.GET.get("priority")
-        if priority:
-            qs = qs.filter(priority=priority)
-
-        assigned = request.GET.get("assigned")
-        if assigned == "me":
-            qs = qs.filter(assignees=request.user)
-        elif assigned == "unassigned":
-            qs = qs.filter(assignees__isnull=True)
-        elif assigned:
-            qs = qs.filter(assignees__id=assigned)
-
-        overdue = request.GET.get("overdue")
-        if overdue:
-            qs = qs.filter(
-                deadline__isnull=False,
-                deadline__lt=timezone.now(),
-            ).exclude(status__in=["resolved", "closed"])
-
-        columns = []
-        for status_val, status_label in Ticket.Status.choices:
-            col_qs = qs.filter(status=status_val).order_by("-priority", "-created_at")
-            columns.append({"key": status_val, "label": status_label, "tickets": col_qs})
-
-        members = (
-            __import__("django.contrib.auth", fromlist=["get_user_model"])
-            .get_user_model()
-            .objects.filter(memberships__company=request.company)
-            .order_by("username")
-        )
-        from apps.products.access import product_users
-        members = product_users(product, request.company)
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "products/partials/_product_kanban_columns.html",
+                          {"columns": columns, "total": total, "product": product})
 
         return render(request, "products/product_ticket_kanban.html", {
+            **ctx,
             "product": product,
             "columns": columns,
-            "members": members,
-            "search": search,
-            "current_type": ticket_type,
-            "current_priority": priority,
-            "current_assigned": assigned,
-            "current_overdue": overdue,
-            "total": qs.count(),
-            "status_choices": Ticket.Status.choices,
+            "members": product_users(product, request.company),
+            "total": total,
         })
 
 

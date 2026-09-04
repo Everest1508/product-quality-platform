@@ -1,0 +1,82 @@
+{% comment %}
+Shared ticket filter bar for the kanban and list views.
+Context:
+  filter_target  id of the element htmx swaps ("ticket-results" or "kanban-board")
+  clear_url      href for the "Clear" link
+  products       (optional) product queryset -> renders the product dropdown
+  status_choices (optional) -> renders the status dropdown (list view only)
+  members, current_* / search / current_sort
+{% endcomment %}
+<form class="toolbar" method="get" action="{{ request.path }}"
+      style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;"
+      hx-get="{{ request.path }}" hx-target="#{{ filter_target }}" hx-swap="innerHTML"
+      hx-push-url="true" hx-trigger="change" hx-indicator="#{{ filter_target }}">
+
+  <div class="search-wrap" style="display:flex;max-width:240px;width:100%;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="search" name="q" value="{{ search }}" placeholder="Search tickets…"
+           hx-get="{{ request.path }}" hx-target="#{{ filter_target }}" hx-swap="innerHTML"
+           hx-push-url="true" hx-trigger="keyup changed delay:400ms, search"
+           hx-include="closest form" hx-indicator="#{{ filter_target }}">
+  </div>
+
+  {% if status_choices %}
+  <select name="status" class="filter-select" aria-label="Status">
+    <option value="">All statuses</option>
+    {% for value, label in status_choices %}
+    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+
+  <select name="type" class="filter-select" aria-label="Type">
+    <option value="">All types</option>
+    <option value="bug" {% if current_type == 'bug' %}selected{% endif %}>Bug</option>
+    <option value="feature" {% if current_type == 'feature' %}selected{% endif %}>Feature</option>
+    <option value="question" {% if current_type == 'question' %}selected{% endif %}>Question</option>
+  </select>
+
+  <select name="priority" class="filter-select" aria-label="Priority">
+    <option value="">All priorities</option>
+    <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
+    <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
+    <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
+    <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
+  </select>
+
+  {% if products %}
+  <select name="product" class="filter-select" aria-label="Product">
+    <option value="">All products</option>
+    {% for product in products %}
+    <option value="{{ product.pk }}" {% if current_product|stringformat:"s" == product.pk|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+
+  <select name="assigned" class="filter-select" aria-label="Assignee">
+    <option value="">All assignees</option>
+    <option value="me" {% if current_assigned == 'me' %}selected{% endif %}>Assigned to me</option>
+    <option value="unassigned" {% if current_assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
+    {% for member in members %}
+    <option value="{{ member.pk }}" {% if current_assigned == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="filter-check">
+    <input type="checkbox" name="overdue" value="1" {% if current_overdue %}checked{% endif %}>
+    Overdue only
+  </label>
+
+  <span style="display:inline-flex;align-items:center;gap:8px;margin-left:auto;">
+    <select name="sort" class="sort-select" aria-label="Sort">
+      <option value="-created" {% if current_sort == '-created' or not current_sort %}selected{% endif %}>Newest first</option>
+      <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
+      <option value="-updated" {% if current_sort == '-updated' %}selected{% endif %}>Recently updated</option>
+      <option value="-priority" {% if current_sort == '-priority' %}selected{% endif %}>Priority (high first)</option>
+      <option value="priority" {% if current_sort == 'priority' %}selected{% endif %}>Priority (low first)</option>
+      <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title (A–Z)</option>
+    </select>
+    <a href="{{ clear_url }}" class="btn btn-sm" style="font-size:12px;color:var(--muted);">Clear</a>
+  </span>
+  <noscript><button type="submit" class="btn btn-sm">Apply</button></noscript>
+</form>

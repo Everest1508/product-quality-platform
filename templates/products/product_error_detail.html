@@ -27,8 +27,8 @@
     </div>
     <div class="text-sm text-muted mb-4">Fingerprint: {{ error_group.fingerprint }}</div>
     <div class="text-sm mb-4">Occurrences: <strong>{{ error_group.occurrence_count }}</strong></div>
-    <div class="text-sm mb-4">First seen: {{ error_group.first_seen|date:"M d, Y H:i" }}</div>
-    <div class="text-sm mb-4">Last seen: {{ error_group.last_seen|date:"M d, Y H:i" }}</div>
+    <div class="text-sm mb-4">First seen <span title="{{ error_group.first_seen|date:'M j, Y, H:i' }}">{{ error_group.first_seen|timesince }} ago</span></div>
+    <div class="text-sm mb-4">Last seen <span title="{{ error_group.last_seen|date:'M j, Y, H:i' }}">{{ error_group.last_seen|timesince }} ago</span></div>
   </div>
   <div class="card">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Actions</h3>

@@ -1,0 +1,59 @@
+{% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ total }} ticket{{ total|pluralize }}</span>{% endif %}
+{% for col in columns %}
+<div class="kanban-col" data-status="{{ col.key }}">
+  <div class="kanban-header">
+    <span><span class="dot {{ col.key }}"></span>{{ col.label }}</span>
+    <span class="kanban-count">{{ col.tickets|length }}</span>
+  </div>
+  <div class="kanban-cards" data-status="{{ col.key }}">
+    {% for ticket in col.tickets %}
+    <div class="kanban-card{% if ticket.is_overdue %} overdue{% endif %}"
+         draggable="true"
+         data-ticket-id="{{ ticket.pk }}"
+         data-status="{{ col.key }}"
+         data-url="{% url 'tickets:ticket_status' pk=ticket.pk %}"
+         data-csrf="{{ csrf_token }}">
+      <div class="card-id">
+        <span style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}" onclick="event.stopPropagation();" style="cursor:pointer;">
+          #{{ ticket.pk }}
+        </span>
+        {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
+        <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" onclick="event.stopPropagation();" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="kanban-delete-btn" title="Delete" aria-label="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      <div class="card-title">
+        <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}">{{ ticket.title }}</a>
+      </div>
+      <div class="card-meta">
+        <span class="card-type {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
+        <span class="card-priority {{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span>
+      </div>
+      <div class="card-footer">
+        {% if ticket.assignees.all %}
+        <div class="card-assignees">
+          {% for a in ticket.assignees.all|slice:":3" %}
+          <span class="avatar avatar-sm" data-tooltip="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);margin-right:-4px;border:2px solid #fff;">{{ a.username.0|upper }}</span>
+          {% endfor %}
+          {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm" style="margin-left:4px;">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
+        </div>
+        {% else %}
+        <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
+        {% endif %}
+        {% if ticket.deadline %}
+        <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" title="{{ ticket.deadline|date:'M j, Y, H:i' }}">{% if ticket.is_overdue %}Overdue · {% else %}Due {% endif %}{{ ticket.deadline|date:'M j' }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% if not col.tickets %}
+    <div class="kanban-empty">No tickets</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}

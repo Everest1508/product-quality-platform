@@ -1,140 +1,92 @@
-{% if is_privileged %}
-<div class="grid-4 mb-6">
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Team Members</div>
-      <div class="stat-icon blue">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.6c2.6.3 5 2.2 5.5 5.4"/></svg>
-      </div>
-    </div>
-    <div class="stat-val">{{ member_count }}</div>
-    <div class="stat-foot">across <b>{{ role_breakdown|length }}</b> role{{ role_breakdown|length|pluralize }}</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Open Errors</div>
-      <div class="stat-icon red">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="color:var(--red);">{{ open_errors }}</div>
-    <div class="stat-foot"><b>{{ errors_last_7d }}</b> new in last 7 days</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Open Tickets</div>
-      <div class="stat-icon orange">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2c0 .5-.4 1-.9 1.2a1.6 1.6 0 0 0 0 4.6c.5.2.9.7.9 1.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2c0-.5.4-1 .9-1.2a1.6 1.6 0 0 0 0-4.6C3.4 9.5 3 9 3 8.5Z"/><path d="M9 6v12"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="color:var(--orange);">{{ open_tickets }}</div>
-    <div class="stat-foot"><b>{{ tickets_last_7d }}</b> new in last 7 days</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Resolved Errors</div>
-      <div class="stat-icon green">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="color:var(--green);">{{ resolved_errors }}</div>
-    <div class="stat-foot">resolved to date, company-wide</div>
-  </div>
-</div>
-{% else %}
-<div class="grid-4 mb-6">
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">My Products</div>
-      <div class="stat-icon blue">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </div>
-    </div>
-    <div class="stat-val">{{ product_cards|length }}</div>
-    <div class="stat-foot">granted to you</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Open Errors</div>
-      <div class="stat-icon red">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="color:var(--red);">{{ open_errors }}</div>
-    <div class="stat-foot"><b>{{ errors_last_7d }}</b> new in last 7 days</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Open Tickets</div>
-      <div class="stat-icon orange">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2c0 .5-.4 1-.9 1.2a1.6 1.6 0 0 0 0 4.6c.5.2.9.7.9 1.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2c0-.5.4-1 .9-1.2a1.6 1.6 0 0 0 0-4.6C3.4 9.5 3 9 3 8.5Z"/><path d="M9 6v12"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="color:var(--orange);">{{ open_tickets }}</div>
-    <div class="stat-foot"><b>{{ tickets_last_7d }}</b> new in last 7 days</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">My Open Tickets</div>
-      <div class="stat-icon purple">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.9-3.5 3.6-5.5 7-5.5s6.1 2 7 5.5"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="color:var(--purple);">{{ my_work_count }}</div>
-    <div class="stat-foot">assigned to you</div>
-  </div>
-</div>
-{% endif %}
+{% load dashboard_extras %}
 
-<div class="mb-6">
-  <div class="section-head">
-    <h2>My Products <span class="muted">· {{ product_cards|length }}</span></h2>
-    <a class="link" href="{% url 'tickets:ticket_board' %}">Open board &rarr;</a>
-  </div>
-  {% include "dashboards/partials/_product_cards.html" %}
+<div class="dash-strip">
+  <a href="{% url 'errors:error_list' %}?status=open" class="k-err {% if not open_errors %}zero{% endif %}">
+    <span class="v">{{ open_errors }}</span>
+    <span class="l">Open errors</span>
+    {% if errors_delta < 0 %}<span class="d good">{{ errors_delta|abs_value }} fewer than last week</span>
+    {% elif errors_delta > 0 %}<span class="d bad">{{ errors_delta }} more than last week</span>
+    {% else %}<span class="d" style="color:var(--muted);">no change from last week</span>{% endif %}
+  </a>
+  <a href="{% url 'tickets:ticket_board' %}?status=open" class="k-tkt">
+    <span class="v">{{ open_tickets }}</span>
+    <span class="l">Open tickets</span>
+    {% if tickets_delta < 0 %}<span class="d good">{{ tickets_delta|abs_value }} fewer new than last week</span>
+    {% elif tickets_delta > 0 %}<span class="d bad">{{ tickets_delta }} more new than last week</span>
+    {% else %}<span class="d" style="color:var(--muted);">no change from last week</span>{% endif %}
+  </a>
+  <a href="{% url 'dashboards:reports' %}" class="k-res {% if not resolved_last_7d %}zero{% endif %}">
+    <span class="v">{{ resolved_last_7d }}</span>
+    <span class="l">Resolved this week</span>
+    <span class="d" style="color:var(--muted);">tickets closed in 7 days</span>
+  </a>
+  <a href="{% url 'tickets:ticket_board' %}?assigned=me" class="k-mine {% if not my_work_count %}zero{% endif %}">
+    <span class="v">{{ my_work_count }}</span>
+    <span class="l">Assigned to you</span>
+    <span class="d" style="color:var(--muted);">open tickets on your plate</span>
+  </a>
 </div>
 
-<div class="grid-2 mb-6">
-  <div class="card">
-    {% include "dashboards/partials/_my_work.html" %}
-  </div>
-  <div class="card">
-    {% include "dashboards/partials/_attention.html" %}
-  </div>
-</div>
+<div class="dash-main">
+  <div>
+    <div class="dash-panel">
+      <header>
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+        <h2>Needs attention</h2>
+        {% if attention_count %}<span class="n">{{ attention_count }}</span>{% endif %}
+      </header>
+      {% include "dashboards/partials/_attention.html" %}
+    </div>
 
-{% if is_privileged %}
-<div class="grid-2">
-  <div class="card">
-    <div class="flex-between mb-4">
-      <div class="text-sm font-medium">Team Breakdown</div>
-      <span class="count-badge">{{ role_breakdown|length }}</span>
+    <div class="dash-panel">
+      <header>
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="m21 8-9-5-9 5v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></span>
+        <h2>Products</h2>
+        <span class="n">{{ product_cards|length }}</span>
+        <a href="{% url 'products:product_list' %}">View all</a>
+      </header>
+      {% include "dashboards/partials/_product_cards.html" %}
     </div>
-    {% for role in role_breakdown %}
-    <div class="flex-between" style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <span class="text-sm">{{ role.role|title }}</span>
-      <span class="text-sm font-medium">{{ role.count }}</span>
-    </div>
-    {% empty %}
-    <p class="text-sm text-muted" style="text-align:center;padding:20px;">No team members yet.</p>
-    {% endfor %}
   </div>
 
-  <div class="card">
-    <div class="flex-between mb-4">
-      <div class="text-sm font-medium">Recent Activity</div>
-      <span class="count-badge">{{ activity|length }}</span>
+  <div>
+    <div class="dash-panel">
+      <header>
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.6 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.4A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.6Z"/></svg></span>
+        <h2>Assigned to you</h2>
+        {% if my_work_count %}<span class="n">{{ my_work_count }}</span>{% endif %}
+      </header>
+      {% include "dashboards/partials/_my_work.html" %}
     </div>
-    <div style="max-height:300px;overflow-y:auto;">
-      {% for entry in activity %}
-      <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-        <div class="text-sm">{{ entry.title }}</div>
-        <div class="date">{% if entry.actor %}{{ entry.actor.username }} · {% endif %}{{ entry.created_at|timesince }} ago</div>
+
+    {% if is_privileged %}
+    <div class="dash-panel">
+      <header>
+        <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <h2>Recent activity</h2>
+        <a href="{% url 'dashboards:audit_log' %}">Full log</a>
+      </header>
+      {% for entry in activity|slice:":12" %}
+      <div class="dash-row">
+        <span class="lead">{{ entry.title }}</span>
+        <span class="meta" title="{{ entry.created_at|date:'M j, Y, H:i' }}">{{ entry.created_at|timesince }} ago</span>
       </div>
       {% empty %}
-      <p class="text-sm text-muted" style="text-align:center;padding:20px;">No activity yet.</p>
+      <p class="empty-line">No activity yet.</p>
       {% endfor %}
     </div>
+
+    <div class="dash-panel">
+      <header>
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span>
+        <h2>Team</h2>
+        <a href="{% url 'accounts:team_list' %}">Manage</a>
+      </header>
+      <div class="dash-row"><span class="lead">Members</span><span class="meta">{{ member_count }}</span></div>
+      {% for role in role_breakdown %}
+      <div class="dash-row"><span class="lead">{{ role.role|capfirst }}{% if role.count != 1 %}s{% endif %}</span><span class="meta">{{ role.count }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 </div>
-{% endif %}

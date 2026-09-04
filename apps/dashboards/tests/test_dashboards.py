@@ -210,7 +210,7 @@ class DashboardViewTest(TestCase):
         response = self.client.get(reverse("dashboards:index"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["product_cards"], [])
-        self.assertIn("You don't have access to any products yet", response.content.decode())
+        self.assertIn("No products yet", response.content.decode())
 
 
 class ProductDashboardViewTest(TestCase):

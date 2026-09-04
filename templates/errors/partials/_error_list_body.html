@@ -25,7 +25,7 @@
     {% endif %}
   </td>
   <td class="text-sm" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">{{ error.occurrence_count }}</td>
-  <td class="date" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">{{ error.last_seen|timesince }} ago</td>
+  <td class="date" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'" title="{{ error.last_seen|date:'M j, Y, H:i' }}">{{ error.last_seen|timesince }} ago</td>
   <td>
     <div class="row-actions">
       <a href="{% url 'errors:error_detail' pk=error.pk %}" class="btn" title="View" aria-label="View" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">

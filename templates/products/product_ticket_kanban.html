@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% block title %}Kanban — {{ product.name }}{% endblock %}
+{% block title %}Tickets — {{ product.name }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumbs">
@@ -12,7 +12,7 @@
 
 <div class="head" style="margin-bottom:20px;">
   <div>
-    <h1>{{ product.name }} — Tickets <span class="count">{{ total }} ticket{{ total|pluralize }}</span></h1>
+    <h1>{{ product.name }} — Tickets <span class="count" id="ticket-count">{{ total }} ticket{{ total|pluralize }}</span></h1>
     <p class="text-sm text-muted" style="margin-top:4px;">Tickets for {{ product.name }} only. Drag a card to change its status.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
@@ -20,234 +20,19 @@
     <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "products:product_ticket_bulk_delete" pk=product.pk %}')">
       Delete Selected (<span id="bulk-delete-count">0</span>)
     </button>
-    <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
-      <a href="{% url 'products:product_board' pk=product.pk %}?{{ request.GET.urlencode }}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
-      <a href="{% url 'products:product_tickets' pk=product.pk %}?{{ request.GET.urlencode }}" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
+    <div class="view-toggle">
+      <a href="{% url 'products:product_board' pk=product.pk %}?{{ request.GET.urlencode }}" class="active">Kanban</a>
+      <a href="{% url 'products:product_tickets' pk=product.pk %}?{{ request.GET.urlencode }}">List</a>
     </div>
     <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>
 </div>
 
-<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-  <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
-    <form method="get" class="search-wrap" style="display:flex;max-width:260px;width:100%;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" name="q" value="{{ search }}" placeholder="Search tickets...">
-      {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
-      {% if current_priority %}<input type="hidden" name="priority" value="{{ current_priority }}">{% endif %}
-      {% if current_assigned %}<input type="hidden" name="assigned" value="{{ current_assigned }}">{% endif %}
-      {% if current_overdue %}<input type="hidden" name="overdue" value="{{ current_overdue }}">{% endif %}
-    </form>
-
-    <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
-      <option value="">All types</option>
-      <option value="bug" {% if current_type == 'bug' %}selected{% endif %}>Bug</option>
-      <option value="feature" {% if current_type == 'feature' %}selected{% endif %}>Feature</option>
-      <option value="question" {% if current_type == 'question' %}selected{% endif %}>Question</option>
-    </select>
-
-    <select class="filter-select" onchange="window.location=buildUrl({priority:this.value})">
-      <option value="">All priorities</option>
-      <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
-      <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
-      <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
-      <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
-    </select>
-
-    <select class="filter-select" onchange="window.location=buildUrl({assigned:this.value})">
-      <option value="">All assignees</option>
-      <option value="me" {% if current_assigned == 'me' %}selected{% endif %}>Assigned to me</option>
-      <option value="unassigned" {% if current_assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
-      {% for member in members %}
-      <option value="{{ member.pk }}" {% if current_assigned == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-      {% endfor %}
-    </select>
-
-    <label class="filter-check">
-      <input type="checkbox" onchange="window.location=buildUrl({overdue:this.checked ? '1' : ''})" {% if current_overdue %}checked{% endif %}>
-      Overdue Only
-    </label>
-  </div>
-
-  {% if search or current_type or current_priority or current_assigned or current_overdue %}
-  <a href="{% url 'products:product_board' pk=product.pk %}" class="btn btn-sm" style="font-size:12px;color:var(--red);">Clear filters</a>
-  {% endif %}
-</div>
-
-<script>
-function buildUrl(params) {
-  var url = new URL(window.location.href);
-  url.searchParams.delete('page');
-  for (var key in params) {
-    url.searchParams.delete(key);
-    if (params[key]) url.searchParams.set(key, params[key]);
-  }
-  return url.toString();
-}
-</script>
+{% include "tickets/partials/_ticket_filter_bar.html" with filter_target="kanban-board" clear_url=request.path %}
 
 <div class="kanban-board" id="kanban-board">
-  {% for col in columns %}
-  <div class="kanban-col" data-status="{{ col.key }}">
-    <div class="kanban-header">
-      <span><span class="dot {{ col.key }}"></span>{{ col.label }}</span>
-      <span class="kanban-count">{{ col.tickets|length }}</span>
-    </div>
-    <div class="kanban-cards" data-status="{{ col.key }}">
-      {% for ticket in col.tickets %}
-      <div class="kanban-card{% if ticket.is_overdue %} overdue{% endif %}"
-           draggable="true"
-           data-ticket-id="{{ ticket.pk }}"
-           data-status="{{ col.key }}"
-           data-url="{% url 'tickets:ticket_status' pk=ticket.pk %}"
-           data-csrf="{{ csrf_token }}">
-        <div class="card-id">
-          <span style="display:flex;align-items:center;gap:4px;">
-            <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}" onclick="event.stopPropagation();" style="cursor:pointer;">
-            #{{ ticket.pk }}
-          </span>
-          {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
-          <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" onclick="event.stopPropagation();" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="kanban-delete-btn" title="Delete" aria-label="Delete">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </form>
-          {% endif %}
-        </div>
-        <div class="card-title">
-          <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}">{{ ticket.title }}</a>
-        </div>
-        <div class="card-meta">
-          <span class="card-type {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
-          <span class="card-priority {{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span>
-        </div>
-        <div class="card-footer">
-          {% if ticket.assignees.all %}
-          <div class="card-assignees">
-            {% for a in ticket.assignees.all|slice:":3" %}
-            <span class="avatar avatar-sm" data-tooltip="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);margin-right:-4px;border:2px solid #fff;">{{ a.username.0|upper }}</span>
-            {% endfor %}
-            {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm" style="margin-left:4px;">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
-          </div>
-          {% else %}
-          <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
-          {% endif %}
-          {% if ticket.deadline %}
-          <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" data-tooltip="Due {{ ticket.deadline|date:'Y-m-d H:i' }}">{% if ticket.is_overdue %}Overdue · {% else %}Due {% endif %}{{ ticket.deadline|date:'M j' }}</span>
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
-      {% if not col.tickets %}
-      <div class="kanban-empty">No tickets</div>
-      {% endif %}
-    </div>
-  </div>
-  {% endfor %}
+  {% include "products/partials/_product_kanban_columns.html" %}
 </div>
 
-<script>
-(function() {
-  const board = document.getElementById('kanban-board');
-  let draggedCard = null;
-
-  board.addEventListener('dragstart', function(e) {
-    const card = e.target.closest('.kanban-card');
-    if (!card) return;
-    draggedCard = card;
-    card.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', card.dataset.ticketId);
-  });
-
-  board.addEventListener('dragend', function(e) {
-    const card = e.target.closest('.kanban-card');
-    if (card) card.classList.remove('dragging');
-    document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
-    draggedCard = null;
-  });
-
-  board.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const col = e.target.closest('.kanban-col');
-    if (col) {
-      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
-      col.classList.add('drag-over');
-    }
-  });
-
-  board.addEventListener('dragleave', function(e) {
-    const col = e.target.closest('.kanban-col');
-    if (col && !col.contains(e.relatedTarget)) {
-      col.classList.remove('drag-over');
-    }
-  });
-
-  board.addEventListener('drop', function(e) {
-    e.preventDefault();
-    const col = e.target.closest('.kanban-col');
-    if (!col || !draggedCard) return;
-
-    const ticketId = draggedCard.dataset.ticketId;
-    const newStatus = col.dataset.status;
-    const oldStatus = draggedCard.dataset.status;
-    const url = draggedCard.dataset.url;
-    const csrf = draggedCard.dataset.csrf;
-
-    if (newStatus === oldStatus) return;
-
-    const oldCol = document.querySelector('.kanban-col[data-status="' + oldStatus + '"] .kanban-cards');
-
-    const cardsContainer = col.querySelector('.kanban-cards');
-    const empty = cardsContainer.querySelector('.kanban-empty');
-    if (empty) empty.remove();
-    cardsContainer.appendChild(draggedCard);
-    draggedCard.dataset.status = newStatus;
-    col.classList.remove('drag-over');
-
-    document.querySelectorAll('.kanban-col').forEach(function(c) {
-      const count = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
-      c.querySelector('.kanban-count').textContent = count;
-    });
-
-    document.querySelectorAll('.kanban-col').forEach(function(c) {
-      const cards = c.querySelector('.kanban-cards');
-      if (cards.querySelectorAll('.kanban-card').length === 0) {
-        if (!cards.querySelector('.kanban-empty')) {
-          const emptyDiv = document.createElement('div');
-          emptyDiv.className = 'kanban-empty';
-          emptyDiv.textContent = 'No tickets';
-          cards.appendChild(emptyDiv);
-        }
-      }
-    });
-
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': csrf,
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: 'status=' + encodeURIComponent(newStatus),
-    }).then(function(resp) {
-      if (!resp.ok) {
-        resp.json().then(function(data) {
-          window.dispatchEvent(new CustomEvent('django-message', { detail: { text: data.error || 'Cannot move ticket', tags: 'error' } }));
-        });
-        if (oldCol) {
-          oldCol.appendChild(draggedCard);
-          draggedCard.dataset.status = oldStatus;
-          document.querySelectorAll('.kanban-col').forEach(function(c) {
-            const count = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
-            c.querySelector('.kanban-count').textContent = count;
-          });
-        }
-      }
-    });
-  });
-})();
-</script>
+{% include "tickets/partials/_kanban_drag.html" %}
 {% endblock %}

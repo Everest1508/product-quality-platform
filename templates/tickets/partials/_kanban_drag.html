@@ -1,0 +1,142 @@
+<script>
+(function() {
+  const board = document.getElementById('kanban-board');
+  if (!board || board.dataset.dragBound) return;
+  board.dataset.dragBound = '1';
+  let draggedCard = null;
+
+  function recount() {
+    document.querySelectorAll('.kanban-col').forEach(function(c) {
+      const n = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
+      c.querySelector('.kanban-count').textContent = n;
+      const cards = c.querySelector('.kanban-cards');
+      if (n === 0 && !cards.querySelector('.kanban-empty')) {
+        const e = document.createElement('div');
+        e.className = 'kanban-empty';
+        e.textContent = 'No tickets';
+        cards.appendChild(e);
+      }
+    });
+  }
+
+  board.addEventListener('dragstart', function(e) {
+    const card = e.target.closest('.kanban-card');
+    if (!card) return;
+    draggedCard = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.ticketId);
+  });
+
+  board.addEventListener('dragend', function(e) {
+    const card = e.target.closest('.kanban-card');
+    if (card) card.classList.remove('dragging');
+    document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+    draggedCard = null;
+  });
+
+  board.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const col = e.target.closest('.kanban-col');
+    if (col) {
+      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+      col.classList.add('drag-over');
+    }
+  });
+
+  board.addEventListener('dragleave', function(e) {
+    const col = e.target.closest('.kanban-col');
+    if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+  });
+
+  board.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const col = e.target.closest('.kanban-col');
+    if (!col || !draggedCard) return;
+
+    const newStatus = col.dataset.status;
+    const oldStatus = draggedCard.dataset.status;
+    const url = draggedCard.dataset.url;
+    const csrf = draggedCard.dataset.csrf;
+    if (newStatus === oldStatus) return;
+
+    const oldCol = document.querySelector('.kanban-col[data-status="' + oldStatus + '"] .kanban-cards');
+    const cardsContainer = col.querySelector('.kanban-cards');
+    const empty = cardsContainer.querySelector('.kanban-empty');
+    if (empty) empty.remove();
+    cardsContainer.appendChild(draggedCard);
+    draggedCard.dataset.status = newStatus;
+    col.classList.remove('drag-over');
+    recount();
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: 'status=' + encodeURIComponent(newStatus),
+    }).then(function(resp) {
+      if (!resp.ok) {
+        resp.json().then(function(data) {
+          window.dispatchEvent(new CustomEvent('django-message', { detail: { text: data.error || 'Cannot move ticket', tags: 'error' } }));
+        });
+        if (oldCol) {
+          oldCol.appendChild(draggedCard);
+          draggedCard.dataset.status = oldStatus;
+          recount();
+        }
+      }
+    });
+  });
+
+  // Touch fallback: long-press a card to pick a target column.
+  board.addEventListener('contextmenu', function(e) {
+    const card = e.target.closest('.kanban-card');
+    if (!card || !('ontouchstart' in window)) return;
+    e.preventDefault();
+    moveViaPrompt(card);
+  });
+  let pressTimer = null;
+  board.addEventListener('touchstart', function(e) {
+    const card = e.target.closest('.kanban-card');
+    if (!card) return;
+    pressTimer = setTimeout(function() { moveViaPrompt(card); }, 550);
+  }, { passive: true });
+  board.addEventListener('touchend', function() { clearTimeout(pressTimer); });
+  board.addEventListener('touchmove', function() { clearTimeout(pressTimer); }, { passive: true });
+
+  function moveViaPrompt(card) {
+    const cols = [...document.querySelectorAll('.kanban-col')].map(c => ({
+      key: c.dataset.status,
+      label: c.querySelector('.kanban-header span').textContent.trim(),
+    }));
+    const cur = card.dataset.status;
+    const opts = cols.filter(c => c.key !== cur);
+    const choice = window.prompt('Move #' + card.dataset.ticketId + ' to:\n' +
+      opts.map((o, i) => (i + 1) + '. ' + o.label).join('\n'));
+    const idx = parseInt(choice, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= opts.length) return;
+    const target = document.querySelector('.kanban-col[data-status="' + opts[idx].key + '"] .kanban-cards');
+    const oldCol = document.querySelector('.kanban-col[data-status="' + cur + '"] .kanban-cards');
+    const emptyEl = target.querySelector('.kanban-empty');
+    if (emptyEl) emptyEl.remove();
+    target.appendChild(card);
+    card.dataset.status = opts[idx].key;
+    recount();
+    fetch(card.dataset.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': card.dataset.csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: 'status=' + encodeURIComponent(opts[idx].key),
+    }).then(function(resp) {
+      if (!resp.ok && oldCol) { oldCol.appendChild(card); card.dataset.status = cur; recount(); }
+    });
+  }
+})();
+</script>

@@ -354,6 +354,17 @@ def get_user_dashboard_data(user, company):
     attention = _build_attention(company, product_ids, is_privileged)
 
     now = timezone.now()
+    week = now - timedelta(days=7)
+    two_weeks = now - timedelta(days=14)
+
+    errors_7d = error_scope.filter(first_seen__gte=week).count()
+    errors_prev_7d = error_scope.filter(first_seen__gte=two_weeks, first_seen__lt=week).count()
+    tickets_7d = ticket_scope.filter(created_at__gte=week).count()
+    tickets_prev_7d = ticket_scope.filter(created_at__gte=two_weeks, created_at__lt=week).count()
+    resolved_7d = ticket_scope.filter(
+        status__in=["resolved", "closed"], updated_at__gte=week
+    ).count()
+
     data = {
         "is_privileged": is_privileged,
         "role": membership.role if membership else None,
@@ -361,8 +372,11 @@ def get_user_dashboard_data(user, company):
         "open_errors": open_errors,
         "open_tickets": open_tickets,
         "resolved_errors": resolved_errors,
-        "errors_last_7d": error_scope.filter(first_seen__gte=now - timedelta(days=7)).count(),
-        "tickets_last_7d": ticket_scope.filter(created_at__gte=now - timedelta(days=7)).count(),
+        "errors_last_7d": errors_7d,
+        "errors_delta": errors_7d - errors_prev_7d,
+        "tickets_last_7d": tickets_7d,
+        "tickets_delta": tickets_7d - tickets_prev_7d,
+        "resolved_last_7d": resolved_7d,
         "my_work": my_work,
         "my_work_count": my_work_count,
         "attention": attention,

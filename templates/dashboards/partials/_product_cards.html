@@ -1,33 +1,32 @@
 {% if product_cards %}
-<div class="grid-3">
-  {% for card in product_cards %}
-  <a href="{% url 'dashboards:product_dashboard' product_pk=card.product.pk %}" class="card product-card health-{{ card.health }}">
-    <div class="flex-between mb-4">
-      <div class="product-name">{{ card.product.name }}</div>
-      <span class="health-dot {{ card.health }}" title="{{ card.health|title }}"></span>
-    </div>
-    <div class="grid-3" style="text-align:center;gap:8px;">
-      <div class="stat">
-        <div class="val" style="font-size:16px;">{{ card.open_errors }}</div>
-        <div class="label">Errors</div>
-      </div>
-      <div class="stat">
-        <div class="val" style="font-size:16px;">{{ card.open_tickets }}</div>
-        <div class="label">Tickets</div>
-      </div>
-      <div class="stat">
-        <div class="val" style="font-size:16px;">{{ card.avg_score|default:"—" }}</div>
-        <div class="label">CSAT</div>
-      </div>
-    </div>
-    {% if card.stale_count %}
-    <div class="date" style="margin-top:8px;">{{ card.stale_count }} stale ticket{{ card.stale_count|pluralize }}</div>
-    {% endif %}
-  </a>
-  {% endfor %}
+<div style="overflow-x:auto;">
+<table class="dash-table">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Health</th>
+      <th class="num">Errors</th>
+      <th class="num">Tickets</th>
+      <th class="num">CSAT</th>
+      <th class="num">Stale</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for card in product_cards %}
+    <tr>
+      <td style="font-weight:500;"><a href="{% url 'dashboards:product_dashboard' product_pk=card.product.pk %}">{{ card.product.name }}</a></td>
+      <td><span class="health-tag {{ card.health }}">{{ card.health|capfirst }}</span></td>
+      <td class="num {% if card.open_errors %}warn{% endif %}"><a href="{% url 'products:product_errors' pk=card.product.pk %}">{{ card.open_errors }}</a></td>
+      <td class="num"><a href="{% url 'products:product_board' pk=card.product.pk %}">{{ card.open_tickets }}</a></td>
+      <td class="num">{{ card.avg_score|default:"—" }}</td>
+      <td class="num {% if card.stale_count %}warn{% endif %}">{{ card.stale_count|default:"—" }}</td>
+      <td class="num"><a href="{% url 'products:product_board' pk=card.product.pk %}" class="dash-act">Open board &rarr;</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 </div>
 {% else %}
-<p class="text-sm text-muted" style="text-align:center;padding:24px;border:2px dashed var(--border);border-radius:8px;">
-  You don't have access to any products yet. Contact an admin to be granted access.
-</p>
+<p class="empty-line">No products yet. Ask an admin to grant you access.</p>
 {% endif %}

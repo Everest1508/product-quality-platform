@@ -1,13 +1,23 @@
 {% extends "core/base.html" %}
 
-{% block title %}Dashboard — PQ Platform{% endblock %}
+{% block title %}Home — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Dashboard <span class="count">{{ request.company.name }}</span></h1>
-</div>
+<div class="dash">
+  <div class="dash-head">
+    <div>
+      <h1>{{ greeting }}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h1>
+      <p class="text-sm text-muted">{{ today|date:"l, F j" }} · {{ request.company.name }}</p>
+    </div>
+    <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary" style="padding:8px 16px;">+ New ticket</a>
+  </div>
 
-<div id="dashboard-content">
-  {% include "dashboards/partials/_dashboard_content.html" %}
+  <div id="dashboard-content"
+       hx-get="{% url 'dashboards:index' %}"
+       hx-trigger="dash:refresh from:body"
+       hx-target="#dashboard-content"
+       hx-swap="innerHTML">
+    {% include "dashboards/partials/_dashboard_content.html" %}
+  </div>
 </div>
 {% endblock %}

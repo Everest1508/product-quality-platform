@@ -40,8 +40,8 @@
     </div>
     {% if ticket.description %}<div class="text-sm mb-4">{{ ticket.description|linebreaksbr }}</div>{% endif %}
     <div class="text-sm text-muted mb-4">Type: {{ ticket.get_ticket_type_display }}</div>
-    <div class="text-sm text-muted mb-4">Created: {{ ticket.created_at|date:"M d, Y H:i" }}</div>
-    <div class="text-sm text-muted mb-4">Updated: {{ ticket.updated_at|timesince }} ago</div>
+    <div class="text-sm text-muted mb-4">Created <span title="{{ ticket.created_at|date:'M j, Y, H:i' }}">{{ ticket.created_at|timesince }} ago</span></div>
+    <div class="text-sm text-muted mb-4">Updated <span title="{{ ticket.updated_at|date:'M j, Y, H:i' }}">{{ ticket.updated_at|timesince }} ago</span></div>
   </div>
   <div class="card">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Details</h3>

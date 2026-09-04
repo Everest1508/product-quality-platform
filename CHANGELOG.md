@@ -3,6 +3,51 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not yet versioned.
 
+## [Unreleased] — 2026-09-04 · dashboard & ticket boards
+
+### Added
+
+- **Home dashboard rework.** Stat cards for open errors, open tickets, tickets
+  resolved this week, and tickets assigned to you — each with a week-over-week
+  delta. Below them: a grouped "Needs attention" list (critical errors, stale
+  tickets, unassigned tickets), a products table (health, open errors/tickets,
+  CSAT, stale count), and — for owners/admins — recent activity and a team
+  breakdown.
+- **Inline actions on the dashboard.** Assign a ticket to yourself, resolve or
+  ignore an error, and start or resolve your own tickets straight from the
+  attention/assigned lists. Each action posts via htmx and refreshes the whole
+  dashboard in place, so the counts and lists stay current without a reload.
+- **One shared filter bar** across all four ticket boards (company-wide and
+  product-scoped, kanban and list) — the same controls in the same order. The
+  kanban board gained the sort dropdown it was missing.
+- **htmx filtering on the ticket boards.** Changing a filter, sort, search term,
+  or page swaps just the board or table in place instead of reloading the page;
+  the count in the header updates with it.
+- **Touch fallback for the kanban** — long-press a card to pick a target column,
+  since native drag-and-drop doesn't work on touchscreens.
+- Breadcrumb and a "Last seen" stat on the company-wide error detail page.
+
+### Changed
+
+- Relative dates ("3 days ago") are used consistently across ticket and error
+  lists and detail pages, with the exact timestamp on hover. Removed the mix of
+  relative and absolute formats (some panels showed both for the same value).
+- The Kanban ⇄ List toggle carries the active filters across the switch.
+- Consolidated the duplicated filter logic across the four ticket views into
+  shared `apply_ticket_filters` / `sort_tickets` helpers, and extracted the
+  kanban board markup and drag script into reusable partials.
+
+### Fixed
+
+- **htmx CSRF handler.** The global `htmx:configRequest` handler used htmx-1.x
+  syntax (`evt.headers`) and so never attached the CSRF token under htmx 2.x —
+  any header-based htmx `POST` failed with 403. Form-based htmx requests carried
+  their own hidden CSRF field, which is why the bug went unnoticed. This also
+  unblocks non-form htmx actions elsewhere in the app.
+- Dashboard sections and their empty states ("All caught up", "Nothing assigned")
+  are now contained in labelled panels instead of floating in whitespace, which
+  made a sparse or new workspace hard to read.
+
 ## [Unreleased] — 2026-09-04
 
 ### Security

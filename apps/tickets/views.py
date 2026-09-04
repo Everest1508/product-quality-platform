@@ -42,75 +42,95 @@ SORT_MAP = {
     "-title": "-title",
 }
 
+# The filters shared by the ticket kanban and list views, so both boards
+# expose the same controls. Kanban additionally groups by status (columns);
+# the List view adds a `status` dropdown on top of this.
+TICKET_FILTER_KEYS = ("q", "type", "priority", "product", "assigned", "overdue", "sort")
+
+
+def apply_ticket_filters(request, qs):
+    """Apply the shared ticket filter querystring to ``qs``.
+
+    Returns ``(qs, ctx)`` where ``ctx`` holds the ``current_*`` values used to
+    re-render the filter bar. Does not apply ``sort`` (see ``sort_tickets``).
+    """
+    ctx = {}
+
+    search = request.GET.get("q", "").strip()
+    if search:
+        qs = qs.filter(title__icontains=search)
+    ctx["search"] = search
+
+    ticket_type = request.GET.get("type")
+    if ticket_type:
+        qs = qs.filter(ticket_type=ticket_type)
+    ctx["current_type"] = ticket_type
+
+    priority = request.GET.get("priority")
+    if priority:
+        qs = qs.filter(priority=priority)
+    ctx["current_priority"] = priority
+
+    product_id = request.GET.get("product")
+    if product_id:
+        qs = qs.filter(product_id=product_id)
+    ctx["current_product"] = product_id
+
+    assigned = request.GET.get("assigned")
+    if assigned == "me":
+        qs = qs.filter(assignees=request.user)
+    elif assigned == "unassigned":
+        qs = qs.filter(assignees__isnull=True)
+    elif assigned:
+        qs = qs.filter(assignees__id=assigned).distinct()
+    ctx["current_assigned"] = assigned
+
+    overdue = request.GET.get("overdue")
+    if overdue:
+        qs = qs.filter(
+            deadline__isnull=False,
+            deadline__lt=timezone.now(),
+        ).exclude(status__in=["resolved", "closed"])
+    ctx["current_overdue"] = overdue
+
+    ctx["current_sort"] = request.GET.get("sort", "")
+    return qs, ctx
+
+
+def sort_tickets(request, qs, default):
+    """Order ``qs`` by the ``sort`` querystring, falling back to ``default``
+    (a tuple of field names) when it is missing or unrecognised."""
+    sort = request.GET.get("sort", "")
+    if sort in SORT_MAP:
+        return qs.order_by(SORT_MAP[sort])
+    return qs.order_by(*default)
+
 
 class TicketListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
+        qs, ctx = apply_ticket_filters(request, qs)
 
         status = request.GET.get("status")
         if status:
             qs = qs.filter(status=status)
 
-        ticket_type = request.GET.get("type")
-        if ticket_type:
-            qs = qs.filter(ticket_type=ticket_type)
-
-        priority = request.GET.get("priority")
-        if priority:
-            qs = qs.filter(priority=priority)
-
-        product_id = request.GET.get("product")
-        if product_id:
-            qs = qs.filter(product_id=product_id)
-
-        assigned = request.GET.get("assigned")
-        if assigned == "me":
-            qs = qs.filter(assignees=request.user)
-        elif assigned == "unassigned":
-            qs = qs.filter(assignees__isnull=True)
-        elif assigned:
-            qs = qs.filter(assignees__id=assigned)
-
-        overdue = request.GET.get("overdue")
-        if overdue:
-            qs = qs.filter(
-                deadline__isnull=False,
-                deadline__lt=timezone.now(),
-            ).exclude(status__in=["resolved", "closed"])
-
-        search = request.GET.get("q", "").strip()
-        if search:
-            qs = qs.filter(title__icontains=search)
-
-        sort = request.GET.get("sort", "-created")
-        order = SORT_MAP.get(sort, "-created_at")
-        qs = qs.order_by(order)
+        qs = sort_tickets(request, qs, default=("-created_at",))
 
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
 
-        members = User.objects.filter(
-            memberships__company=request.company
-        ).order_by("username")
-        products = accessible_products(request.user, request.company).order_by("name")
-
         if request.headers.get("HX-Request") == "true":
-            return render(request, "tickets/partials/_ticket_list_body.html", {
-                "page": page,
-            })
+            return render(request, "tickets/partials/_ticket_list_results.html", {"page": page})
 
+        members = User.objects.filter(memberships__company=request.company).order_by("username")
+        products = accessible_products(request.user, request.company).order_by("name")
         return render(request, "tickets/ticket_list.html", {
+            **ctx,
             "page": page,
             "members": members,
             "products": products,
             "current_status": status,
-            "current_type": ticket_type,
-            "current_priority": priority,
-            "current_assigned": assigned,
-            "current_overdue": overdue,
-            "current_product": product_id,
-            "search": search,
-            "current_sort": sort,
             "status_choices": Ticket.Status.choices,
         })
 
@@ -118,60 +138,26 @@ class TicketListView(CompanyMemberRequiredMixin, View):
 class TicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
+        qs, ctx = apply_ticket_filters(request, qs)
+        qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
 
-        search = request.GET.get("q", "").strip()
-        if search:
-            qs = qs.filter(title__icontains=search)
+        columns = [
+            {"key": v, "label": label, "tickets": list(qs.filter(status=v))}
+            for v, label in Ticket.Status.choices
+        ]
+        total = sum(len(c["tickets"]) for c in columns)
 
-        ticket_type = request.GET.get("type")
-        if ticket_type:
-            qs = qs.filter(ticket_type=ticket_type)
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "tickets/partials/_kanban_columns.html", {"columns": columns, "total": total})
 
-        priority = request.GET.get("priority")
-        if priority:
-            qs = qs.filter(priority=priority)
-
-        product_id = request.GET.get("product")
-        if product_id:
-            qs = qs.filter(product_id=product_id)
-
-        assigned = request.GET.get("assigned")
-        if assigned == "me":
-            qs = qs.filter(assignees=request.user)
-        elif assigned == "unassigned":
-            qs = qs.filter(assignees__isnull=True)
-        elif assigned:
-            qs = qs.filter(assignees__id=assigned)
-
-        overdue = request.GET.get("overdue")
-        if overdue:
-            qs = qs.filter(
-                deadline__isnull=False,
-                deadline__lt=timezone.now(),
-            ).exclude(status__in=["resolved", "closed"])
-
-        columns = []
-        for status_val, status_label in Ticket.Status.choices:
-            col_qs = qs.filter(status=status_val).order_by("-priority", "-created_at")
-            columns.append({"key": status_val, "label": status_label, "tickets": col_qs})
-
-        members = User.objects.filter(
-            memberships__company=request.company
-        ).order_by("username")
+        members = User.objects.filter(memberships__company=request.company).order_by("username")
         products = accessible_products(request.user, request.company).order_by("name")
-
         return render(request, "tickets/ticket_kanban.html", {
+            **ctx,
             "columns": columns,
             "members": members,
             "products": products,
-            "search": search,
-            "current_type": ticket_type,
-            "current_priority": priority,
-            "current_product": product_id,
-            "current_assigned": assigned,
-            "current_overdue": overdue,
-            "total": qs.count(),
-            "status_choices": Ticket.Status.choices,
+            "total": total,
         })
 
 
