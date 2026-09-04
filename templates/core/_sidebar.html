@@ -1,65 +1,150 @@
-  <div class="sidebar">
-    {% include "core/_company_switcher.html" %}
-    {% if product %}
-    <div class="org">
-      <a href="{% url 'products:product_list' %}" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:8px;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        All products
-      </a>
-      {{ product.name }}<span>{{ product.error_count|default:0 }} errors · {{ product.ticket_count|default:0 }} tickets</span>
+<aside class="sidebar">
+  {% include "core/_company_switcher.html" %}
+
+  <nav class="nav-section">
+    <a href="{% url 'dashboards:index' %}" data-label="Home"
+       class="side-item {% if request.resolver_match.view_name == 'dashboards:index' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-6h6v6"/></svg>
+      <span class="side-label">Home</span>
+    </a>
+    <a href="{% url 'products:product_list' %}" data-label="Products"
+       class="side-item {% if request.resolver_match.url_name == 'product_list' or request.resolver_match.url_name == 'product_create' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="m3 7 9-4 9 4v10l-9 4-9-4z"/><path d="m3 7 9 4 9-4M12 11v10"/></svg>
+      <span class="side-label">Products</span>
+    </a>
+    <a href="{% url 'tickets:ticket_board' %}" data-label="All tickets"
+       class="side-item {% if request.resolver_match.url_name == 'ticket_board' or request.resolver_match.url_name == 'ticket_kanban' or request.resolver_match.url_name == 'ticket_list' or request.resolver_match.url_name == 'ticket_create' or request.resolver_match.url_name == 'ticket_detail' or request.resolver_match.url_name == 'ticket_edit' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M4 9V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 3"/></svg>
+      <span class="side-label">All tickets</span>
+      {% if nav_open_tickets %}<span class="side-badge">{{ nav_open_tickets }}</span>{% endif %}
+    </a>
+    <a href="{% url 'errors:error_list' %}" data-label="All errors"
+       class="side-item {% if request.resolver_match.url_name == 'error_list' or request.resolver_match.url_name == 'error_detail' or request.resolver_match.url_name == 'error_create' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M10.3 4.3 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <span class="side-label">All errors</span>
+      {% if nav_open_errors %}<span class="side-badge">{{ nav_open_errors }}</span>{% endif %}
+    </a>
+    <a href="{% url 'dashboards:reports' %}" data-label="Reports"
+       class="side-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 20v-5M13 20V8M18 20v-10"/></svg>
+      <span class="side-label">Reports</span>
+    </a>
+  </nav>
+
+  {% if product %}
+  <div class="side-context">
+    <div class="switch" x-data="{ open: false }" @keydown.escape.window="open = false">
+      <button type="button" class="switch-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
+        <span class="switch-dot"></span>
+        <span class="switch-glyph">{{ product.name|make_list|first|upper }}</span>
+        <span class="switch-name">{{ product.name }}</span>
+        <svg class="switch-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="switch-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
+        {% for p in nav_products %}
+        <a href="{% url 'products:product_board' pk=p.pk %}" class="switch-item {% if p.pk == product.pk %}current{% endif %}">
+          <span class="switch-item-name">{{ p.name }}</span>
+          {% if p.pk == product.pk %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}
+        </a>
+        {% endfor %}
+        <a href="{% url 'products:product_list' %}" class="switch-item switch-item-all">
+          <span class="switch-item-name">View all products</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
     </div>
-    <div class="nav">
-      <a href="{% url 'products:product_detail' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_detail' %}active{% endif %}">Overview</a>
-      <a href="{% url 'products:product_errors' pk=product.pk %}" class="{% if 'errors' in request.path and 'product_error' in request.path or request.resolver_match.url_name == 'product_errors' or request.resolver_match.url_name == 'product_error_detail' %}active{% endif %}">
-        Errors{% if product.error_count %}<span class="n">{{ product.error_count }}</span>{% endif %}
-      </a>
-      <a href="{% url 'products:product_board' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_board' or request.resolver_match.url_name == 'product_ticket_kanban' or request.resolver_match.url_name == 'product_tickets' or request.resolver_match.url_name == 'product_ticket_create' or request.resolver_match.url_name == 'product_ticket_detail' %}active{% endif %}">
-        Tickets{% if product.ticket_count %}<span class="n">{{ product.ticket_count }}</span>{% endif %}
-      </a>
-      <a href="{% url 'products:product_surveys' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_surveys' or request.resolver_match.url_name == 'product_survey_create' %}active{% endif %}">
-        Feedback{% if product.survey_count %}<span class="n">{{ product.survey_count }}</span>{% endif %}
-      </a>
-      <a href="{% url 'products:product_rules' pk=product.pk %}" class="{% if request.resolver_match.url_name == 'product_rules' or request.resolver_match.url_name == 'product_rule_create' %}active{% endif %}">
-        Automation{% if product.rule_count %}<span class="n">{{ product.rule_count }}</span>{% endif %}
-      </a>
-    </div>
-    <div class="nav-label">Workspace</div>
-    <div class="nav">
-      <a href="{% url 'dashboards:index' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
-      <a href="{% url 'tickets:ticket_board' %}" class="{% if request.resolver_match.url_name == 'ticket_board' or request.resolver_match.url_name == 'ticket_kanban' or request.resolver_match.url_name == 'ticket_list' or request.resolver_match.url_name == 'ticket_create' or request.resolver_match.url_name == 'ticket_detail' %}active{% endif %}">Tickets</a>
-      <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
-      <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
-      <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
-      <a href="{% url 'dashboards:reports' %}" class="{% if 'reports' in request.path %}active{% endif %}">Reports</a>
-      <a href="{% url 'dsr:dsr_sheet' %}" class="{% if 'dsr' in request.path %}active{% endif %}">DSR Sheet</a>
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-      <a href="{% url 'dashboards:audit_log' %}" class="{% if 'audit' in request.path %}active{% endif %}">Audit log</a>
-      {% endif %}
-    </div>
-    {% else %}
-    <div class="org">{{ request.company.name }}<span>{{ request.company_role|title }} workspace</span></div>
-    <div class="nav">
-      <a href="{% url 'dashboards:index' %}" class="{% if 'dashboards' in request.path %}active{% endif %}">Dashboards</a>
-      <a href="{% url 'products:product_list' %}" class="{% if 'products' in request.path %}active{% endif %}">Products</a>
-    </div>
-    <div class="nav-label">Workspace</div>
-    <div class="nav">
-      <a href="{% url 'feedback:cs_hub' %}" class="{% if 'cs-hub' in request.path %}active{% endif %}">CS Hub</a>
-      <a href="{% url 'accounts:team_list' %}" class="{% if 'team' in request.path %}active{% endif %}">Team</a>
-      <a href="{% url 'accounts:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">Settings</a>
-      <a href="{% url 'dashboards:reports' %}" class="{% if 'reports' in request.path %}active{% endif %}">Reports</a>
-      <a href="{% url 'dsr:dsr_sheet' %}" class="{% if 'dsr' in request.path %}active{% endif %}">DSR Sheet</a>
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-      <a href="{% url 'dashboards:audit_log' %}" class="{% if 'audit' in request.path %}active{% endif %}">Audit log</a>
-      {% endif %}
-    </div>
-    {% endif %}
-    <div class="sidebar-footer">
-      <form method="post" action="{% url 'accounts:logout' %}">
-        {% csrf_token %}
-        <button type="submit" style="background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0;">
-          Sign out
-        </button>
-      </form>
+
+    <a href="{% url 'products:product_detail' pk=product.pk %}" data-label="Overview"
+       class="side-item {% if request.resolver_match.url_name == 'product_detail' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span class="side-label">Overview</span>
+    </a>
+    <a href="{% url 'products:product_errors' pk=product.pk %}" data-label="Errors"
+       class="side-item {% if request.resolver_match.url_name == 'product_errors' or request.resolver_match.url_name == 'product_error_detail' or request.resolver_match.url_name == 'product_error_create' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M10.3 4.3 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <span class="side-label">Errors</span>
+      {% if product.error_count %}<span class="side-badge">{{ product.error_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'products:product_board' pk=product.pk %}" data-label="Tickets"
+       class="side-item {% if request.resolver_match.url_name == 'product_board' or request.resolver_match.url_name == 'product_ticket_kanban' or request.resolver_match.url_name == 'product_tickets' or request.resolver_match.url_name == 'product_ticket_create' or request.resolver_match.url_name == 'product_ticket_detail' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M4 9V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 3"/></svg>
+      <span class="side-label">Tickets</span>
+      {% if product.ticket_count %}<span class="side-badge">{{ product.ticket_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'products:product_surveys' pk=product.pk %}" data-label="Feedback"
+       class="side-item {% if request.resolver_match.url_name == 'product_surveys' or request.resolver_match.url_name == 'product_survey_create' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="side-label">Feedback</span>
+      {% if product.survey_count %}<span class="side-badge">{{ product.survey_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'products:product_rules' pk=product.pk %}" data-label="Automation"
+       class="side-item {% if request.resolver_match.url_name == 'product_rules' or request.resolver_match.url_name == 'product_rule_create' %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46L12 8h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46L11 14z"/></svg>
+      <span class="side-label">Automation</span>
+      {% if product.rule_count %}<span class="side-badge">{{ product.rule_count }}</span>{% endif %}
+    </a>
+  </div>
+  {% endif %}
+
+  <nav class="nav-section">
+    <div class="nav-label">Operations</div>
+    <a href="{% url 'feedback:cs_hub' %}" data-label="CS Hub"
+       class="side-item {% if 'cs-hub' in request.path %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m5.6 5.6 3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9"/></svg>
+      <span class="side-label">CS Hub</span>
+    </a>
+    <a href="{% url 'dsr:dsr_sheet' %}" data-label="DSR Sheet"
+       class="side-item {% if 'dsr' in request.path %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h6"/></svg>
+      <span class="side-label">DSR Sheet</span>
+    </a>
+  </nav>
+
+  {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+  <nav class="nav-section">
+    <div class="nav-label">Admin</div>
+    <a href="{% url 'accounts:team_list' %}" data-label="Team"
+       class="side-item {% if 'team' in request.path %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="side-label">Team</span>
+    </a>
+    <a href="{% url 'dashboards:audit_log' %}" data-label="Audit log"
+       class="side-item {% if 'audit' in request.path %}active{% endif %}">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      <span class="side-label">Audit log</span>
+    </a>
+  </nav>
+  {% endif %}
+
+  <div class="side-foot">
+    <button type="button" class="side-collapse" data-sidebar-toggle aria-label="Collapse sidebar">
+      <svg class="ic" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+      <span class="side-label">Collapse</span>
+    </button>
+
+    <div class="side-user" x-data="{ open: false }" @keydown.escape.window="open = false">
+      <button type="button" class="side-user-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
+        <span class="side-avatar">{{ request.user.get_full_name|default:request.user.username|make_list|first|upper }}</span>
+        <span class="side-user-meta">
+          <span class="side-user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+          <span class="side-user-role">{{ request.company_role|default:"member" }}</span>
+        </span>
+        <svg class="switch-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="side-user-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
+        <a href="{% url 'accounts:profile' %}">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.44.63.82.73"/></svg>
+          Settings
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Sign out
+          </button>
+        </form>
+      </div>
     </div>
   </div>
+</aside>
+<div class="sidebar-backdrop" data-sidebar-close></div>

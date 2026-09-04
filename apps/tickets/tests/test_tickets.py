@@ -285,3 +285,79 @@ class TicketDeleteTest(TestCase):
         response = self.client.post(reverse("tickets:ticket_delete", kwargs={"pk": other_ticket.pk}))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(Ticket.objects.count(), 2)
+
+
+class TicketProductAccessTest(TestCase):
+    """A member restricted to certain products must not see or touch tickets
+    belonging to products they have no access to (global tickets board)."""
+
+    def setUp(self):
+        self.client = Client()
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        self.dev = User.objects.create_user("dev", "dev@test.com", "pass1234")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
+
+        self.allowed = Product.objects.create(name="Allowed", slug="allowed", company=self.company)
+        self.secret = Product.objects.create(name="Secret", slug="secret", company=self.company)
+        ProductAccess.objects.create(user=self.dev, product=self.allowed, company=self.company)
+
+        self.allowed_ticket = Ticket.objects.create(
+            company=self.company, title="Allowed ticket", product=self.allowed,
+        )
+        self.secret_ticket = Ticket.objects.create(
+            company=self.company, title="Secret ticket", product=self.secret,
+        )
+        self.orphan_ticket = Ticket.objects.create(
+            company=self.company, title="No product ticket",
+        )
+        self.client.login(username="dev", password="pass1234")
+
+    def test_board_hides_inaccessible_product_tickets(self):
+        response = self.client.get(reverse("tickets:ticket_board"))
+        shown = {t.pk for col in response.context["columns"] for t in col["tickets"]}
+        self.assertIn(self.allowed_ticket.pk, shown)
+        self.assertIn(self.orphan_ticket.pk, shown)
+        self.assertNotIn(self.secret_ticket.pk, shown)
+
+    def test_list_hides_inaccessible_product_tickets(self):
+        response = self.client.get(reverse("tickets:ticket_list"))
+        shown = {t.pk for t in response.context["page"].object_list}
+        self.assertNotIn(self.secret_ticket.pk, shown)
+
+    def test_cannot_open_inaccessible_ticket(self):
+        response = self.client.get(
+            reverse("tickets:ticket_detail", kwargs={"pk": self.secret_ticket.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_cannot_change_status_of_inaccessible_ticket(self):
+        response = self.client.post(
+            reverse("tickets:ticket_status", kwargs={"pk": self.secret_ticket.pk}),
+            {"status": "closed"},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.secret_ticket.refresh_from_db()
+        self.assertEqual(self.secret_ticket.status, "open")
+
+    def test_can_change_status_of_accessible_ticket(self):
+        response = self.client.post(
+            reverse("tickets:ticket_status", kwargs={"pk": self.allowed_ticket.pk}),
+            {"status": "closed"},
+        )
+        self.assertIn(response.status_code, (200, 302))
+        self.allowed_ticket.refresh_from_db()
+        self.assertEqual(self.allowed_ticket.status, "closed")
+
+    def test_bulk_delete_skips_inaccessible_tickets(self):
+        # dev created both tickets but only has access to `allowed`
+        Ticket.objects.filter(pk__in=[self.secret_ticket.pk, self.allowed_ticket.pk]).update(
+            created_by=self.dev
+        )
+        self.client.post(
+            reverse("tickets:ticket_bulk_delete"),
+            {"ticket_ids[]": [self.secret_ticket.pk, self.allowed_ticket.pk]},
+        )
+        self.assertTrue(Ticket.objects.filter(pk=self.secret_ticket.pk).exists())
+        self.assertFalse(Ticket.objects.filter(pk=self.allowed_ticket.pk).exists())

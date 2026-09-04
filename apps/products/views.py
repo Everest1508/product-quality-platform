@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
+from apps.core.context_processors import _attach_product_counts
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.products.access import accessible_products, require_product_access
@@ -287,6 +288,7 @@ class ProductErrorListView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         qs = product.error_groups.all()
 
         status = request.GET.get("status")
@@ -320,6 +322,7 @@ class ProductErrorDetailView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk, error_pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         error_group = get_object_or_404(product.error_groups.select_related("product"), pk=error_pk)
         occurrences = error_group.occurrences.all()[:50]
         return render(request, "products/product_error_detail.html", {
@@ -332,15 +335,17 @@ class ProductErrorCreateView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         from apps.errors.forms import ErrorCreateForm
-        form = ErrorCreateForm(company=request.company, initial={"product": product})
+        form = ErrorCreateForm(company=request.company, user=request.user, initial={"product": product})
         return render(request, "products/product_error_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         from apps.errors.forms import ErrorCreateForm
-        form = ErrorCreateForm(request.POST, company=request.company)
+        form = ErrorCreateForm(request.POST, company=request.company, user=request.user)
         if form.is_valid():
             group = form.save(company=request.company, user=request.user)
             messages.success(request, f"Error #{group.pk} created.")
@@ -353,6 +358,7 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
         from apps.accounts.models import User
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         qs = product.tickets.select_related("assigned_to", "created_by")
 
         status = request.GET.get("status")
@@ -411,6 +417,7 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
         from apps.tickets.models import Ticket
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         qs = product.tickets.select_related("assigned_to", "created_by")
 
         search = request.GET.get("q", "").strip()
@@ -472,15 +479,17 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(company=request.company, product=product, initial={"product": product})
+        form = TicketCreateForm(company=request.company, product=product, user=request.user, initial={"product": product})
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(request.POST, company=request.company, product=product)
+        form = TicketCreateForm(request.POST, company=request.company, product=product, user=request.user)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.company = request.company
@@ -541,6 +550,7 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
         from apps.tickets.forms import TicketCommentForm
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
+        _attach_product_counts(product)
         ticket = get_object_or_404(
             product.tickets.select_related("assigned_to", "created_by", "linked_error_group"),
             pk=ticket_pk,

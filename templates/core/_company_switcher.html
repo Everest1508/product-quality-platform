@@ -1,23 +1,24 @@
 {% if workspaces %}
-<div class="org-switch" x-data="{ open: false }" @keydown.escape.window="open = false">
-  <button type="button" class="org-switch-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
-    <span class="org-switch-name">{{ request.company.name }}</span>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+<div class="switch" x-data="{ open: false }" @keydown.escape.window="open = false">
+  <button type="button" class="switch-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
+    <span class="switch-glyph">{{ request.company.name|make_list|first|upper }}</span>
+    <span class="switch-name">{{ request.company.name }}</span>
+    <svg class="switch-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
   </button>
-  <div class="org-switch-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
+  <div class="switch-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
     {% for m in workspaces %}
     {% if m.company_id == request.company.id %}
-    <div class="org-switch-item current">
-      <span class="org-switch-item-name">{{ m.company.name }}</span>
-      <span class="org-switch-role">{{ m.get_role_display }}</span>
+    <div class="switch-item current">
+      <span class="switch-item-name">{{ m.company.name }}</span>
+      <span class="switch-role">{{ m.get_role_display }}</span>
     </div>
     {% else %}
     <form method="post" action="{% url 'accounts:company_switch' %}">
       {% csrf_token %}
       <input type="hidden" name="company_id" value="{{ m.company_id }}">
-      <button type="submit" class="org-switch-item">
-        <span class="org-switch-item-name">{{ m.company.name }}</span>
-        <span class="org-switch-role">{{ m.get_role_display }}</span>
+      <button type="submit" class="switch-item">
+        <span class="switch-item-name">{{ m.company.name }}</span>
+        <span class="switch-role">{{ m.get_role_display }}</span>
       </button>
     </form>
     {% endif %}

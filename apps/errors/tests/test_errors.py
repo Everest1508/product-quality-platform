@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from apps.accounts.models import Company, Membership
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence
-from apps.products.models import Product
+from apps.products.models import Product, ProductAccess
 
 User = get_user_model()
 
@@ -175,3 +175,61 @@ class ErrorDeleteTest(TestCase):
         response = self.client.post(reverse("errors:error_delete", kwargs={"pk": other_error.pk}))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(ErrorGroup.objects.count(), 2)
+
+
+class ErrorProductAccessTest(TestCase):
+    """A member restricted to certain products must not see or touch error
+    groups belonging to products they have no access to."""
+
+    def setUp(self):
+        self.client = Client()
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.dev = User.objects.create_user("dev", "dev@test.com", "pass1234")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
+
+        self.allowed = Product.objects.create(name="Allowed", slug="allowed", company=self.company)
+        self.secret = Product.objects.create(name="Secret", slug="secret", company=self.company)
+        ProductAccess.objects.create(user=self.dev, product=self.allowed, company=self.company)
+
+        self.allowed_error = ErrorGroup.objects.create(
+            product=self.allowed, company=self.company,
+            fingerprint="a1", title="Allowed error", severity="high", status="open",
+        )
+        self.secret_error = ErrorGroup.objects.create(
+            product=self.secret, company=self.company,
+            fingerprint="s1", title="Secret error", severity="high", status="open",
+        )
+        self.client.login(username="dev", password="pass1234")
+
+    def test_list_hides_inaccessible_product_errors(self):
+        response = self.client.get(reverse("errors:error_list"))
+        shown = {e.pk for e in response.context["page"].object_list}
+        self.assertEqual(shown, {self.allowed_error.pk})
+
+    def test_cannot_open_inaccessible_error(self):
+        response = self.client.get(
+            reverse("errors:error_detail", kwargs={"pk": self.secret_error.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_cannot_resolve_inaccessible_error(self):
+        response = self.client.post(
+            reverse("errors:error_resolve", kwargs={"pk": self.secret_error.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+        self.secret_error.refresh_from_db()
+        self.assertEqual(self.secret_error.status, "open")
+
+    def test_can_resolve_accessible_error(self):
+        response = self.client.post(
+            reverse("errors:error_resolve", kwargs={"pk": self.allowed_error.pk})
+        )
+        self.assertIn(response.status_code, (200, 302))
+        self.allowed_error.refresh_from_db()
+        self.assertEqual(self.allowed_error.status, "resolved")
+
+    def test_cannot_convert_inaccessible_error_to_ticket(self):
+        response = self.client.post(
+            reverse("errors:error_convert_to_ticket", kwargs={"pk": self.secret_error.pk})
+        )
+        self.assertEqual(response.status_code, 404)

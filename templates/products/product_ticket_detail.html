@@ -1,8 +1,17 @@
 {% extends "core/base.html" %}
 {% block title %}{{ ticket.title }} — {{ product.name }}{% endblock %}
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_board' pk=product.pk %}">Tickets</a>
+  <span class="sep">/</span>
+  <span class="current">#{{ ticket.pk }}</span>
+</nav>
+
 <div class="head">
-  <a href="{% url 'products:product_board' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Tickets</a>
   <h1 style="font-size:17px;">#{{ ticket.pk }} {{ ticket.title }}</h1>
   <div class="head-actions">
     {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}

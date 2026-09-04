@@ -8,6 +8,11 @@ from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMix
 from apps.dashboards.service import log_activity
 from apps.errors.forms import ErrorCreateForm
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence
+from apps.products.access import (
+    accessible_error_groups,
+    accessible_products,
+    require_error_group_access,
+)
 from apps.tickets.models import Ticket
 
 
@@ -31,7 +36,7 @@ ERROR_SORT_MAP = {
 
 class ErrorListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        qs = ErrorGroup.objects.filter(company=request.company).select_related("product")
+        qs = accessible_error_groups(request.user, request.company).select_related("product")
 
         product_id = request.GET.get("product")
         if product_id:
@@ -57,7 +62,7 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
         page_num = request.GET.get("page", 1)
         page = paginator.get_page(page_num)
 
-        products = request.company.product_set.all()
+        products = accessible_products(request.user, request.company)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "errors/partials/_error_list_body.html", {
@@ -82,6 +87,7 @@ class ErrorDetailView(CompanyMemberRequiredMixin, View):
             pk=pk,
             company=request.company,
         )
+        require_error_group_access(request, error_group)
         occurrences = error_group.occurrences.all()[:50]
 
         if request.headers.get("HX-Request") == "true":
@@ -104,6 +110,7 @@ class ErrorStatusView(CompanyMemberRequiredMixin, View):
             pk=target_pk,
             company=request.company,
         )
+        require_error_group_access(request, error_group)
         new_status = request.POST.get("status")
         valid_choices = [c[0] for c in ErrorGroup.STATUS_CHOICES]
         if new_status in valid_choices:
@@ -137,6 +144,7 @@ class ErrorIgnoreView(CompanyMemberRequiredMixin, View):
             pk=target_pk,
             company=request.company,
         )
+        require_error_group_access(request, error_group)
         error_group.status = "ignored"
         error_group.save(update_fields=["status"])
         log_activity(
@@ -166,6 +174,7 @@ class ErrorResolveView(CompanyMemberRequiredMixin, View):
             pk=target_pk,
             company=request.company,
         )
+        require_error_group_access(request, error_group)
         error_group.status = "resolved"
         error_group.save(update_fields=["status"])
         log_activity(
@@ -193,11 +202,11 @@ class ErrorCreateView(CompanyMemberRequiredMixin, View):
         product_id = request.GET.get("product")
         if product_id:
             initial["product"] = product_id
-        form = ErrorCreateForm(company=request.company, initial=initial)
+        form = ErrorCreateForm(company=request.company, user=request.user, initial=initial)
         return render(request, "errors/error_form.html", {"form": form})
 
     def post(self, request):
-        form = ErrorCreateForm(request.POST, company=request.company)
+        form = ErrorCreateForm(request.POST, company=request.company, user=request.user)
         if form.is_valid():
             group = form.save(company=request.company, user=request.user)
             messages.success(request, f"Error #{group.pk} created.")
@@ -214,6 +223,7 @@ class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
             pk=target_pk,
             company=request.company,
         )
+        require_error_group_access(request, error_group)
         ticket = Ticket.objects.create(
             company=request.company,
             title=f"Error: {error_group.title}",
@@ -253,6 +263,7 @@ class ErrorDeleteView(CompanyAdminRequiredMixin, View):
             pk=target_pk,
             company=request.company,
         )
+        require_error_group_access(request, error_group)
         error_id = error_group.pk
         product_id = error_group.product_id
         title = error_group.title

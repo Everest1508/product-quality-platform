@@ -2,19 +2,27 @@
 {% block title %}Tickets — {{ product.name }}{% endblock %}
 
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">Tickets</span>
+</nav>
+
 <div class="head" style="margin-bottom:20px;">
   <div>
     <h1>{{ product.name }} — Tickets <span class="count">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }}</span></h1>
-    <p class="text-sm text-muted" style="margin-top:4px;">Filterable table list of tickets for {{ product.name }}.</p>
+    <p class="text-sm text-muted" style="margin-top:4px;">Tickets for {{ product.name }} only.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
-    <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Delete Tickets</button>
+    <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Select</button>
     <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "products:product_ticket_bulk_delete" pk=product.pk %}')">
       Delete Selected (<span id="bulk-delete-count">0</span>)
     </button>
     <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
-      <a href="{% url 'products:product_board' pk=product.pk %}" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
-      <a href="{% url 'products:product_tickets' pk=product.pk %}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
+      <a href="{% url 'products:product_board' pk=product.pk %}?{{ request.GET.urlencode }}" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
+      <a href="{% url 'products:product_tickets' pk=product.pk %}?{{ request.GET.urlencode }}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
     </div>
     <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>

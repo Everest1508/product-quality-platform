@@ -8,6 +8,12 @@ from django.views import View
 
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
+from apps.products.access import (
+    accessible_products,
+    accessible_tickets,
+    require_ticket_access,
+    user_has_product_access,
+)
 from apps.products.models import Product
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
 from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
@@ -39,7 +45,7 @@ SORT_MAP = {
 
 class TicketListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        qs = Ticket.objects.filter(company=request.company).select_related("product", "assigned_to", "created_by")
+        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
 
         status = request.GET.get("status")
         if status:
@@ -86,7 +92,7 @@ class TicketListView(CompanyMemberRequiredMixin, View):
         members = User.objects.filter(
             memberships__company=request.company
         ).order_by("username")
-        products = Product.objects.filter(company=request.company).order_by("name")
+        products = accessible_products(request.user, request.company).order_by("name")
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_ticket_list_body.html", {
@@ -111,7 +117,7 @@ class TicketListView(CompanyMemberRequiredMixin, View):
 
 class TicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        qs = Ticket.objects.filter(company=request.company).select_related("product", "assigned_to", "created_by")
+        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
 
         search = request.GET.get("q", "").strip()
         if search:
@@ -152,7 +158,7 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
         members = User.objects.filter(
             memberships__company=request.company
         ).order_by("username")
-        products = Product.objects.filter(company=request.company).order_by("name")
+        products = accessible_products(request.user, request.company).order_by("name")
 
         return render(request, "tickets/ticket_kanban.html", {
             "columns": columns,
@@ -171,7 +177,7 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
 
 class TicketCreateView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        form = TicketCreateForm(company=request.company)
+        form = TicketCreateForm(company=request.company, user=request.user)
         return render(request, "tickets/ticket_form.html", {"form": form})
 
     def post(self, request):
@@ -180,7 +186,9 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
         if product_id:
             from apps.products.models import Product
             product = Product.objects.filter(pk=product_id, company=request.company).first()
-        form = TicketCreateForm(request.POST, company=request.company, product=product)
+            if product and not user_has_product_access(request.user, request.company, product):
+                product = None
+        form = TicketCreateForm(request.POST, company=request.company, product=product, user=request.user)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.company = request.company
@@ -206,6 +214,7 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
 class TicketEditView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         form = TicketEditForm(instance=ticket)
         assignee_selected_ids = [str(a.pk) for a in ticket.assignees.all()]
         return render(request, "tickets/ticket_form.html", {
@@ -217,6 +226,7 @@ class TicketEditView(CompanyMemberRequiredMixin, View):
 
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         form = TicketEditForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save()
@@ -249,6 +259,7 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             pk=pk,
             company=request.company,
         )
+        require_ticket_access(request, ticket)
         comments = ticket.comments.select_related("author").all()
         comment_form = TicketCommentForm()
 
@@ -258,14 +269,6 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
         if ticket.product:
             from apps.products.access import product_users
             members = product_users(ticket.product, request.company)
-
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "tickets/partials/_ticket_detail_content.html", {
-                "ticket": ticket,
-                "comments": comments,
-                "comment_form": comment_form,
-                "members": members,
-            })
 
         return render(request, "tickets/ticket_detail.html", {
             "ticket": ticket,
@@ -281,6 +284,7 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
 class TicketPriorityView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         new_priority = request.POST.get("priority")
         if new_priority in dict(Ticket.Priority.choices):
             old_priority = ticket.get_priority_display()
@@ -308,6 +312,7 @@ class TicketPriorityView(CompanyMemberRequiredMixin, View):
 class TicketStatusView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         new_status = request.POST.get("status")
 
         is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
@@ -353,6 +358,7 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
 class TicketAssignView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         assignee_ids = request.POST.getlist("assignees")
 
         old_assignees = set(ticket.assignees.values_list("pk", flat=True))
@@ -412,6 +418,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
 class TicketCommentView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         form = TicketCommentForm(request.POST)
 
         if form.is_valid():
@@ -444,6 +451,7 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
 class TicketDeadlineView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         form = TicketDeadlineForm(request.POST)
 
         if form.is_valid():
@@ -481,6 +489,7 @@ class TicketDeadlineView(CompanyMemberRequiredMixin, View):
 class TicketDeleteView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
         if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
             return HttpResponseForbidden("You can only delete tickets you created.")
         ticket_id = ticket.pk
@@ -513,6 +522,10 @@ class TicketBulkDeleteView(CompanyMemberRequiredMixin, View):
             try:
                 ticket = Ticket.objects.get(pk=tid, company=request.company)
             except (Ticket.DoesNotExist, ValueError):
+                continue
+            if ticket.product_id and not user_has_product_access(
+                request.user, request.company, ticket.product
+            ):
                 continue
             if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
                 continue

@@ -290,5 +290,5 @@ class CompanySwitchTest(TestCase):
         response = self.client.get(reverse("accounts:team_list"))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("org-switch", content)
+        self.assertIn("switch-btn", content)
         self.assertIn(reverse("accounts:company_switch"), content)

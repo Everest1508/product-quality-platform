@@ -13,11 +13,15 @@ class ErrorCreateForm(forms.Form):
     environment = forms.CharField(max_length=20, initial="production", widget=forms.TextInput(attrs={"class": "form-input"}))
     page = forms.CharField(max_length=500, required=False, widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Page URL where error occurred"}))
 
-    def __init__(self, *args, company=None, **kwargs):
+    def __init__(self, *args, company=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
-            from apps.products.models import Product
-            self.fields["product"].queryset = Product.objects.filter(company=company)
+            if user is not None:
+                from apps.products.access import accessible_products
+                self.fields["product"].queryset = accessible_products(user, company)
+            else:
+                from apps.products.models import Product
+                self.fields["product"].queryset = Product.objects.filter(company=company)
 
     def save(self, company, user):
         data = self.cleaned_data

@@ -1,8 +1,17 @@
 {% extends "core/base.html" %}
 {% block title %}{{ error_group.title }} — {{ product.name }}{% endblock %}
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_errors' pk=product.pk %}">Errors</a>
+  <span class="sep">/</span>
+  <span class="current">{{ error_group.title|truncatechars:40 }}</span>
+</nav>
+
 <div class="head">
-  <a href="{% url 'products:product_errors' pk=product.pk %}" class="btn" style="margin-right:12px;font-size:13px;">← Errors</a>
   <h1 style="font-size:17px;">{{ error_group.title }}</h1>
 </div>
 <div class="grid-2 mb-6">

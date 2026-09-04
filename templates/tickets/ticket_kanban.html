@@ -1,26 +1,26 @@
 {% extends "core/base.html" %}
-{% block title %}Kanban Board — PQ Platform{% endblock %}
+{% block title %}All tickets — PQ Platform{% endblock %}
 
 {% block content %}
 <nav class="breadcrumbs">
-  <a href="{% url 'tickets:ticket_board' %}">Tickets</a>
+  <a href="{% url 'tickets:ticket_board' %}">All tickets</a>
   <span class="sep">/</span>
-  <span class="current">Kanban Board</span>
+  <span class="current">Kanban</span>
 </nav>
 
 <div class="head" style="margin-bottom:20px;">
   <div>
-    <h1>Kanban Board <span class="count">{{ total }} ticket{{ total|pluralize }}</span></h1>
-    <p class="text-sm text-muted" style="margin-top:4px;">Drag-and-drop status workflow board across all company tickets.</p>
+    <h1>All tickets <span class="count">{{ total }} ticket{{ total|pluralize }} · every product</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Tickets from every product you can access. Use the product filter to narrow to one.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
-    <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Delete Tickets</button>
+    <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Select</button>
     <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "tickets:ticket_bulk_delete" %}')">
       Delete Selected (<span id="bulk-delete-count">0</span>)
     </button>
     <div class="view-toggle" style="display:flex;background:var(--panel);padding:3px;border:1px solid var(--border);border-radius:6px;">
-      <a href="{% url 'tickets:ticket_board' %}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
-      <a href="{% url 'tickets:ticket_list' %}" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
+      <a href="{% url 'tickets:ticket_board' %}?{{ request.GET.urlencode }}" class="active" style="padding:4px 10px;font-size:12px;font-weight:500;">Kanban</a>
+      <a href="{% url 'tickets:ticket_list' %}?{{ request.GET.urlencode }}" style="padding:4px 10px;font-size:12px;font-weight:500;">List</a>
     </div>
     <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>
@@ -127,7 +127,6 @@ function buildUrl(params) {
         <div class="card-meta">
           <span class="card-type {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
           <span class="card-priority {{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span>
-          {% if ticket.is_overdue %}<span class="overdue-badge">Overdue</span>{% endif %}
         </div>
         <div class="card-footer">
           {% if ticket.assignees.all %}
@@ -141,7 +140,7 @@ function buildUrl(params) {
           <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
           {% endif %}
           {% if ticket.deadline %}
-          <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" data-tooltip="Due {{ ticket.deadline|date:'Y-m-d H:i' }}">due {{ ticket.deadline|date:'m-d H:i' }}</span>
+          <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" data-tooltip="Due {{ ticket.deadline|date:'Y-m-d H:i' }}">{% if ticket.is_overdue %}Overdue · {% else %}Due {% endif %}{{ ticket.deadline|date:'M j' }}</span>
           {% endif %}
         </div>
       </div>

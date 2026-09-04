@@ -4,7 +4,7 @@
 
 {% block content %}
 <nav class="breadcrumbs">
-  <a href="{% url 'tickets:ticket_board' %}">Tickets</a>
+  <a href="{% url 'tickets:ticket_board' %}">All tickets</a>
   <span class="sep">/</span>
   {% if editing %}
   <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}">#{{ ticket.pk }}</a>

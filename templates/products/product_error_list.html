@@ -1,8 +1,19 @@
 {% extends "core/base.html" %}
 {% block title %}Errors — {{ product.name }}{% endblock %}
 {% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">Errors</span>
+</nav>
+
 <div class="head">
-  <h1>Errors <span class="count">{{ page.paginator.count }} total</span></h1>
+  <div>
+    <h1>{{ product.name }} — Errors <span class="count">{{ page.paginator.count }} group{{ page.paginator.count|pluralize }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Error groups for {{ product.name }} only.</p>
+  </div>
   <div class="head-actions">
     <a href="{% url 'products:product_error_create' pk=product.pk %}" class="btn btn-primary" style="font-size:13px;">Report error</a>
   </div>

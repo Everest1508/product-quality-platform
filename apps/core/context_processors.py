@@ -38,6 +38,12 @@ def product_context(request):
             if product:
                 _attach_product_counts(product)
                 ctx["product"] = product
+                from apps.products.access import accessible_products
+                ctx["nav_products"] = list(
+                    accessible_products(request.user, request.company)
+                    .order_by("name")
+                    .values("pk", "name")
+                )
     except Exception:
         pass
     return ctx
@@ -46,5 +52,29 @@ def product_context(request):
 def workspace_context(request):
     if not request.user.is_authenticated:
         return {}
-    memberships = request.user.memberships.select_related("company").all()
-    return {"workspaces": list(memberships)}
+
+    ctx = {"workspaces": list(request.user.memberships.select_related("company").all())}
+
+    company = getattr(request, "company", None)
+    if company is not None:
+        try:
+            from apps.ingestion.models import ErrorGroup
+            from apps.products.access import accessible_products
+            from apps.tickets.models import Ticket
+
+            products = accessible_products(request.user, company)
+            ctx["nav_open_tickets"] = (
+                Ticket.objects.filter(company=company)
+                .filter(product__in=products)
+                .exclude(status__in=["resolved", "closed"])
+                .count()
+            )
+            ctx["nav_open_errors"] = (
+                ErrorGroup.objects.filter(company=company, product__in=products)
+                .exclude(status__in=["resolved", "ignored"])
+                .count()
+            )
+        except Exception:
+            pass
+
+    return ctx
