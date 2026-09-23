@@ -1,18 +1,41 @@
+import json
+from urllib.parse import urlencode, urlparse
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
-from apps.accounts.models import Company, Membership
+from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.dashboards.service import log_activity
 
 User = get_user_model()
+
+
+def _user_json(user):
+    display_name = (f"{user.first_name} {user.last_name}".strip()) or user.username
+    return {
+        "id": str(user.pk),
+        "email": user.email or None,
+        "displayName": display_name,
+        "isGuest": False,
+    }
+
+
+def _is_loopback_redirect(redirect_uri):
+    try:
+        parsed = urlparse(redirect_uri)
+    except ValueError:
+        return False
+    return parsed.scheme == "http" and parsed.hostname in ("127.0.0.1", "localhost")
 
 
 class LoginView(View):
@@ -275,3 +298,90 @@ class ProfileView(CompanyMemberRequiredMixin, View):
             messages.success(request, "Profile updated.")
             return redirect("accounts:profile")
         return render(request, "accounts/profile.html", {"form": form})
+
+
+class OAuthAuthorizeView(View):
+    """External sign-in entry point for third-party clients (currently just the
+    Serop desktop app). Loopback-only redirect_uri to keep this from being usable
+    as an open redirect."""
+
+    def get(self, request):
+        client_id = request.GET.get("client_id", "")
+        redirect_uri = request.GET.get("redirect_uri", "")
+        state = request.GET.get("state", "")
+        if not _is_loopback_redirect(redirect_uri):
+            return HttpResponseBadRequest("redirect_uri must be a loopback (127.0.0.1/localhost) address.")
+
+        if request.user.is_authenticated:
+            return self._issue_and_redirect(request.user, client_id, redirect_uri, state)
+
+        return render(request, "accounts/oauth_authorize.html", {
+            "form": LoginForm(),
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "state": state,
+        })
+
+    def post(self, request):
+        client_id = request.POST.get("client_id", "")
+        redirect_uri = request.POST.get("redirect_uri", "")
+        state = request.POST.get("state", "")
+        if not _is_loopback_redirect(redirect_uri):
+            return HttpResponseBadRequest("redirect_uri must be a loopback (127.0.0.1/localhost) address.")
+
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username_or_email = form.cleaned_data["username"]
+            password = form.cleaned_data["password"]
+            user = User.objects.filter(email=username_or_email).first() or User.objects.filter(username=username_or_email).first()
+            authenticated = authenticate(request, username=user.username, password=password) if user else None
+            if authenticated:
+                login(request, authenticated)
+                return self._issue_and_redirect(authenticated, client_id, redirect_uri, state)
+            form.add_error(None, "Invalid credentials.")
+
+        return render(request, "accounts/oauth_authorize.html", {
+            "form": form,
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "state": state,
+        })
+
+    def _issue_and_redirect(self, user, client_id, redirect_uri, state):
+        _code_obj, raw_code = ExternalAuthCode.issue(user, client_id, redirect_uri)
+        query = urlencode({"code": raw_code, "state": state})
+        return redirect(f"{redirect_uri}?{query}")
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class OAuthTokenView(View):
+    """Exchanges a one-time authorize code for a bearer token. Called
+    server-to-server by the Serop Electron main process, not from a browser
+    session, so it carries no CSRF cookie and is exempted."""
+
+    def post(self, request):
+        try:
+            body = json.loads(request.body or b"{}")
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest("Invalid JSON body.")
+
+        code = body.get("code", "")
+        user = ExternalAuthCode.exchange(code) if code else None
+        if not user:
+            return JsonResponse({"ok": False, "error": "Invalid or expired code."}, status=400)
+
+        _token_obj, raw_token = ExternalAccessToken.create_token(user, client_id=body.get("client_id", "serop"))
+        return JsonResponse({"ok": True, "token": raw_token, "user": _user_json(user)})
+
+
+class OAuthMeView(View):
+    def get(self, request):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return JsonResponse({"ok": False, "error": "Missing bearer token."}, status=401)
+
+        token_obj = ExternalAccessToken.validate(auth_header[len("Bearer "):])
+        if not token_obj:
+            return JsonResponse({"ok": False, "error": "Invalid or revoked token."}, status=401)
+
+        return JsonResponse({"ok": True, "user": _user_json(token_obj.user)})

@@ -25,7 +25,7 @@ venv/bin/python manage.py test apps.tickets.tests.test_tickets.TicketProductAcce
 
 Two tests in `apps.accounts.tests.test_tenant_isolation` fail on a clean checkout (`test_signup_creates_user`, `test_request_has_company_after_login`) — stale tests against an auth flow that was refactored (`accounts:signup` route is gone; `LOGIN_REDIRECT_URL = "/dashboard/"` points at a route that no longer exists). Not regressions.
 
-Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`.
+Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`. Also starts a `redis` service (`REDIS_URL`, used by Django Channels for `apps.serop`'s live inbox — see below). Outside Docker, run Redis locally or the WebSocket consumer just won't get a channel layer; `manage.py runserver` auto-detects Channels (it's in `INSTALLED_APPS`) and serves both HTTP and WS.
 
 There is no frontend build step. Templates render server-side; htmx and Alpine.js load from CDN in `templates/core/base.html`. All CSS is a single `<style>` block in `base.html` driven by CSS custom properties (`--accent`, `--panel`, `--border`, …). `static/` does not exist, so the `staticfiles.W004` check warning is expected.
 
@@ -73,3 +73,11 @@ Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app 
 ### Auth
 
 Custom `accounts.User` (`AbstractUser` + `discord_id`). django-allauth is installed but login/logout/signup are handled by `apps/accounts/views.py` (email + password). A user with no `Membership` is sent to `accounts:company_setup`, which creates a `Company` and an owner `Membership`.
+
+### Serop integration (`apps/serop/`, `apps/accounts` OAuth views)
+
+This CRM is the cloud backend for **Server Operator** ("Serop"), a separate Electron app in the parent working directory (`../CLAUDE.md`) — not just an SDK-ingesting customer, an actual dependent of this repo. Two things exist purely to serve it:
+
+- **OAuth-ish sign-in** (`apps/accounts/views.py`: `OAuthAuthorizeView`/`OAuthTokenView`/`OAuthMeView`, models `ExternalAuthCode`/`ExternalAccessToken` in `apps/accounts/models.py`) — a loopback-redirect flow (`redirect_uri` must be `127.0.0.1`/`localhost`) since there's no self-serve signup here; Serop's Electron main process catches the redirect. `ExternalAccessToken` is the bearer token every `apps/serop/` endpoint authenticates with.
+- **`apps/serop/`** — Serop's teams/shared-servers/inbox API (`/api/serop/...`, DRF `APIView`s, `ExternalTokenAuthentication` sets `request.user` to the real CRM `User`) plus the live inbox WebSocket (`apps/serop/consumers.py`, routed in `core/asgi.py`, mounted at `/ws/inbox/?token=...`). **Serop "teams" are this app's `Company`/`Membership` directly** — adding someone to a Serop team creates a real `Membership` (role `viewer` by default) in that company, which is a deliberate but easy-to-forget cross-product coupling: it grants no ticketing visibility by itself (`accessible_products` only auto-grants owners/admins), but it does mean Serop and the ticketing UI's team-membership lists are the same data. `SeropSharedServer.encrypted_password` is Fernet-encrypted with `settings.SHARED_SERVER_ENCRYPTION_KEY` — never log or return it undecrypted outside `SharedServerCredentialsView`.
+- CORS is enabled (`django-cors-headers`) but scoped via `CORS_URLS_REGEX` to `^/(oauth|api/serop)/.*$` only — the rest of the CRM's session-cookie web UI is untouched.

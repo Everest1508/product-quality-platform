@@ -1,4 +1,9 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
   web:
     build: .
     ports:
@@ -10,4 +15,7 @@ services:
       - DJANGO_SECRET_KEY=change-me-in-production
       - DJANGO_DEBUG=True
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,crm.beforth.in
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
     command: sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"

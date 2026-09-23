@@ -20,4 +20,4 @@ RUN chmod +x entrypoint.sh
 
 EXPOSE 8011
 
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8011", "--workers", "3"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8011", "core.asgi:application"]

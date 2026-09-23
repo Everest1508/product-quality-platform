@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "rest_framework",
     "django_htmx",
+    "corsheaders",
+    "channels",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -39,10 +41,12 @@ INSTALLED_APPS = [
     "apps.feedback",
     "apps.dashboards",
     "apps.dsr",
+    "apps.serop",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -142,3 +146,28 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS",
     "https://crm.beforth.in,http://localhost:8011,http://127.0.0.1:8011",
 ).split(",")
+
+# CORS — scoped to the Serop desktop app's bearer-token-authenticated API only.
+# These paths carry no cookies, so allowing any origin on them is safe; the
+# rest of the CRM (session-cookie web UI) is untouched by corsheaders.
+CORS_URLS_REGEX = r"^/(oauth|api/serop)/.*$"
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = False
+
+# Serop desktop app integration
+ASGI_APPLICATION = "core.asgi.application"
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    },
+}
+
+# Fernet key used to encrypt shared-server passwords (apps.serop.models.SeropSharedServer).
+# Generate one with:
+#   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+SHARED_SERVER_ENCRYPTION_KEY = os.environ.get(
+    "SHARED_SERVER_ENCRYPTION_KEY",
+    "Wj9_TxFEXHDzzcaYIxY3dfCjyK2_9pZDesWRfpFIcWA=",
+)
