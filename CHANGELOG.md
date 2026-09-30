@@ -1,7 +1,116 @@
 # Changelog
 
-All notable changes to this project are documented here.
-Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not yet versioned.
+This is what the **What's new** button in the sidebar shows, so write it for the
+person using the app: what they can now do, what got easier, what was broken.
+No class names, no field names, no test names, no file paths — if a change needs
+that kind of detail it belongs in `AGENTS.md` instead, which is where the
+engineering invariants live.
+
+Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not
+yet versioned. Older releases are below the newest.
+
+## [Unreleased] — 2026-09-30 · attendance, leave & payroll
+
+Three new sections — Attendance, Leave and Payroll — plus a home page built around
+your own week, a rebuilt sidebar and a pass over accessibility. The reasoning
+behind each of these, and the questions still open, are in
+[changes-2026-09-30.md](changes-2026-09-30.md).
+
+### New
+
+- **Clock in and out from anywhere in the app.** Your company sets its own office
+  hours and decides how late is too late.
+  - Office hours are 10:00–19:00 with a 60-minute unpaid break, so a full day
+    reads 8 hours rather than 9.
+  - Up to 15 minutes late is on time, up to 30 costs Rs 50, up to an hour costs
+    Rs 100, and later than that costs half a day. A day you never clocked in is
+    never charged.
+- **Your own attendance and a monthly timesheet.** When you came in, when you left,
+  and what it means for your pay — without asking an admin.
+- **Request leave, and approve it.** Everyone can request time off; an approver
+  works through a queue of requests waiting on them.
+  - Approvers are picked per person in the team settings. Owners and admins can
+    always approve, whatever the toggle says.
+  - Owners and admins also see what is waiting on them, right on the home page.
+- **Leave types you can tell apart.** Each type carries its own colour and icon, so
+  casual and sick are not two identical grey rows.
+- **Lateness on your payslip.** Every late arrival is listed with the date, the
+  time you arrived and what it cost — on your own payslip, not just an admin's.
+  - What the screen shows before the run is issued is calculated the same way, so
+    the estimate and the payslip can never disagree.
+- **A home page about you.** It shows your attendance, your pay, your leave balance
+  and your own tickets, instead of company-wide totals that told you nothing about
+  your week.
+  - Managers and owners additionally see the team's numbers, and tickets from
+    products you don't have access to stay hidden.
+  - The main button is now **Request leave** rather than **New ticket**, and a
+    banner tells you when you are on approved leave today.
+- **What's new, in the sidebar.** The footer shows the version, and the button
+  beside it opens these notes.
+  - It opens on the current release. The two earlier ones are folded away, and you
+    can filter down to just what was fixed or improved.
+- **A show/hide button on the password field** when you sign in.
+
+### Improved
+
+- **Leave is simpler to keep track of.** 17 days a year — 12 casual and 5 sick —
+  and you can take at most 3 working days off at a time, counted across all types
+  together.
+  - Counted in working days, so Friday to Monday costs 2 days, not 4.
+- **The leave settings page is one clear row per type**, instead of a table whose
+  headings didn't line up with the boxes you were editing.
+  - A type with no limit now reads **No cap**, rather than "Unlimited" — 0 is a
+    real setting.
+- **Lunch breaks are handled honestly.** The hour comes out of your day only if
+  your day was long enough to include it, so leaving at 11:00 is not reported as
+  less time than you actually worked.
+- **The sidebar knows where you are.** It highlights the page you're on, names its
+  sections properly for screen readers, and keeps its highlight and tooltips when
+  collapsed.
+
+### Fixed
+
+- **The app used to go blank next to the sidebar.** A misplaced closing tag made
+  everything to the right of it invisible. The product edit form had the same
+  fault.
+- **Signing in used to land everyone on a 404.** You now go to your home page.
+- **A bad month of lateness could tell you to hand money back.** Someone on a low
+  salary who was late every day came out at **-99.96** on their payslip. The
+  deduction is now capped at what the month can absorb, so a payslip can never go
+  negative.
+- **"Add entry" on the timesheet made up a row for you.** It quietly logged an hour
+  of "New Task" as complete. It now asks for the task and the hours, and won't
+  accept more than 24 in a day.
+- **The timesheet ignored anything invalid you typed.** Bad values are now
+  rejected with a message instead of being silently saved.
+- **90 controls were unlabelled for screen readers.** Every field now has a label
+  that is actually attached to it, so clicking it focuses the box and a screen
+  reader announces it.
+  - This covered search and sort boxes, the bulk-select boxes on ticket cards, the
+    audit log's date filters, and the assignee picker's remove buttons — which all
+    announced "Remove assignee" regardless of who you were removing.
+  - Two of these were only found on a second pass, because the first check was
+    itself looking the wrong way.
+- **Seven pages had no sidebar highlight at all**, including Automation and
+  Feedback, which you could only reach by typing the URL.
+- **Your payslip said unpaid leave was the only thing that reduced your pay**, which
+  stopped being true the moment lateness could, and three places still said
+  "medical" after we renamed it to sick.
+- **The demo data changed depending on what time you seeded it**, and past 10:15 it
+  invented a late penalty for your demo team.
+- **Two copies of the timesheet's add form shared the same field ids**, so labels
+  pointed at the wrong box. Links that open in a new tab also now carry the
+  attribute that stops the new page reaching back into this one.
+
+### Security
+
+- **A live API token is committed in the repository.** It does not validate against
+  this app's database, but if it was ever valid anywhere it **should be rotated**.
+  - Two files are named so the test runner picks them up, which is why
+    `manage.py test` reports three errors that have nothing to do with your code.
+  - They also send real requests to whatever is running on your machine when the
+    test suite starts.
+  - Not changed yet. It needs a decision about where the token should live.
 
 ## [Unreleased] — 2026-09-04 · dashboard & ticket boards
 

@@ -1,0 +1,41 @@
+{% if records %}
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Check in</th>
+      <th>Check out</th>
+      <th>Worked</th>
+      <th>Status</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in records %}
+    <tr>
+      <td class="date">{{ record.date|date:"D, M d" }}</td>
+      <td>{{ record.check_in|date:"g:i A"|default:"—" }}</td>
+      <td>{{ record.check_out|date:"g:i A"|default:"—" }}</td>
+      <td>
+        {% if record.is_complete %}{{ record.worked_formatted }}
+        {% elif record.is_open %}<span class="text-muted">running</span>
+        {% else %}<span class="text-muted">—</span>{% endif %}
+      </td>
+      <td>
+        {% if record.is_open %}<span class="pill open">On clock</span>
+        {% elif record.is_complete %}<span class="pill resolved">Complete</span>
+        {% else %}<span class="pill closed">No punch</span>{% endif %}
+        {% if record.is_edited %}<span class="pill info">edited</span>{% endif %}
+      </td>
+      <td class="sub">{{ record.notes|default:""|truncatechars:40 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">
+  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  <h3>No attendance yet</h3>
+  <p>Use the check-in button above to record your first day.</p>
+</div>
+{% endif %}

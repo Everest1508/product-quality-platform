@@ -35,21 +35,26 @@
     {% endif %}
   </select>
 
-  <div class="assignee-dd__trigger" :class="{ 'open': open }" @click="open = !open" role="button" tabindex="0" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+  <!-- The native select above is display:none, so this trigger is the control
+       assistive tech actually meets. As an interactive div it carries no
+       accessible name and no expansion state unless they are stated here. -->
+  <div class="assignee-dd__trigger" :class="{ 'open': open }" @click="open = !open" role="button" tabindex="0"
+       @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open"
+       aria-label="Assignees" aria-haspopup="listbox" :aria-expanded="open ? 'true' : 'false'">
     <div class="assignee-dd__chips" x-show="selected.size > 0">
       <template x-for="opt in selectedOptions" :key="opt.id">
         <span class="assignee-dd__chip">
           <span x-text="opt.name"></span>
-          <button type="button" @click.stop="toggle(opt.id)" aria-label="Remove assignee">×</button>
+          <button type="button" @click.stop="toggle(opt.id)" :aria-label="'Remove ' + opt.name">×</button>
         </span>
       </template>
     </div>
     <span class="assignee-dd__placeholder" x-show="selected.size === 0">Select assignees...</span>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </div>
 
   <div class="assignee-dd__panel" x-show="open" x-cloak>
-    <input class="assignee-dd__search" type="text" x-model="search" placeholder="Search assignees...">
+    <input class="assignee-dd__search" type="text" x-model="search" placeholder="Search assignees..." aria-label="Search assignees">
     <div class="assignee-dd__list">
       <template x-for="opt in filtered" :key="opt.id">
         <label class="assignee-dd__option" @click.prevent="toggle(opt.id)">

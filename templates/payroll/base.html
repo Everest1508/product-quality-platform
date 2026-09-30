@@ -1,0 +1,125 @@
+{% extends "core/base.html" %}
+
+{% comment %}
+Shell for every /payroll/ page. The six pages used to each carry their own
+<style> block, hand-rolled breadcrumbs and an inline-styled header, which is how
+they drifted apart. Everything they share lives here instead; a page supplies a
+title, a subtitle, its actions and its body.
+{% endcomment %}
+
+{% block title %}{% block pay_title %}Payroll{% endblock %} — PQ Platform{% endblock %}
+
+{% block content %}
+<style>
+  /* ---- setup screen: one <form> per person, so a grid, never a <table> ---- */
+  .pay-grid{display:grid;
+            grid-template-columns:minmax(180px,2fr) 116px 152px 146px 168px 64px;
+            gap:14px;align-items:center;}
+  .pay-head{padding:9px 18px;border-bottom:1px solid var(--border);
+            font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+            color:#9a9aa2;}
+  .pay-row{padding:13px 18px;border-bottom:1px solid var(--line);}
+  .pay-row:last-of-type{border-bottom:none;}
+  .pay-row:hover{background:var(--panel);}
+  /* Off-payroll rows recede but stay fully legible and editable. */
+  .pay-row.off .pay-who,.pay-row.off .pay-date{opacity:.7;}
+  .pay-row.off .pay-estimate{color:var(--muted);}
+
+  .pay-who{display:flex;align-items:center;gap:9px;min-width:0;}
+  .pay-who .avatar{width:30px;height:30px;font-size:12px;margin-right:0;flex:0 0 auto;}
+  .pay-who .who-text{min-width:0;display:flex;flex-direction:column;}
+  .pay-who .who-name{font-weight:500;display:flex;align-items:center;gap:7px;}
+  .pay-role{font-size:11px;font-weight:500;color:var(--muted);background:var(--gray-bg);
+            padding:1px 6px;border-radius:4px;}
+
+  /* Checkbox -> switch. The On/Off text follows :checked, so it shows what will
+     be saved rather than the last saved value. */
+  .pay-switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+  .pay-switch input{position:absolute;opacity:0;width:0;height:0;}
+  .pay-switch .track{width:32px;height:18px;border-radius:9px;background:var(--border);
+                     border:1px solid var(--border);position:relative;flex:0 0 auto;
+                     transition:background .15s ease,border-color .15s ease;}
+  .pay-switch .track::after{content:"";position:absolute;top:1px;left:1px;width:14px;height:14px;
+                            border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);
+                            transition:transform .15s ease;}
+  .pay-switch input:checked + .track{background:var(--green);border-color:var(--green);}
+  .pay-switch input:checked + .track::after{transform:translateX(14px);}
+  .pay-switch input:focus-visible + .track{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--blue);}
+  .pay-switch .state{font-size:13px;color:var(--muted);}
+  .pay-switch input:checked ~ .state{color:var(--green);font-weight:500;}
+
+  /* Monthly salary, with the day rate it works out to. */
+  .pay-money{display:flex;align-items:center;gap:7px;}
+  .pay-money .form-input{width:92px;text-align:right;font-variant-numeric:tabular-nums;}
+  .pay-money .cur{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .pay-money .form-input.aux{width:58px;text-align:center;font-size:12px;
+                             padding:8px 4px;text-transform:uppercase;}
+  .pay-date .form-input{width:136px;}
+  .pay-derived{font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:4px;}
+  .pay-derived b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums;}
+  .pay-hint{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  .pay-estimate{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:13.5px;}
+  .pay-estimate .amt{font-weight:500;}
+  .pay-estimate .days{font-size:12px;color:var(--muted);}
+  .pay-estimate .cut{color:var(--red);font-weight:500;font-size:12px;}
+  .pay-save{text-align:right;}
+
+  .pay-total{display:flex;align-items:center;justify-content:space-between;gap:14px;
+             padding:12px 18px;border-top:1px solid var(--border);font-size:13.5px;
+             font-variant-numeric:tabular-nums;}
+
+  /* ---- shared page furniture ---- */
+  .pay-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .pay-stats .val.sm{font-size:19px;}
+  .pay-stats-3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:760px){.pay-stats,.pay-stats-3{grid-template-columns:repeat(2,1fr);}}
+
+  .pay-panel-head{padding:14px 18px;border-bottom:1px solid var(--border);
+                  font-size:15px;font-weight:600;}
+  .pay-num{text-align:right;font-variant-numeric:tabular-nums;}
+
+  /* Key/value rows, for the payslip and run detail. */
+  .pay-kv{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:8px 20px;
+          font-size:13.5px;align-items:baseline;}
+  .pay-kv dt{color:var(--muted);}
+  .pay-kv dd{margin:0;font-variant-numeric:tabular-nums;}
+  .pay-kv .rule{grid-column:1 / -1;border-top:1px solid var(--line);margin:4px 0;}
+  .pay-kv .strong{font-weight:600;}
+
+  .pay-note{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);
+            margin-top:14px;max-width:900px;}
+  .pay-note b{color:var(--text);font-weight:500;}
+
+  /* Narrow screens: each person becomes their own stacked card. */
+  @media (max-width:820px){
+    .pay-head{display:none;}
+    .pay-row{grid-template-columns:1fr 1fr;gap:10px 12px;padding:14px 16px;}
+    .pay-who{grid-column:1 / -1;}
+    .pay-estimate{grid-column:1 / -1;}
+    .pay-save{grid-column:1 / -1;text-align:left;}
+  }
+</style>
+
+{% include "core/_breadcrumbs.html" %}
+
+<div class="head">
+  <div>
+    <h1>{% block pay_heading %}{% block pay_name %}Payroll{% endblock %}{% endblock %}</h1>
+    {% block pay_subtitle %}{% endblock %}
+  </div>
+  {% block pay_actions %}{% endblock %}
+</div>
+
+<nav class="tabs">
+  {% if pay_section == 'mine' %}
+    <a class="tab active" href="{% url 'payroll:my_payslips' %}">My payslips</a>
+  {% else %}
+    <a class="tab{% if pay_section == 'runs' %} active{% endif %}" href="{% url 'payroll:run_list' %}">Runs</a>
+    <a class="tab{% if pay_section == 'salaries' %} active{% endif %}" href="{% url 'payroll:profiles' %}">Salaries</a>
+    <a class="tab{% if pay_section == 'holidays' %} active{% endif %}" href="{% url 'payroll:holidays' %}">Holidays</a>
+  {% endif %}
+</nav>
+
+{% block pay_body %}{% endblock %}
+{% endblock %}

@@ -55,6 +55,10 @@ class Membership(models.Model):
         choices=Role.choices,
         default=Role.VIEWER,
     )
+    is_leave_approver = models.BooleanField(
+        default=False,
+        help_text="Can approve or reject any employee's leave in this company.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = MembershipManager()

@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -361,3 +362,37 @@ class TicketProductAccessTest(TestCase):
         )
         self.assertTrue(Ticket.objects.filter(pk=self.secret_ticket.pk).exists())
         self.assertFalse(Ticket.objects.filter(pk=self.allowed_ticket.pk).exists())
+
+
+class AssigneeDropdownLabellingTest(TicketViewTest):
+    """The assignees picker hides the native select and stands up a div.
+
+    `.assignee-dd__native` is `display:none`, so the `role="button"` trigger is
+    the control assistive tech actually meets. As a bare interactive div it had
+    no accessible name, no `aria-haspopup` and no expansion state, and its
+    "remove" chip said the same thing for every assignee.
+    """
+
+    def trigger(self):
+        body = self.client.get(reverse("tickets:ticket_create")).content.decode()
+        start = body.index('class="assignee-dd__trigger"')
+        start = body.rindex("<div", 0, start)
+        return body[start : body.index(">", start) + 1]
+
+    def test_trigger_is_named_and_advertises_what_it_opens(self):
+        tag = self.trigger()
+        self.assertIn('aria-label="Assignees"', tag)
+        self.assertIn('aria-haspopup="listbox"', tag)
+        self.assertIn("aria-expanded", tag)
+
+    def test_the_search_box_inside_the_panel_is_named(self):
+        body = self.client.get(reverse("tickets:ticket_create")).content.decode()
+        panel = body[body.index('class="assignee-dd__panel"') :]
+        search = re.search(r'<input[^>]*class="assignee-dd__search"[^>]*>', panel)
+        self.assertIsNotNone(search)
+        self.assertIn("aria-label=", search.group(0))
+
+    def test_remove_chip_names_the_assignee_it_removes(self):
+        body = self.client.get(reverse("tickets:ticket_create")).content.decode()
+        self.assertNotIn('aria-label="Remove assignee"', body)
+        self.assertIn("'Remove ' + opt.name", body)

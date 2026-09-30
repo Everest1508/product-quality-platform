@@ -42,17 +42,17 @@
 
       <div class="grid-2 mb-4" style="gap:16px;">
         <div class="form-group">
-          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">First name</label>
+          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.first_name.id_for_label }}">First name</label>
           {{ form.first_name }}
         </div>
         <div class="form-group">
-          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Last name</label>
+          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.last_name.id_for_label }}">Last name</label>
           {{ form.last_name }}
         </div>
       </div>
 
       <div class="form-group mb-6">
-        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Email address</label>
+        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.email.id_for_label }}">Email address</label>
         {{ form.email }}
       </div>
 
@@ -62,7 +62,7 @@
       </div>
 
       <div class="form-group mb-6">
-        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Discord User ID</label>
+        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.discord_id.id_for_label }}">Discord User ID</label>
         {{ form.discord_id }}
         <div class="text-sm text-muted" style="margin-top:6px;line-height:1.4;">
           Used to mention you in Discord webhook alerts when a ticket is assigned to you. Enable <b>Developer Mode</b> in Discord settings, right-click your avatar, and choose <i>"Copy User ID"</i>.

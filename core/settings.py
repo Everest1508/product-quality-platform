@@ -41,6 +41,9 @@ INSTALLED_APPS = [
     "apps.feedback",
     "apps.dashboards",
     "apps.dsr",
+    "apps.attendance",
+    "apps.leave",
+    "apps.payroll",
     "apps.serop",
 ]
 
@@ -72,6 +75,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.product_context",
                 "apps.core.context_processors.workspace_context",
+                "apps.core.context_processors.version_context",
             ],
         },
     },
@@ -107,10 +111,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Shown in the sidebar footer and served by /api/v1/version/. There are no git
+# tags in this repo, so `git describe` yields only a commit hash, which is not
+# something to show a user. Bump this when cutting a release, and start a new
+# "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.0.0")
+CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
+
 # Auth
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/login/"
-LOGIN_REDIRECT_URL = "/dashboard/"
+LOGIN_REDIRECT_URL = "dashboards:index"  # a URL *name*: the path is in core/urls.py
 LOGOUT_REDIRECT_URL = "/login/"
 
 # The active workspace is stored in the session under this key.

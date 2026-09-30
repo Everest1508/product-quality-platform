@@ -66,7 +66,7 @@
   </div>
 </div>
 
-<div class="card sheet-card mb-6" style="padding:0;overflow:hidden;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+<div class="card sheet-card mb-6" x-data="{ addOpen: false }" style="padding:0;overflow:hidden;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.03);">
   <div class="sheet-header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;">
     <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;color:var(--text);">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -82,22 +82,28 @@
         <span id="copy-btn-text">Copy DSR Text</span>
       </button>
 
-      <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
-            hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
-            hx-target="#dsr-content"
-            hx-swap="innerHTML"
-            style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-sm btn-primary"
-                style="font-size:12px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Entry
-        </button>
-      </form>
+      <button type="button" class="btn btn-sm btn-primary" @click="addOpen = !addOpen"
+              style="font-size:12px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Entry
+      </button>
     </div>
   </div>
 
   <textarea id="hidden-dsr-summary" style="display:none;">{{ copy_summary_text }}</textarea>
+
+  <div x-show="addOpen" x-cloak
+       style="padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--border);">
+    <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+          hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+          hx-target="#dsr-content"
+          hx-swap="innerHTML"
+          style="display:grid;grid-template-columns:2fr 1fr 100px 1fr 1fr auto;gap:10px;align-items:end;">
+      {% csrf_token %}
+      {% include "dsr/partials/_add_fields.html" with form=add_form %}
+      <button type="submit" class="btn btn-sm btn-primary">Log it</button>
+    </form>
+  </div>
 
   <div class="sheet-table-wrapper" style="overflow-x:auto;">
     <table class="sheet-table">
@@ -130,9 +136,11 @@
                 <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
                       hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
                       hx-target="#dsr-content"
-                      hx-swap="innerHTML">
+                      hx-swap="innerHTML"
+                      style="display:grid;grid-template-columns:2fr 1fr 100px 1fr 1fr auto;gap:10px;align-items:end;">
                   {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-primary">+ Add First Entry</button>
+                  {% include "dsr/partials/_add_fields.html" with form=add_form_empty %}
+                  <button type="submit" class="btn btn-sm btn-primary">Log it</button>
                 </form>
               </div>
             </td>

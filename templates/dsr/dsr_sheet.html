@@ -58,14 +58,14 @@
         hx-push-url="true">
     
     <div style="display:flex;align-items:center;gap:6px;">
-      <label style="font-size:12px;font-weight:500;color:var(--muted);">Date:</label>
-      <input type="date" name="date" class="form-input" value="{{ selected_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
+      <label style="font-size:12px;font-weight:500;color:var(--muted);" for="date">Date:</label>
+      <input id="date" type="date" name="date" class="form-input" value="{{ selected_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
     </div>
 
     {% if is_privileged and members %}
     <div style="display:flex;align-items:center;gap:6px;">
-      <label style="font-size:12px;font-weight:500;color:var(--muted);">Employee:</label>
-      <select name="user_id" class="form-input" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
+      <label style="font-size:12px;font-weight:500;color:var(--muted);" for="user_id">Employee:</label>
+      <select id="user_id" name="user_id" class="form-input" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
         {% for member in members %}
         <option value="{{ member.pk }}" {% if member.pk == target_user.pk %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
         {% endfor %}

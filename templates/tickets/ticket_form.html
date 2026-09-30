@@ -46,13 +46,13 @@
     <div class="form-section">
       <div class="form-section-label">General Information</div>
       <div class="form-group">
-        <label>Title</label>
-        <input type="text" name="title" value="{{ form.title.value|default:'' }}" class="form-input" required placeholder="What needs to be done?" autofocus>
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" value="{{ form.title.value|default:'' }}" class="form-input" required placeholder="What needs to be done?" autofocus>
         {% if form.title.errors %}<p class="field-error">{{ form.title.errors.0 }}</p>{% endif %}
       </div>
       <div class="form-group" style="margin-bottom:0;">
-        <label>Description</label>
-        <textarea name="description" class="form-input" rows="4" placeholder="Detailed description of the issue or feature request...">{{ form.description.value|default:'' }}</textarea>
+        <label for="description">Description</label>
+        <textarea id="description" name="description" class="form-input" rows="4" placeholder="Detailed description of the issue or feature request...">{{ form.description.value|default:'' }}</textarea>
       </div>
     </div>
 
@@ -60,16 +60,16 @@
       <div class="form-section-label">Attributes &amp; Context</div>
       <div class="grid-2">
         <div class="form-group">
-          <label>Type</label>
-          <select name="ticket_type" class="form-input">
+          <label for="ticket_type">Type</label>
+          <select id="ticket_type" name="ticket_type" class="form-input">
             <option value="bug" {% if form.ticket_type.value == "bug" %}selected{% endif %}>Bug</option>
             <option value="feature" {% if form.ticket_type.value == "feature" %}selected{% endif %}>Feature</option>
             <option value="question" {% if form.ticket_type.value == "question" %}selected{% endif %}>Question</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Priority</label>
-          <select name="priority" class="form-input">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority" class="form-input">
             <option value="low" {% if form.priority.value == "low" %}selected{% endif %}>Low</option>
             <option value="medium" {% if form.priority.value == "medium" or not form.priority.value %}selected{% endif %}>Medium</option>
             <option value="high" {% if form.priority.value == "high" %}selected{% endif %}>High</option>
@@ -80,8 +80,8 @@
 
       {% if editing %}
       <div class="form-group">
-        <label>Status</label>
-        <select name="status" class="form-input">
+        <label for="status">Status</label>
+        <select id="status" name="status" class="form-input">
           <option value="open" {% if form.status.value == "open" %}selected{% endif %}>Open</option>
           <option value="assigned" {% if form.status.value == "assigned" %}selected{% endif %}>Assigned</option>
           <option value="in_progress" {% if form.status.value == "in_progress" %}selected{% endif %}>In Progress</option>
@@ -93,8 +93,8 @@
       {% endif %}
 
       <div class="form-group" style="margin-bottom:0;">
-        <label>Product</label>
-        <select name="product" class="form-input">
+        <label for="product">Product</label>
+        <select id="product" name="product" class="form-input">
           <option value="">No product (Company-wide)</option>
           {% for product in form.fields.product.queryset %}
           <option value="{{ product.pk }}" {% if form.product.value|stringformat:"s" == product.pk|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
@@ -110,8 +110,8 @@
         {% include "tickets/partials/_assignee_multiselect.html" %}
       </div>
       <div class="form-group" style="margin-bottom:0;">
-        <label>Deadline <span class="text-sm text-muted">(optional)</span></label>
-        <input type="datetime-local" name="deadline" value="{{ form.deadline.value|date:'Y-m-d\TH:i' }}" class="form-input">
+        <label for="deadline">Deadline <span class="text-sm text-muted">(optional)</span></label>
+        <input id="deadline" type="datetime-local" name="deadline" value="{{ form.deadline.value|date:'Y-m-d\TH:i' }}" class="form-input">
         {% if form.deadline.errors %}<p class="field-error">{{ form.deadline.errors.0 }}</p>{% endif %}
       </div>
     </div>

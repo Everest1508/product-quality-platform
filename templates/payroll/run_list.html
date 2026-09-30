@@ -1,0 +1,65 @@
+{% extends "payroll/base.html" %}
+
+{% block pay_name %}Payroll{% endblock %}
+
+{% block pay_subtitle %}
+<p class="text-sm text-muted" style="margin-top:4px;">
+  A pay cycle runs from the 27th of each month to the 26th of the next.
+</p>
+{% endblock %}
+
+{% block pay_actions %}
+<div class="head-actions">
+  <a href="{% url 'payroll:profiles' %}" class="btn">Salaries</a>
+  <a href="{% url 'payroll:preview' %}" class="btn btn-primary">
+    {% if has_current_run %}Current cycle{% else %}Preview current cycle{% endif %}
+  </a>
+</div>
+{% endblock %}
+
+{% block pay_body %}
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="pay-panel-head">Runs</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Cycle</th>
+        <th class="pay-num">Working days</th>
+        <th class="pay-num">Payslips</th>
+        <th class="pay-num">Unpaid leave</th>
+        <th class="pay-num">Total deduction</th>
+        <th class="pay-num">Total gross</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for run in runs %}
+      <tr>
+        <td><strong>{{ run.label }}</strong></td>
+        <td class="pay-num">{{ run.working_days }}</td>
+        <td class="pay-num">{{ run.payslips.count }}</td>
+        <td class="pay-num">{{ run.total_deduction }}</td>
+        <td class="pay-num"><strong>{{ run.total_gross }}</strong></td>
+        <td>
+          {% if run.is_locked %}<span class="pill closed">locked</span>
+          {% else %}<span class="pill resolved">open</span>{% endif %}
+        </td>
+        <td class="pay-num"><a href="{% url 'payroll:run_detail' run.pk %}" class="btn btn-sm">View</a></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8">
+          <div class="empty">
+            <h3>No payroll runs yet</h3>
+            <p>Set a monthly salary in
+              <a href="{% url 'payroll:profiles' %}">Payroll setup</a>,
+              then preview the current cycle.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

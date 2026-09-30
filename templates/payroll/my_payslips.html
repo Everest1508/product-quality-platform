@@ -1,0 +1,74 @@
+{% extends "payroll/base.html" %}
+
+{% block pay_name %}My payslips{% endblock %}
+
+{% block pay_subtitle %}
+<p class="text-sm text-muted" style="margin-top:4px;">
+  What you were paid each cycle. Day rate is your monthly salary divided by the
+  working days in that cycle, so weekends and holidays never cost you anything.
+</p>
+{% endblock %}
+
+{% block pay_body %}
+{% if not on_payroll %}
+<div class="card" style="padding:14px 18px;margin-bottom:20px;background:var(--orange-bg);border-color:var(--orange);">
+  <strong>You are not on payroll.</strong>
+  <span class="text-sm">An admin has to switch you on in Payroll setup before you get a payslip.</span>
+</div>
+{% endif %}
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="pay-panel-head">Payslips</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Cycle</th>
+        <th class="pay-num">Day rate</th>
+        <th class="pay-num">Paid leave</th>
+        <th class="pay-num">Unpaid leave</th>
+        <th class="pay-num">Deduction</th>
+        <th class="pay-num">Net pay</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for payslip in payslips %}
+      <tr>
+        <td>
+          <strong>{{ payslip.run.label }}</strong>
+          {% if payslip.run.is_locked %}<span class="pill closed">locked</span>{% endif %}
+          <div class="sub">{{ payslip.run.period_start|date:"j M" }} – {{ payslip.run.period_end|date:"j M Y" }}</div>
+        </td>
+        <td class="pay-num">{{ payslip.daily_rate }}</td>
+        <td class="pay-num">
+          {% if payslip.paid_leave_days %}{{ payslip.paid_leave_days }}
+          {% else %}<span class="text-muted">0</span>{% endif %}
+        </td>
+        <td class="pay-num">
+          {% if payslip.unpaid_leave_days %}<span class="pill high">{{ payslip.unpaid_leave_days }}</span>
+          {% else %}<span class="text-muted">0</span>{% endif %}
+        </td>
+        <td class="pay-num">{% if payslip.deduction %}−{{ payslip.deduction }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+        <td class="pay-num"><strong>{{ payslip.currency }} {{ payslip.gross }}</strong></td>
+        <td class="pay-num"><a href="{% url 'payroll:my_payslip' payslip.pk %}" class="btn btn-sm">View</a></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7">
+          <div class="empty">
+            <h3>No payslips yet</h3>
+            <p>Payslips appear once your admin generates the cycle.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="pay-note">
+  <span>The cycle running now is <b>{{ cycle_start|date:"j M" }} – {{ cycle_end|date:"j M Y" }}</b>. It shows up here after it is generated.</span>
+  <span>Only <b>unpaid</b> leave and <b>late arrivals</b> reduce your pay. Casual and sick leave are paid, so they show up here but cost you nothing.</span>
+  <span>Weekends and <a href="{% url 'payroll:holidays' %}">company holidays</a> are not working days — they are left out of the divisor rather than deducted.</span>
+</div>
+{% endblock %}

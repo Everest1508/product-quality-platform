@@ -9,7 +9,11 @@ from django.views import View
 
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.models import ActivityLog
-from apps.dashboards.service import get_product_dashboard_data, get_summary_report, get_user_dashboard_data
+from apps.dashboards.service import (
+    get_personal_dashboard_data,
+    get_product_dashboard_data,
+    get_summary_report,
+)
 from apps.products.access import require_product_access
 from apps.products.models import Product
 
@@ -27,10 +31,13 @@ def _parse_date(value, default):
 
 class DashboardView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        data = get_user_dashboard_data(request.user, request.company)
+        data = get_personal_dashboard_data(request.user, request.company)
         hour = timezone.localtime().hour
-        data["today"] = timezone.localdate()
-        data["greeting"] = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
+        data["greeting"] = (
+            "Good morning" if hour < 12
+            else "Good afternoon" if hour < 18
+            else "Good evening"
+        )
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "dashboards/partials/_dashboard_content.html", data)

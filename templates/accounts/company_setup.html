@@ -22,7 +22,7 @@
     <form method="post">
       {% csrf_token %}
       <div class="form-group" style="text-align:left;">
-        <label>Company Name</label>
+        <label for="{{ form.name.id_for_label }}">Company Name</label>
         {{ form.name }}
         <p class="text-sm text-muted" style="margin-top:4px;">A URL-friendly slug will be auto-generated.</p>
       </div>

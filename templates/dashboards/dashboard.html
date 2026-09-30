@@ -9,8 +9,17 @@
       <h1>{{ greeting }}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h1>
       <p class="text-sm text-muted">{{ today|date:"l, F j" }} · {{ request.company.name }}</p>
     </div>
-    <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary" style="padding:8px 16px;">+ New ticket</a>
+    <div class="dash-head-actions">
+      <a href="{% url 'leave:apply' %}" class="btn btn-primary" style="padding:8px 16px;">+ Request leave</a>
+    </div>
   </div>
+
+  {% if attendance.on_leave_today %}
+    <div class="pd-banner">
+      <strong>You're on approved leave today.</strong>
+      Payroll won't deduct these days, and attendance won't expect a punch.
+    </div>
+  {% endif %}
 
   <div id="dashboard-content"
        hx-get="{% url 'dashboards:index' %}"

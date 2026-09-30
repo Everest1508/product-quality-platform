@@ -1,11 +1,13 @@
 import hashlib
 import random
-from datetime import timedelta
+from datetime import date, timedelta
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.accounts.models import Company, Membership, User
+from apps.attendance.models import AttendanceRecord
 from apps.automation.models import AutoTicketRule
 from apps.dashboards.models import ActivityLog
 from apps.dashboards.service import log_activity
@@ -111,6 +113,21 @@ FEEDBACK_COMMENTS = [
     "Wish there was an export option.",
 ]
 
+# Days back from the 1st of the current month, so the history always lands
+# inside the month being reported on rather than spilling into the next one.
+# Offsets 0-27 cover the whole calendar month.
+ATTENDANCE_PLAN = [
+    ("owner", [1, 2, 4, 5, 7, 8, 11, 12, 14, 15, 18, 19, 21, 22]),
+    ("admin", [1, 2, 3, 4, 7, 8, 9, 11, 12, 14, 15, 16, 18, 19, 21]),
+    ("dev1", [1, 2, 3, 5, 7, 8, 11, 12, 13, 15, 18, 19, 21, 22]),
+    ("dev2", [1, 3, 4, 7, 9, 11, 12, 14, 16, 18, 19, 22]),
+    ("support", [1, 2, 4, 5, 8, 9, 11, 13, 15, 16, 18, 20, 21]),
+    ("viewer", [2, 3, 7, 9, 12, 14, 18, 20]),
+]
+
+# Left deliberately open so the admin team view has a live "on the clock" list.
+ATTENDANCE_OPEN = {"dev1", "support"}
+
 
 class Command(BaseCommand):
     help = (
@@ -171,6 +188,9 @@ class Command(BaseCommand):
             self._create_rules(company, product, users)
 
         self._backfill_activity(company)
+        self._create_attendance(company, users)
+        self._create_leave(company, users)
+        self._create_payroll(company, users)
 
         usernames = ", ".join(u[0] for u in USERS)
         self.stdout.write(self.style.SUCCESS(
@@ -178,6 +198,8 @@ class Command(BaseCommand):
             f"  Company: {company.name}\n"
             f"  Users:   {usernames}\n"
             f"  Login:   admin / {self.password}   (any user listed above)\n"
+            f"  Leave:   approver can approve at /leave/approvals/\n"
+            f"  Payroll: on payroll at /payroll/, salaries at /payroll/profiles/\n"
         ))
 
     def _reset(self):
@@ -497,6 +519,224 @@ class Command(BaseCommand):
             threshold_count=25,
             window_minutes=120,
             action="notify_only",
+        )
+
+    def _create_attendance(self, company, users):
+        """Seed this month's punch history plus today's live state.
+
+        Offsets are counted back from the 1st of the current month, so the
+        records always sit inside the month the timesheet defaults to even
+        when the command runs late in a month.
+        """
+        from datetime import datetime, time
+
+        today = timezone.localdate()
+        month_start = today.replace(day=1)
+
+        for username, offsets in ATTENDANCE_PLAN:
+            user = users[username]
+            for offset in offsets:
+                day = month_start + timedelta(days=offset - 1)
+                if day > today:
+                    continue  # don't seed the future
+                if day.weekday() >= 5 and random.random() < 0.7:
+                    continue  # mostly weekends off
+
+                check_in = timezone.make_aware(
+                    datetime.combine(day, time(hour=9, minute=random.randint(0, 45)))
+                )
+                hours = random.choices(
+                    [6, 7, 7.5, 8, 8.5, 9], weights=[1, 2, 2, 4, 2, 1]
+                )[0]
+
+                record = AttendanceRecord.objects.create(
+                    company=company,
+                    user=user,
+                    date=day,
+                    check_in=check_in,
+                    check_out=check_in + timedelta(hours=hours),
+                )
+                if random.random() < 0.08:
+                    record.is_edited = True
+                    record.notes = "Corrected by admin"
+                    record.save()
+
+        # Today: two are still on the clock, the rest are done for the day.
+        #
+        # The arrival times are derived from the *shift start*, not from
+        # `now - N hours`. Counting back from the clock made the demo data
+        # depend on the hour the seed happened to run: at 14:25 a punch 7 hours
+        # ago lands at 07:25, but at 09:00 the same code lands at 02:00, and
+        # anything past the shift start manufactured a real late penalty out of
+        # demo data. Timesheet history above is `time(hour=9, ...)` for the same
+        # reason.
+        from apps.attendance.service import shift_for
+
+        shift = shift_for(company)
+        shift_start = timezone.make_aware(
+            datetime.combine(today, shift.start_time)
+        )
+        # Never seed an arrival in the future if the command runs before the
+        # shift does; fall back to `now - 1h` in that case.
+        latest_arrival = shift_start + timedelta(minutes=random.randint(0, 10))
+        if self.now <= latest_arrival:
+            latest_arrival = self.now - timedelta(hours=1)
+
+        for username, user in users.items():
+            if username in ATTENDANCE_OPEN:
+                AttendanceRecord.objects.create(
+                    company=company,
+                    user=user,
+                    date=today,
+                    check_in=latest_arrival
+                    - timedelta(minutes=random.randint(20, 240)),
+                    check_out=None,
+                )
+            elif random.random() < 0.85:
+                check_out = self.now - timedelta(minutes=random.randint(5, 90))
+                arrival = latest_arrival - timedelta(minutes=random.randint(20, 240))
+                AttendanceRecord.objects.create(
+                    company=company,
+                    user=user,
+                    date=today,
+                    check_in=arrival,
+                    check_out=check_out if check_out > arrival else None,
+                )
+
+    def _create_leave(self, company, users):
+        """Seed leave policies, an approver, and a few requests.
+
+        Dates are built from working days so the seeded requests always sit
+        inside this calendar year and respect the per-policy caps.
+        """
+        from apps.leave.models import LeavePolicy, LeaveRequest
+
+        policies = {
+            "Casual": LeavePolicy.objects.create(
+                company=company,
+                name="Casual",
+                icon="coffee",
+                color="green",
+                max_days_per_year=Decimal("12.0"),
+                max_consecutive_days=Decimal("3.0"),
+                is_paid=True,
+            ),
+            "Sick": LeavePolicy.objects.create(
+                company=company,
+                name="Sick",
+                icon="stethoscope",
+                color="amber",
+                max_days_per_year=Decimal("5.0"),
+                max_consecutive_days=Decimal("3.0"),
+                is_paid=True,
+            ),
+            "Unpaid": LeavePolicy.objects.create(
+                company=company,
+                name="Unpaid",
+                icon="wallet",
+                color="red",
+                max_days_per_year=None,
+                max_consecutive_days=None,
+                is_paid=False,
+            ),
+        }
+
+        # Give one developer the approver flag so the queue is not admin-only.
+        Membership.objects.filter(
+            user=users["admin"], company=company
+        ).update(is_leave_approver=True)
+
+        today = timezone.localdate()
+
+        def next_working_day(offset):
+            """The `offset`-th working day from today, at least a week out."""
+            day = today + timedelta(days=7)
+            while day.weekday() >= 5:
+                day += timedelta(days=1)
+            count = 1
+            while count < offset:
+                day += timedelta(days=1)
+                if day.weekday() < 5:
+                    count += 1
+            return day
+
+        plan = [
+            ("dev1", "Casual", "approved", "Family wedding", False, 2),
+            ("dev1", "Sick", "pending", "Dental surgery follow-up", False, 1),
+            ("dev2", "Casual", "pending", "Long weekend trip", False, 3),
+            ("admin", "Unpaid", "rejected", "Extended personal trip", False, 5),
+            ("support", "Sick", "approved", "Flu, advised to rest", True, 1),
+        ]
+
+        for username, policy_name, status, reason, half, days in plan:
+            policy = policies[policy_name]
+            start = next_working_day(random.randint(1, 6))
+            charged = Decimal("0.5") if half else Decimal(days)
+            # Walk forward over working days so the stored charge always
+            # matches working_days(start, end) and no weekend days sneak in.
+            end = start
+            if not half:
+                for _ in range(days - 1):
+                    end += timedelta(days=1)
+                    # Saturday needs two steps to reach Monday.
+                    while end.weekday() >= 5:
+                        end += timedelta(days=1)
+            LeaveRequest.objects.create(
+                company=company,
+                user=users[username],
+                policy=policy,
+                start_date=start,
+                end_date=end,
+                is_half_day=half,
+                days=charged,
+                status=status,
+                reason=reason,
+                decided_by=users["admin"] if status != "pending" else None,
+                decided_at=None if status == "pending" else self.now,
+                decision_note="Not enough cover that week" if status == "rejected" else "",
+            )
+
+        self.stdout.write(
+            f"  Leave:   {LeavePolicy.objects.filter(company=company).count()} policies, "
+            f"{LeaveRequest.objects.filter(company=company).count()} requests\n"
+        )
+
+    def _create_payroll(self, company, users):
+        """Seed holidays and a daily rate for part of the team.
+
+        Rates are backdated to the start of the year so every pay cycle,
+        past or future, resolves to one. `viewer` is deliberately left off
+        payroll so the "nobody to pay" case stays reachable in the demo.
+        """
+        from apps.payroll.models import Holiday, PayrollProfile
+
+        for month, day, name in ((1, 26, "Republic Day"), (8, 15, "Independence Day")):
+            Holiday.objects.get_or_create(
+                company=company, date=date(self.now.year, month, day), defaults={"name": name}
+            )
+
+        # Monthly gross, the way pay is actually quoted. The daily rate is
+        # derived per cycle from the real working-day count.
+        salaries = {"owner": None, "admin": "90000.00", "dev1": "42000.00",
+                    "dev2": "42000.00", "support": "24000.00"}
+        on_payroll = {"admin", "dev1", "dev2", "support"}
+        for username, salary in salaries.items():
+            user = users.get(username)
+            if user is None:
+                continue
+            PayrollProfile.objects.create(
+                company=company,
+                user=user,
+                monthly_salary=Decimal(salary) if salary else None,
+                currency="INR",
+                is_on_payroll=username in on_payroll,
+                effective_from=date(self.now.year, 1, 1),
+            )
+
+        self.stdout.write(
+            f"  Payroll: {Holiday.objects.filter(company=company).count()} holidays, "
+            f"{PayrollProfile.objects.filter(company=company, is_on_payroll=True).count()} "
+            f"on payroll\n"
         )
 
     def _backfill_activity(self, company):

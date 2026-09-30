@@ -54,6 +54,9 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput(attrs={
         "class": "form-input",
         "placeholder": "Password",
+        # Flipped by the eye button in the surrounding .pw-wrap; inert where no
+        # Alpine scope wraps the field.
+        "x-bind:type": "show ? 'text' : 'password'",
     }))
 
 
@@ -164,11 +167,19 @@ class TeamEditForm(forms.Form):
         choices=[(r.value, r.label) for r in Membership.Role if r.value != "owner"],
         widget=forms.Select(attrs={"class": "form-input"}),
     )
+    is_leave_approver = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(),
+        label="Can approve leave",
+    )
 
     def __init__(self, *args, membership=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.membership = membership
         self.fields["role"].initial = membership.role if membership else "developer"
+        self.fields["is_leave_approver"].initial = (
+            membership.is_leave_approver if membership else False
+        )
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower().strip()
@@ -187,7 +198,10 @@ class TeamEditForm(forms.Form):
         new_role = self.cleaned_data["role"]
         if self.membership.role != new_role:
             self.membership.role = new_role
-            self.membership.save(update_fields=["role"])
+        self.membership.is_leave_approver = self.cleaned_data.get(
+            "is_leave_approver", False
+        )
+        self.membership.save(update_fields=["role", "is_leave_approver"])
         return self.membership
 
 

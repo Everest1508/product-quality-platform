@@ -1,0 +1,231 @@
+{% comment %}
+  Version + changelog dialog. Opened by the sidebar footer button, which
+  dispatches "pq:changelog" on window -- the two live in different files and the
+  sidebar is `overflow-x:hidden`, so a dialog nested inside it would be clipped.
+
+  Content comes from /api/v1/changelog/ rather than being rendered into every
+  page: it is tens of kilobytes that nobody scrolls past. The version in the
+  sidebar footer is rendered server-side so it is visible immediately, without a
+  round trip that would leave an empty gap on first paint.
+
+  The question this dialog answers is "what changed in the version I'm looking
+  at?", so it opens on the newest release alone -- not the whole file. The full
+  file is 56 bullets across three blocks, two of which are also tagged
+  "Unreleased" with the same date, so showing everything at once reads as one
+  undifferentiated wall. Older blocks are one click away, and the type chips
+  narrow the current one to "just the fixes" without scrolling past 24 items.
+{% endcomment %}
+<div id="pq-changelog" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true"
+     aria-labelledby="pq-changelog-title">
+  <div class="modal changelog">
+    <div class="changelog-head">
+      <div>
+        <h3 id="pq-changelog-title">What's new{% if app_version %} in <span class="changelog-ver">v{{ app_version }}</span>{% endif %}</h3>
+        <div class="changelog-sub" id="pq-changelog-sub"></div>
+      </div>
+      <button type="button" class="changelog-close" id="pq-changelog-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="changelog-filters" id="pq-changelog-filters" role="group" aria-label="Filter changes by type" hidden></div>
+    <div class="changelog-body" id="pq-changelog-body">
+      <p class="changelog-note">Loading&hellip;</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var dialog = document.getElementById('pq-changelog');
+  if (!dialog) return;
+  var body = document.getElementById('pq-changelog-body');
+  var filters = document.getElementById('pq-changelog-filters');
+  var sub = document.getElementById('pq-changelog-sub');
+  var closeBtn = document.getElementById('pq-changelog-close');
+  var lastFocus = null;
+  var loaded = false;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var state = { data: null, filter: 'all', older: false };
+
+  function close() {
+    dialog.style.display = 'none';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    lastFocus = null;
+  }
+
+  function esc(value) {
+    var d = document.createElement('div');
+    d.textContent = value == null ? '' : String(value);
+    return d.innerHTML;
+  }
+
+  // "2026-09-30" -> "30 Sep 2026". The raw ISO string sorts correctly and reads
+  // like a database column; this is the only place a date reaches a reader.
+  function fmtDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    if (!m) return iso || '';
+    return parseInt(m[3], 10) + ' ' + MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1];
+  }
+
+  function plural(n, one, many) {
+    return n + ' ' + (n === 1 ? one : many);
+  }
+
+  function sectionsFor(rel) {
+    return (rel.sections || []).filter(function (s) {
+      return state.filter === 'all' || s.slug === state.filter;
+    });
+  }
+
+  function countItems(rel, slug) {
+    var n = 0;
+    (rel.sections || []).forEach(function (s) {
+      if (slug === 'all' || s.slug === slug) n += s.count || (s.items || []).length;
+    });
+    return n;
+  }
+
+  // The API already returns escaped, allow-listed HTML for each bullet (bold,
+  // code and http/https links only), so items go in via innerHTML on purpose.
+  // Anything interpolated here from the response shape is escaped first.
+  function releaseHtml(rel, headingTag) {
+    var sections = sectionsFor(rel);
+    if (!sections.length) return '';
+    var html = '<section class="changelog-rel">';
+    html += '<div class="changelog-rel-head">';
+    html += '<' + headingTag + '>' + esc(rel.heading || rel.title || 'Updates') + '</' + headingTag + '>';
+    // A tag is only informative once something has been tagged; every block here
+    // still says "Unreleased", so it is a badge and not the heading.
+    html += rel.released
+      ? '<span class="changelog-tag">' + esc(rel.tag) + '</span>'
+      : '<span class="changelog-tag is-unreleased">In development</span>';
+    if (rel.date) html += '<span class="changelog-date">' + esc(fmtDate(rel.date)) + '</span>';
+    html += '</div>';
+    sections.forEach(function (section) {
+      var items = (section.items || []).filter(Boolean);
+      if (!items.length) return;
+      html += '<h5>' + esc(section.label || section.name) +
+              '<span class="changelog-count">' + items.length + '</span></h5><ul>';
+      items.forEach(function (item) { html += '<li>' + item + '</li>'; });
+      html += '</ul>';
+    });
+    return html + '</section>';
+  }
+
+  function renderFilters(releases) {
+    var latest = releases[0];
+    if (!latest) return;
+    var chips = [{ slug: 'all', label: 'All', n: countItems(latest, 'all') }];
+    var seen = {};
+    (latest.sections || []).forEach(function (s) {
+      if (!s.slug || seen[s.slug]) return;
+      seen[s.slug] = true;
+      chips.push({ slug: s.slug, label: s.label || s.name, n: countItems(latest, s.slug) });
+    });
+    // One type is not a choice, and a filter with nothing behind it is a dead
+    // control, so the row only appears when it would actually narrow something.
+    if (chips.length < 3) { filters.hidden = true; return; }
+    filters.hidden = false;
+    filters.innerHTML = chips.map(function (c) {
+      return '<button type="button" class="changelog-chip" data-filter="' + esc(c.slug) + '"' +
+             ' aria-pressed="' + (state.filter === c.slug ? 'true' : 'false') + '">' +
+             esc(c.label) + ' <span class="changelog-chip-n">' + c.n + '</span></button>';
+    }).join('');
+  }
+
+  function renderBody() {
+    var releases = (state.data && state.data.releases) || [];
+    if (!releases.length) {
+      body.innerHTML = '<p class="changelog-note">No changelog entries yet.</p>';
+      return;
+    }
+    var latest = releases[0];
+    var older = releases.slice(1);
+    var total = latest.item_count || countItems(latest, 'all');
+    var shown = countItems(latest, state.filter);
+
+    sub.textContent = state.filter === 'all'
+      ? plural(total, 'change', 'changes') + ' in this version' + (latest.date ? ' \u00b7 ' + fmtDate(latest.date) : '')
+      : plural(shown, 'change', 'changes') + ' \u00b7 ' + (latest.heading || latest.title || 'this version');
+
+    renderFilters(releases);
+
+    var parts = [];
+    var newest = releaseHtml(latest, 'h4');
+    if (newest) {
+      parts.push(newest);
+    } else {
+      parts.push('<p class="changelog-note">Nothing in this version yet.</p>');
+    }
+
+    if (older.length) {
+      // Built first so an empty result hides the container instead of leaving a
+      // heading with nothing under it.
+      var olderHtml = '';
+      if (state.older) {
+        older.forEach(function (rel) { olderHtml += releaseHtml(rel, 'h4'); });
+      }
+      parts.push('<button type="button" class="changelog-older" id="pq-changelog-older" aria-expanded="' +
+        (state.older ? 'true' : 'false') + '" aria-controls="pq-changelog-older-list">' +
+        (state.older ? 'Hide' : 'Show') + ' ' + plural(older.length, 'earlier update', 'earlier updates') +
+        '</button>');
+      if (olderHtml) {
+        parts.push('<div id="pq-changelog-older-list">' + olderHtml + '</div>');
+      }
+    }
+    body.innerHTML = parts.join('');
+  }
+
+  function fail(message) {
+    filters.hidden = true;
+    sub.textContent = '';
+    body.innerHTML = '<p class="changelog-note">' + esc(message) + '</p>';
+  }
+
+  function load() {
+    if (loaded) return;
+    loaded = true;
+    fetch('/api/v1/changelog/', {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status === 403 ? 'Sign in to view the changelog.' : 'Could not load the changelog (HTTP ' + r.status + ').');
+        return r.json();
+      })
+      .then(function (data) { state.data = data; renderBody(); })
+      .catch(function (err) {
+        loaded = false; // let a later click retry
+        fail(err.message || 'Could not load the changelog.');
+      });
+  }
+
+  filters.addEventListener('click', function (e) {
+    var chip = e.target.closest('[data-filter]');
+    if (!chip) return;
+    state.filter = chip.getAttribute('data-filter');
+    renderBody();
+  });
+
+  // Delegated, because the button is re-rendered by every filter change.
+  body.addEventListener('click', function (e) {
+    var toggle = e.target.closest('#pq-changelog-older');
+    if (!toggle) return;
+    state.older = !state.older;
+    renderBody();
+  });
+
+  function open(event) {
+    if (event && event.detail && event.detail.trigger) lastFocus = event.detail.trigger;
+    dialog.style.display = 'flex';
+    closeBtn.focus();
+    load();
+    if (state.data) renderBody();
+  }
+
+  window.addEventListener('pq:changelog', open);
+  closeBtn.addEventListener('click', close);
+  dialog.addEventListener('mousedown', function (e) { if (e.target === dialog) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && dialog.style.display !== 'none') close();
+  });
+})();
+</script>

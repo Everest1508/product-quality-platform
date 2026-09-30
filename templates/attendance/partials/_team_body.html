@@ -1,0 +1,162 @@
+<div x-data="{ editing: null }">
+<div class="att-stats">
+  <div class="card stat">
+    <div class="text-sm text-muted">On the clock</div>
+    <div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--green);">{{ on_clock_count }}</div>
+  </div>
+  <div class="card stat">
+    <div class="text-sm text-muted">Checked in today</div>
+    <div style="font-size:22px;font-weight:600;margin-top:4px;">{{ present_count }}</div>
+  </div>
+  <div class="card stat">
+    <div class="text-sm text-muted">Not checked in</div>
+    <div style="font-size:22px;font-weight:600;margin-top:4px;">{{ absent_count }}</div>
+  </div>
+  <div class="card stat">
+    <div class="text-sm text-muted">On leave</div>
+    <div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--orange);">{{ leave_count }}</div>
+  </div>
+  <div class="card stat">
+    <div class="text-sm text-muted">Forgotten check-outs</div>
+    <div style="font-size:22px;font-weight:600;margin-top:4px;{% if stale_count %}color:var(--orange);{% endif %}">{{ stale_count }}</div>
+  </div>
+</div>
+
+{% if stale_count %}
+<div style="padding:10px 14px;background:var(--orange-bg);border:1px solid var(--orange);border-radius:6px;margin-bottom:16px;font-size:13px;color:var(--orange);">
+  {{ stale_count }} record(s) still on the clock from a previous day. Edit them below to close them out.
+</div>
+{% endif %}
+
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+  <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
+    <h2 style="font-size:15px;font-weight:600;margin:0;">On the clock right now</h2>
+  </div>
+  {% if on_clock %}
+  <table>
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Since</th>
+        <th>Elapsed</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in on_clock %}
+      <tr>
+        <td>
+          <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
+          <span class="title">{{ row.user.get_full_name|default:row.user.username }}</span>
+          <div class="sub">{{ row.role }}</div>
+        </td>
+        <td class="date">{{ row.record.check_in|date:"g:i A" }}</td>
+        <td>
+          <span x-data="{
+                     since: '{{ row.record.check_in|date:'c' }}',
+                     mins: null,
+                     tick() { this.mins = Math.max(0, Math.floor((Date.now() - new Date(this.since).getTime()) / 60000)); },
+                     get elapsed() {
+                       const m = this.mins === null ? 0 : this.mins;
+                       return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+                     }
+                   }"
+                x-init="tick(); setInterval(tick, 30000)">
+            <span x-text="elapsed">{{ row.record.elapsed_formatted }}</span>
+          </span>
+        </td>
+        <td>
+          {{ row.record.date|date:"M d" }}
+          {% if row.is_stale %}<span class="pill high">stale</span>{% endif %}
+        </td>
+        <td style="text-align:right;">
+          <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">
+            Edit
+          </button>
+        </td>
+      </tr>
+
+      <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
+        <td colspan="5" style="background:var(--panel);">
+          <form method="post" action="{% url 'attendance:attendance_edit' row.record.pk %}"
+                style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:6px 0;">
+            {% csrf_token %}
+            <div>
+              <label class="text-sm text-muted" for="edit_check_in_{{ row.record.pk }}" style="display:block;margin-bottom:4px;">Check in</label>
+              <input id="edit_check_in_{{ row.record.pk }}" type="datetime-local" name="check_in" value="{{ row.record.check_in|date:'Y-m-d\\TH:i' }}" class="form-input" style="padding:6px 10px;">
+            </div>
+            <div>
+              <label class="text-sm text-muted" for="edit_check_out_{{ row.record.pk }}" style="display:block;margin-bottom:4px;">Check out</label>
+              <input id="edit_check_out_{{ row.record.pk }}" type="datetime-local" name="check_out" value="{{ row.record.check_out|date:'Y-m-d\\TH:i' }}" class="form-input" style="padding:6px 10px;">
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label class="text-sm text-muted" for="edit_notes_{{ row.record.pk }}" style="display:block;margin-bottom:4px;">Notes</label>
+              <input id="edit_notes_{{ row.record.pk }}" type="text" name="notes" value="{{ row.record.notes }}" class="form-input" style="padding:6px 10px;" placeholder="Optional">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+    <h3>Nobody is on the clock</h3>
+    <p>Team members appear here while they are checked in.</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
+    <h2 style="font-size:15px;font-weight:600;margin:0;">Today — {{ today|date:"l, F d" }}</h2>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Role</th>
+        <th>Check in</th>
+        <th>Check out</th>
+        <th>Worked</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in team %}
+      <tr>
+        <td>
+          <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
+          <span class="title">{{ row.user.get_full_name|default:row.user.username }}</span>
+        </td>
+        <td class="sub">{{ row.role }}</td>
+        <td>{{ row.record.check_in|date:"g:i A"|default:"—" }}</td>
+        <td>{{ row.record.check_out|date:"g:i A"|default:"—" }}</td>
+        <td>
+          {% if row.record and row.record.is_complete %}{{ row.record.worked_formatted }}
+          {% elif row.record and row.record.is_open %}<span class="text-muted">running</span>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td>
+          {% if row.on_leave %}<span class="pill open" title="On approved leave">On leave</span>
+          {% elif row.record and row.record.is_open %}<span class="pill open">On clock</span>
+          {% elif row.record and row.record.is_complete %}<span class="pill resolved">Complete</span>
+          {% else %}<span class="pill closed">Absent</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">
+          <div class="empty">
+            <h3>No team members</h3>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>

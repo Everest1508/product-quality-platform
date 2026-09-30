@@ -1,0 +1,66 @@
+{% comment %}
+Punch control. Shows today's state and the button that advances it.
+On an htmx punch the server re-renders this partial, so the state is never
+stale in the DOM; the inline Alpine only ticks the elapsed counter locally.
+{% endcomment %}
+<div id="punch-control"
+     x-data="{
+       since: {{ today_record.check_in|date:'c'|default:'null'|safe }},
+       mins: null,
+       tick() {
+         if (!this.since) return;
+         this.mins = Math.max(0, Math.floor((Date.now() - new Date(this.since).getTime()) / 60000));
+       },
+       get elapsed() {
+         const m = this.mins === null ? 0 : this.mins;
+         return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+       }
+     }"
+     x-init="if (since) { tick(); setInterval(tick, 30000); }">
+
+  {% if today_record and today_record.is_open %}
+    <div class="punch-state punch-state-open">
+      <div class="punch-state-meta">
+        <span class="punch-state-label">On the clock since</span>
+        <span class="punch-state-time" x-text="elapsed">{{ today_record.elapsed_formatted }}</span>
+      </div>
+      <form method="post" action="{% url 'attendance:punch' %}"
+            hx-post="{% url 'attendance:punch' %}" hx-target="#punch-control" hx-swap="outerHTML">
+        {% csrf_token %}
+        <button type="submit" class="btn punch-btn punch-btn-out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+          Check out
+        </button>
+      </form>
+    </div>
+
+  {% elif today_record and today_record.is_complete %}
+    <div class="punch-state punch-state-done">
+      <div class="punch-state-meta">
+        <span class="punch-state-label">Today</span>
+        <span class="punch-state-time">
+          {{ today_record.check_in|date:"g:i A" }} &rarr; {{ today_record.check_out|date:"g:i A" }}
+        </span>
+      </div>
+      <span class="pill resolved">{{ today_record.worked_formatted }}</span>
+    </div>
+
+  {% else %}
+    <div class="punch-state punch-state-ready">
+      <div class="punch-state-meta">
+        <span class="punch-state-label">Not checked in yet</span>
+        <span class="punch-state-time">Today</span>
+      </div>
+      <form method="post" action="{% url 'attendance:punch' %}"
+            hx-post="{% url 'attendance:punch' %}" hx-target="#punch-control" hx-swap="outerHTML">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary punch-btn punch-btn-in">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+          Check in
+        </button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if message %}<p class="punch-message">{{ message }}</p>{% endif %}
+</div>

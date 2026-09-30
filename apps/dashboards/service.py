@@ -1,6 +1,8 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, Q
+from decimal import Decimal
+
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 
 
@@ -515,3 +517,162 @@ def get_summary_report(company, start_date, end_date, user=None):
             .order_by("-created_at")[:25]
         ),
     }
+
+
+def _personal_attendance(company, user, today):
+    """Today's punch state plus the month-to-date picture.
+
+    `worked_minutes` lives on the record, so a day that is still open (punched
+    in, not out) contributes 0 -- better to under-report the day than invent an
+    end time for someone still working.
+    """
+    from apps.attendance.models import AttendanceRecord
+    from apps.attendance.service import net_minutes_for, shift_for
+    from apps.leave.service import is_on_leave
+
+    record = AttendanceRecord.objects.filter(
+        company=company, user=user, date=today
+    ).first()
+
+    month_first = today.replace(day=1)
+    month_records = AttendanceRecord.objects.filter(
+        company=company, user=user, date__gte=month_first, date__lte=today
+    ).exclude(check_in__isnull=True)
+    present_days = month_records.count()
+    shift = shift_for(company)
+    minutes = sum(net_minutes_for(r, shift) for r in month_records)
+
+    return {
+        "record": record,
+        "on_leave_today": is_on_leave(company, user, today),
+        "present_days": present_days,
+        "worked_minutes": minutes,
+        "month_label": today.strftime("%B"),
+    }
+
+
+def _personal_payroll(company, user):
+    """Latest issued payslip, or an explicit 'not on payroll' state.
+
+    Returns None fields rather than a fake zero when the user has never been
+    on a run -- a 0.00 payslip would read as "you were paid nothing".
+    """
+    from apps.payroll.models import Payslip, PayrollProfile
+
+    payslip = (
+        Payslip.objects.filter(company=company, user=user)
+        .select_related("run")
+        .order_by("-run__period_end", "-pk")
+        .first()
+    )
+
+    # "On payroll" is a profile fact, not a payslip fact. Reading it off the
+    # payslip alone would tell someone whose admin simply hasn't run payroll
+    # yet that they are not on payroll at all.
+    latest = (
+        PayrollProfile.objects.filter(company=company, user=user, is_on_payroll=True)
+        .order_by("-effective_from")
+        .first()
+    )
+    monthly = latest.monthly_salary if latest else None
+
+    if not payslip:
+        return {
+            "payslip": None,
+            "on_payroll": False,
+            "has_profile": bool(latest),
+            "monthly_salary": monthly,
+        }
+
+    profile = payslip.profile
+    return {
+        "payslip": payslip,
+        "on_payroll": True,
+        "has_profile": True,
+        "monthly_salary": profile.monthly_salary if profile else monthly,
+    }
+
+
+def _personal_dsr(company, user, today):
+    """This week's DSR logging, so an empty sheet is visible as a prompt."""
+    from apps.dsr.models import DSREntry
+
+    week_start = today - timedelta(days=today.weekday())
+    week = DSREntry.objects.filter(
+        company=company, user=user, date__gte=week_start, date__lte=today
+    )
+    recent = (
+        DSREntry.objects.filter(company=company, user=user)
+        .order_by("-date", "-pk")
+        .select_related("ticket")[:5]
+    )
+    return {
+        "dsr_week_start": week_start,
+        "dsr_entries": week.count(),
+        "dsr_hours": week.aggregate(total=Sum("hours_spent"))["total"] or Decimal("0"),
+        "dsr_recent": list(recent),
+    }
+
+
+def get_personal_dashboard_data(user, company):
+    """Home page data: the member's own month, with company totals for admins.
+
+    This is deliberately personal-first. The old dashboard opened on company
+    error and ticket counts, which told an employee nothing about their own
+    week. Everything here is either "mine" or, for owner/admin, a company
+    number they are actually responsible for.
+    """
+    from apps.accounts.models import Membership
+    from apps.leave.models import LeaveRequest
+    from apps.leave.service import balances_for
+    from apps.products.access import accessible_tickets
+
+    today = timezone.localdate()
+    membership = Membership.objects.filter(user=user, company=company).first()
+    is_privileged = bool(
+        membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
+    )
+
+    attendance = _personal_attendance(company, user, today)
+
+    my_leave = (
+        LeaveRequest.objects.filter(company=company, user=user)
+        .select_related("policy")
+        .order_by("-start_date")[:4]
+    )
+    pending_leave = LeaveRequest.objects.filter(
+        company=company, user=user, status="pending"
+    ).count()
+
+    # `accessible_tickets`, not `company=company`: a ticket is product-owned,
+    # and a developer assigned a ticket in a product they cannot otherwise see
+    # must not have it surface here.
+    ticket_scope = accessible_tickets(user, company).filter(assignees=user)
+    open_mine = ticket_scope.exclude(status__in=["resolved", "closed"])
+    my_tickets = open_mine.select_related("product").order_by("-updated_at")[:5]
+    my_ticket_count = open_mine.count()
+
+    data = {
+        "is_privileged": is_privileged,
+        "role": membership.role if membership else None,
+        "today": today,
+        "attendance": attendance,
+        "leave_balances": balances_for(company, user, today.year),
+        "my_leave_requests": list(my_leave),
+        "pending_leave": pending_leave,
+        "payroll": _personal_payroll(company, user),
+        "dsr": _personal_dsr(company, user, today),
+        "my_tickets": list(my_tickets),
+        "my_ticket_count": my_ticket_count,
+    }
+
+    if is_privileged:
+        data["team"] = get_admin_dashboard_data(company)
+        data["leave_approvals"] = LeaveRequest.objects.filter(
+            company=company, status="pending"
+        ).select_related("user", "policy").order_by("start_date")[:5]
+        data["leave_approval_count"] = LeaveRequest.objects.filter(
+            company=company, status="pending"
+        ).count()
+
+    return data

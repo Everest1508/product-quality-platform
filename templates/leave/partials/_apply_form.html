@@ -1,0 +1,25 @@
+<form method="post" class="card" style="max-width:620px;">
+  {% csrf_token %}
+  {% include "leave/partials/_apply_fields.html" %}
+  <div class="form-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
+    <a href="{% url 'leave:my_leave' %}" class="btn">Cancel</a>
+    <button type="submit" class="btn btn-primary">Submit request</button>
+  </div>
+</form>
+
+{% if balances %}
+<div class="form-section-label" style="margin-top:26px;">Your remaining allowance</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;">
+  {% for balance in balances %}
+  <div class="card">
+    <strong>{{ balance.policy.name }}</strong>
+    <div style="font-size:19px;font-weight:600;margin-top:6px;">
+      {% if balance.is_unlimited %}Unlimited{% else %}{{ balance.remaining_label }} left{% endif %}
+    </div>
+    {% if balance.policy.max_consecutive_days %}
+    <div class="field-hint">max {{ balance.policy.max_consecutive_days|floatformat:"-2" }} days per spell</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

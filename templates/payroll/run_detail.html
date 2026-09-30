@@ -1,0 +1,93 @@
+{% extends "payroll/base.html" %}
+
+{% block pay_name %}{{ run.label }}{% endblock %}
+
+{% block pay_subtitle %}
+<p class="text-sm text-muted" style="margin-top:4px;">
+  {{ run.working_days }} working days
+  {% if run.is_locked %}<span class="pill closed">locked</span>
+  {% else %}<span class="pill resolved">open</span>{% endif %}
+</p>
+{% endblock %}
+
+{% block pay_actions %}
+<div class="head-actions">
+  <a href="{% url 'payroll:preview' %}?anchor={{ run.period_start|date:'Y-m-d' }}" class="btn">Re-preview</a>
+  <form method="post" action="{% url 'payroll:run_lock' run.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn">{% if run.is_locked %}Unlock{% else %}Lock{% endif %}</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block pay_body %}
+<div class="pay-stats pay-stats-3">
+  <div class="card stat">
+    <div class="val sm">{{ total_payable }}</div>
+    <div class="label">Total payable days</div>
+  </div>
+  <div class="card stat">
+    <div class="val sm" style="color:var(--red);">{{ total_deduction }}</div>
+    <div class="label">Total deduction</div>
+  </div>
+  <div class="card stat">
+    <div class="val sm" style="color:var(--green);">{{ total_gross }}</div>
+    <div class="label">Total gross</div>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th class="pay-num">Day rate</th>
+        <th class="pay-num">Working days</th>
+        <th class="pay-num">Paid leave</th>
+        <th class="pay-num">Unpaid leave</th>
+        <th class="pay-num">Payable days</th>
+        <th class="pay-num">Deduction</th>
+        <th class="pay-num">Gross</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for payslip in payslips %}
+      <tr>
+        <td>
+          <span class="avatar">{{ payslip.user.get_full_name|default:payslip.user.username|make_list|first|upper }}</span>
+          <span class="title">{{ payslip.user.get_full_name|default:payslip.user.username }}</span>
+          <div class="sub">{{ payslip.user.username }}</div>
+        </td>
+        <td class="pay-num">{{ payslip.currency }} {{ payslip.daily_rate }}</td>
+        <td class="pay-num">{{ payslip.working_days }}</td>
+        <td class="pay-num">{{ payslip.paid_leave_days }}</td>
+        <td class="pay-num">
+          {% if payslip.unpaid_leave_days %}<span class="pill high">{{ payslip.unpaid_leave_days }}</span>
+          {% else %}<span class="text-muted">0</span>{% endif %}
+        </td>
+        <td class="pay-num"><strong>{{ payslip.payable_days }}</strong></td>
+        <td class="pay-num">{% if payslip.deduction %}−{{ payslip.deduction }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+        <td class="pay-num"><strong>{{ payslip.currency }} {{ payslip.gross }}</strong></td>
+        <td class="pay-num"><a href="{% url 'payroll:payslip' payslip.pk %}" class="btn btn-sm">Payslip</a></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9">
+          <div class="empty">
+            <h3>No payslips in this run</h3>
+            <p>Re-preview and generate, or check that someone is switched on in
+              <a href="{% url 'payroll:profiles' %}">Salaries</a>.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="pay-note">
+  <span>Regenerating an <b>open</b> run rewrites its payslips with today's numbers — useful after fixing a holiday or a leave record.</span>
+  <span>A <b>locked</b> run is never rewritten, so issued payslips keep the figures that applied at the time.</span>
+</div>
+{% endblock %}

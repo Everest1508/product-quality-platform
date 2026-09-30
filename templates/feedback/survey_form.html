@@ -36,13 +36,13 @@
     <div class="form-section">
       <div class="form-section-label">General Information</div>
       <div class="form-group">
-        <label>Survey Name</label>
-        <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required placeholder="e.g. Post-Checkout CSAT Survey" autofocus>
+        <label for="name">Survey Name</label>
+        <input id="name" type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required placeholder="e.g. Post-Checkout CSAT Survey" autofocus>
         {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
       </div>
       <div class="form-group" style="margin-bottom:0;">
-        <label>Description</label>
-        <textarea name="description" class="form-input" rows="3" placeholder="Optional internal notes about this survey...">{{ form.description.value|default:'' }}</textarea>
+        <label for="description">Description</label>
+        <textarea id="description" name="description" class="form-input" rows="3" placeholder="Optional internal notes about this survey...">{{ form.description.value|default:'' }}</textarea>
       </div>
     </div>
 
@@ -50,16 +50,16 @@
       <div class="form-section-label">Configuration &amp; Target</div>
       <div class="grid-2">
         <div class="form-group">
-          <label>Survey Type</label>
-          <select name="survey_type" class="form-input">
+          <label for="survey_type">Survey Type</label>
+          <select id="survey_type" name="survey_type" class="form-input">
             <option value="nps" {% if form.survey_type.value == "nps" %}selected{% endif %}>Net Promoter Score (NPS)</option>
             <option value="csat" {% if form.survey_type.value == "csat" %}selected{% endif %}>Customer Satisfaction (CSAT)</option>
             <option value="ces" {% if form.survey_type.value == "ces" %}selected{% endif %}>Customer Effort Score (CES)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Target Product</label>
-          <select name="product" class="form-input">
+          <label for="product">Target Product</label>
+          <select id="product" name="product" class="form-input">
             {% for product in form.fields.product.queryset %}
             <option value="{{ product.pk }}" {% if form.product.value|stringformat:"d" == product.pk|stringformat:"d" %}selected{% endif %}>{{ product.name }}</option>
             {% endfor %}
@@ -67,8 +67,8 @@
         </div>
       </div>
       <div class="form-group" style="margin-bottom:0;">
-        <label>Status</label>
-        <select name="status" class="form-input">
+        <label for="status">Status</label>
+        <select id="status" name="status" class="form-input">
           <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Draft</option>
           <option value="active" {% if form.status.value == "active" %}selected{% endif %}>Active</option>
           <option value="closed" {% if form.status.value == "closed" %}selected{% endif %}>Closed</option>

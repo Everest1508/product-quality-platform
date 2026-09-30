@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -63,6 +64,42 @@ class AuditLogViewTest(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["page"].paginator.count, 0)
+
+
+class AuditLogFilterLabellingTest(TestCase):
+    """The filter row had one labelled control and three unlabelled siblings.
+
+    `Filter by type` carried an `aria-label` while the member filter beside it
+    did not, and the two date inputs were introduced by a `<span>From</span>` —
+    a span labels nothing, so clicking "From" did not focus the field and a
+    screen reader announced an unlabelled date input.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=owner, company=company, role="owner")
+        self.client.login(username="owner", password="pass1234")
+        self.body = self.client.get(reverse("dashboards:audit_log")).content.decode()
+
+    def test_every_filter_select_is_named(self):
+        selects = re.findall(r"<select\b[^>]*>", self.body)
+        self.assertTrue(selects)
+        for tag in selects:
+            with self.subTest(tag=tag):
+                self.assertIn("aria-label=", tag)
+
+    def test_date_inputs_are_named_by_a_real_label(self):
+        for field in ("from", "to"):
+            with self.subTest(field=field):
+                self.assertRegex(self.body, rf'<input[^>]*id="audit-{field}"')
+                self.assertIn(f'<label for="audit-{field}"', self.body)
+
+    def test_the_date_inputs_are_not_introduced_by_a_span(self):
+        """A span of visible text is not a label; it labels nothing."""
+        self.assertNotIn(">From</span>", self.body)
+        self.assertNotIn(">To</span>", self.body)
 
 
 class ReportsViewTest(TestCase):

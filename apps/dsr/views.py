@@ -10,6 +10,7 @@ from django.views import View
 
 from apps.accounts.models import Membership
 from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
 
 User = get_user_model()
@@ -96,6 +97,10 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
         "members": members,
         "team_overview": team_overview,
         "copy_summary_text": copy_summary_text,
+        # Two prefixes: this form renders in the bar and again in the
+        # empty-state row, and duplicate ids are invalid HTML.
+        "add_form": DSREntryForm(id_prefix="dsr-bar"),
+        "add_form_empty": DSREntryForm(id_prefix="dsr-row"),
         "category_choices": DSREntry.Category.choices,
         "status_choices": DSREntry.Status.choices,
     }
@@ -136,25 +141,37 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
         if entry.user != request.user and not is_privileged:
             return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
 
-        if "hours_spent" in request.POST:
-            try:
-                entry.hours_spent = Decimal(request.POST.get("hours_spent", "0"))
-            except Exception:
-                pass
+        status = request.POST.get("status", entry.status)
+        category = request.POST.get("category", entry.category)
 
-        if "notes" in request.POST:
-            entry.notes = request.POST.get("notes", "")
+        if status not in DSREntry.Status.values:
+            messages.error(request, "Unknown status.")
+            status = entry.status
+        if category not in DSREntry.Category.values:
+            messages.error(request, "Unknown category.")
+            category = entry.category
 
-        if "status" in request.POST:
-            entry.status = request.POST.get("status", entry.status)
+        try:
+            hours = Decimal(request.POST.get("hours_spent", entry.hours_spent))
+        except (ArithmeticError, ValueError, TypeError):
+            messages.error(request, "Hours must be a number.")
+            hours = entry.hours_spent
 
-        if "task_name" in request.POST:
-            entry.task_name = request.POST.get("task_name", entry.task_name)
-
-        if "category" in request.POST:
-            entry.category = request.POST.get("category", entry.category)
-
-        entry.save()
+        form = DSREntryForm(
+            {
+                "task_name": request.POST.get("task_name", entry.task_name),
+                "category": category,
+                "hours_spent": hours,
+                "status": status,
+                "notes": request.POST.get("notes", entry.notes),
+            },
+            instance=entry,
+        )
+        if not form.is_valid():
+            messages.error(request, "Could not save those changes.")
+            entry.refresh_from_db()
+        else:
+            form.save()
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
@@ -200,19 +217,22 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
         else:
             target_user = request.user
 
-        entry = DSREntry.objects.create(
-            company=request.company,
-            user=target_user,
-            date=target_date,
-            task_name="New Task",
-            category=DSREntry.Category.OTHER,
-            hours_spent=Decimal("1.00"),
-            status=DSREntry.Status.COMPLETED,
-            is_auto_logged=False,
-        )
+        form = DSREntryForm(request.POST, id_prefix="dsr-bar")
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.company = request.company
+            entry.user = target_user
+            entry.date = target_date
+            entry.is_auto_logged = False
+            entry.save()
+            messages.success(request, f"Added \"{entry.task_name}\".")
+        else:
+            messages.error(request, "Could not add that entry.")
 
         if request.headers.get("HX-Request") == "true":
             context = _get_dsr_context(request.company, target_user, target_date, is_privileged)
+            context["add_form"] = form
+            context["add_form_empty"] = DSREntryForm(id_prefix="dsr-row")
             return render(request, "dsr/partials/_dsr_table.html", context)
 
         return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")

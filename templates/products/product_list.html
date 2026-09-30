@@ -19,12 +19,12 @@
   <div style="display:flex;align-items:center;gap:10px;flex:1;">
     <form method="get" class="search-wrap" style="display:flex;max-width:320px;width:100%;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" name="q" value="{{ search }}" placeholder="Search products...">
+      <input type="text" name="q" value="{{ search }}"  aria-label="Search products" placeholder="Search products...">
       {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
       {% if view_mode %}<input type="hidden" name="view" value="{{ view_mode }}">{% endif %}
     </form>
 
-    <select class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
+    <select aria-label="Sort" class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
       <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
       <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>Name Z-A</option>
       <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>

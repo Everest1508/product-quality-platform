@@ -2,10 +2,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.ingestion.urls")),
+    path("api/", include("apps.core.urls")),
     path("api/serop/", include("apps.serop.urls")),
     path("products/", include("apps.products.urls")),
     path("errors/", include("apps.errors.urls")),
@@ -13,7 +15,15 @@ urlpatterns = [
     path("automation/", include("apps.automation.urls")),
     path("feedback/", include("apps.feedback.urls")),
     path("dashboards/", include("apps.dashboards.urls")),
+    # Historic singular path, kept alive for old bookmarks and anything that
+    # hardcoded it. A redirect, not a second `include`: including the same
+    # module twice registers the `dashboards` namespace twice (urls.W005) and
+    # makes reverse() ambiguous about which prefix it will produce.
+    path("dashboard/", RedirectView.as_view(pattern_name="dashboards:index")),
     path("dsr/", include("apps.dsr.urls")),
+    path("attendance/", include("apps.attendance.urls")),
+    path("leave/", include("apps.leave.urls")),
+    path("payroll/", include("apps.payroll.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

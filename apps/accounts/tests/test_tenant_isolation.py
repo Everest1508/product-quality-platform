@@ -83,8 +83,12 @@ class MiddlewareCompanyResolutionTest(TestCase):
 
     def test_request_has_company_after_login(self):
         self.client.login(username="alice", password="pass1234")
-        response = self.client.get(reverse("accounts:dashboard"))
+        # `accounts:dashboard` ('/') is a redirect to the real dashboard, so
+        # follow it -- the middleware assertion has to be made on the page
+        # that is actually rendered.
+        response = self.client.get(reverse("accounts:dashboard"), follow=True)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[-1][0], reverse("dashboards:index"))
         self.assertEqual(response.context["request"].company, self.company)
         self.assertEqual(response.context["request"].company_role, "owner")
 

@@ -1,0 +1,90 @@
+{% extends "payroll/base.html" %}
+
+{% block pay_name %}Payslip — {{ payslip.user.get_full_name|default:payslip.user.username }}{% endblock %}
+
+{% block pay_subtitle %}
+<p class="text-sm text-muted" style="margin-top:4px;">
+  {{ payslip.run.period_start|date:"j M Y" }} → {{ payslip.run.period_end|date:"j M Y" }}
+  {% if payslip.run.is_locked %}<span class="pill closed">locked</span>{% endif %}
+</p>
+{% endblock %}
+
+{% block pay_actions %}
+<div class="head-actions">
+  <a href="{% url 'payroll:run_detail' payslip.run.pk %}" class="btn">Back to run</a>
+  <button type="button" class="btn" onclick="window.print()">Print</button>
+</div>
+{% endblock %}
+
+{% block pay_body %}
+<div class="card" style="padding:22px 24px;max-width:640px;">
+  <dl class="pay-kv">
+    <dt>Employee</dt>
+    <dd class="strong">{{ payslip.user.get_full_name|default:payslip.user.username }}</dd>
+    <dt>Cycle</dt>
+    <dd>{{ payslip.run.label }}</dd>
+    <dt>Daily rate</dt>
+    <dd>{{ payslip.currency }} {{ payslip.daily_rate }}</dd>
+    <dt>Working days</dt>
+    <dd>{{ payslip.working_days }}</dd>
+    <dt>Paid leave <span class="text-muted">(casual / sick)</span></dt>
+    <dd>{{ payslip.paid_leave_days }}</dd>
+    <dt>Unpaid leave</dt>
+    <dd>{% if payslip.unpaid_leave_days %}<span style="color:var(--red);">{{ payslip.unpaid_leave_days }}</span>{% else %}0{% endif %}</dd>
+    {% if payslip.late_penalty or payslip.late_half_days %}
+    <dt>Late arrivals</dt>
+    <dd>
+      <span style="color:var(--red);">
+        {% if payslip.late_half_days %}{{ payslip.late_half_days }} half day(s){% if payslip.late_penalty %}, {% endif %}{% endif %}{% if payslip.late_penalty %}{{ payslip.currency }} {{ payslip.late_penalty }}{% endif %}
+      </span>
+    </dd>
+    {% endif %}
+    <dt>Deduction</dt>
+    <dd style="color:var(--red);">−{{ payslip.currency }} {{ payslip.deduction }}</dd>
+    <dt>Payable days</dt>
+    <dd class="strong">{{ payslip.payable_days }}</dd>
+    <div class="rule"></div>
+    <dt class="strong">Net pay</dt>
+    <dd class="strong" style="font-size:18px;color:var(--green);">{{ payslip.currency }} {{ payslip.gross }}</dd>
+  </dl>
+</div>
+
+{% if payslip.breakdown.monthly_salary %}
+<div class="card" style="margin-top:14px;max-width:640px;padding:18px 24px;">
+  <h2 style="font-size:13px;font-weight:600;margin:0 0 10px;">How this was worked out</h2>
+  <dl class="pay-kv">
+    <dt>Monthly salary</dt>
+    <dd>{{ payslip.currency }} {{ payslip.breakdown.monthly_salary }}</dd>
+    <dt>Divided by</dt>
+    <dd>
+      {{ payslip.breakdown.working_days }} working days
+      <span class="sub">Sat, Sun and holidays are not working days</span>
+    </dd>
+    <dt>Daily rate</dt>
+    <dd class="strong">{{ payslip.currency }} {{ payslip.breakdown.daily_rate }}</dd>
+    <dt>Paid</dt>
+    <dd class="strong">{{ payslip.payable_days }} days × {{ payslip.breakdown.daily_rate }} = {{ payslip.currency }} {{ payslip.gross }}</dd>
+  </dl>
+</div>
+{% endif %}
+
+{% if payslip.breakdown.late_events %}
+<div class="card" style="margin-top:14px;max-width:640px;padding:18px 24px;">
+  <h2 style="font-size:13px;font-weight:600;margin:0 0 4px;">Late arrivals</h2>
+  <p class="text-sm text-muted" style="margin:0 0 10px;">
+    Each one is a deduction from this slip. Half days cost half a day's pay;
+    the other bands are flat penalties.
+  </p>
+  <ul style="list-style:none;margin:0;padding:0;font-size:13px;">
+    {% for event in payslip.breakdown.late_events %}
+    <li style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--border);">
+      <span>{{ event.reason }}</span>
+      <span style="white-space:nowrap;color:var(--red);font-variant-numeric:tabular-nums;">
+        {% if event.band == "half_day" %}½ day{% else %}−{{ payslip.currency }} {{ event.amount }}{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

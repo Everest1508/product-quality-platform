@@ -1,4 +1,16 @@
+from django.conf import settings
+
 from apps.products.models import Product
+
+
+def version_context(request):
+    """The running version, for the sidebar footer.
+
+    Cheap and unconditional: it reads one setting and parses nothing. The
+    changelog itself is fetched from /api/v1/changelog/ on demand instead, so it
+    is not paid for on every page.
+    """
+    return {"app_version": getattr(settings, "APP_VERSION", "0.0.0")}
 
 
 def _attach_product_counts(product):

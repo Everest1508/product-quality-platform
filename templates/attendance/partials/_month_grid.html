@@ -1,0 +1,42 @@
+<div class="att-grid-wrap" style="overflow-x:auto;">
+  <table class="att-grid">
+    <thead>
+      <tr>
+        {% for day in days %}
+        <th class="att-day-head{% if day.is_weekend %} att-weekend{% endif %}{% if day.is_today %} att-today{% endif %}">
+          {{ day.date|date:"D" }}<br><span style="font-weight:400;opacity:.7;">{{ day.day }}</span>
+        </th>
+        {% endfor %}
+        <th class="att-total-head">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        {% for day in days %}
+        <td class="att-cell{% if day.is_weekend %} att-weekend{% endif %}{% if day.is_today %} att-today{% endif %}{% if day.on_leave %} att-leave{% elif not day.record or not day.record.check_in %} att-absent{% endif %}">
+          {% if day.record and day.record.check_in %}
+            <span class="att-hours">{{ day.net_minutes }}m</span>
+            <div class="att-range">{{ day.record.check_in|date:"H:i" }}{% if day.record.check_out %}–{{ day.record.check_out|date:"H:i" }}{% endif %}</div>
+            {% if day.late_label %}<span class="att-flag att-flag-late">{{ day.late_label }}</span>{% endif %}
+            {% if day.record.is_open %}<span class="att-flag">open</span>{% endif %}
+            {% if day.record.is_edited %}<span class="att-flag att-flag-edit">edited</span>{% endif %}
+          {% elif day.on_leave %}
+            <span class="att-hours">leave</span>
+          {% else %}
+            <span class="att-none">—</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+        <td class="att-total"><strong>{{ total_formatted }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="display:flex;gap:20px;margin-top:14px;font-size:13px;color:var(--muted);flex-wrap:wrap;">
+  <span>Present: <strong style="color:var(--text);">{{ present_days }}</strong> day(s)</span>
+  <span>Absent: <strong style="color:var(--text);">{{ absent_days }}</strong> day(s)</span>
+  <span>On leave: <strong style="color:var(--text);">{{ leave_days }}</strong> day(s)</span>
+  <span>Late: <strong style="color:var(--text);">{{ late_days }}</strong> day(s)</span>
+  <span>Total: <strong style="color:var(--text);">{{ total_formatted }}</strong></span>
+</div>

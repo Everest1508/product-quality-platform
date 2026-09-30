@@ -15,7 +15,7 @@
          data-csrf="{{ csrf_token }}">
       <div class="card-id">
         <span style="display:flex;align-items:center;gap:4px;">
-          <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}" onclick="event.stopPropagation();" style="cursor:pointer;">
+          <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}" aria-label="Select ticket {{ ticket.pk }}" onclick="event.stopPropagation();" style="cursor:pointer;">
           #{{ ticket.pk }}{% if ticket.product %} &middot; <b style="color:var(--text);">{{ ticket.product.name }}</b>{% endif %}
         </span>
         {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}

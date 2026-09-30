@@ -1,0 +1,34 @@
+{% extends "core/base.html" %}
+
+{% block title %}Leave Approvals — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'leave:my_leave' %}">Leave</a>
+  <span class="sep">/</span>
+  <span class="current">Approvals</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Leave Approvals</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Pending and decided requests across the company.</p>
+  </div>
+  <div class="head-actions">
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+    <a href="{% url 'leave:policies' %}" class="btn">Leave policy</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="toolbar" style="display:flex;align-items:center;gap:6px;margin-bottom:18px;flex-wrap:wrap;">
+  {% for tab in tabs %}
+  <a href="?status={{ tab.value }}"
+     class="btn btn-sm {% if tab.is_active %}btn-primary{% endif %}">
+    {{ tab.label }}{% if tab.count %} ({{ tab.count }}){% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{% include "leave/partials/_approval_list.html" %}
+{% endblock %}

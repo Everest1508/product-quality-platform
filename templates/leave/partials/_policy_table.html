@@ -1,0 +1,119 @@
+{% comment %}
+Policy editor: one row per leave type, then one row to add a new one.
+
+Deliberately a grid of labelled fields, not a <table>. The previous version was
+a <table> whose header advertised four columns while every body row was a
+single <td colspan="5"> wrapping a <form> containing its own CSS grid -- the
+header was structurally unrelated to the inputs, so the "days" box could not
+be identified.
+
+Only the settings live here. What is left of each allowance is an employee
+question and is answered on /leave/ and the dashboard, not on the admin form.
+{% endcomment %}
+
+<div class="card" style="padding:0;overflow:hidden;">
+  {% for policy in policies %}
+    <form method="post" action="{% url 'leave:policy_update' policy.pk %}"
+          class="lp-row">
+      {% csrf_token %}
+
+      <div class="lp-field lp-grow">
+        <label for="lp-name-{{ policy.pk }}">Leave type</label>
+        <div class="lp-named">
+          {% include "leave/partials/_icon_picker.html" with selected=policy.icon %}
+          <span class="lp-dot lp-dot-{{ policy.color|default:'none' }}" aria-hidden="true"></span>
+          <input type="text" id="lp-name-{{ policy.pk }}" name="name"
+                 class="form-input" value="{{ policy.name }}" required maxlength="60">
+        </div>
+      </div>
+
+      <div class="lp-field">
+        <label for="lp-days-{{ policy.pk }}">Days per year</label>
+        <input type="number" id="lp-days-{{ policy.pk }}" name="max_days_per_year"
+               class="form-input lp-days" step="0.5" min="0"
+               value="{{ policy.max_days_per_year|default_if_none:'' }}"
+               placeholder="No cap">
+      </div>
+
+      <div class="lp-field">
+        <label for="lp-spell-{{ policy.pk }}">Max per spell</label>
+        <input type="number" id="lp-spell-{{ policy.pk }}" name="max_consecutive_days"
+               class="form-input lp-days" step="0.5" min="0.5"
+               value="{{ policy.max_consecutive_days|default_if_none:'' }}"
+               placeholder="No cap">
+      </div>
+
+      <div class="lp-field lp-narrow">
+        <label for="lp-colour-{{ policy.pk }}">Colour</label>
+        <div class="lp-inline">
+          <span class="lp-dot lp-dot-{{ policy.color|default:'none' }}" aria-hidden="true"></span>
+          <select id="lp-colour-{{ policy.pk }}" name="color" class="form-input">
+            {% for token, label in model.COLOR_TOKENS %}
+              <option value="{{ token }}" {% if policy.color == token %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="lp-field lp-paid">
+        <label for="lp-paid-{{ policy.pk }}">Paid</label>
+        <label class="lp-switch">
+          <input type="checkbox" id="lp-paid-{{ policy.pk }}" name="is_paid"
+                 value="true" {% if policy.is_paid %}checked{% endif %}>
+          <span class="lp-track" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-sm btn-primary lp-save">Save</button>
+    </form>
+  {% empty %}
+    <p class="lp-none">No leave types yet &mdash; add one below.</p>
+  {% endfor %}
+</div>
+
+<form method="post" action="{% url 'leave:policy_add' %}" class="lp-row lp-add">
+  {% csrf_token %}
+
+  <div class="lp-field lp-grow">
+    <label for="lp-new-name">Leave type</label>
+    <div class="lp-named">
+      {% include "leave/partials/_icon_picker.html" with selected="" %}
+      <input type="text" id="lp-new-name" name="name" class="form-input"
+             placeholder="e.g. Sick" required maxlength="60">
+    </div>
+  </div>
+
+  <div class="lp-field">
+    <label for="lp-new-days">Days per year</label>
+    <input type="number" id="lp-new-days" name="max_days_per_year"
+           class="form-input lp-days" step="0.5" min="0" placeholder="No cap">
+  </div>
+
+  <div class="lp-field">
+    <label for="lp-new-spell">Max per spell</label>
+    <input type="number" id="lp-new-spell" name="max_consecutive_days"
+           class="form-input lp-days" step="0.5" min="0.5" placeholder="No cap">
+  </div>
+
+  <div class="lp-field lp-narrow">
+    <label for="lp-new-colour">Colour</label>
+    <div class="lp-inline">
+      <span class="lp-dot lp-dot-none" aria-hidden="true"></span>
+      <select id="lp-new-colour" name="color" class="form-input">
+        {% for token, label in model.COLOR_TOKENS %}
+          <option value="{{ token }}">{% if token %}{{ label }}{% else %}No colour{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="lp-field lp-paid">
+    <label for="lp-new-paid">Paid</label>
+    <label class="lp-switch">
+      <input type="checkbox" id="lp-new-paid" name="is_paid" value="true" checked>
+      <span class="lp-track" aria-hidden="true"></span>
+    </label>
+  </div>
+
+  <button type="submit" class="btn btn-sm btn-primary lp-save">Add</button>
+</form>

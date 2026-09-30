@@ -5,6 +5,8 @@ from apps.dashboards import views
 app_name = "dashboards"
 
 urlpatterns = [
+    # `index` is the real home page. The singular `/dashboard/` path is a
+    # redirect to it, declared in core/urls.py.
     path("", views.DashboardView.as_view(), name="index"),
     path("", views.DashboardView.as_view(), name="admin_dashboard"),
     path("product/<int:product_pk>/", views.ProductDashboardView.as_view(), name="product_dashboard"),

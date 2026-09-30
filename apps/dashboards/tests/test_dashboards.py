@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
@@ -9,6 +10,7 @@ from apps.accounts.models import Company, Membership
 from apps.dashboards.models import ActivityLog
 from apps.dashboards.service import (
     get_admin_dashboard_data,
+    get_personal_dashboard_data,
     get_product_dashboard_data,
     get_user_dashboard_data,
     log_activity,
@@ -188,20 +190,30 @@ class DashboardViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_dashboard_developer_scoped(self):
+        """A developer only sees tickets from products they are allocated to."""
         dev = User.objects.create_user("dev", "dev@test.com", "pass1234")
         Membership.objects.create(user=dev, company=self.company, role="developer")
         product_a = Product.objects.create(name="App A", slug="app-a", company=self.company)
-        Product.objects.create(name="App B", slug="app-b", company=self.company)
+        product_b = Product.objects.create(name="App B", slug="app-b", company=self.company)
         ProductAccess.objects.create(product=product_a, user=dev, company=self.company)
+
+        for product, title in ((product_a, "Mine to see"), (product_b, "Not mine")):
+            ticket = Ticket.objects.create(
+                company=self.company, product=product, title=title,
+                status="open", created_by=dev,
+            )
+            ticket.assignees.add(dev)
 
         self.client.login(username="dev", password="pass1234")
         response = self.client.get(reverse("dashboards:index"))
         self.assertEqual(response.status_code, 200)
-        card_ids = {c["product"].id for c in response.context["product_cards"]}
-        self.assertEqual(card_ids, {product_a.pk})
+        titles = [t.title for t in response.context["my_tickets"]]
+        self.assertEqual(titles, ["Mine to see"])
         self.assertFalse(response.context["is_privileged"])
         content = response.content.decode()
         self.assertNotIn("Team Breakdown", content)
+        # Company-wide cards stay hidden from a non-privileged role.
+        self.assertNotIn("pd-card pd-company", content)
 
     def test_dashboard_no_products_empty_state(self):
         viewer = User.objects.create_user("viewer", "viewer@test.com", "pass1234")
@@ -209,8 +221,8 @@ class DashboardViewTest(TestCase):
         self.client.login(username="viewer", password="pass1234")
         response = self.client.get(reverse("dashboards:index"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["product_cards"], [])
-        self.assertIn("No products yet", response.content.decode())
+        self.assertEqual(response.context["my_tickets"], [])
+        self.assertIn("No open tickets assigned to you", response.content.decode())
 
 
 class ProductDashboardViewTest(TestCase):
@@ -261,3 +273,237 @@ class ProductDashboardViewTest(TestCase):
             reverse("dashboards:product_dashboard", kwargs={"product_pk": self.product.pk})
         )
         self.assertEqual(response.status_code, 200)
+
+
+class PersonalDashboardTest(TestCase):
+    """The home page is personal-first: an employee's own month, not the
+    company's error count. Role only decides whether the company-wide cards
+    are added, never whether the personal ones are shown."""
+
+    def setUp(self):
+        self.client = Client()
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.other = Company.objects.create(name="Other", slug="other")
+        self.product = Product.objects.create(name="App", slug="app", company=self.company)
+        self.dev = User.objects.create_user("dev", "dev@test.com", "pass1234")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
+        self.admin = User.objects.create_user("boss", "boss@test.com", "pass1234")
+        Membership.objects.create(user=self.admin, company=self.company, role="owner")
+        self.client.login(username="dev", password="pass1234")
+
+    def get(self, path="/dashboards/"):
+        # The real page. `/dashboard/` is only a redirect to this (see
+        # test_both_dashboard_paths_work).
+        return self.client.get(path)
+
+    def test_both_dashboard_paths_work(self):
+        """LOGIN_REDIRECT_URL used to point at '/dashboard/', which matched no
+        route, so every login landed on a 404. The singular path now redirects
+        to the real one; both must end on a working page."""
+        self.assertEqual(self.get("/dashboards/").status_code, 200)
+        alias = self.get("/dashboard/")
+        self.assertEqual(alias.status_code, 302)
+        self.assertEqual(alias.url, reverse("dashboards:index"))
+        self.assertEqual(self.get(alias.url).status_code, 200)
+
+    def test_login_redirect_url_is_a_url_name(self):
+        self.assertEqual(settings.LOGIN_REDIRECT_URL, "dashboards:index")
+
+    def test_login_lands_on_a_working_dashboard(self):
+        """The exact failure the old setting caused: a 302 to a dead path."""
+        self.client.logout()
+        response = self.client.post(
+            reverse("accounts:login"), {"username": "dev", "password": "pass1234"}
+        )
+        self.assertEqual(response.status_code, 302)
+        landed = self.client.get(response.url, follow=True)
+        self.assertEqual(landed.status_code, 200)
+        self.assertEqual(landed.redirect_chain[-1][0], reverse("dashboards:index"))
+
+    def test_personal_cards_are_shown_to_a_developer(self):
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+        for section in ("today", "pay", "leave", "dsr", "tickets"):
+            self.assertContains(response, f"pd-card pd-{section}")
+
+    def test_company_cards_are_admin_only(self):
+        self.assertNotContains(self.get(), "pd-card pd-company")
+        self.assertNotContains(self.get(), "pd-card pd-queue")
+
+        self.client.login(username="boss", password="pass1234")
+        response = self.get()
+        self.assertContains(response, "pd-card pd-company")
+        self.assertContains(response, "pd-card pd-queue")
+
+    def test_leave_approvals_only_for_privileged_roles(self):
+        from apps.leave.models import LeavePolicy, LeaveRequest
+        from datetime import date
+
+        policy = LeavePolicy.objects.create(
+            company=self.company, name="Casual", max_days_per_year=12
+        )
+        LeaveRequest.objects.create(
+            company=self.company,
+            user=self.dev,
+            policy=policy,
+            start_date=date(2026, 11, 2),
+            end_date=date(2026, 11, 3),
+            days=2,
+            status="pending",
+        )
+        self.assertNotContains(self.get(), "pd-card pd-queue")
+
+        self.client.login(username="boss", password="pass1234")
+        self.assertContains(self.get(), "pd-card pd-queue")
+
+    def test_attendance_reflects_only_my_own_punches(self):
+        from datetime import date, datetime, time
+        from django.utils import timezone as tz
+        from apps.attendance.models import AttendanceRecord
+
+        today = tz.localdate()
+        at = tz.make_aware(datetime.combine(today, time(9, 0)))
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=today, check_in=at
+        )
+        # A colleague working hard today must not move my numbers.
+        other = User.objects.create_user("mate", "mate@test.com", "pass1234")
+        Membership.objects.create(user=other, company=self.company, role="developer")
+        AttendanceRecord.objects.create(
+            company=self.company, user=other, date=today, check_in=at, check_out=at
+        )
+
+        response = self.get()
+        self.assertEqual(response.context["attendance"]["present_days"], 1)
+        self.assertEqual(response.context["attendance"]["worked_minutes"], 0)
+        self.assertContains(response, "Punch out")
+
+    def test_payroll_shows_my_salary_not_a_colleagues(self):
+        from datetime import date
+        from decimal import Decimal
+        from apps.payroll.models import PayrollProfile
+
+        PayrollProfile.objects.create(
+            company=self.company,
+            user=self.dev,
+            effective_from=date(2026, 1, 1),
+            monthly_salary=Decimal("42000.00"),
+            is_on_payroll=True,
+        )
+        rich = User.objects.create_user("rich", "rich@test.com", "pass1234")
+        Membership.objects.create(user=rich, company=self.company, role="developer")
+        PayrollProfile.objects.create(
+            company=self.company,
+            user=rich,
+            effective_from=date(2026, 1, 1),
+            monthly_salary=Decimal("99000.00"),
+            is_on_payroll=True,
+        )
+
+        body = self.get().content.decode()
+        self.assertIn("42,000.00", body)
+        self.assertNotIn("99,000.00", body)
+
+    def test_not_on_payroll_says_so_rather_than_showing_zero(self):
+        self.assertContains(self.get(), "not on payroll")
+
+    def test_on_payroll_without_a_generated_slip_is_not_claimed_as_absent(self):
+        """Regression: 'on payroll' is a profile fact. Reading it off the
+        payslip told someone whose admin had not run payroll yet that they
+        were not on payroll at all."""
+        from datetime import date
+        from decimal import Decimal
+        from apps.payroll.models import PayrollProfile
+
+        PayrollProfile.objects.create(
+            company=self.company,
+            user=self.dev,
+            effective_from=date(2026, 1, 1),
+            monthly_salary=Decimal("42000.00"),
+            is_on_payroll=True,
+        )
+        response = self.get()
+        self.assertTrue(response.context["payroll"]["has_profile"])
+        self.assertFalse(response.context["payroll"]["on_payroll"])
+        self.assertContains(response, "no payslip has been generated")
+
+    def test_my_tickets_respect_product_access(self):
+        """A ticket in a product the developer cannot see must not surface,
+        even when they are assigned to it."""
+        ProductAccess.objects.create(
+            product=self.product, user=self.dev, company=self.company
+        )
+        hidden = Product.objects.create(name="Hidden", slug="hidden", company=self.company)
+        mine = Ticket.objects.create(
+            company=self.company, product=self.product, title="Mine",
+            status="open", created_by=self.dev,
+        )
+        mine.assignees.add(self.dev)
+        secret = Ticket.objects.create(
+            company=self.company, product=hidden, title="Secret",
+            status="open", created_by=self.dev,
+        )
+        secret.assignees.add(self.dev)
+
+        data = get_personal_dashboard_data(self.dev, self.company)
+        titles = [t.title for t in data["my_tickets"]]
+        self.assertIn("Mine", titles)
+        self.assertNotIn("Secret", titles)
+        self.assertEqual(data["my_ticket_count"], 1)
+
+    def test_tickets_do_not_leak_across_companies(self):
+        elsewhere = Ticket.objects.create(
+            company=self.other, product=None, title="Theirs",
+            status="open", created_by=self.admin,
+        )
+        elsewhere.assignees.add(self.dev)
+
+        data = get_personal_dashboard_data(self.dev, self.company)
+        self.assertEqual([t.title for t in data["my_tickets"]], [])
+        self.assertEqual(data["my_ticket_count"], 0)
+
+    def test_dsr_hours_cover_only_this_week_and_only_mine(self):
+        from datetime import timedelta
+        from decimal import Decimal
+        from apps.dsr.models import DSREntry
+
+        today = timezone.localdate()
+        DSREntry.objects.create(
+            company=self.company, user=self.dev, date=today,
+            task_name="Mine today", hours_spent=Decimal("2.5"),
+        )
+        mate = User.objects.create_user("mate", "mate@test.com", "pass1234")
+        Membership.objects.create(user=mate, company=self.company, role="developer")
+        DSREntry.objects.create(
+            company=self.company, user=mate, date=today,
+            task_name="Theirs", hours_spent=Decimal("8.00"),
+        )
+        # Old entry, same person, outside this week.
+        DSREntry.objects.create(
+            company=self.company, user=self.dev, date=today - timedelta(days=14),
+            task_name="Last sprint", hours_spent=Decimal("7.00"),
+        )
+
+        data = get_personal_dashboard_data(self.dev, self.company)
+        self.assertEqual(data["dsr"]["dsr_hours"], Decimal("2.5"))
+        self.assertEqual(data["dsr"]["dsr_entries"], 1)
+        self.assertNotIn(
+            "Theirs", [e.task_name for e in data["dsr"]["dsr_recent"]]
+        )
+
+    def test_dsr_empty_state_explains_itself(self):
+        self.assertContains(self.get(), "Nothing logged this week")
+
+    def test_htmx_request_returns_the_partial(self):
+        response = self.get(reverse("dashboards:index"))
+        response = self.client.get(
+            reverse("dashboards:index"), HTTP_HX_REQUEST="true"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("<html", response.content.decode())
+
+    def test_anonymous_is_redirected_to_login(self):
+        self.client.logout()
+        response = self.get()
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)

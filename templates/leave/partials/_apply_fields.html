@@ -1,0 +1,38 @@
+{% if form.non_field_errors %}
+  {% for error in form.non_field_errors %}
+  <div class="field-error" style="margin-bottom:14px;">{{ error }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="form-group" style="margin-bottom:16px;">
+  <label class="form-section-label" style="display:block;" for="{{ form.policy_id.id_for_label }}">Leave type</label>
+  {{ form.policy_id }}
+  {% for error in form.policy_id.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+  <div class="form-group">
+    <label class="form-section-label" style="display:block;" for="{{ form.start_date.id_for_label }}">Start date</label>
+    {{ form.start_date }}
+    {% for error in form.start_date.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+  </div>
+  <div class="form-group">
+    <label class="form-section-label" style="display:block;" for="{{ form.end_date.id_for_label }}">End date</label>
+    {{ form.end_date }}
+    <div class="field-hint">Leave this blank for a single day.</div>
+    {% for error in form.end_date.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+  </div>
+</div>
+
+<div class="form-group" style="margin-bottom:16px;">
+  <label class="filter-check" style="font-size:14px;font-weight:500;">
+    {{ form.is_half_day }} Half day (counts as 0.5 against your balance)
+  </label>
+  {% for error in form.is_half_day.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+</div>
+
+<div class="form-group">
+  <label class="form-section-label" style="display:block;" for="{{ form.reason.id_for_label }}">Reason</label>
+  {{ form.reason }}
+  {% for error in form.reason.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+</div>

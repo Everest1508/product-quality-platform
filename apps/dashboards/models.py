@@ -40,6 +40,18 @@ class ActivityLog(TenantScopedModel):
         RULE_DELETED = "rule_deleted", "Rule Deleted"
         RULE_TOGGLED = "rule_toggled", "Rule Toggled"
         AUTO_TICKET = "auto_ticket", "Auto Ticket Created"
+        ATTENDANCE_CHECKED_IN = "attendance_checked_in", "Attendance Checked In"
+        ATTENDANCE_CHECKED_OUT = "attendance_checked_out", "Attendance Checked Out"
+        ATTENDANCE_EDITED = "attendance_edited", "Attendance Edited"
+        LEAVE_REQUESTED = "leave_requested", "Leave Requested"
+        LEAVE_APPROVED = "leave_approved", "Leave Approved"
+        LEAVE_REJECTED = "leave_rejected", "Leave Rejected"
+        LEAVE_CANCELLED = "leave_cancelled", "Leave Cancelled"
+        LEAVE_POLICY_UPDATED = "leave_policy_updated", "Leave Policy Updated"
+        PAYROLL_RUN = "payroll_run", "Payroll Run Generated"
+        PAYROLL_PROFILE_SAVED = "payroll_profile_saved", "Payroll Profile Saved"
+        HOLIDAY_ADDED = "holiday_added", "Holiday Added"
+        HOLIDAY_REMOVED = "holiday_removed", "Holiday Removed"
 
     event_type = models.CharField(max_length=30, choices=EventType.choices)
     title = models.CharField(max_length=500)

@@ -14,21 +14,21 @@
   <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
     <form method="get" class="search-wrap" style="display:flex;max-width:280px;width:100%;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" name="q" value="{{ search }}" placeholder="Search event titles...">
+      <input type="text" name="q" value="{{ search }}"  aria-label="Search event titles" placeholder="Search event titles...">
       {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
       {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
       {% if current_from %}<input type="hidden" name="from" value="{{ current_from }}">{% endif %}
       {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
     </form>
 
-    <select class="filter-select" onchange="window.location=buildUrl({type:this.value})">
+    <select aria-label="Filter by type" class="filter-select" onchange="window.location=buildUrl({type:this.value})">
       <option value="">All event types</option>
       {% for value, label in event_types %}
       <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
 
-    <select class="filter-select" onchange="window.location=buildUrl({actor:this.value})">
+    <select aria-label="Filter by member" class="filter-select" onchange="window.location=buildUrl({actor:this.value})">
       <option value="">Any member</option>
       {% for member in members %}
       <option value="{{ member.pk }}" {% if current_actor == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
@@ -38,12 +38,12 @@
 
   <div style="display:flex;align-items:center;gap:8px;">
     <div style="display:flex;align-items:center;gap:4px;">
-      <span class="text-sm text-muted" style="font-size:12px;">From</span>
-      <input type="date" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
+      <label for="audit-from" class="text-sm text-muted" style="font-size:12px;">From</label>
+      <input type="date" id="audit-from" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
     </div>
     <div style="display:flex;align-items:center;gap:4px;">
-      <span class="text-sm text-muted" style="font-size:12px;">To</span>
-      <input type="date" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
+      <label for="audit-to" class="text-sm text-muted" style="font-size:12px;">To</label>
+      <input type="date" id="audit-to" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
     </div>
     {% if search or current_type or current_actor or current_from or current_to %}
     <a href="{% url 'dashboards:audit_log' %}" class="btn btn-sm" style="font-size:12px;color:var(--red);">Clear</a>

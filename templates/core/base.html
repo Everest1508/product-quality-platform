@@ -33,14 +33,22 @@
   .sidebar-backdrop{display:none;}
 
   .nav-section{display:flex;flex-direction:column;gap:1px;}
+  /* A hairline between sections in *both* states: expanded, the "Operations"
+     and "Admin" labels are not enough to group 5 and 8 items; collapsed, the
+     labels are display:none and the rule is the only thing left. */
+  .nav-section + .nav-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .nav-section + .nav-section > .nav-label{padding-top:5px;}
   .nav-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.055em;color:#a1a1aa;font-weight:600;padding:15px 10px 5px;white-space:nowrap;overflow:hidden;}
 
-  .side-item{position:relative;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;color:var(--muted);font-size:13.5px;line-height:1.1;white-space:nowrap;overflow:hidden;transition:background .12s,color .12s;}
+  .side-item{position:relative;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;color:var(--muted);font-size:13.5px;line-height:1.1;white-space:nowrap;transition:background .12s,color .12s;}
   .side-item:hover{background:var(--panel);color:var(--text);}
+  .side-item:focus-visible,.side-collapse:focus-visible,.switch-btn:focus-visible,
+  .side-user-btn:focus-visible,.switch-item:focus-visible,.side-user-menu a:focus-visible,
+  .side-user-menu button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:7px;}
   .side-item.active{background:var(--accent-soft);color:var(--accent);font-weight:500;}
   .side-item.active::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2.5px;border-radius:0 3px 3px 0;background:var(--accent);}
-  .side-item .ic{width:17px;height:17px;flex-shrink:0;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;}
-  .side-item .side-label{flex:1;overflow:hidden;text-overflow:ellipsis;}
+  .side-item .ic{width:17px;height:17px;flex-shrink:0;stroke-width:1.75;}
+  .side-item .side-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
   .side-badge{font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:1px 6px;min-width:19px;text-align:center;flex-shrink:0;}
   .side-item.active .side-badge{color:var(--accent);background:#fff;border-color:transparent;}
 
@@ -53,7 +61,8 @@
   .switch-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
   .switch-glyph{display:none;width:20px;height:20px;border-radius:5px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:700;align-items:center;justify-content:center;flex-shrink:0;}
   .switch-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .switch-caret{color:var(--muted);flex-shrink:0;}
+  .switch-caret{width:12px;height:12px;stroke-width:2;color:var(--muted);flex-shrink:0;}
+  .switch-tick{width:14px;height:14px;stroke-width:2.5;}
   .switch-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:9px;box-shadow:0 10px 28px rgba(0,0,0,.13);z-index:70;padding:4px;max-height:min(340px,60vh);overflow-y:auto;}
   .side-context .switch{margin-bottom:4px;}
   .switch-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px;border:none;background:none;border-radius:6px;font:inherit;font-size:13px;color:var(--text);text-align:left;cursor:pointer;}
@@ -68,7 +77,7 @@
   .side-foot{margin-top:auto;padding-top:6px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:2px;}
   .side-collapse{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;color:var(--muted);font-size:12.5px;border:none;background:none;cursor:pointer;font:inherit;width:100%;white-space:nowrap;overflow:hidden;}
   .side-collapse:hover{background:var(--panel);color:var(--text);}
-  .side-collapse .ic{width:16px;height:16px;flex-shrink:0;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease;}
+  .side-collapse .ic{width:16px;height:16px;flex-shrink:0;stroke-width:1.75;transition:transform .18s ease;}
 
   .side-user{position:relative;}
   .side-user-btn{display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;border:none;background:none;border-radius:8px;cursor:pointer;font:inherit;text-align:left;color:var(--text);}
@@ -81,17 +90,22 @@
   .side-user-menu a,.side-user-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:8px;border:none;background:none;border-radius:6px;font:inherit;font-size:13px;color:var(--text);text-align:left;cursor:pointer;}
   .side-user-menu a:hover,.side-user-menu button:hover{background:var(--panel);}
   .side-user-menu form{margin:0;}
-  .side-user-menu svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;color:var(--muted);flex-shrink:0;}
+  .side-user-menu svg{width:15px;height:15px;stroke-width:1.75;color:var(--muted);flex-shrink:0;}
+  .side-menu-ic{width:15px;height:15px;flex-shrink:0;}
+  .switch-icon{width:14px;height:14px;stroke-width:2;flex-shrink:0;}
+  .switch-item svg{width:14px;height:14px;stroke-width:2;}
 
   @media(min-width:861px){
     html.sidebar-collapsed .sidebar{padding-left:8px;padding-right:8px;}
-    html.sidebar-collapsed .side-label,
     html.sidebar-collapsed .side-badge,
     html.sidebar-collapsed .nav-label,
     html.sidebar-collapsed .switch-name,
     html.sidebar-collapsed .switch-caret,
     html.sidebar-collapsed .switch-dot,
     html.sidebar-collapsed .side-user-meta{display:none;}
+    /* Clipped, not display:none -- the label must stay readable to a screen
+       reader and to `content:attr(data-label)` tooltips. */
+    html.sidebar-collapsed .side-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
     html.sidebar-collapsed .switch-glyph{display:flex;}
     html.sidebar-collapsed .side-item,
     html.sidebar-collapsed .side-collapse,
@@ -198,6 +212,12 @@
   select.form-input{appearance:auto;}
   textarea.form-input{resize:vertical;min-height:80px;}
 
+  .pw-wrap{position:relative;}
+  .pw-wrap .form-input{padding-right:38px;}
+  .pw-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;font:inherit;padding:0;}
+  .pw-toggle:hover{color:var(--text);background:var(--panel);}
+  .pw-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:-2px;}
+
   .empty{text-align:center;padding:48px 20px;color:var(--muted);}
   .empty svg{margin:0 auto 12px;display:block;}
   .empty h3{font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px;}
@@ -258,6 +278,56 @@
   .modal h3{font-size:16px;font-weight:600;margin-bottom:8px;}
   .modal p{font-size:13.5px;color:var(--muted);margin-bottom:20px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;}
+
+  /* Version + changelog. The trigger sits in the sidebar footer; the dialog is
+     a sibling of .shell because .sidebar is overflow-x:hidden and would clip it. */
+  .side-version{width:100%;text-align:left;border:none;background:none;font:inherit;cursor:pointer;}
+  .side-version .ic{width:16px;height:16px;flex-shrink:0;stroke-width:1.75;}
+  .side-version .side-label{font-variant-numeric:tabular-nums;}
+  .side-version:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:7px;}
+  .changelog{width:92%;max-width:640px;max-height:84vh;display:flex;flex-direction:column;padding:0;}
+  .changelog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--border);}
+  .changelog-head h3{margin:0 0 2px;}
+  .changelog-ver{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .changelog-sub{font-size:12px;color:var(--muted);}
+  .changelog-close{border:none;background:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:0 2px;}
+  .changelog-close:hover{color:var(--text);}
+  /* Type chips. The point is to answer "what's fixed?" without scrolling past
+     24 items, so they sit between the header and the list where they stay put
+     while the body scrolls under them. */
+  .changelog-filters{display:flex;flex-wrap:wrap;gap:6px;padding:12px 20px;border-bottom:1px solid var(--line);}
+  .changelog-filters[hidden]{display:none;}
+  .changelog-chip{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;}
+  .changelog-chip:hover{color:var(--text);border-color:var(--muted);}
+  .changelog-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .changelog-chip-n{font-variant-numeric:tabular-nums;opacity:.7;font-size:11px;}
+  .changelog-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .changelog-body{overflow-y:auto;padding:4px 20px 20px;}
+  .changelog-body section{padding:16px 0;border-bottom:1px solid var(--line);}
+  .changelog-body section:last-child{border-bottom:none;}
+  .changelog-rel-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .changelog-rel-head h4{margin:0;font-size:14px;font-weight:600;}
+  .changelog-tag{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:var(--panel);border:1px solid var(--border);color:var(--muted);}
+  .changelog-tag.is-unreleased{font-style:italic;font-weight:500;}
+  .changelog-date{font-size:11.5px;color:var(--muted);}
+  .changelog h5{display:flex;align-items:center;gap:6px;margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;}
+  .changelog-count{font-size:10px;letter-spacing:0;padding:0 5px;border-radius:8px;background:var(--panel);border:1px solid var(--border);color:var(--muted);}
+  /* Older blocks are one click away rather than prepended to the answer. */
+  .changelog-older{width:100%;margin:14px 0 4px;font:inherit;font-size:12.5px;padding:9px 12px;border-radius:8px;border:1px dashed var(--border);background:none;color:var(--muted);cursor:pointer;}
+  .changelog-older:hover{color:var(--text);border-color:var(--muted);}
+  .changelog-older:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .changelog ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;}
+  .changelog li{font-size:13px;line-height:1.5;color:var(--text);}
+  .changelog li::marker{color:#a1a1aa;}
+  /* Detail written as an indented sub-bullet in CHANGELOG.md. Rendered as a real
+     nested list: flattened into the parent it became a 2,600-character
+     paragraph with literal dashes, which is the wall this dialog exists to
+     avoid. */
+  .changelog .changelog-sub{margin:6px 0 2px;padding-left:16px;gap:5px;}
+  .changelog .changelog-sub li{font-size:12.5px;color:var(--muted);}
+  .changelog code{font-size:12px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:0 4px;}
+  .changelog a{color:var(--accent);}
+  .changelog-note{font-size:12.5px;color:var(--muted);padding:16px 0;}
 
   .kanban-board{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-bottom:10px;align-items:stretch;height:calc(100vh - 188px);scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--border) transparent;scroll-snap-type:x proximity;}
   .kanban-board::-webkit-scrollbar{height:10px;}
@@ -376,6 +446,147 @@
   .dash-panel > header a{margin-left:auto;font-size:12px;font-weight:500;color:var(--blue);}
   .dash-panel > header a:hover{text-decoration:underline;}
   .dash-panel .empty-line{color:var(--muted);font-size:13px;padding:16px 4px;text-align:center;}
+
+  /* Personal dashboard. `pd-` = personal dashboard; cards are one-per-module so
+     each employee's own month reads top-to-bottom before anything company-wide. */
+  .pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;}
+  .pd-card{border:1px solid var(--border);border-radius:12px;padding:2px 18px 14px;box-shadow:0 1px 2px rgba(0,0,0,.03);min-width:0;}
+  .pd-card > header{display:flex;align-items:center;gap:8px;padding:14px 0 10px;}
+  .pd-card > header .pd-ico{width:16px;height:16px;color:var(--muted);flex-shrink:0;}
+  .pd-card > header .pd-ico svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block;}
+  .pd-card > header h2{font-size:14px;font-weight:600;letter-spacing:-.01em;}
+  .pd-card > header .pd-sub{margin-left:auto;font-size:11.5px;color:var(--muted);}
+  .pd-card > header .n{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:0 7px;}
+  @media(max-width:820px){.pd-grid{grid-template-columns:minmax(0,1fr);}}
+
+  .pd-banner{margin:0 0 18px;padding:11px 15px;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:9px;background:var(--blue-bg);font-size:13px;line-height:1.45;}
+  .pd-banner strong{font-weight:600;}
+
+  /* Today -- the one card with a live action in it. */
+  .pd-today{grid-column:1 / -1;}
+  .pd-today-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 0 12px;}
+  .pd-state{display:flex;flex-direction:column;gap:2px;min-width:150px;}
+  .pd-state .lead{font-size:16px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+  .pd-state .meta{font-size:12px;color:var(--muted);}
+  .pd-state.open .lead{color:var(--green);}
+  .pd-state.done .lead{color:var(--blue);}
+  .pd-state.todo .lead,.pd-state.rest .lead{color:var(--muted);font-weight:500;}
+  .pd-state.leave .lead{color:var(--orange);font-size:15px;}
+  .pd-today-row form{margin-left:auto;}
+
+  .pd-mini{display:flex;gap:22px;padding:10px 0 2px;border-top:1px solid var(--line);}
+  .pd-mini > div{display:flex;flex-direction:column;gap:1px;}
+  .pd-mini.three{gap:28px;}
+  .pd-mini .v{font-size:19px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15;}
+  .pd-mini .l{font-size:12.5px;color:inherit;}
+  .pd-mini .m{font-size:11.5px;color:var(--muted);}
+
+  .pd-net{display:flex;flex-direction:column;gap:2px;padding:4px 0 12px;}
+  .pd-net .l{font-size:12px;color:var(--muted);}
+  .pd-net .v{font-size:25px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums;color:var(--green);}
+
+  .pd-kv{margin:0;padding:0;}
+  .pd-kv > dt{float:left;clear:left;width:38%;padding:5px 0;font-size:12.5px;color:var(--muted);}
+  .pd-kv > dd{margin:0 0 0 38%;padding:5px 0;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;}
+  .pd-kv .m{color:var(--muted);font-size:11.5px;}
+  .pd-kv .m.bad{color:var(--red);}
+  .pd-kv::after{content:"";display:block;clear:both;}
+
+  .pd-bars{list-style:none;margin:0;padding:2px 0 8px;}
+  .pd-bars li{display:grid;grid-template-columns:1fr 76px auto;align-items:center;gap:10px;padding:6px 0;font-size:13px;}
+  .pd-bars .lead{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pd-bars .track{height:6px;border-radius:3px;background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+  .pd-bars .fill{display:block;height:100%;background:var(--blue);}
+  .pd-bars .fill.unlimited{background:var(--green);}
+  .pd-bars .fill.pending{background:repeating-linear-gradient(45deg,var(--blue) 0 4px,var(--blue-bg) 4px 8px);}
+  .pd-bars .val{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .pd-bars .val strong{color:inherit;font-weight:600;}
+  .pd-bars .pill{grid-column:2 / -1;justify-self:end;}
+
+  .pd-list{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--line);}
+  .pd-list li{display:flex;align-items:baseline;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .pd-list li:last-child{border-bottom:none;}
+  .pd-list .lead{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:450;}
+  .pd-list .meta{color:var(--muted);font-size:11.5px;white-space:nowrap;flex-shrink:0;}
+
+  .pd-empty{padding:10px 0 4px;}
+  .pd-empty p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .pd-empty-line{grid-column:1 / -1;font-size:12.5px;color:var(--muted);}
+
+  .pd-more{display:block;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:500;color:var(--blue);}
+  .pd-more:hover{text-decoration:underline;}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.01em;padding:1px 7px;border-radius:9px;white-space:nowrap;}
+  .pill.approved{color:var(--green);background:var(--green-bg);}
+  .pill.pending{color:var(--orange);background:var(--orange-bg);}
+  .pill.rejected{color:var(--red);background:var(--red-bg);}
+  .pill.cancelled{color:var(--gray);background:var(--gray-bg);}
+  .pill.warn{color:var(--orange);background:var(--orange-bg);}
+
+  .dash-head-actions{display:flex;gap:8px;}
+
+  /* Leave policy editor: one labelled row per type. The <label>s are the
+     point of this block — the old <table> header could not label inputs that
+     lived in their own grid. */
+  .lp-row{display:flex;align-items:flex-end;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);transition:background .12s ease;}
+  .lp-row:last-child{border-bottom:none;}
+  .lp-row:hover{background:var(--panel);}
+  .lp-field{display:flex;flex-direction:column;gap:5px;}
+  .lp-grow{flex:1;min-width:0;}
+  .lp-narrow{width:104px;flex-shrink:0;}
+  .lp-row label{font-size:11.5px;font-weight:600;color:var(--muted);}
+  .lp-row .form-input{width:100%;}
+  .lp-days{width:92px;}
+  .lp-named{display:flex;align-items:center;gap:8px;}
+  .lp-named .form-input{flex:1;min-width:0;}
+  .lp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--border);}
+  .lp-dot-lg{width:11px;height:11px;}
+  .lp-dot-green{background:var(--green);} .lp-dot-amber{background:var(--orange);}
+  .lp-dot-red{background:var(--red);}     .lp-dot-blue{background:var(--blue);}
+  .lp-dot-purple{background:var(--purple);} .lp-dot-grey{background:var(--gray);}
+  .lp-dot-none{background:transparent;box-shadow:inset 0 0 0 1.5px var(--border);}
+
+  /* Paid is a switch, not a bare checkbox: it changes someone's salary, so it
+     should not look like a filter tick. */
+  .lp-paid{align-items:flex-start;}
+  .lp-switch{display:flex;align-items:center;height:32px;cursor:pointer;}
+  .lp-switch input{position:absolute;opacity:0;width:0;height:0;}
+  .lp-switch .lp-track{position:relative;display:block;width:38px;height:21px;border-radius:11px;background:var(--gray-bg);border:1px solid var(--border);transition:background .15s ease,border-color .15s ease;}
+  .lp-switch .lp-track::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--bg);box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s ease;}
+  .lp-switch input:checked + .lp-track{background:var(--green);border-color:var(--green);}
+  .lp-switch input:checked + .lp-track::after{transform:translateX(17px);}
+  .lp-switch input:focus-visible + .lp-track{outline:2px solid var(--blue);outline-offset:2px;}
+
+  .lp-inline{display:flex;align-items:center;gap:7px;}
+  .lp-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+
+  /* Icon picker: a native <details> collapsed to one glyph, so a 20-icon grid
+     costs no row height until it is opened. */
+  .lp-pick{position:relative;flex-shrink:0;}
+  .lp-pick summary{list-style:none;cursor:pointer;}
+  .lp-pick summary::-webkit-details-marker{display:none;}
+  .lp-pick-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--muted);transition:border-color .12s,color .12s,background .12s;}
+  .lp-pick-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .lp-pick[open] .lp-pick-btn{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .lp-icon-glyph{width:17px;height:17px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+  .lp-icon-blank{font-size:15px;line-height:1;color:var(--muted);}
+  .lp-pick-menu{position:absolute;z-index:60;top:calc(100% + 6px);left:0;display:grid;grid-template-columns:repeat(5,34px);gap:2px;padding:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.13);}
+  .lp-icon-opt{display:flex;align-items:center;justify-content:center;width:34px;height:30px;border-radius:7px;cursor:pointer;color:var(--muted);transition:background .1s,color .1s;}
+  .lp-icon-opt:hover{background:var(--panel);color:var(--text);}
+  .lp-icon-opt input{position:absolute;opacity:0;width:0;height:0;}
+  .lp-icon-opt:has(input:checked){background:var(--accent-soft);color:var(--accent);}
+  .lp-icon-opt:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:1px;}
+  .lp-icon-cell{display:flex;align-items:center;justify-content:center;}
+
+  .lp-save{white-space:nowrap;}
+  .lp-add{border:1px dashed var(--border);border-radius:12px;margin-top:12px;background:transparent;}
+  .lp-add:hover{background:var(--panel);}
+  .lp-none{padding:14px 16px;font-size:12.5px;color:var(--muted);}
+  @media(max-width:720px){
+    .lp-row{flex-wrap:wrap;align-items:flex-end;}
+    .lp-grow{flex:1 1 100%;}
+    .lp-days,.lp-narrow{width:calc(50% - 6px);flex:1 1 auto;}
+  }
 
   .dash-group{padding-top:10px;}
   .dash-group:first-of-type{padding-top:4px;}
@@ -730,12 +941,17 @@
     }
     if (e.target.closest('[data-sidebar-open]')) root.classList.add('sidebar-open');
     if (e.target.closest('[data-sidebar-close]')) root.classList.remove('sidebar-open');
+    var changelogBtn = e.target.closest('[data-changelog-open]');
+    if (changelogBtn) {
+      window.dispatchEvent(new CustomEvent('pq:changelog', { detail: { trigger: changelogBtn } }));
+    }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') root.classList.remove('sidebar-open');
   });
 })();
 </script>
+{% include "core/_changelog_modal.html" %}
 {% else %}
 <div class="auth-shell">
   {% block content_full_only %}{% endblock %}

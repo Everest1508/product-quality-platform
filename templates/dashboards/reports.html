@@ -19,12 +19,12 @@
         hx-swap="innerHTML"
         hx-push-url="true">
     <div class="form-group" style="margin:0;">
-      <label style="font-size:12px;font-weight:500;margin-bottom:4px;display:block;">From</label>
-      <input type="date" name="start_date" class="form-input" value="{{ start_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;">
+      <label style="font-size:12px;font-weight:500;margin-bottom:4px;display:block;" for="start_date">From</label>
+      <input id="start_date" type="date" name="start_date" class="form-input" value="{{ start_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;">
     </div>
     <div class="form-group" style="margin:0;">
-      <label style="font-size:12px;font-weight:500;margin-bottom:4px;display:block;">To</label>
-      <input type="date" name="end_date" class="form-input" value="{{ end_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;">
+      <label style="font-size:12px;font-weight:500;margin-bottom:4px;display:block;" for="end_date">To</label>
+      <input id="end_date" type="date" name="end_date" class="form-input" value="{{ end_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;">
     </div>
     <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">Generate report</button>
   </form>

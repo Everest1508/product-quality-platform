@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+
+{% block title %}Apply for Leave — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'leave:my_leave' %}">Leave</a>
+  <span class="sep">/</span>
+  <span class="current">Apply</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Apply for Leave</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Your approver will review this. Leave is charged in working days.</p>
+  </div>
+</div>
+
+<div id="apply-form">
+  {% include "leave/partials/_apply_form.html" %}
+</div>
+{% endblock %}

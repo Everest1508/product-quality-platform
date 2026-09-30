@@ -1,0 +1,114 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}My Leave — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'leave:my_leave' %}">Leave</a>
+  <span class="sep">/</span>
+  <span class="current">My leave</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>My Leave</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Your allowance for {{ year }}, and every request you have made.</p>
+  </div>
+  <div class="head-actions">
+    <a href="{% url 'leave:apply' %}" class="btn btn-primary">Apply for leave</a>
+  </div>
+</div>
+
+<div class="form-section-label">Allowance for {{ year }}</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:26px;">
+  {% for balance in balances %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+      <span class="lp-named">
+        {% icon balance.policy.icon "lp-icon-glyph" %}
+        <span class="lp-dot lp-dot-lg lp-dot-{{ balance.policy.color|default:'none' }}" aria-hidden="true"></span>
+        <strong>{{ balance.policy.name }}</strong>
+      </span>
+      {% if balance.policy.is_paid %}<span class="pill resolved">paid</span>
+      {% else %}<span class="pill closed">unpaid</span>{% endif %}
+    </div>
+    {% if balance.is_unlimited %}
+      <div style="font-size:24px;font-weight:600;margin-top:8px;">Unlimited</div>
+      <div class="field-hint">no annual cap · up to {{ balance.policy.max_consecutive_days|default:"any" }}{% if balance.policy.max_consecutive_days %} days per spell{% endif %}</div>
+    {% else %}
+      <div style="font-size:24px;font-weight:600;margin-top:8px;">
+        {{ balance.remaining_label }}
+        <span class="text-sm text-muted" style="font-weight:400;">of {{ balance.limit_label }} left</span>
+      </div>
+      <div class="field-hint">
+        {{ balance.approved_label }} approved{% if balance.has_pending %} · {{ balance.pending_label }} pending{% endif %}
+        {% if balance.policy.max_consecutive_days %} · max {{ balance.policy.max_consecutive_days|floatformat:"-2" }} at a time{% endif %}
+      </div>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="card">
+    <div class="text-sm text-muted">No leave types are configured for this company yet.</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="form-section-label">Requests</div>
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Dates</th>
+        <th>Days</th>
+        <th>Status</th>
+        <th>Decided by</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for leave in requests %}
+      <tr>
+        <td><strong>{{ leave.policy.name }}</strong></td>
+        <td>{{ leave.span_label }}</td>
+        <td>{{ leave.days_label }}</td>
+        <td>
+          {% if leave.status == 'pending' %}<span class="pill info">pending</span>
+          {% elif leave.status == 'approved' %}<span class="pill resolved">approved</span>
+          {% elif leave.status == 'rejected' %}<span class="pill closed">rejected</span>
+          {% else %}<span class="pill closed">cancelled</span>{% endif %}
+          {% if leave.is_half_day %}<span class="pill draft">half day</span>{% endif %}
+        </td>
+        <td>
+          {% if leave.decided_by %}{{ leave.decided_by.get_full_name|default:leave.decided_by.username }}
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td style="text-align:right;">
+          {% if leave.is_pending %}
+          <form method="post" action="{% url 'leave:cancel' leave.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm">Withdraw</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% if leave.decision_note %}
+      <tr>
+        <td colspan="6" class="field-hint" style="padding-top:0;">Note: {{ leave.decision_note }}</td>
+      </tr>
+      {% endif %}
+      {% empty %}
+      <tr>
+        <td colspan="6">
+          <div class="empty">
+            <h3>No leave requests yet</h3>
+            <p>Apply for leave and it will appear here.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
