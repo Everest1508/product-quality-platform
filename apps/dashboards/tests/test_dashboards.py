@@ -507,3 +507,59 @@ class PersonalDashboardTest(TestCase):
         response = self.get()
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response.url)
+
+
+class UnreadableDecimalTakesDownTheDashboardTest(TestCase):
+    """The production 500 behind `InvalidOperation at /dashboards/`.
+
+    A single DecimalField cell that SQLite's converter cannot read fails while
+    the cursor is being built, so the page dies before any of DashboardView's own
+    logic runs -- there is no query the view can be rewritten to avoid. The audit
+    command is the repair path, so that is what this pins.
+    """
+
+    def setUp(self):
+        from decimal import Decimal
+
+        from django.db import connection
+
+        from apps.payroll.models import PayrollProfile
+
+        self.decimal = Decimal
+        self.connection = connection
+        self.client = Client()
+        self.user = User.objects.create_user("alice", "alice@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=self.user, company=self.company, role="owner")
+        self.client.login(username="alice", password="pass1234")
+        self.profile = PayrollProfile.objects.create(
+            company=self.company,
+            user=self.user,
+            monthly_salary=self.decimal("50000.00"),
+            is_on_payroll=True,
+        )
+
+    def test_the_home_page_raises_on_one_unreadable_salary(self):
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE payroll_payrollprofile SET monthly_salary = ? WHERE id = ?",
+                [float("inf"), self.profile.pk],
+            )
+        with self.assertRaises(Exception) as ctx:
+            self.client.get(reverse("dashboards:index"))
+        self.assertEqual(type(ctx.exception).__name__, "InvalidOperation")
+
+    def test_audit_decimals_repair_restores_the_home_page(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE payroll_payrollprofile SET monthly_salary = ? WHERE id = ?",
+                [float("inf"), self.profile.pk],
+            )
+        buffer = StringIO()
+        call_command("audit_decimals", "--fix", "--set", "0.00", stdout=buffer)
+        self.assertIn("Repaired 1 cell", buffer.getvalue())
+        self.assertEqual(self.client.get(reverse("dashboards:index")).status_code, 200)
