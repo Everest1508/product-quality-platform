@@ -13,13 +13,30 @@
     <tbody>
       <tr>
         {% for day in days %}
-        <td class="att-cell{% if day.is_weekend %} att-weekend{% endif %}{% if day.is_today %} att-today{% endif %}{% if day.on_leave %} att-leave{% elif not day.record or not day.record.check_in %} att-absent{% endif %}">
+        <td class="att-cell{% if day.is_weekend %} att-weekend{% endif %}{% if day.is_today %} att-today{% endif %}{% if day.on_leave %} att-leave{% elif not day.record or not day.record.check_in %} att-absent{% endif %}"
+            {% if day.record and day.record.is_open %}title="Set the check-out"{% endif %}>
           {% if day.record and day.record.check_in %}
+            {# An unclosed day links straight to its correction form: the grid
+               has no room for an inline one, and making the admin leave for the
+               team page to fix the cell they are looking at is the wrong way
+               round. #}
+            {% if day.record.is_open %}
+            <a href="{% url 'attendance:attendance_edit' day.record.pk %}?next={{ request.get_full_path|urlencode }}"
+               title="{% if day.record.is_stale %}No check-out recorded — set it{% else %}On the clock — edit punches{% endif %}"
+               style="color:inherit;text-decoration:none;display:block;">
+            {% endif %}
             <span class="att-hours">{{ day.net_minutes }}m</span>
             <div class="att-range">{{ day.record.check_in|date:"H:i" }}{% if day.record.check_out %}–{{ day.record.check_out|date:"H:i" }}{% endif %}</div>
             {% if day.late_label %}<span class="att-flag att-flag-late">{{ day.late_label }}</span>{% endif %}
-            {% if day.record.is_open %}<span class="att-flag">open</span>{% endif %}
+            {# The cell is ~30px wide, so the flag stays terse and the title
+               carries the meaning. "open" means genuinely on the clock today;
+               an earlier day that was never closed out says "no out", because
+               the two used to read identically and a forgotten punch went
+               unnoticed for weeks. The whole cell links to the edit form. #}
+            {% if day.record.is_stale %}<span class="att-flag" style="color:var(--orange);" title="Checked in {{ day.record.date|date:"M d" }} and never checked out — {{ day.record.open_days }} day(s) open">no out</span>
+            {% elif day.record.is_open_today %}<span class="att-flag">open</span>{% endif %}
             {% if day.record.is_edited %}<span class="att-flag att-flag-edit">edited</span>{% endif %}
+            {% if day.record.is_open %}</a>{% endif %}
           {% elif day.on_leave %}
             <span class="att-hours">leave</span>
           {% else %}
@@ -38,5 +55,6 @@
   <span>Absent: <strong style="color:var(--text);">{{ absent_days }}</strong> day(s)</span>
   <span>On leave: <strong style="color:var(--text);">{{ leave_days }}</strong> day(s)</span>
   <span>Late: <strong style="color:var(--text);">{{ late_days }}</strong> day(s)</span>
+  {% if open_days %}<span>No check-out: <strong style="color:var(--orange);">{{ open_days }}</strong> day(s)</span>{% endif %}
   <span>Total: <strong style="color:var(--text);">{{ total_formatted }}</strong></span>
 </div>

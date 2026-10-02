@@ -1,0 +1,16 @@
+{% comment %}
+How late the current punch was, in words.
+
+Its own partial because it appears in both the "on the clock" and "checked out"
+states, and a single penalty being described two different ways in two states of
+the same panel is how one of them ends up lying. It quotes `late_band` /
+`late_minutes`, which come from `late_penalty_for` — the same call that builds
+the payslip line — so the panel cannot disagree with the charge.
+{% endcomment %}
+{% if late_band == "half_day" %}
+  <span class="punch-late punch-late-hard">{{ late_minutes }}m late · half day</span>
+{% elif late_band %}
+  <span class="punch-late">{{ late_minutes }}m late</span>
+{% elif today_record and today_record.check_in %}
+  <span class="punch-ontime">on time</span>
+{% endif %}

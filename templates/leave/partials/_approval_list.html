@@ -21,7 +21,17 @@
         </td>
         <td>{{ leave.policy.name }}</td>
         <td>{{ leave.span_label }}</td>
-        <td>{{ leave.days_label }}{% if leave.is_half_day %} <span class="pill draft">half</span>{% endif %}</td>
+        <td>
+          {{ leave.days_label }}{% if leave.is_half_day %} <span class="pill draft">half</span>{% endif %}
+          {# The split, on the row rather than only in the dialog: a queue of
+             twenty is scanned, not opened one at a time, and "5 days" alone
+             cannot be approved -- somebody has to know 3 of them are paid. #}
+          <div class="sub">
+            {% if leave.is_fully_paid %}<span class="pill resolved">paid</span>
+            {% elif leave.is_fully_unpaid %}<span class="pill closed">unpaid</span>
+            {% else %}<span class="pill progress">{{ leave.split_label }}</span>{% endif %}
+          </div>
+        </td>
         <td style="max-width:240px;">{{ leave.reason|default:"—"|truncatechars:80 }}</td>
         <td>
           {% if leave.status == 'pending' %}<span class="pill info">pending</span>
@@ -31,15 +41,14 @@
         </td>
         {% if status == 'pending' %}
         <td style="text-align:right;white-space:nowrap;">
-          <form method="post" action="{% url 'leave:decision' leave.pk 'approve' %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-primary">Approve</button>
-          </form>
-          <form method="post" action="{% url 'leave:decision' leave.pk 'reject' %}" style="display:inline;">
-            {% csrf_token %}
-            <input type="hidden" name="note" value="">
-            <button type="submit" class="btn btn-sm">Reject</button>
-          </form>
+          {# One Review button opens the shared dialog, which carries the dates,
+             the paid/unpaid split and the note. The approve/reject pair that
+             used to sit here could not express a paid decision at all -- it
+             posted the type's `is_paid` and left the approver no say. #}
+          <button type="button" class="btn btn-sm btn-primary"
+                  onclick="window.openLeaveDecision && window.openLeaveDecision({{ leave.pk }})">
+            Review
+          </button>
         </td>
         {% endif %}
       </tr>

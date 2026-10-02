@@ -357,8 +357,9 @@ class PersonalDashboardTest(TestCase):
         self.assertContains(self.get(), "pd-card pd-queue")
 
     def test_attendance_reflects_only_my_own_punches(self):
-        from datetime import date, datetime, time
+        from datetime import date, datetime, time, timedelta
         from django.utils import timezone as tz
+        from apps.attendance import service as attendance_service
         from apps.attendance.models import AttendanceRecord
 
         today = tz.localdate()
@@ -366,17 +367,66 @@ class PersonalDashboardTest(TestCase):
         AttendanceRecord.objects.create(
             company=self.company, user=self.dev, date=today, check_in=at
         )
-        # A colleague working hard today must not move my numbers.
+        # A colleague working a full day today must not move my numbers.
         other = User.objects.create_user("mate", "mate@test.com", "pass1234")
         Membership.objects.create(user=other, company=self.company, role="developer")
+        colleague_minutes = 8 * 60
+        colleague_out = at + timedelta(minutes=colleague_minutes)
         AttendanceRecord.objects.create(
-            company=self.company, user=other, date=today, check_in=at, check_out=at
+            company=self.company, user=other, date=today,
+            check_in=at, check_out=colleague_out,
         )
 
         response = self.get()
         self.assertEqual(response.context["attendance"]["present_days"], 1)
-        self.assertEqual(response.context["attendance"]["worked_minutes"], 0)
+
+        # An unclosed day is counted from check-in and capped at one working day,
+        # so it is no longer 0 -- see `attendance.service.effective_span_for`.
+        # It is deliberately not compared against a literal: that number depends
+        # on the hour the suite happens to run, which is how a test ends up
+        # passing for a reason nobody chose.
+        record = AttendanceRecord.objects.get(
+            company=self.company, user=self.dev, date=today
+        )
+        expected = attendance_service.effective_span_for(
+            record, attendance_service.shift_for(self.company)
+        )
+        self.assertEqual(
+            response.context["attendance"]["worked_minutes"], expected
+        )
+        # The isolation this test exists for: the colleague's full day is absent,
+        # so the total is nowhere near their hours plus mine.
+        self.assertLess(expected, colleague_minutes)
         self.assertContains(response, "Punch out")
+
+    def test_my_month_total_counts_a_day_i_forgot_to_check_out_of(self):
+        """The whole reason an unclosed day is worth anything.
+
+        Scoring it 0 is not neutral: it silently costs the employee the day
+        until an admin notices, which is the case nobody notices.
+        """
+        from datetime import date, datetime, time, timedelta
+        from django.utils import timezone as tz
+        from apps.attendance.models import AttendanceRecord
+        from apps.attendance.service import net_minutes_for, shift_for
+
+        today = tz.localdate()
+        start = tz.make_aware(
+            datetime.combine(today - timedelta(days=1), time(10, 0))
+        )
+        record = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev,
+            date=today - timedelta(days=1), check_in=start,
+        )
+        record.check_in = tz.now() - timedelta(minutes=300)
+        record.save()
+
+        response = self.get()
+        self.assertEqual(
+            response.context["attendance"]["worked_minutes"],
+            net_minutes_for(record, shift_for(self.company)),
+        )
+        self.assertGreater(response.context["attendance"]["worked_minutes"], 0)
 
     def test_payroll_shows_my_salary_not_a_colleagues(self):
         from datetime import date

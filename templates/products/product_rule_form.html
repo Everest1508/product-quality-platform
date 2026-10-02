@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 {% block title %}New Rule — {{ product.name }}{% endblock %}
 {% block content %}
 <div class="head">
@@ -10,25 +11,17 @@
     {% csrf_token %}
     <input type="hidden" name="product" value="{{ product.pk }}">
     <div class="form-group">
-      <label for="name">Rule Name</label>
+      <span class="dd-label">Rule Name</span>
       <input id="name" type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" required>
     </div>
     <div class="grid-2">
       <div class="form-group">
         <label for="trigger_type">Trigger Type</label>
-        <select id="trigger_type" name="trigger_type" class="form-input">
-          <option value="error_threshold" {% if form.trigger_type.value == "error_threshold" %}selected{% endif %}>Error Threshold</option>
-        </select>
+        {% dropdown "trigger_type" "error_threshold:Error Threshold"|opts form.trigger_type.value placeholder="Error Threshold" label="Rule Name" %}
       </div>
       <div class="form-group">
-        <label for="severity">Severity Filter (optional)</label>
-        <select id="severity" name="severity" class="form-input">
-          <option value="">All severities</option>
-          <option value="critical" {% if form.severity.value == "critical" %}selected{% endif %}>Critical</option>
-          <option value="high" {% if form.severity.value == "high" %}selected{% endif %}>High</option>
-          <option value="medium" {% if form.severity.value == "medium" %}selected{% endif %}>Medium</option>
-          <option value="low" {% if form.severity.value == "low" %}selected{% endif %}>Low</option>
-        </select>
+        <span class="dd-label">Severity Filter (optional)</span>
+        {% dropdown "severity" ":All severities|critical:Critical|high:High|medium:Medium|low:Low"|opts form.severity.value placeholder="All severities" label="Severity Filter (optional)" %}
       </div>
     </div>
     <div class="grid-2">
@@ -43,20 +36,12 @@
     </div>
     <div class="grid-2">
       <div class="form-group">
-        <label for="action">Action</label>
-        <select id="action" name="action" class="form-input">
-          <option value="create_ticket" {% if form.action.value == "create_ticket" %}selected{% endif %}>Create Ticket</option>
-          <option value="notify_only" {% if form.action.value == "notify_only" %}selected{% endif %}>Notify Only</option>
-        </select>
+        <span class="dd-label">Action</span>
+        {% dropdown "action" "create_ticket:Create Ticket|notify_only:Notify Only"|opts form.action.value placeholder="Create Ticket" label="Action" %}
       </div>
       <div class="form-group">
-        <label for="assign_to">Assign To (optional)</label>
-        <select id="assign_to" name="assign_to" class="form-input">
-          <option value="">Nobody</option>
-          {% for user in form.fields.assign_to.queryset %}
-          <option value="{{ user.pk }}" {% if form.assign_to.value|stringformat:"d" == user.pk|stringformat:"d" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
-          {% endfor %}
-        </select>
+        <span class="dd-label">Assign To (optional)</span>
+        {% dropdown "assign_to" form.fields.assign_to.queryset|obj_pairs:"pk:get_full_name" form.assign_to.value placeholder="Nobody" label="Assign To (optional)" empty_value="" %}
       </div>
     </div>
     <div class="form-group">

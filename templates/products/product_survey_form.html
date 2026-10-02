@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 {% block title %}New Survey — {{ product.name }}{% endblock %}
 {% block content %}
 <div class="head">
@@ -20,20 +21,12 @@
     </div>
     <div class="grid-2">
       <div class="form-group">
-        <label for="survey_type">Survey Type</label>
-        <select id="survey_type" name="survey_type" class="form-input">
-          <option value="nps" {% if form.survey_type.value == "nps" %}selected{% endif %}>Net Promoter Score (NPS)</option>
-          <option value="csat" {% if form.survey_type.value == "csat" %}selected{% endif %}>Customer Satisfaction (CSAT)</option>
-          <option value="ces" {% if form.survey_type.value == "ces" %}selected{% endif %}>Customer Effort Score (CES)</option>
-        </select>
+        <span class="dd-label">Survey Type</span>
+        {% dropdown "survey_type" "nps:Net Promoter Score (NPS)|csat:Customer Satisfaction (CSAT)|ces:Customer Effort Score (CES)"|opts form.survey_type.value placeholder="Net Promoter Score (NPS)" label="Survey Type" %}
       </div>
       <div class="form-group">
-        <label for="status">Status</label>
-        <select id="status" name="status" class="form-input">
-          <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Draft</option>
-          <option value="active" {% if form.status.value == "active" %}selected{% endif %}>Active</option>
-          <option value="closed" {% if form.status.value == "closed" %}selected{% endif %}>Closed</option>
-        </select>
+        <span class="dd-label">Status</span>
+        {% dropdown "status" "draft:Draft|active:Active|closed:Closed"|opts form.status.value placeholder="Draft" label="Status" %}
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:20px;">

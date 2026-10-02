@@ -1,4 +1,4 @@
-{% if ticket.status == 'open' %}<span class="pill open">Open</span>
+{% load dropdown_tags %}{% if ticket.status == 'open' %}<span class="pill open">Open</span>
 {% elif ticket.status == 'assigned' %}<span class="pill assigned">Assigned</span>
 {% elif ticket.status == 'in_progress' %}<span class="pill progress">In progress</span>
 {% elif ticket.status == 'testing' %}<span class="pill testing">Testing</span>
@@ -9,11 +9,8 @@
       hx-post="{% url 'tickets:ticket_status' pk=ticket.pk %}"
       hx-target="#detail-status"
       hx-swap="innerHTML"
+      hx-trigger="change"
       style="margin-top:6px;">
   {% csrf_token %}
-  <select name="status" class="form-input" style="font-size:12px;padding:4px 6px;" hx-trigger="change" hx-post="{% url 'tickets:ticket_status' pk=ticket.pk %}" hx-target="#detail-status" hx-swap="innerHTML">
-    {% for value, label in ticket.valid_next_statuses %}
-    <option value="{{ value }}" {% if ticket.status == value %}selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-  </select>
+  {% dropdown "status" ticket.valid_next_statuses ticket.status placeholder="Status" label="Change status" %}
 </form>

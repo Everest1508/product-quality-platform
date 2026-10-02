@@ -12,6 +12,7 @@ from apps.accounts.models import Membership
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
+from apps.dsr.service import submission_window
 
 User = get_user_model()
 
@@ -25,10 +26,18 @@ def _parse_date(date_str, default):
         return default
 
 
+def _is_privileged(user, company):
+    membership = Membership.objects.filter(user=user, company=company).first()
+    return bool(membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN))
+
+
 def _get_dsr_context(company, target_user, selected_date, is_privileged):
     today = timezone.localdate()
     prev_date = selected_date - timedelta(days=1)
     next_date = selected_date + timedelta(days=1)
+    # Never offer a forward link past today: future days are closed to everyone.
+    next_date = min(next_date, today)
+    can_submit, locked_reason = submission_window(selected_date, is_privileged)
 
     entries = DSREntry.objects.filter(
         company=company,
@@ -86,6 +95,8 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
         "yesterday": today - timedelta(days=1),
         "prev_date": prev_date,
         "next_date": next_date,
+        "can_submit": can_submit,
+        "locked_reason": locked_reason,
         "target_user": target_user,
         "is_privileged": is_privileged,
         "entries": entries,
@@ -111,10 +122,7 @@ class DSRSheetView(CompanyMemberRequiredMixin, View):
         today = timezone.localdate()
         selected_date = _parse_date(request.GET.get("date"), today)
 
-        membership = Membership.objects.filter(user=request.user, company=request.company).first()
-        is_privileged = bool(
-            membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
-        )
+        is_privileged = _is_privileged(request.user, request.company)
 
         target_user_id = request.GET.get("user_id")
         if target_user_id and is_privileged:
@@ -134,12 +142,17 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         entry = get_object_or_404(DSREntry, pk=pk, company=request.company)
 
-        membership = Membership.objects.filter(user=request.user, company=request.company).first()
-        is_privileged = bool(
-            membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
-        )
+        is_privileged = _is_privileged(request.user, request.company)
         if entry.user != request.user and not is_privileged:
             return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
+
+        # Decided before any write: this POST mutates a stored sheet.
+        can_submit, reason = submission_window(entry.date, is_privileged)
+        if not can_submit:
+            if request.headers.get("HX-Request") == "true":
+                return JsonResponse({"ok": False, "error": reason}, status=403)
+            messages.error(request, reason)
+            return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
 
         status = request.POST.get("status", entry.status)
         category = request.POST.get("category", entry.category)
@@ -183,16 +196,23 @@ class DSREntryDeleteView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         entry = get_object_or_404(DSREntry, pk=pk, company=request.company)
 
-        membership = Membership.objects.filter(user=request.user, company=request.company).first()
-        is_privileged = bool(
-            membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
-        )
+        is_privileged = _is_privileged(request.user, request.company)
         if entry.user != request.user and not is_privileged:
             return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
 
+        # Deleting is a mutation too, so the same window applies.
+        can_submit, reason = submission_window(entry.date, is_privileged)
+        if not can_submit:
+            if request.headers.get("HX-Request") == "true":
+                return JsonResponse({"ok": False, "error": reason}, status=403)
+            messages.error(request, reason)
+            return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
+
         entry_date = entry.date
         target_user = entry.user
+        task_name = entry.task_name
         entry.delete()
+        messages.success(request, f"Deleted \"{task_name}\".")
 
         if request.headers.get("HX-Request") == "true":
             context = _get_dsr_context(request.company, target_user, entry_date, is_privileged)
@@ -206,16 +226,23 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
         today = timezone.localdate()
         target_date = _parse_date(request.GET.get("date") or request.POST.get("date"), today)
 
-        membership = Membership.objects.filter(user=request.user, company=request.company).first()
-        is_privileged = bool(
-            membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN)
-        )
+        is_privileged = _is_privileged(request.user, request.company)
 
         target_user_id = request.GET.get("user_id") or request.POST.get("user_id")
         if target_user_id and is_privileged:
             target_user = get_object_or_404(User, pk=target_user_id, memberships__company=request.company)
         else:
             target_user = request.user
+
+        # `date` arrives from the query string, so this is the one place that
+        # has to refuse a day the sheet cannot accept rather than trust the UI.
+        can_submit, reason = submission_window(target_date, is_privileged)
+        if not can_submit:
+            messages.error(request, reason)
+            if request.headers.get("HX-Request") == "true":
+                context = _get_dsr_context(request.company, target_user, target_date, is_privileged)
+                return render(request, "dsr/partials/_dsr_table.html", context)
+            return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
 
         form = DSREntryForm(request.POST, id_prefix="dsr-bar")
         if form.is_valid():

@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}Products — PQ Platform{% endblock %}
 
@@ -24,13 +25,7 @@
       {% if view_mode %}<input type="hidden" name="view" value="{{ view_mode }}">{% endif %}
     </form>
 
-    <select aria-label="Sort" class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
-      <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
-      <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>Name Z-A</option>
-      <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
-      <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
-      <option value="-versions" {% if current_sort == '-versions' %}selected{% endif %}>Most versions</option>
-    </select>
+    {% dropdown "sort" "name:Name A-Z|-name:Name Z-A|-created:Newest first|created:Oldest first|-versions:Most versions"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
   </div>
 
   <div class="view-toggle">

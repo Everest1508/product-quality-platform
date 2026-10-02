@@ -1,4 +1,4 @@
-{% comment %}
+{% load dropdown_tags %}{% comment %}
 Policy editor: one row per leave type, then one row to add a new one.
 
 Deliberately a grid of labelled fields, not a <table>. The previous version was
@@ -44,14 +44,10 @@ question and is answered on /leave/ and the dashboard, not on the admin form.
       </div>
 
       <div class="lp-field lp-narrow">
-        <label for="lp-colour-{{ policy.pk }}">Colour</label>
+        <span class="dd-label">Colour</span>
         <div class="lp-inline">
           <span class="lp-dot lp-dot-{{ policy.color|default:'none' }}" aria-hidden="true"></span>
-          <select id="lp-colour-{{ policy.pk }}" name="color" class="form-input">
-            {% for token, label in model.COLOR_TOKENS %}
-              <option value="{{ token }}" {% if policy.color == token %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
+          {% dropdown "color" model.COLOR_TOKENS policy.color placeholder="No colour" label="Colour" empty_value="" %}
         </div>
       </div>
 
@@ -96,14 +92,10 @@ question and is answered on /leave/ and the dashboard, not on the admin form.
   </div>
 
   <div class="lp-field lp-narrow">
-    <label for="lp-new-colour">Colour</label>
+    <span class="dd-label">Colour</span>
     <div class="lp-inline">
       <span class="lp-dot lp-dot-none" aria-hidden="true"></span>
-      <select id="lp-new-colour" name="color" class="form-input">
-        {% for token, label in model.COLOR_TOKENS %}
-          <option value="{{ token }}">{% if token %}{{ label }}{% else %}No colour{% endif %}</option>
-        {% endfor %}
-      </select>
+      {% dropdown "color" model.COLOR_TOKENS "" placeholder="No colour" label="Colour" empty_value="" %}
     </div>
   </div>
 

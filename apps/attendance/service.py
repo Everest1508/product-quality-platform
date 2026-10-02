@@ -13,6 +13,23 @@ from apps.attendance.models import (
 from apps.leave.service import approved_leave_map
 
 
+def unclosed_days(company, user):
+    """Days checked in but never closed out, newest first.
+
+    Query rather than a filter on `is_stale`, which is a property. This is the
+    punch panel's warning list, so it deliberately spans **every** month, not
+    the one currently being viewed: a punch from last month still costs the
+    employee the days between check-in and closing time until it is fixed.
+    """
+    return AttendanceRecord.objects.filter(
+        company=company,
+        user=user,
+        check_in__isnull=False,
+        check_out__isnull=True,
+        date__lt=timezone.localdate(),
+    ).order_by("-date")
+
+
 def get_today_record(company, user):
     return AttendanceRecord.objects.filter(
         company=company, user=user, date=timezone.localdate()
@@ -37,7 +54,7 @@ def get_who_is_in(company):
             "user": record.user,
             "record": record,
             "role": _role_for(record.user, company),
-            "is_stale": record.date < timezone.localdate(),
+            "is_stale": record.is_stale,
         }
         for record in records
     ]
@@ -61,6 +78,8 @@ def _blank_row(user, on_leave=None):
         "days": [],
         "present_days": 0,
         "absent_days": 0,
+        # Left-open days that were never closed out. Distinct from `open_days`
+        # in a monthly row, which counted every unclosed day including today's.
         "open_days": 0,
         "total_minutes": 0,
         "late_days": 0,
@@ -123,8 +142,9 @@ def get_monthly_rows(company, year, month, user=None):
             record.user_id, _blank_row(record.user)
         )
         row["days"].append(record)
-        if record.is_open:
+        if record.is_stale:
             row["open_days"] += 1
+
         if record.check_in is not None:
             row["present_days"] += 1
         else:
@@ -174,6 +194,7 @@ def get_month_grid(company, year, month, user):
             "late_label": late_label_for(record, shift)
             if record and record.check_in
             else None,
+            "is_unclosed": bool(record and record.is_stale),
         })
         cursor += timedelta(days=1)
 
@@ -189,6 +210,8 @@ def get_month_grid(company, year, month, user):
         ),
         "leave_days": sum(1 for d in days if d["on_leave"]),
         "late_days": sum(1 for d in days if d["late_label"]),
+        # Only days that are genuinely unclosed, not days still being worked.
+        "open_days": sum(1 for d in days if d["is_unclosed"]),
     }
 
 
@@ -227,6 +250,33 @@ def shift_for(company):
     return shift
 
 
+def effective_span_for(record, shift=None):
+    """The span a day is worth for reporting, even if nobody closed it out.
+
+    An unclosed record is not zero hours: the employee demonstrably worked from
+    check-in, and scoring the day 0 quietly costs them a day's pay until an admin
+    happens to notice. So an open day counts elapsed time -- **capped at
+    `shift.worked_minutes_per_day`**, i.e. assume they left at closing time.
+
+    The cap is not optional. Elapsed time is measured from check-in to *now*, so
+    without it a forgotten punch accrues hours forever and one unclosed record
+    from last month reports 300h in a 22-working-day month.
+
+    This cannot move anyone's pay: payslips price payable *days*
+    (`payroll/service`), not hours, and `late_penalties_in_period` only reads
+    `check_in`. It changes what the timesheet and the dashboard report.
+
+    Falls back to 0 for a record with no check_in: nobody arrived, so there is
+    nothing to count, and `lateness_for` already treats that as not-late.
+    """
+    if record.is_complete:
+        return record.worked_minutes
+    if not record.is_open:
+        return 0
+    shift = shift or shift_for(record.company)
+    return min(record.elapsed_minutes, shift.worked_minutes_per_day)
+
+
 def net_minutes_for(record, shift):
     """Worked minutes for one day, less the unpaid scheduled break.
 
@@ -238,8 +288,13 @@ def net_minutes_for(record, shift):
     The break is only deducted from a day long enough to contain it. Someone
     who leaves at 11:00 has not sat out a 60 minute break, and taking one off
     anyway would under-report a short day that is already short.
+
+    Note how `effective_span_for`'s cap lands *below* this threshold on
+    purpose: `worked_minutes_per_day` is already net of the break, so a capped
+    unclosed day passes through here un-deducted and reports exactly the day.
+    Do not "simplify" the comparison to `<=`.
     """
-    span = record.worked_minutes
+    span = effective_span_for(record, shift)
     if span < shift.worked_minutes_per_day + shift.break_minutes:
         return span
     return max(0, span - shift.break_minutes)

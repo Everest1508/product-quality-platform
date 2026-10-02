@@ -396,3 +396,117 @@ class AssigneeDropdownLabellingTest(TicketViewTest):
         body = self.client.get(reverse("tickets:ticket_create")).content.decode()
         self.assertNotIn('aria-label="Remove assignee"', body)
         self.assertIn("'Remove ' + opt.name", body)
+
+
+class TicketFilterDropdownTest(TestCase):
+    """The filter bar's choice controls are `<details>` + radios, not `<select>`.
+
+    The point of that swap is that the values keep posting with no JavaScript
+    and still fire a native `change` for the htmx form, so these pin the
+    rendered contract rather than the styling.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user("alice", "alice@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=self.user, company=self.company, role="owner")
+        self.product = Product.objects.create(name="App", slug="app", company=self.company)
+        self.client.login(username="alice", password="pass1234")
+
+    def _bar(self, query=""):
+        html = self.client.get(reverse("tickets:ticket_list") + query).content.decode()
+        start = html.index("<form class=\"toolbar\"")
+        # The end has to be searched from `start`: an earlier </form> belongs to
+        # the topbar, and slicing to it yields an empty string.
+        return html[start:html.index("</form>", start)]
+
+    def test_the_filter_bar_has_no_native_select_left(self):
+        self.assertNotIn("<select", self._bar())
+
+    def test_every_filter_still_posts_a_key_even_when_left_alone(self):
+        """An unchecked radio group submits nothing, so a filter the user never
+        touches would vanish from the query string instead of arriving as "".
+        """
+        bar = self._bar()
+        for name in ("status", "type", "priority", "assigned"):
+            self.assertRegex(bar, rf'name="{name}" value="[^"]*"[^>]*checked', msg=name)
+        self.assertRegex(bar, r'name="sort" value="[^"]*"[^>]*checked')
+
+    def test_the_current_filter_is_prechecked_so_the_page_round_trips(self):
+        bar = self._bar("?type=feature&priority=low")
+        self.assertIn('name="type" value="feature" data-label="Feature" checked', bar)
+        self.assertIn('name="priority" value="low" data-label="Low" checked', bar)
+
+    def test_the_assignee_filter_offers_the_two_sentinels_and_every_member(self):
+        """`assigned` means three different things, not one.
+
+        `TicketListView` resolves it as "me" -> me, "unassigned" -> no
+        assignees, anything else -> `assignees__id=<pk>`, so the dropdown has to
+        offer all three. Replacing the `<select>` with a hand-written list of
+        sentinels silently dropped the member branch, which is the one an admin
+        actually filters by.
+        """
+        mate = User.objects.create_user("bob", "bob@test.com", "pass1234")
+        Membership.objects.create(
+            user=mate, company=self.company, role="developer"
+        )
+        bar = self._bar()
+        for value in ("me", "unassigned", str(mate.pk)):
+            with self.subTest(value=value):
+                self.assertIn(f'name="assigned" value="{value}"', bar)
+        # No first/last name is set, so `obj_pairs` falls back to the username.
+        # This is the assertion that would catch a bound-method repr leaking.
+        self.assertIn(">bob</span>", bar)
+        self.assertNotIn("bound method", bar)
+
+    def test_a_member_filter_is_still_accepted_by_the_view(self):
+        """End-to-end half of the above: the member option is not decorative."""
+        mate = User.objects.create_user("bob", "bob@test.com", "pass1234")
+        Membership.objects.create(
+            user=mate, company=self.company, role="developer"
+        )
+        Ticket.objects.create(
+            company=self.company, product=self.product, title="Mine",
+            created_by=self.user,
+        )
+        # `assigned_to` is a separate FK kept in sync by `set_assignees`, and the
+        # view filters on the M2M -- so the write has to go through the real path.
+        theirs = Ticket.objects.create(
+            company=self.company, product=self.product, title="Theirs",
+            created_by=self.user,
+        )
+        theirs.set_assignees([mate])
+        # The rows render outside the toolbar form, in #ticket-results.
+        page = self.client.get(
+            reverse("tickets:ticket_list") + f"?assigned={mate.pk}"
+        ).content.decode()
+        self.assertIn("Theirs", page)
+        self.assertNotIn("Mine", page)
+        self.assertEqual(theirs.assigned_to_id, mate.pk)
+
+        bar = self._bar(f"?assigned={mate.pk}")
+        # The choice has to survive the round trip, and the closed trigger has
+        # to name the person rather than fall back to the placeholder.
+        self.assertIn(
+            f'name="assigned" value="{mate.pk}" data-label="bob" checked', bar
+        )
+        self.assertIn(">bob</span>", bar)
+
+
+    def test_an_all_filter_is_a_real_option_rather_than_a_missing_key(self):
+        bar = self._bar("?type=")
+        self.assertIn('name="type" value="" data-label="All types" checked', bar)
+
+    def test_the_trigger_shows_the_current_value_without_javascript(self):
+        bar = self._bar("?type=question")
+        self.assertIn("data-dd-label>Question<", bar)
+
+    def test_filtering_still_narrows_the_list(self):
+        Ticket.objects.create(company=self.company, title="A bug", created_by=self.user,
+                              status="open", ticket_type="bug")
+        Ticket.objects.create(company=self.company, title="A feature", created_by=self.user,
+                              status="open", ticket_type="feature")
+        html = self.client.get(reverse("tickets:ticket_list") + "?type=feature").content.decode()
+        self.assertIn("A feature", html)
+        self.assertNotIn("A bug", html)

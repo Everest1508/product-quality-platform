@@ -8,6 +8,12 @@ venv/
 media/
 staticfiles/
 *.md
+# ...except the changelog, which the app reads at runtime to fill the sidebar
+# "What's new" dialog. The `*.md` line above dropped it from the image, and
+# because a missing changelog is rendered as an empty dialog rather than an
+# error, production simply had no release notes at all. Keep the negation
+# *after* `*.md` -- Docker applies patterns in order and the last match wins.
+!CHANGELOG.md
 .dockerignore
 Dockerfile
 docker-compose.yml

@@ -3,6 +3,31 @@ from django.utils import timezone
 from apps.dsr.models import DSREntry
 
 
+def submission_window(day, is_privileged=False):
+    """Whether a DSR day still accepts writes, and why not when it doesn't.
+
+    A DSR day is submitted on the day itself, so it closes when the local
+    calendar rolls over: at 23:59 local `today == day` and the sheet is still
+    open, and at 00:00 the same sheet becomes a past day. That is the
+    "submit by 11:59pm" boundary -- it is derived from the local date rather
+    than a stored cutoff, so it cannot drift out of step with the timezone.
+
+    Past days stay readable but read-only, so an earlier sheet can be checked
+    and not rewritten. Owners and admins are the override for a forgotten or
+    mistyped entry. Future days are closed to *everyone*: hours cannot be
+    worked yet, and there is no business reason for an admin to pre-log them,
+    so granting an override there would only let bad data in.
+
+    Returns ``(can_submit, reason)``; ``reason`` is user-facing copy.
+    """
+    today = timezone.localdate()
+    if day > today:
+        return False, "That day has not happened yet. You can only log work up to today."
+    if day < today and not is_privileged:
+        return False, "This day is closed. It stays readable, but only today can be edited."
+    return True, ""
+
+
 def auto_log_ticket_dsr(ticket, actor=None):
     """Automatically log or update a DSR entry when a ticket is completed/resolved."""
     if ticket.status not in ["resolved", "closed"]:

@@ -576,31 +576,52 @@ class Command(BaseCommand):
         shift_start = timezone.make_aware(
             datetime.combine(today, shift.start_time)
         )
-        # Never seed an arrival in the future if the command runs before the
-        # shift does; fall back to `now - 1h` in that case.
-        latest_arrival = shift_start + timedelta(minutes=random.randint(0, 10))
-        if self.now <= latest_arrival:
-            latest_arrival = self.now - timedelta(hours=1)
+        # Arrivals land in a plausible band *around* the shift start: a little
+        # early, on time, or genuinely late. The previous code subtracted up to
+        # four hours from the start, which avoided late penalties by inventing
+        # 06:30 arrivals for a 10:00 shift -- and, now that the punch panel
+        # prints the real arrival time and the lateness band, those punches were
+        # plainly wrong on the screen. A band around the start exercises the
+        # Rs 50 / Rs 100 / half-day paths with data that could actually happen.
+        #
+        # If the command runs before the shift does, everything falls back to
+        # "an hour ago" so nothing is seeded in the future.
+        before_shift = self.now <= shift_start
+
+        # `update_or_create`, not `create`: `AttendanceRecord` is one row per
+        # company+user+date, and the history loop above already covers today
+        # whenever today's date is one of this month's plan offsets. On those
+        # days `create` raised the unique constraint and aborted the whole seed
+        # -- which is why the seeder looked fine for most of a month and failed
+        # on others. Today's live state is the one that wins: somebody on the
+        # clock must not be left with the check-out the history loop invented.
+        def arrival_for():
+            if before_shift:
+                return self.now - timedelta(hours=1)
+            return shift_start + timedelta(minutes=random.randint(-15, 35))
 
         for username, user in users.items():
             if username in ATTENDANCE_OPEN:
-                AttendanceRecord.objects.create(
+                AttendanceRecord.objects.update_or_create(
                     company=company,
                     user=user,
                     date=today,
-                    check_in=latest_arrival
-                    - timedelta(minutes=random.randint(20, 240)),
-                    check_out=None,
+                    defaults={
+                        "check_in": arrival_for(),
+                        "check_out": None,
+                    },
                 )
             elif random.random() < 0.85:
                 check_out = self.now - timedelta(minutes=random.randint(5, 90))
-                arrival = latest_arrival - timedelta(minutes=random.randint(20, 240))
-                AttendanceRecord.objects.create(
+                arrival = arrival_for()
+                AttendanceRecord.objects.update_or_create(
                     company=company,
                     user=user,
                     date=today,
-                    check_in=arrival,
-                    check_out=check_out if check_out > arrival else None,
+                    defaults={
+                        "check_in": arrival,
+                        "check_out": check_out if check_out > arrival else None,
+                    },
                 )
 
     def _create_leave(self, company, users):
@@ -610,6 +631,7 @@ class Command(BaseCommand):
         inside this calendar year and respect the per-policy caps.
         """
         from apps.leave.models import LeavePolicy, LeaveRequest
+        from apps.leave.service import auto_split
 
         policies = {
             "Casual": LeavePolicy.objects.create(
@@ -660,6 +682,19 @@ class Command(BaseCommand):
                     count += 1
             return day
 
+        def _working_days_between(start, count):
+            """The working days a request of `count` days starting at `start`
+            would cover, so the seeder can avoid overlapping itself."""
+            if count <= 0:
+                return set()
+            days_seen = []
+            day = start
+            while len(days_seen) < count:
+                if day.weekday() < 5:
+                    days_seen.append(day)
+                day += timedelta(days=1)
+            return set(days_seen)
+
         plan = [
             ("dev1", "Casual", "approved", "Family wedding", False, 2),
             ("dev1", "Sick", "pending", "Dental surgery follow-up", False, 1),
@@ -668,9 +703,26 @@ class Command(BaseCommand):
             ("support", "Sick", "approved", "Flu, advised to rest", True, 1),
         ]
 
-        for username, policy_name, status, reason, half, days in plan:
+        # Each person's requests are placed on their own working days rather
+        # than at independent random offsets. Two random offsets for the same
+        # person can land on the same day, and `validate_and_split` rightly
+        # refuses overlapping leave -- so the seeder was producing rows that
+        # the product itself would never accept, and `SeedDataTest` re-deriving
+        # them hit that refusal. Spacing per user is what makes a seeded request
+        # look like a real one.
+        occupied = set()
+
+        for index, (username, policy_name, status, reason, half, days) in enumerate(plan):
             policy = policies[policy_name]
-            start = next_working_day(random.randint(1, 6))
+            offset = index + 1
+            while any(
+                day in occupied
+                for day in _working_days_between(
+                    next_working_day(offset), days
+                )
+            ):
+                offset += 1
+            start = next_working_day(offset)
             charged = Decimal("0.5") if half else Decimal(days)
             # Walk forward over working days so the stored charge always
             # matches working_days(start, end) and no weekend days sneak in.
@@ -681,6 +733,14 @@ class Command(BaseCommand):
                     # Saturday needs two steps to reach Monday.
                     while end.weekday() >= 5:
                         end += timedelta(days=1)
+            occupied.update(_working_days_between(start, 1 if half else days))
+            # The split is computed by the service rather than guessed here, so
+            # a seeded row is indistinguishable from one an applicant filed: it
+            # is exactly what `auto_split` would have decided for these dates,
+            # which is what `SeedDataTest` re-derives and compares.
+            split = auto_split(
+                company, users[username], policy, start, end, charged
+            )
             LeaveRequest.objects.create(
                 company=company,
                 user=users[username],
@@ -689,6 +749,9 @@ class Command(BaseCommand):
                 end_date=end,
                 is_half_day=half,
                 days=charged,
+                paid_days=split["paid"],
+                unpaid_days=split["unpaid"],
+                split_mode="auto",
                 status=status,
                 reason=reason,
                 decided_by=users["admin"] if status != "pending" else None,

@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}{% if editing %}Edit Ticket #{{ ticket.pk }}{% else %}New Ticket{% endif %} — PQ Platform{% endblock %}
 
@@ -60,46 +61,25 @@
       <div class="form-section-label">Attributes &amp; Context</div>
       <div class="grid-2">
         <div class="form-group">
-          <label for="ticket_type">Type</label>
-          <select id="ticket_type" name="ticket_type" class="form-input">
-            <option value="bug" {% if form.ticket_type.value == "bug" %}selected{% endif %}>Bug</option>
-            <option value="feature" {% if form.ticket_type.value == "feature" %}selected{% endif %}>Feature</option>
-            <option value="question" {% if form.ticket_type.value == "question" %}selected{% endif %}>Question</option>
-          </select>
+          <span class="dd-label">Type</span>
+          {% dropdown "ticket_type" "bug:Bug|feature:Feature|question:Question"|opts form.ticket_type.value placeholder="Type" label="Type" %}
         </div>
         <div class="form-group">
-          <label for="priority">Priority</label>
-          <select id="priority" name="priority" class="form-input">
-            <option value="low" {% if form.priority.value == "low" %}selected{% endif %}>Low</option>
-            <option value="medium" {% if form.priority.value == "medium" or not form.priority.value %}selected{% endif %}>Medium</option>
-            <option value="high" {% if form.priority.value == "high" %}selected{% endif %}>High</option>
-            <option value="critical" {% if form.priority.value == "critical" %}selected{% endif %}>Critical</option>
-          </select>
+          <span class="dd-label">Priority</span>
+          {% dropdown "priority" "low:Low|medium:Medium|high:High|critical:Critical"|opts form.priority.value|default:"medium" placeholder="Priority" label="Priority" %}
         </div>
       </div>
 
       {% if editing %}
       <div class="form-group">
-        <label for="status">Status</label>
-        <select id="status" name="status" class="form-input">
-          <option value="open" {% if form.status.value == "open" %}selected{% endif %}>Open</option>
-          <option value="assigned" {% if form.status.value == "assigned" %}selected{% endif %}>Assigned</option>
-          <option value="in_progress" {% if form.status.value == "in_progress" %}selected{% endif %}>In Progress</option>
-          <option value="testing" {% if form.status.value == "testing" %}selected{% endif %}>Testing</option>
-          <option value="resolved" {% if form.status.value == "resolved" %}selected{% endif %}>Resolved</option>
-          <option value="closed" {% if form.status.value == "closed" %}selected{% endif %}>Closed</option>
-        </select>
+        <span class="dd-label">Status</span>
+        {% dropdown "status" "open:Open|assigned:Assigned|in_progress:In Progress|testing:Testing|resolved:Resolved|closed:Closed"|opts form.status.value placeholder="Status" label="Status" %}
       </div>
       {% endif %}
 
       <div class="form-group" style="margin-bottom:0;">
-        <label for="product">Product</label>
-        <select id="product" name="product" class="form-input">
-          <option value="">No product (Company-wide)</option>
-          {% for product in form.fields.product.queryset %}
-          <option value="{{ product.pk }}" {% if form.product.value|stringformat:"s" == product.pk|stringformat:"s" %}selected{% endif %}>{{ product.name }}</option>
-          {% endfor %}
-        </select>
+        <span class="dd-label">Product</span>
+        {% dropdown "product" form.fields.product.queryset|obj_pairs:"pk:name" form.product.value placeholder="No product (Company-wide)" label="Product" empty_value="" %}
       </div>
     </div>
 

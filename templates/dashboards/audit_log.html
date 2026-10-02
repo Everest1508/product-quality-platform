@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}Audit Log — PQ Platform{% endblock %}
 
@@ -21,19 +22,9 @@
       {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
     </form>
 
-    <select aria-label="Filter by type" class="filter-select" onchange="window.location=buildUrl({type:this.value})">
-      <option value="">All event types</option>
-      {% for value, label in event_types %}
-      <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+    {% dropdown "type" event_types current_type placeholder="All event types" label="Filter by type" navigate=True empty_value="" %}
 
-    <select aria-label="Filter by member" class="filter-select" onchange="window.location=buildUrl({actor:this.value})">
-      <option value="">Any member</option>
-      {% for member in members %}
-      <option value="{{ member.pk }}" {% if current_actor == member.pk|stringformat:"s" %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-      {% endfor %}
-    </select>
+    {% dropdown "actor" members|obj_pairs:"pk:get_full_name" current_actor placeholder="Any member" label="Filter by member" navigate=True empty_value="" %}
   </div>
 
   <div style="display:flex;align-items:center;gap:8px;">

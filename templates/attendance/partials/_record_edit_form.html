@@ -1,0 +1,35 @@
+{% comment %}
+The one form an admin uses to correct a record's punches.
+
+Extracted because it was inline in the team view's "on the clock" table and
+now also has to appear beside every unclosed day on an employee's own history,
+which would otherwise be a second copy of the same six inputs. Two copies of a
+write form means one of them eventually loses its CSRF token or its label.
+
+`next` sends the admin back where they started editing rather than dumping them
+on the team page; the view refuses an off-site value.
+{% endcomment %}
+<form method="post" action="{% url 'attendance:attendance_edit' record.pk %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+      style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:6px 0;">
+  {% csrf_token %}
+  <div>
+    <label class="text-sm text-muted" for="edit_check_in_{{ record.pk }}" style="display:block;margin-bottom:4px;">Check in</label>
+    <input id="edit_check_in_{{ record.pk }}" type="datetime-local" name="check_in"
+           value="{{ record.check_in|date:'Y-m-d\\TH:i' }}" class="form-input" style="padding:6px 10px;">
+  </div>
+  <div>
+    <label class="text-sm text-muted" for="edit_check_out_{{ record.pk }}" style="display:block;margin-bottom:4px;">Check out</label>
+    {# Prefill a forgotten check-out with the end of the scheduled day. Emptying
+       it is still possible: an admin who wants the day to stay open can clear
+       the box, and the form posts an empty string as "no check-out". #}
+    <input id="edit_check_out_{{ record.pk }}" type="datetime-local" name="check_out"
+           value="{% if record.check_out %}{{ record.check_out|date:'Y-m-d\\TH:i' }}{% elif record.is_open %}{{ record.date|date:'Y-m-d' }}T{{ shift.end_time|time:'H:i' }}{% endif %}"
+           class="form-input" style="padding:6px 10px;">
+  </div>
+  <div style="flex:1;min-width:160px;">
+    <label class="text-sm text-muted" for="edit_notes_{{ record.pk }}" style="display:block;margin-bottom:4px;">Notes</label>
+    <input id="edit_notes_{{ record.pk }}" type="text" name="notes" value="{{ record.notes }}"
+           class="form-input" style="padding:6px 10px;" placeholder="Optional">
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm">Save</button>
+</form>

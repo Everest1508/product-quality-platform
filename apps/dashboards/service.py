@@ -522,9 +522,11 @@ def get_summary_report(company, start_date, end_date, user=None):
 def _personal_attendance(company, user, today):
     """Today's punch state plus the month-to-date picture.
 
-    `worked_minutes` lives on the record, so a day that is still open (punched
-    in, not out) contributes 0 -- better to under-report the day than invent an
-    end time for someone still working.
+    An unclosed day (punched in, never out) is counted by
+    `service.effective_span_for`, which uses elapsed time capped at the
+    scheduled day. It used to contribute 0 -- better to under-report than invent
+    an end time -- but 0 is not neutral: the employee loses the day's pay until
+    an admin notices, which is exactly the case nobody noticed.
     """
     from apps.attendance.models import AttendanceRecord
     from apps.attendance.service import net_minutes_for, shift_for

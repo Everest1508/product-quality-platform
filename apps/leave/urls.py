@@ -7,6 +7,11 @@ app_name = "leave"
 urlpatterns = [
     path("", views.MyLeaveView.as_view(), name="my_leave"),
     path("apply/", views.LeaveApplyView.as_view(), name="apply"),
+    path(
+        "apply/preview/",
+        views.LeaveSplitPreviewView.as_view(),
+        name="split_preview",
+    ),
     path("<int:pk>/cancel/", views.LeaveCancelView.as_view(), name="cancel"),
     path("approvals/", views.LeaveQueueView.as_view(), name="approvals"),
     path(

@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 {% block title %}{{ ticket.title }} — {{ product.name }}{% endblock %}
 {% block content %}
 <nav class="breadcrumbs">
@@ -60,11 +61,7 @@
     <div class="text-sm mb-4"><span class="text-muted">Status:</span>
       <form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}" style="display:inline;">
         {% csrf_token %}
-        <select name="status" onchange="this.form.submit()" class="form-input" style="display:inline;width:auto;padding:4px 8px;font-size:12px;">
-          {% for val, label in ticket.valid_next_statuses %}
-          <option value="{{ val }}" {% if ticket.status == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
+        {% dropdown "status" ticket.valid_next_statuses ticket.status placeholder="Status" label="Change status" submit=True %}
       </form>
     </div>
   </div>

@@ -14,9 +14,18 @@ def format_days(value):
 
     ``Decimal("12.0").normalize()`` is ``Decimal('1.2E+1')``, so a naive
     normalize() in a template prints "1.2E+1" (and "1E+1" for ten whole days).
+
+    Coerces to `Decimal` first because the callers are not all `Decimal`:
+    `working_days` returns a plain `int`, and this helper is documented as the
+    one place a day count is rendered. An `int` reached `.normalize()` and
+    raised `AttributeError` -- inside a reason string, so the 500 was
+    "AttributeError: 'int' object has no attribute 'normalize'" on a screen
+    whose only job was to show a number.
     """
     if value is None:
         return "—"
+    if not isinstance(value, Decimal):
+        value = Decimal(str(value))
     value = value.normalize()
     if value == value.to_integral_value():
         value = value.quantize(Decimal("1"))
@@ -61,8 +70,25 @@ def year_of(date):
     return date.year
 
 
+def _paid_charge(request):
+    """Days a request charges against its allowance.
+
+    Only *paid* days consume an allowance -- an unpaid day is not a day of
+    allowance spent, it is a day somebody chose (or was told) to go without pay
+    for. Charging both would mean a single long request could exhaust the year's
+    casual leave with days that were never paid in the first place, and the
+    balance would fall without the payslip ever showing why.
+
+    A row with no stored split predates the field; its policy's `is_paid` is the
+    only record of the decision, so that is what it charges.
+    """
+    if request.paid_days is not None:
+        return request.paid_days
+    return request.days if request.policy.is_paid else Decimal("0.0")
+
+
 def consumed_days(company, user, policy, year, include_pending=True):
-    """Days already charged to a user for one policy in one year.
+    """Paid days already charged to a user for one policy in one year.
 
     Approved leave counts always; pending leave also counts by default so two
     applications cannot both claim the last remaining days.
@@ -77,13 +103,13 @@ def consumed_days(company, user, policy, year, include_pending=True):
         policy=policy,
         status__in=statuses,
         start_date__year=year,
-    )
-    total = sum((r.days for r in qs), Decimal("0.0"))
+    ).select_related("policy")
+    total = sum((_paid_charge(r) for r in qs), Decimal("0.0"))
     return total
 
 
 def balance_for(company, user, policy, year=None):
-    """Remaining allowance for one policy, as a dict for templates."""
+    """Remaining *paid* allowance for one policy, as a dict for templates."""
     year = year or timezone.localdate().year
     limit = policy.max_days_per_year
     approved = consumed_days(company, user, policy, year, include_pending=False)
@@ -202,15 +228,170 @@ def consecutive_run_days(company, user, start_date, end_date, exclude_pk=None):
     return Decimal(working_days(span_start, span_end))
 
 
-def validate_request(
+def paid_allowance(company, user, policy, start_date, end_date, days, exclude_pk=None):
+    """How many of `days` can be paid, and why not more.
+
+    Two ceilings, and the lower one wins:
+
+      * the remaining annual allowance, and
+      * the spell cap, which now limits *paid* days in one unbroken run rather
+        than blocking the run. The run already includes this request's own dates
+        (`consecutive_run_days` adds them), so those are subtracted to get what
+        is already booked -- otherwise a lone 5-day request under a 3-day cap
+        would compute zero headroom and be charged entirely unpaid, which is the
+        opposite of "the first 3 are paid".
+
+    The subtraction is the span's working days, not `days`. The run is measured
+    as a span, so a half day contributes one working day to it; subtracting the
+    0.5 charge would leave 0.5 phantom days counted as already booked against
+    the cap.
+
+    Returns `None` for "unlimited", which is how an uncapped policy and a
+    request smaller than both ceilings come back. `reasons` explains the binding
+    constraint in words, because the apply screen and the approver's dialog both
+    have to say *why* a request came out part-unpaid.
+    """
+    if not policy.is_paid:
+        # An unpaid type is unpaid in full. It touches neither ceiling: there is
+        # no allowance to spend and no paid spell to shorten.
+        return Decimal("0.0"), ["This leave type is unpaid."]
+
+    remaining = balance_for(company, user, policy, start_date.year)["remaining"]
+    reasons = []
+    headroom = None
+
+    cap = policy.max_consecutive_days
+    if cap is not None:
+        run = consecutive_run_days(company, user, start_date, end_date, exclude_pk)
+        already_booked = max(
+            Decimal("0.0"), run - Decimal(working_days(start_date, end_date))
+        )
+        headroom = max(Decimal("0.0"), cap - already_booked)
+        reasons.append(
+            f"{policy.name} leave is capped at {format_days(cap)} paid days "
+            f"at a time"
+        )
+
+    if remaining is None:
+        allowance = headroom
+    elif headroom is None:
+        allowance = remaining
+    else:
+        allowance = min(remaining, headroom)
+
+    if allowance is None:
+        return None, reasons
+    return min(allowance, days), reasons
+
+
+def auto_split(company, user, policy, start_date, end_date, days, exclude_pk=None):
+    """Paid up to the allowance, the rest unpaid.
+
+    **Paid days come from the start of the request.** The allowance covers the
+    earliest days and the overflow falls at the tail, which is also the order
+    the applicant and the approver both read the split in.
+
+    That ordering is what makes a request straddling two pay cycles priceable:
+    payroll bills each cycle separately, so given 3 paid + 2 unpaid over a span
+    crossing the boundary, the early cycle bills paid days first and only the
+    days that spill past its own end date can land in the later one. If
+    `payroll.service.leave_days_in_period` ever reverses this, the same request
+    costs a different amount depending on which cycle is being run.
+    """
+    allowance, reasons = paid_allowance(
+        company, user, policy, start_date, end_date, days, exclude_pk=exclude_pk
+    )
+    if allowance is None:
+        return {"paid": days, "unpaid": Decimal("0.0"), "reasons": reasons}
+    paid = max(Decimal("0.0"), min(days, allowance))
+    unpaid = days - paid
+    if unpaid > 0:
+        reasons.append(
+            f"{format_days(unpaid)} of the {format_days(days)} day(s) will be "
+            f"charged as unpaid leave"
+        )
+    return {"paid": paid, "unpaid": unpaid, "reasons": reasons}
+
+
+def resolve_split(company, user, policy, start_date, end_date, days, mode, paid,
+                  unpaid, exclude_pk=None):
+    """The split an approver's form means, checked against the request.
+
+    AUTO recomputes it and ignores whatever the boxes said. MANUAL takes the
+    approver's numbers, but never for more days than the request actually spans
+    -- a form that can charge 9 paid days for a 3-day request is a form that can
+    invent pay. Non-negative, and the two must add up, or the totals quietly stop
+    describing the same span the dates do.
+    """
+    if mode == LeaveRequest.SplitMode.MANUAL:
+        if paid is None or unpaid is None:
+            raise ValidationError(
+                "Enter both paid and unpaid days, or switch the split to automatic."
+            )
+        if paid < 0 or unpaid < 0:
+            raise ValidationError("Paid and unpaid days cannot be negative.")
+        total = paid + unpaid
+        if total != days:
+            raise ValidationError(
+                f"Paid plus unpaid must equal the {format_days(days)} day(s) requested."
+            )
+        return {
+            "paid": paid,
+            "unpaid": unpaid,
+            "reasons": ["Split set manually by the approver."],
+        }
+    return auto_split(
+        company, user, policy, start_date, end_date, days, exclude_pk=exclude_pk
+    )
+
+
+def decision_preview(company, leave):
+    """What the approver's dialog needs to show for one pending request.
+
+    The automatic split is recomputed here rather than reusing the applicant's
+    stored one: the allowance may have moved since they applied (somebody else
+    booked the last paid day), and showing them a stale "3 paid" invites an
+    approver to confirm a number the server will reject. A click on Approve
+    re-validates regardless -- this is a preview, not the decision.
+    """
+    try:
+        current = auto_split(
+            company,
+            leave.user,
+            leave.policy,
+            leave.start_date,
+            leave.end_date,
+            leave.days,
+            exclude_pk=leave.pk,
+        )
+    except ValidationError:
+        # A request that can no longer be split cleanly (its dates are now in
+        # the past, say) still has to be reviewable, so the approver can reject
+        # it or correct the dates rather than being met with an error page.
+        current = {
+            "paid": leave.split["paid"],
+            "unpaid": leave.split["unpaid"],
+            "reasons": [],
+        }
+    return {
+        "paid": current["paid"],
+        "unpaid": current["unpaid"],
+        "reasons": current["reasons"],
+        "paid_label": format_days(current["paid"]),
+        "unpaid_label": format_days(current["unpaid"]),
+    }
+
+
+def validate_and_split(
     company, user, policy, start_date, end_date, is_half_day, exclude_pk=None
 ):
-    """Return the charge in days, or raise ValidationError with the reason.
+    """Validate a request and return its charge *and* its paid/unpaid split.
 
-    Checks, in the order a person would care about them: the range makes sense,
-    it is not in the past, it is not a lone weekend, it does not clash with
-    leave already booked, and it fits both the policy's spell limit and the
-    remaining balance.
+    The hard rejections are the ones no amount of goodwill fixes: no dates, an
+    inverted range, a start in the past, a weekend-only range, a half day spread
+    over two dates, and an overlap with leave already booked. The two policy
+    ceilings are not rejections any more -- they decide how much of the request
+    is paid, and the rest is unpaid. See `auto_split`.
     """
     if not (start_date and end_date):
         raise ValidationError("Choose a start and end date.")
@@ -243,31 +424,22 @@ def validate_request(
     if clash.exists():
         raise ValidationError("You already have leave booked across those dates.")
 
-    # The spell cap is checked on the *combined* run, not just this request's
-    # own days: 2 casual followed by 2 sick is four days away, and the office
-    # rule caps the run rather than the type. The per-policy
-    # `max_consecutive_days` supplies the limit; every other type contributes
-    # its already-booked days to the same run.
-    spell_cap = policy.max_consecutive_days
-    if spell_cap is not None:
-        if days > spell_cap:
-            raise ValidationError(
-                f"{policy.name} leave is capped at "
-                f"{format_days(spell_cap)} days at a time."
-            )
-        run = consecutive_run_days(company, user, start_date, end_date, exclude_pk)
-        if run > spell_cap:
-            raise ValidationError(
-                f"That would be {format_days(run)} consecutive days away, and "
-                f"{policy.name} leave is capped at {format_days(spell_cap)} "
-                f"days at a time."
-            )
+    split = auto_split(
+        company, user, policy, start_date, end_date, days, exclude_pk=exclude_pk
+    )
+    return {"days": days, **split}
 
-    balance = balance_for(company, user, policy, start_date.year)
-    if balance["remaining"] is not None and days > balance["remaining"]:
-        raise ValidationError(
-            f"That would use {format_days(days)} of your {format_days(balance['remaining'])} "
-            f"remaining {policy.name} days."
-        )
 
-    return days
+def validate_request(
+    company, user, policy, start_date, end_date, is_half_day, exclude_pk=None
+):
+    """The charge in days, or raise ValidationError with the reason.
+
+    A thin wrapper over `validate_and_split` for callers that only need the
+    number. The returned charge is the whole span: what is *paid* out of it is
+    the split's business, and a caller that ignores the split is not wrong about
+    how long the person is away.
+    """
+    return validate_and_split(
+        company, user, policy, start_date, end_date, is_half_day, exclude_pk=exclude_pk
+    )["days"]

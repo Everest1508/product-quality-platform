@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}{{ error_group.title }} — PQ Platform{% endblock %}
 
@@ -65,17 +66,13 @@
       <div id="error-detail-status">
         {% include "errors/partials/_error_status_badge.html" with error_group=error_group %}
       </div>
-      <form method="post" action="{% url 'errors:error_status' pk=error_group.pk %}"
+      <form method="post" action="{% url 'errors:error_status' pk=error_group.pk %}" hx-trigger="change"
             hx-post="{% url 'errors:error_status' pk=error_group.pk %}"
             hx-target="#error-detail-status"
             hx-swap="innerHTML"
             style="margin-top:12px;">
         {% csrf_token %}
-        <select name="status" class="form-input" style="font-size:12px;" hx-trigger="change" hx-post="{% url 'errors:error_status' pk=error_group.pk %}" hx-target="#error-detail-status" hx-swap="innerHTML">
-          {% for value, label in status_choices %}
-          <option value="{{ value }}" {% if error_group.status == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
+        {% dropdown "status" status_choices error_group.status placeholder="Status" label="Change status" %}
       </form>
       <div style="display:flex;gap:6px;margin-top:12px;">
         {% if error_group.status != 'resolved' %}

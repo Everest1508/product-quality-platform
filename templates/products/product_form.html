@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}{% if editing %}Edit Product{% else %}New Product{% endif %} — PQ Platform{% endblock %}
 
@@ -46,11 +47,8 @@
               {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
             </div>
             <div class="form-group">
-              <label for="default_environment">Default Environment</label>
-              <select id="default_environment" name="default_environment" class="form-input">
-                <option value="production" {% if form.default_environment.value == "production" %}selected{% endif %}>Production</option>
-                <option value="staging" {% if form.default_environment.value == "staging" %}selected{% endif %}>Staging</option>
-              </select>
+              <span class="dd-label">Default Environment</span>
+              {% dropdown "default_environment" "production:Production|staging:Staging"|opts form.default_environment.value placeholder="Production" label="Default Environment" %}
             </div>
           </div>
           <div class="form-group" style="margin-bottom:0;">

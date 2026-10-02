@@ -1,0 +1,173 @@
+{% comment %}
+The approver's decision dialog: one modal for the whole page, fed by a JSON
+payload the view builds (`decision_items`).
+
+Why one shared dialog rather than a form per row: the split controls, the date
+fields and the note are the same eleven inputs every time, and a queue of a
+hundred pending requests would otherwise ship a hundred copies of them. The
+per-row button only sets `current` and flips `open`.
+
+`auto` and `manual` are the two ways to answer "paid or unpaid". Auto shows the
+server's arithmetic and is the default; manual is for the case where the
+approver knows something the policy cannot know. The manual boxes are only
+enabled in manual mode -- a disabled box that still submits is how a request
+ends up with two different splits depending on which control was touched.
+{% endcomment %}
+{% load leave_tags %}
+{% if decision_items %}
+{% leave_decision_payload decision_items "leave-decision-data" %}
+
+<div class="modal-backdrop" id="leave-decision"
+     x-data="leaveDecision($el.dataset)"
+     x-show="open" x-cloak
+     @keydown.escape.window="open = false">
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="leave-decision-title">
+    <h3 id="leave-decision-title">
+      <span x-text="current?.who"></span> — <span x-text="current?.policy"></span> leave
+    </h3>
+
+    <template x-if="current">
+      <div>
+        <p class="text-sm text-muted" style="margin:0 0 14px;">
+          <span x-text="current?.span"></span> ·
+          <span x-text="current?.days_label"></span>
+        </p>
+
+        <p x-show="current?.reason" class="text-sm" style="margin:0 0 14px;">
+          <strong>Reason:</strong> <span x-text="current?.reason"></span>
+        </p>
+
+        <form method="post" :action="current?.approve_url" x-ref="form">
+          {% csrf_token %}
+
+          <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label class="form-label" for="leave-d-start">Start date</label>
+              <input class="form-input" type="date" id="leave-d-start" name="start_date"
+                     x-model="start" required>
+            </div>
+            <div>
+              <label class="form-label" for="leave-d-end">End date</label>
+              <input class="form-input" type="date" id="leave-d-end" name="end_date" x-model="end">
+            </div>
+          </div>
+
+          <label class="lp-switch" style="margin:12px 0 4px;display:inline-flex;align-items:center;gap:8px;">
+            <input type="checkbox" name="is_half_day" x-model="halfDay">
+            <span>Half day</span>
+          </label>
+
+          <fieldset style="border:1px solid var(--border);border-radius:6px;padding:12px;margin:14px 0 0;">
+            <legend class="text-sm text-muted" style="padding:0 6px;">Paid or unpaid</legend>
+
+            <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;cursor:pointer;">
+              <input type="radio" name="split_mode" value="auto" x-model="mode" style="margin-top:3px;">
+              <span>
+                <strong>Automatic</strong>
+                <span class="text-sm text-muted" x-text="'— ' + autoLabel()"></span>
+              </span>
+            </label>
+
+            <p class="text-sm text-muted" style="margin:0 0 12px 24px;" x-show="reasons().length">
+              <span x-text="reasons().join(' ')"></span>
+            </p>
+
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+              <input type="radio" name="split_mode" value="manual" x-model="mode" style="margin-top:3px;">
+              <span><strong>Set the split myself</strong></span>
+            </label>
+
+            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 0 24px;"
+                 x-show="mode === 'manual'">
+              <div>
+                <label class="form-label" for="leave-d-paid">Paid days</label>
+                <input class="form-input" type="number" step="0.5" min="0" id="leave-d-paid"
+                       name="paid_days" x-model="paid" :disabled="mode !== 'manual'">
+              </div>
+              <div>
+                <label class="form-label" for="leave-d-unpaid">Unpaid days</label>
+                <input class="form-input" type="number" step="0.5" min="0" id="leave-d-unpaid"
+                       name="unpaid_days" x-model="unpaid" :disabled="mode !== 'manual'">
+              </div>
+            </div>
+            <p class="text-sm text-muted" style="margin:8px 0 0 24px;" x-show="mode === 'manual'">
+              Paid plus unpaid must equal <span x-text="current?.days_label"></span>.
+            </p>
+          </fieldset>
+
+          <div style="margin-top:14px;">
+            <label class="form-label" for="leave-d-note">Note <span class="text-muted">(optional)</span></label>
+            <textarea class="form-input" rows="2" id="leave-d-note" name="note" x-model="note"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" @click="open = false">Cancel</button>
+            <button type="submit" class="btn" @click="submitTo('reject_url')">Reject</button>
+            <button type="submit" class="btn btn-primary"
+                    @click="submitTo('approve_url')">Approve</button>
+          </div>
+        </form>
+      </div>
+    </template>
+  </div>
+</div>
+
+<script>
+/* The dialog's state machine. Kept as a named function rather than an inline
+   x-data string because it is the only place the approve/reject URLs, the auto
+   split and the manual boxes have to agree with each other. */
+function leaveDecision(root) {
+  return {
+    open: false,
+    current: null,
+    start: '',
+    end: '',
+    halfDay: false,
+    mode: 'auto',
+    paid: '0',
+    unpaid: '0',
+    note: '',
+
+    init() {
+      const data = document.getElementById('leave-decision-data');
+      this.items = data ? JSON.parse(data.textContent) : [];
+      // A row's Review button sets the current request on the window so the
+      // button itself needs no Alpine component of its own.
+      window.openLeaveDecision = (pk) => this.show(pk);
+    },
+
+    show(pk) {
+      const item = this.items.find(i => i.pk === pk);
+      if (!item) return;
+      this.current = item;
+      this.start = item.start;
+      this.end = item.end;
+      this.halfDay = item.is_half_day;
+      this.mode = 'auto';
+      this.paid = item.paid;
+      this.unpaid = item.unpaid;
+      this.note = '';
+      this.open = true;
+    },
+
+    autoLabel() {
+      if (!this.current) return '';
+      const paid = this.current.auto_paid_label;
+      const unpaid = this.current.auto_unpaid_label;
+      if (Number(unpaid) === 0) return paid + ' day(s) paid';
+      return paid + ' paid, ' + unpaid + ' unpaid';
+    },
+
+    reasons() {
+      return this.mode === 'auto' && this.current ? (this.current.reasons || []) : [];
+    },
+
+    /* Reject and approve post to different URLs, so the form's action is set
+       from the button rather than hardcoded to one of them. */
+    submitTo(field) {
+      this.$refs.form.action = this.current[field];
+    },
+  };
+}
+</script>
+{% endif %}

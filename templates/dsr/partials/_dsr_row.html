@@ -1,4 +1,4 @@
-<tr id="dsr-row-{{ entry.pk }}" class="{% if entry.is_auto_logged %}dsr-auto-row{% endif %}">
+{% load dropdown_tags %}<tr id="dsr-row-{{ entry.pk }}" class="{% if entry.is_auto_logged %}dsr-auto-row{% endif %}">
   <td style="width:40px;text-align:center;color:var(--muted);font-size:12px;font-weight:500;">
     {{ forloop.counter|default:"•" }}
   </td>
@@ -14,25 +14,28 @@
       <a href="{% url 'tickets:ticket_detail' pk=entry.ticket.pk %}" class="link" style="font-weight:500;font-size:13.5px;color:var(--text);" title="View ticket details">
         {{ entry.task_name }}
       </a>
-      {% else %}
+      {% elif can_submit %}
       <input type="text" name="task_name" value="{{ entry.task_name }}" class="sheet-input" style="font-weight:500;"
              hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
              hx-trigger="change delay:400ms"
              hx-target="#dsr-row-{{ entry.pk }}"
              hx-swap="outerHTML">
+      {% else %}
+      <span style="font-weight:500;font-size:13.5px;color:var(--text);">{{ entry.task_name }}</span>
       {% endif %}
     </div>
   </td>
   <td style="width:150px;">
-    <select name="category" class="sheet-select category-select {{ entry.category }}"
-            hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+    {% if can_submit %}
+    <div hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
             hx-trigger="change"
             hx-target="#dsr-row-{{ entry.pk }}"
             hx-swap="outerHTML">
-      {% for val, label in category_choices %}
-      <option value="{{ val }}" {% if entry.category == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+      {% dropdown "category" category_choices entry.category placeholder="—" label="Category" trigger_class="sheet-select category-select {{ entry.category }}" %}
+    </div>
+    {% else %}
+    <span class="pill" style="font-size:11px;padding:1px 6px;background:var(--panel);color:var(--muted);font-weight:500;">{{ entry.get_category_display }}</span>
+    {% endif %}
   </td>
   <td style="width:100px;font-size:12.5px;color:var(--muted);">
     {% if entry.created_time %}{{ entry.created_time|date:"H:i" }}{% else %}—{% endif %}
@@ -44,34 +47,44 @@
     {{ entry.time_taken_formatted }}
   </td>
   <td style="width:110px;">
+    {% if can_submit %}
     <div style="display:flex;align-items:center;gap:4px;">
-      <input type="number" step="0.25" min="0" max="24" name="hours_spent" value="{{ entry.hours_spent }}" class="sheet-input num-input" style="width:55px;"
+      <input type="number" step="0.25" min="0" name="hours_spent" value="{{ entry.hours_spent }}" class="sheet-input num-input" style="width:55px;"
              hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
              hx-trigger="change delay:300ms"
              hx-target="#dsr-row-{{ entry.pk }}"
              hx-swap="outerHTML">
       <span style="font-size:11px;color:var(--muted);font-weight:500;">hrs</span>
     </div>
+    {% else %}
+    <span style="font-size:13px;font-weight:600;color:var(--text);">{{ entry.hours_spent }} <span style="font-size:11px;color:var(--muted);font-weight:500;">hrs</span></span>
+    {% endif %}
   </td>
   <td style="width:130px;">
-    <select name="status" class="sheet-select status-select {{ entry.status }}"
-            hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
+    {% if can_submit %}
+    <div hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
             hx-trigger="change"
             hx-target="#dsr-row-{{ entry.pk }}"
             hx-swap="outerHTML">
-      {% for val, label in status_choices %}
-      <option value="{{ val }}" {% if entry.status == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+      {% dropdown "status" status_choices entry.status placeholder="—" label="Status" trigger_class="sheet-select status-select {{ entry.status }}" %}
+    </div>
+    {% else %}
+    <span class="pill {% if entry.status == 'completed' %}green{% elif entry.status == 'in_progress' %}blue{% else %}red{% endif %}" style="font-size:11px;">{{ entry.get_status_display }}</span>
+    {% endif %}
   </td>
   <td style="min-width:180px;">
+    {% if can_submit %}
     <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add remarks..." class="sheet-input"
            hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}"
            hx-trigger="change delay:400ms"
            hx-target="#dsr-row-{{ entry.pk }}"
            hx-swap="outerHTML">
+    {% else %}
+    <span style="font-size:12.5px;color:var(--muted);">{{ entry.notes|default:"—" }}</span>
+    {% endif %}
   </td>
   <td style="width:45px;text-align:center;">
+    {% if can_submit %}
     <button type="button" class="btn-icon text-muted" title="Delete entry"
             hx-post="{% url 'dsr:dsr_delete' pk=entry.pk %}"
             hx-confirm="Delete DSR entry?"
@@ -79,5 +92,6 @@
             hx-swap="innerHTML">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
     </button>
+    {% endif %}
   </td>
 </tr>

@@ -84,11 +84,28 @@ class AuditLogFilterLabellingTest(TestCase):
         self.body = self.client.get(reverse("dashboards:audit_log")).content.decode()
 
     def test_every_filter_select_is_named(self):
-        selects = re.findall(r"<select\b[^>]*>", self.body)
-        self.assertTrue(selects)
-        for tag in selects:
+        """The filters are app-wide dropdowns now, not native <select>s.
+
+        A screen reader names a dropdown from its <summary>, so that is where
+        the label has to be. `assertTrue` still guards against this passing
+        vacuously if the page ever stops rendering any dropdown at all.
+        """
+        triggers = re.findall(r"<summary\b[^>]*>", self.body)
+        self.assertTrue(triggers)
+        for tag in triggers:
             with self.subTest(tag=tag):
-                self.assertIn("aria-label=", tag)
+                name = re.search(r'aria-label="([^"]*)"', tag)
+                self.assertIsNotNone(name, f"unnamed dropdown: {tag}")
+                self.assertTrue(name.group(1).strip())
+
+    def test_no_native_select_survives_on_this_page(self):
+        """The point of the rollout: no unstyled browser default survives.
+
+        This page has no custom dropdown with a hidden `<select>` backing it
+        (unlike the ticket assignee picker), so "no `<select>` anywhere" is
+        the exact statement that the rollout reached this screen.
+        """
+        self.assertNotIn("<select", self.body)
 
     def test_date_inputs_are_named_by_a_real_label(self):
         for field in ("from", "to"):

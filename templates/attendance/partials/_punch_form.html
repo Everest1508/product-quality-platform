@@ -1,0 +1,21 @@
+{% load icon_tags %}
+{% comment %}
+The punch form itself, so the check-in and check-out buttons cannot drift apart.
+
+`hx-disabled-elt="this"` is the fix for a real glitch rather than a nicety: the
+panel is re-rendered in place on every punch, so a double-click sent two POSTs
+and the second one — which `models.punch` correctly answers with its `unchanged`
+no-op — replaced "Checked in at 10:02 AM." with "You have already checked in
+and out for today." The employee saw the opposite of what happened.
+
+`method="post"` as well as `hx-post` so the button still works with htmx absent.
+{% endcomment %}
+<form method="post" action="{% url 'attendance:punch' %}"
+      hx-post="{% url 'attendance:punch' %}"
+      hx-target="#punch-control" hx-swap="outerHTML"
+      hx-disabled-elt="this">
+  {% csrf_token %}
+  <button type="submit" class="btn punch-btn punch-btn-{{ variant }}">
+    {% icon icon %} {{ label }}
+  </button>
+</form>

@@ -43,6 +43,86 @@ class DSRSystemTest(TestCase):
         self.assertEqual(entry.status, "completed")
         self.assertGreater(entry.hours_spent, Decimal("0"))
 
+    def test_a_long_open_ticket_cannot_break_the_dashboard(self):
+        """A ticket open longer than 999.99h used to 500 the dashboard.
+
+        `auto_log_ticket_dsr` writes `now - ticket.created_at` with no upper
+        bound and no full_clean, and the field used to be max_digits=5. Any
+        ticket open 42+ days therefore stored a value the decimal converter
+        could not read back, and `_personal_dsr` raised InvalidOperation on
+        every dashboard load for that user.
+        """
+        old = timezone.now() - timedelta(days=60)
+        Ticket.objects.filter(pk=self.ticket.pk).update(created_at=old)
+        self.ticket.refresh_from_db()
+
+        self.ticket.transition_to("resolved", actor=self.member)
+
+        entry = DSREntry.objects.get(ticket=self.ticket)
+        # 60 days == 1440h, which the old 5-digit field could not store.
+        self.assertGreater(entry.hours_spent, Decimal("999.99"))
+        # And it must survive the read-back that used to explode.
+        self.assertEqual(DSREntry.objects.get(pk=entry.pk).hours_spent, entry.hours_spent)
+
+        self.client.login(username="member", password="password")
+        response = self.client.get(reverse("dashboards:index"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_hours_survive_a_wide_round_trip(self):
+        """99999h was the widest figure anyone actually asked for."""
+        self.client.login(username="member", password="password")
+        DSREntry.objects.create(
+            company=self.company,
+            user=self.member,
+            date=timezone.localdate(),
+            task_name="Long-running migration",
+            hours_spent=Decimal("99999.99"),
+        )
+        stored = DSREntry.objects.get(task_name="Long-running migration")
+        self.assertEqual(stored.hours_spent, Decimal("99999.99"))
+        response = self.client.get(reverse("dashboards:index"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_quick_edit_leaves_a_wide_entry_editable(self):
+        """Editing status/notes on a wide row must not re-trip the 24h cap.
+
+        `DSREntryUpdateView` re-validates every posted field, so an
+        unconditional cap made each wide row permanently uneditable.
+        """
+        entry = DSREntry.objects.create(
+            company=self.company,
+            user=self.member,
+            date=timezone.localdate(),
+            task_name="Long-running migration",
+            hours_spent=Decimal("1440.00"),
+        )
+        self.client.login(username="member", password="password")
+        response = self.client.post(
+            reverse("dsr:dsr_update", kwargs={"pk": entry.pk}),
+            {"task_name": "Long-running migration", "status": "completed", "notes": "still going"},
+        )
+        self.assertEqual(response.status_code, 302)
+        entry.refresh_from_db()
+        self.assertEqual(entry.hours_spent, Decimal("1440.00"))
+        self.assertEqual(entry.notes, "still going")
+
+    def test_raising_a_wide_entry_still_hits_the_cap(self):
+        """The cap guards typing a big number; keeping one is not typing one."""
+        entry = DSREntry.objects.create(
+            company=self.company,
+            user=self.member,
+            date=timezone.localdate(),
+            task_name="Long-running migration",
+            hours_spent=Decimal("1440.00"),
+        )
+        self.client.login(username="member", password="password")
+        self.client.post(
+            reverse("dsr:dsr_update", kwargs={"pk": entry.pk}),
+            {"task_name": "Long-running migration", "status": "completed", "hours_spent": "300"},
+        )
+        entry.refresh_from_db()
+        self.assertEqual(entry.hours_spent, Decimal("1440.00"))
+
     def test_dsr_sheet_view_permissions(self):
         self.client.login(username="member", password="password")
         url = reverse("dsr:dsr_sheet")
@@ -270,3 +350,118 @@ class DSRSheetRenderTest(TestCase):
         targets = set(re.findall(r'\sid="([^"]+)"', body))
         for target in re.findall(r'<label[^>]*\sfor="([^"]+)"', body):
             self.assertIn(target, targets, f"label points at missing id {target!r}")
+
+
+class SubmissionWindowTest(TestCase):
+    """A DSR day is submitted on the day; past days stay readable, not writable.
+
+    The boundary is the local calendar, so a sheet is still open at 23:59 and
+    becomes read-only at 00:00 -- there is no stored cutoff to drift.
+    """
+
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme Corp", slug="acme")
+        self.member = User.objects.create_user(username="member", password="password")
+        self.owner = User.objects.create_user(username="owner", password="password")
+        Membership.objects.create(user=self.member, company=self.company, role=Membership.Role.DEVELOPER)
+        Membership.objects.create(user=self.owner, company=self.company, role=Membership.Role.OWNER)
+        self.today = timezone.localdate()
+        self.past = self.today - timedelta(days=1)
+        self.future = self.today + timedelta(days=1)
+        self.entry = DSREntry.objects.create(
+            company=self.company,
+            user=self.member,
+            date=self.past,
+            task_name="Forgot to log this",
+            hours_spent=Decimal("2.00"),
+        )
+
+    def login(self, user="member"):
+        self.client.login(username=user, password="password")
+
+    def sheet(self, day, user="member"):
+        return self.client.get(reverse("dsr:dsr_sheet"), {"date": day.isoformat()})
+
+    def test_past_day_is_readable(self):
+        self.login()
+        response = self.sheet(self.past)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Forgot to log this")
+
+    def test_past_day_offers_no_edit_controls(self):
+        self.login()
+        body = self.sheet(self.past).content.decode()
+        self.assertNotIn(f"/dsr/{self.entry.pk}/update/", body)
+        self.assertNotIn(f"/dsr/{self.entry.pk}/delete/", body)
+        self.assertIn("Read-only", body)
+
+    def test_past_day_refuses_an_update(self):
+        self.login()
+        self.client.post(
+            reverse("dsr:dsr_update", kwargs={"pk": self.entry.pk}),
+            {"task_name": "Rewritten", "status": "completed"},
+        )
+        self.entry.refresh_from_db()
+        self.assertEqual(self.entry.task_name, "Forgot to log this")
+
+    def test_past_day_refuses_a_delete(self):
+        self.login()
+        self.client.post(reverse("dsr:dsr_delete", kwargs={"pk": self.entry.pk}))
+        self.assertTrue(DSREntry.objects.filter(pk=self.entry.pk).exists())
+
+    def test_past_day_refuses_a_new_entry(self):
+        self.login()
+        before = DSREntry.objects.count()
+        self.client.post(
+            f"{reverse('dsr:dsr_add')}?date={self.past.isoformat()}",
+            {
+                "task_name": "Backdated",
+                "category": "other",
+                "hours_spent": "1",
+                "status": "completed",
+            },
+        )
+        self.assertEqual(DSREntry.objects.count(), before)
+
+    def test_an_admin_can_still_fix_a_past_day(self):
+        """The override exists so a forgotten or mistyped sheet is correctable."""
+        self.login("owner")
+        self.client.post(
+            reverse("dsr:dsr_update", kwargs={"pk": self.entry.pk}),
+            {"task_name": "Corrected", "status": "completed"},
+        )
+        self.entry.refresh_from_db()
+        self.assertEqual(self.entry.task_name, "Corrected")
+
+    def test_today_is_open_until_midnight(self):
+        self.login()
+        self.client.post(
+            f"{reverse('dsr:dsr_add')}?date={self.today.isoformat()}",
+            {
+                "task_name": "Logged before the deadline",
+                "category": "other",
+                "hours_spent": "1",
+                "status": "completed",
+            },
+        )
+        self.assertEqual(DSREntry.objects.filter(task_name="Logged before the deadline").count(), 1)
+
+    def test_future_day_is_refused_for_everyone(self):
+        """Not even an admin can pre-log hours that have not been worked."""
+        self.login("owner")
+        before = DSREntry.objects.count()
+        self.client.post(
+            f"{reverse('dsr:dsr_add')}?date={self.future.isoformat()}",
+            {
+                "task_name": "Work not yet done",
+                "category": "other",
+                "hours_spent": "1",
+                "status": "completed",
+            },
+        )
+        self.assertEqual(DSREntry.objects.count(), before)
+
+    def test_no_forward_link_past_today(self):
+        self.login()
+        body = self.sheet(self.today).content.decode()
+        self.assertNotIn(self.future.isoformat(), body)

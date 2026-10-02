@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}All errors — PQ Platform{% endblock %}
 
@@ -34,28 +35,9 @@
     {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
     {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
   </form>
-  <select aria-label="Filter by product" class="filter-select" onchange="window.location=buildUrl({product:this.value})">
-    <option value="">All products</option>
-    {% for p in products %}
-    <option value="{{ p.pk }}" {% if current_product == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
-    {% endfor %}
-  </select>
-  <select aria-label="Filter by severity" class="filter-select" onchange="window.location=buildUrl({severity:this.value})">
-    <option value="">All severities</option>
-    <option value="critical" {% if current_severity == 'critical' %}selected{% endif %}>Critical</option>
-    <option value="high" {% if current_severity == 'high' %}selected{% endif %}>High</option>
-    <option value="medium" {% if current_severity == 'medium' %}selected{% endif %}>Medium</option>
-    <option value="low" {% if current_severity == 'low' %}selected{% endif %}>Low</option>
-    <option value="info" {% if current_severity == 'info' %}selected{% endif %}>Info</option>
-  </select>
-  <select aria-label="Sort" class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
-    <option value="-last_seen" {% if current_sort == '-last_seen' %}selected{% endif %}>Most recent</option>
-    <option value="last_seen" {% if current_sort == 'last_seen' %}selected{% endif %}>Least recent</option>
-    <option value="-count" {% if current_sort == '-count' %}selected{% endif %}>Most occurrences</option>
-    <option value="count" {% if current_sort == 'count' %}selected{% endif %}>Least occurrences</option>
-    <option value="-severity" {% if current_sort == '-severity' %}selected{% endif %}>Severity (high first)</option>
-    <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title A-Z</option>
-  </select>
+  {% dropdown "product" products|obj_pairs:"pk:name" current_product placeholder="All products" empty_value="" label="Filter by product" navigate=True %}
+  {% dropdown "severity" "critical:Critical|high:High|medium:Medium|low:Low|info:Info"|opts current_severity placeholder="All severities" empty_value="" label="Filter by severity" navigate=True %}
+  {% dropdown "sort" "-last_seen:Most recent|last_seen:Least recent|-count:Most occurrences|count:Least occurrences|-severity:Severity (high first)|title:Title A-Z"|opts current_sort|default:"-last_seen" placeholder="Sort" label="Sort" navigate=True %}
 </div>
 
 <table>

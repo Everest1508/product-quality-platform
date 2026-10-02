@@ -1,0 +1,42 @@
+{% comment %}
+The live split preview on the apply screen.
+
+Empty by design: `LeaveSplitPreviewView` renders this with no context whenever
+the dates do not parse yet or the span has no working days, so the panel
+disappears rather than showing "0 paid, 0 unpaid" while somebody is still
+typing.
+
+The wording is the applicant's, not the policy's. "3 paid, 2 unpaid" says what
+happens to them; the approver's version in the dialog adds the reason, because
+there the reader has to judge the number.
+{% endcomment %}
+{% load leave_tags %}
+{% if preview %}
+<div class="card" style="max-width:620px;margin-top:16px;border-left:3px solid var(--accent);">
+  <div class="form-section-label">If you submit these dates</div>
+  <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px;flex-wrap:wrap;">
+    <span style="font-size:19px;font-weight:600;">{{ preview.paid|leave_days }}</span>
+    <span class="text-muted">paid</span>
+    {% if preview.unpaid > 0 %}
+    <span class="text-muted" style="font-size:17px;">·</span>
+    <span style="font-size:19px;font-weight:600;">{{ preview.unpaid|leave_days }}</span>
+    <span class="text-muted">charged as unpaid leave</span>
+    {% endif %}
+  </div>
+  {# `pluralize:"day"` is NOT "day or days" -- Django reads the argument as a
+     suffix pair, so "day" becomes singular="" / plural="day" and the template
+     printed the bare word "day" after every count. `pluralize` with no argument
+     is the "add an s" filter, which is what a literal trailing word needs. #}
+  <div class="field-hint" style="margin-top:10px;">
+    of {{ days|leave_days }} working day{{ days|pluralize }}
+    {% if policy.max_consecutive_days %}
+      · your {{ policy.name }} allowance covers {{ policy.max_consecutive_days|leave_days }} paid day{{ policy.max_consecutive_days|pluralize }} at a time
+    {% endif %}
+  </div>
+  {% if preview.unpaid > 0 %}
+  <div class="field-hint" style="margin-top:6px;">
+    Your approver can change this when they review it.
+  </div>
+  {% endif %}
+</div>
+{% endif %}

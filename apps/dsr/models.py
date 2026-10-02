@@ -47,7 +47,7 @@ class DSREntry(models.Model):
     created_time = models.DateTimeField(null=True, blank=True)
     completed_time = models.DateTimeField(null=True, blank=True)
     hours_spent = models.DecimalField(
-        max_digits=5,
+        max_digits=8,
         decimal_places=2,
         default=0.00,
     )

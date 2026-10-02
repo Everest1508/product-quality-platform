@@ -36,7 +36,7 @@
       <tr>
         <th>Employee</th>
         <th>Days present</th>
-        <th>Open days</th>
+        <th title="Days checked in but never checked out">No check-out</th>
         <th>Total worked</th>
         <th>Avg / day</th>
         <th></th>
@@ -59,7 +59,7 @@
           {% endif %}
         </td>
         <td>
-          {% if row.open_days %}<span class="pill high">{{ row.open_days }}</span>
+          {% if row.open_days %}<span class="pill high" title="Checked in but never checked out">{{ row.open_days }}</span>
           {% else %}<span class="text-muted">0</span>{% endif %}
         </td>
         <td><strong>{{ row.total_formatted }}</strong></td>

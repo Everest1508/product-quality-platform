@@ -101,7 +101,22 @@ class PayrollTestBase(TestCase):
             effective_from=effective_from or date(2026, 1, 1),
         )
 
-    def leave(self, user, start, end, policy, status="approved", half=False):
+    def leave(self, user, start, end, policy, status="approved", half=False,
+              paid=None, unpaid=None):
+        """A leave request, split stored the way an application or an approval
+        stores it.
+        """
+        days = Decimal("0.5") if half else Decimal(
+            str(len(service._weekdays(start, end)))
+        )
+        if paid is None and unpaid is None:
+            pd = days if policy.is_paid else Decimal("0")
+            ud = Decimal("0") if policy.is_paid else days
+            sm = "auto"
+        else:
+            pd = paid if paid is not None else days - unpaid
+            ud = unpaid if unpaid is not None else days - paid
+            sm = "manual"
         return LeaveRequest.objects.create(
             company=self.company,
             user=user,
@@ -109,9 +124,10 @@ class PayrollTestBase(TestCase):
             start_date=start,
             end_date=end,
             is_half_day=half,
-            days=Decimal("0.5") if half else Decimal(
-                str(len(service._weekdays(start, end)))
-            ),
+            days=days,
+            paid_days=pd,
+            unpaid_days=ud,
+            split_mode=sm,
             status=status,
         )
 
@@ -193,6 +209,74 @@ class LeaveInPeriodTest(PayrollTestBase):
             self.company, self.dev, self.start, self.end
         )
         self.assertEqual(result["unpaid_days"], Decimal("0.5"))
+
+    def test_the_stored_split_wins_over_the_policy(self):
+        """An approver can mark a paid type's days unpaid, and payroll must agree.
+
+        This is the case the split was added for: a developer is marked
+        unpaid-only for a launch week under a Casual policy that is normally
+        paid in full. Reading the policy instead of the request would pay them.
+        """
+        self.leave(
+            self.dev, date(2026, 11, 2), date(2026, 11, 4), self.casual,
+            paid=Decimal("1"), unpaid=Decimal("2"),
+        )
+        result = service.leave_days_in_period(
+            self.company, self.dev, self.start, self.end
+        )
+        self.assertEqual(result["paid_days"], Decimal("1.00"))
+        self.assertEqual(result["unpaid_days"], Decimal("2.00"))
+
+    def test_an_approver_can_mark_an_unpaid_types_days_paid(self):
+        """An override in the paid direction is honoured, not second-guessed.
+
+        `is_paid=False` is the default for that type, not a floor on what may be
+        approved: "pay this one, he's covering the release" is a real decision
+        and the approver is the only person who can make it. Payroll reads the
+        stored split, so the exception survives into the payslip.
+        """
+        self.leave(
+            self.dev, date(2026, 11, 2), date(2026, 11, 4), self.unpaid,
+            paid=Decimal("3"), unpaid=Decimal("0"),
+        )
+        result = service.leave_days_in_period(
+            self.company, self.dev, self.start, self.end
+        )
+        self.assertEqual(result["paid_days"], Decimal("3.00"))
+        self.assertEqual(result["unpaid_days"], Decimal("0.00"))
+
+    def test_a_part_unpaid_spell_is_billed_paid_days_first(self):
+        """Paid days come from the start of the span, as `auto_split` decided.
+
+        The straddle case is where the two halves have to agree: 3 paid + 2
+        unpaid over a span crossing the 27th must cost the same total whichever
+        cycle is run. Charging unpaid first would move a paid day into the later
+        cycle and change the per-cycle figures the payslips quote.
+        """
+        self.leave(
+            self.dev, date(2026, 10, 23), date(2026, 11, 4), self.casual,
+            paid=Decimal("3"), unpaid=Decimal("6"),
+        )
+        first = service.leave_days_in_period(
+            self.company, self.dev, date(2026, 9, 27), date(2026, 10, 26)
+        )
+        second = service.leave_days_in_period(
+            self.company, self.dev, self.start, self.end
+        )
+        # 23, 26 Oct fall in the first cycle: both are within the 3 paid days,
+        # so the whole first cycle is paid.
+        self.assertEqual(first["paid_days"], Decimal("2.00"))
+        self.assertEqual(first["unpaid_days"], Decimal("0.00"))
+        # The third paid day lands on 27 Oct; everything after it is unpaid.
+        self.assertEqual(second["paid_days"], Decimal("1.00"))
+        self.assertEqual(second["unpaid_days"], Decimal("6.00"))
+        # Nothing is lost or invented across the boundary.
+        self.assertEqual(
+            first["paid_days"] + second["paid_days"], Decimal("3.00")
+        )
+        self.assertEqual(
+            first["unpaid_days"] + second["unpaid_days"], Decimal("6.00")
+        )
 
     def test_leave_is_split_across_two_cycles(self):
         """25 Oct - 4 Nov straddles the 27th, so the days must be clipped."""

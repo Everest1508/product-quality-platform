@@ -43,15 +43,56 @@ class AttendanceRecord(TenantScopedModel):
 
     @property
     def is_open(self):
-        """True between check-in and check-out, i.e. the employee is on the clock."""
+        """check_in recorded, check_out not yet recorded -- on *any* day.
+
+        This is a property of the row, not of the clock: it is equally true for
+        somebody working right now and for a punch somebody forgot to close three
+        weeks ago. Use `is_open_today` / `is_stale` to tell those apart, because
+        rendering both as "On clock" is how an unclosed day becomes invisible.
+        """
         return self.check_in is not None and self.check_out is None
+
+    @property
+    def is_open_today(self):
+        """Open on today's date: genuinely still on the clock."""
+        return self.is_open and self.date == timezone.localdate()
+
+    @property
+    def is_stale(self):
+        """Open but left unclosed on its own day: a forgotten check-out.
+
+        Defined here, not in `service.get_who_is_in`, because it is a fact about
+        the record. The team view used to compute it privately, so the four other
+        places that render an open day had no way to ask.
+        """
+        return self.is_open and self.date < timezone.localdate()
 
     @property
     def is_complete(self):
         return self.check_in is not None and self.check_out is not None
 
     @property
+    def open_days(self):
+        """Whole days between the punch date and today (0 while it is today's).
+
+        Days *since*, not days *open-for*: a punch from 3 days ago reads "3",
+        which is what "checked in 3 days ago" has to say. Counting today's open
+        day as well would report a 3-day-old punch as 4 days old.
+        """
+        if not self.is_open:
+            return 0
+        return max(0, (timezone.localdate() - self.date).days)
+
+    @property
     def worked_minutes(self):
+        """The raw punch span, and only when both punches exist.
+
+        Deliberately 0 for an unclosed day: this is what the punches *say*, and
+        they say nothing about when the person left. Anything that has to put a
+        number on an unclosed day goes through
+        `apps.attendance.service.effective_span_for`, which has the office
+        hours needed to cap a guess.
+        """
         if not self.is_complete:
             return 0
         delta = self.check_out - self.check_in
@@ -66,14 +107,25 @@ class AttendanceRecord(TenantScopedModel):
         return format_minutes(self.worked_minutes)
 
     @property
+    def elapsed_minutes(self):
+        """Minutes since check-in while the day is still open, else 0."""
+        if not self.is_open:
+            return 0
+        return max(0, int((timezone.now() - self.check_in).total_seconds() // 60))
+
+    @property
     def elapsed_formatted(self):
         """Time on the clock right now, for an open record."""
         if not self.is_open:
             return "N/A"
-        return format_minutes(self._elapsed_minutes())
+        return format_minutes(self.elapsed_minutes)
 
-    def _elapsed_minutes(self):
-        return max(0, int((timezone.now() - self.check_in).total_seconds() // 60))
+    @property
+    def missing_checkout_label(self):
+        """How long the day has been left open, for the flag beside the row."""
+        if self.is_open_today:
+            return "today"
+        return f"{self.open_days}d"
 
 
 def format_minutes(minutes):

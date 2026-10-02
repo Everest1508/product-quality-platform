@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}{% if editing %}Edit Rule{% else %}New Rule{% endif %} — PQ Platform{% endblock %}
 
@@ -41,13 +42,8 @@
         {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
       </div>
       <div class="form-group" style="margin-bottom:0;">
-        <label for="product">Product Scope</label>
-        <select id="product" name="product" class="form-input">
-          <option value="">All products (Company-wide)</option>
-          {% for product in form.fields.product.queryset %}
-          <option value="{{ product.pk }}" {% if form.product.value|stringformat:"d" == product.pk|stringformat:"d" %}selected{% endif %}>{{ product.name }}</option>
-          {% endfor %}
-        </select>
+        <span class="dd-label">Product Scope</span>
+        {% dropdown "product" form.fields.product.queryset|obj_pairs:"pk:name" form.product.value placeholder="All products (Company-wide)" label="Product Scope" empty_value="" %}
         <p class="field-hint">Leave blank to evaluate this rule across all products in your company.</p>
       </div>
     </div>
@@ -56,20 +52,12 @@
       <div class="form-section-label">Trigger Thresholds</div>
       <div class="grid-2">
         <div class="form-group">
-          <label for="trigger_type">Trigger Type</label>
-          <select id="trigger_type" name="trigger_type" class="form-input">
-            <option value="error_threshold" {% if form.trigger_type.value == "error_threshold" %}selected{% endif %}>Error Threshold</option>
-          </select>
+          <span class="dd-label">Trigger Type</span>
+          {% dropdown "trigger_type" "error_threshold:Error Threshold"|opts form.trigger_type.value placeholder="Error Threshold" label="Trigger Type" %}
         </div>
         <div class="form-group">
-          <label for="severity">Severity Filter</label>
-          <select id="severity" name="severity" class="form-input">
-            <option value="">All severities</option>
-            <option value="critical" {% if form.severity.value == "critical" %}selected{% endif %}>Critical</option>
-            <option value="high" {% if form.severity.value == "high" %}selected{% endif %}>High</option>
-            <option value="medium" {% if form.severity.value == "medium" %}selected{% endif %}>Medium</option>
-            <option value="low" {% if form.severity.value == "low" %}selected{% endif %}>Low</option>
-          </select>
+          <span class="dd-label">Severity Filter</span>
+          {% dropdown "severity" ":All severities|critical:Critical|high:High|medium:Medium|low:Low"|opts form.severity.value placeholder="All severities" label="Severity Filter" %}
         </div>
       </div>
       <div class="grid-2" style="margin-bottom:0;">
@@ -88,20 +76,12 @@
       <div class="form-section-label">Action &amp; Target</div>
       <div class="grid-2">
         <div class="form-group">
-          <label for="action">Automated Action</label>
-          <select id="action" name="action" class="form-input">
-            <option value="create_ticket" {% if form.action.value == "create_ticket" %}selected{% endif %}>Create Ticket</option>
-            <option value="notify_only" {% if form.action.value == "notify_only" %}selected{% endif %}>Notify Only</option>
-          </select>
+          <span class="dd-label">Automated Action</span>
+          {% dropdown "action" "create_ticket:Create Ticket|notify_only:Notify Only"|opts form.action.value placeholder="Create Ticket" label="Automated Action" %}
         </div>
         <div class="form-group">
-          <label for="assign_to">Assign To</label>
-          <select id="assign_to" name="assign_to" class="form-input">
-            <option value="">Nobody (Unassigned)</option>
-            {% for user in form.fields.assign_to.queryset %}
-            <option value="{{ user.pk }}" {% if form.assign_to.value|stringformat:"d" == user.pk|stringformat:"d" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
-            {% endfor %}
-          </select>
+          <span class="dd-label">Assign To</span>
+          {% dropdown "assign_to" form.fields.assign_to.queryset|obj_pairs:"pk:get_full_name" form.assign_to.value placeholder="Nobody (Unassigned)" label="Assign To" empty_value="" %}
         </div>
       </div>
       <div class="form-group" style="margin-bottom:0;">

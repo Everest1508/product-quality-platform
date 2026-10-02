@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}Automation — PQ Platform{% endblock %}
 
@@ -23,16 +24,8 @@
     {% if current_active %}<input type="hidden" name="active" value="{{ current_active }}">{% endif %}
     {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
   </form>
-  <select class="filter-select" aria-label="Filter by trigger" onchange="window.location=buildUrl({trigger:this.value})">
-    <option value="">All triggers</option>
-    <option value="error_threshold" {% if current_trigger == 'error_threshold' %}selected{% endif %}>Error threshold</option>
-  </select>
-  <select aria-label="Sort" class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
-    <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>Newest first</option>
-    <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Oldest first</option>
-    <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
-    <option value="-fired" {% if current_sort == '-fired' %}selected{% endif %}>Most triggered</option>
-  </select>
+  {% dropdown "trigger" ":All triggers|error_threshold:Error threshold"|opts current_trigger placeholder="All triggers" label="Filter by trigger" navigate=True %}
+  {% dropdown "sort" "-created:Newest first|created:Oldest first|name:Name A-Z|-fired:Most triggered"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
 </div>
 
 <table>

@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}Daily Status Report (DSR) — PQ Platform{% endblock %}
 
@@ -59,17 +60,13 @@
     
     <div style="display:flex;align-items:center;gap:6px;">
       <label style="font-size:12px;font-weight:500;color:var(--muted);" for="date">Date:</label>
-      <input id="date" type="date" name="date" class="form-input" value="{{ selected_date|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
+      <input id="date" type="date" name="date" class="form-input" value="{{ selected_date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
     </div>
 
     {% if is_privileged and members %}
     <div style="display:flex;align-items:center;gap:6px;">
-      <label style="font-size:12px;font-weight:500;color:var(--muted);" for="user_id">Employee:</label>
-      <select id="user_id" name="user_id" class="form-input" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
-        {% for member in members %}
-        <option value="{{ member.pk }}" {% if member.pk == target_user.pk %}selected{% endif %}>{{ member.get_full_name|default:member.username }}</option>
-        {% endfor %}
-      </select>
+      <span class="dd-label" style="font-size:12px;font-weight:500;color:var(--muted);">Employee</span>
+      {% dropdown "user_id" members|obj_pairs:"pk:get_full_name" target_user.pk placeholder="Select an employee" label="Employee" submit=True %}
     </div>
     {% endif %}
 
@@ -80,7 +77,9 @@
     <a href="{% url 'dsr:dsr_sheet' %}?date={{ prev_date|date:'Y-m-d' }}{% if target_user != request.user %}&user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm" title="Previous Day">← {{ prev_date|date:"M j" }}</a>
     <a href="{% url 'dsr:dsr_sheet' %}{% if target_user != request.user %}?user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm {% if selected_date == today %}btn-primary{% endif %}">Today</a>
     <a href="{% url 'dsr:dsr_sheet' %}?date={{ yesterday|date:'Y-m-d' }}{% if target_user != request.user %}&user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm {% if selected_date == yesterday %}btn-primary{% endif %}">Yesterday</a>
+    {% if next_date > today %}
     <a href="{% url 'dsr:dsr_sheet' %}?date={{ next_date|date:'Y-m-d' }}{% if target_user != request.user %}&user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm" title="Next Day">{{ next_date|date:"M j" }} →</a>
+    {% endif %}
   </div>
 </div>
 

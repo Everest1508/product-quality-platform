@@ -4,21 +4,59 @@
 
 {% block content %}
 <style>
-  .punch-panel{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:20px;flex-wrap:wrap;}
-  .punch-state{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
-  .punch-state-meta{display:flex;flex-direction:column;gap:2px;}
-  .punch-state-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
-  .punch-state-time{font-size:19px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
-  .punch-btn{padding:9px 18px;font-size:14px;gap:7px;display:inline-flex;align-items:center;}
-  .punch-state-open{background:var(--green-bg);border:1px solid var(--green);border-radius:8px;padding:12px 16px;}
-  .punch-state-open .punch-state-label{color:var(--green);}
-  .punch-state-open .punch-state-time{color:var(--green);}
-  .punch-state-done{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;}
-  .punch-state-ready{background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;padding:12px 16px;}
-  .punch-state-ready .punch-state-label{color:var(--blue);}
+  /* Punch panel. One row: state on the left, elapsed + button on the right. */
+  .punch{display:flex;flex-direction:column;gap:12px;}
+  .punch-state{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+               border:1px solid var(--border);border-radius:10px;padding:16px 18px;background:#fff;}
+  .punch-main{display:flex;align-items:center;gap:14px;min-width:0;}
+  .punch-icon{display:flex;align-items:center;justify-content:center;width:38px;height:38px;
+              border-radius:50%;flex-shrink:0;background:var(--panel);color:var(--muted);}
+  .punch-icon .ic{width:19px;height:19px;}
+  .punch-copy{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .punch-label{font-size:16px;font-weight:600;color:var(--text);}
+  .punch-sub{font-size:13px;color:var(--muted);}
+  .punch-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+  .punch-elapsed{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text);}
+
+  .punch-state-open{background:var(--green-bg);border-color:var(--green);}
+  .punch-state-open .punch-icon{background:#fff;color:var(--green);}
+  .punch-state-open .punch-label,.punch-state-open .punch-elapsed{color:var(--green);}
+  .punch-state-ready .punch-icon{background:var(--blue-bg);color:var(--blue);}
+  .punch-state-ready .punch-label{color:var(--blue);}
+  .punch-state-done .punch-icon{background:var(--green-bg);color:var(--green);}
+
+  /* Lateness is priced, so it is coloured like money: green when free,
+     orange for the cash bands, red where it costs half a day. */
+  .punch-ontime{color:var(--green);font-weight:500;}
+  .punch-late{color:var(--orange);font-weight:600;}
+  .punch-late-hard{color:var(--red);}
+
+  /* These two were used by the template and never defined, so both punch
+     buttons rendered as the same plain `.btn`. Check-out is the one that ends
+     the day and needs to look like it. */
+  .punch-btn{padding:10px 20px;font-size:14px;font-weight:600;gap:8px;display:inline-flex;align-items:center;}
+  .punch-btn .ic{width:15px;height:15px;}
+  .punch-btn-in{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .punch-btn-in:hover{background:#1a4f9c;}
+  .punch-btn-out{background:#fff;border-color:var(--green);color:var(--green);}
+  .punch-btn-out:hover{background:var(--green-bg);}
+
+  .punch-warn{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:8px;
+              background:var(--orange-bg);border:1px solid var(--orange);}
+  .punch-warn-icon{flex-shrink:0;color:var(--orange);display:flex;padding-top:1px;}
+  .punch-warn-icon .ic{width:17px;height:17px;}
+  .punch-warn-copy{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--orange);}
+  .punch-warn-copy strong{font-weight:600;}
+
   .punch-message{margin:0;font-size:13px;color:var(--muted);}
+  .punch-btn[disabled]{opacity:.6;cursor:progress;}
+
   .att-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-  @media (max-width:640px){.att-stats{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:640px){
+    .att-stats{grid-template-columns:repeat(2,1fr);}
+    .punch-state{align-items:flex-start;}
+    .punch-actions{width:100%;justify-content:space-between;}
+  }
 </style>
 
 <nav class="breadcrumbs">
@@ -53,18 +91,21 @@
   </div>
 </div>
 
-{% if not focus_user %}
-<div class="punch-panel">
+{% comment %}
+Always rendered, including when an admin reads a colleague's page: the partial
+hides its own button in that case (`punch_readonly`) but still shows the
+forgotten-check-out warning, which is the reason they opened the page.
+{% endcomment %}
+<div class="card" style="padding:18px;margin-bottom:20px;">
   {% include "attendance/partials/_punch_button.html" %}
 </div>
-{% endif %}
 
 <div class="att-stats">
   <div class="card stat">
     <div class="text-sm text-muted">Today</div>
     <div style="font-size:22px;font-weight:600;margin-top:4px;">
       {% if today_record and today_record.is_complete %}{{ today_record.worked_formatted }}
-      {% elif is_open %}running
+      {% elif today_record and today_record.is_open %}{{ today_record.effective_formatted }}
       {% else %}—{% endif %}
     </div>
   </div>
@@ -80,9 +121,19 @@
     <div class="text-sm text-muted">Status</div>
     <div style="font-size:22px;font-weight:600;margin-top:4px;">
       {% if today_record and today_record.is_complete %}<span class="pill resolved">done</span>
-      {% elif is_open %}<span class="pill open">on clock</span>
+      {% elif today_record and today_record.is_open %}<span class="pill open">on clock</span>
       {% else %}<span class="pill closed">not in</span>{% endif %}
     </div>
+  </div>
+  {# A forgotten check-out on an *earlier* day is a different problem from
+     today's state, and the stat strip above only knows about today. Counted
+     over the month being viewed, not just today. #}
+  <div class="card stat">
+    <div class="text-sm text-muted">No check-out</div>
+    <div style="font-size:22px;font-weight:600;margin-top:4px;{% if unclosed_days %}color:var(--orange);{% endif %}">{{ unclosed_days }}</div>
+    {% if unclosed_days %}
+    <div class="text-sm text-muted" style="margin-top:2px;">day(s) this month need a check-out</div>
+    {% endif %}
   </div>
 </div>
 

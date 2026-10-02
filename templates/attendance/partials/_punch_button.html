@@ -1,9 +1,31 @@
+{% load icon_tags %}
 {% comment %}
-Punch control. Shows today's state and the button that advances it.
-On an htmx punch the server re-renders this partial, so the state is never
-stale in the DOM; the inline Alpine only ticks the elapsed counter locally.
+Punch control — the one thing an employee opens this page to do.
+
+Rendered from two places, `MyAttendanceView` on a page load and
+`AttendancePunchView` on an htmx punch, both through `_punch_context`, so the
+two can never disagree about what state the day is in. After a punch the server
+re-renders this partial, so the DOM is never stale; the Alpine `x-text` only
+ticks the elapsed counter locally between requests.
+
+Three things it has to get right:
+
+* **Show when you checked in, not just how long you have been here.** The old
+  panel said "On the clock since" and then printed a *duration*, so the one
+  number an employee wanted — the time — was nowhere on the screen.
+* **Say "late" when it happens.** A late punch costs Rs 50 / Rs 100 / half a
+  day, and this panel used to not mention it at all, so the first notice was a
+  payslip weeks later. The band comes from `late_penalty_for`, the same call the
+  payslip makes, so the two cannot quote different numbers.
+* **Repeat a forgotten check-out from an earlier day.** It is the reason the
+  hours are capped, and hiding it here is how it went unnoticed for weeks.
+
+The three states are `is_complete` (day done), `is_open_today` (on the clock)
+and neither (not in yet). `is_open` alone cannot pick between the last two —
+see `apps/attendance/models.py`.
 {% endcomment %}
 <div id="punch-control"
+     class="punch"
      x-data="{
        since: {{ today_record.check_in|date:'c'|default:'null'|safe }},
        mins: null,
@@ -18,49 +40,86 @@ stale in the DOM; the inline Alpine only ticks the elapsed counter locally.
      }"
      x-init="if (since) { tick(); setInterval(tick, 30000); }">
 
-  {% if today_record and today_record.is_open %}
-    <div class="punch-state punch-state-open">
-      <div class="punch-state-meta">
-        <span class="punch-state-label">On the clock since</span>
-        <span class="punch-state-time" x-text="elapsed">{{ today_record.elapsed_formatted }}</span>
-      </div>
-      <form method="post" action="{% url 'attendance:punch' %}"
-            hx-post="{% url 'attendance:punch' %}" hx-target="#punch-control" hx-swap="outerHTML">
-        {% csrf_token %}
-        <button type="submit" class="btn punch-btn punch-btn-out">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-          Check out
-        </button>
-      </form>
-    </div>
-
+  {% if punch_readonly %}
+    {% comment %}
+    An admin reading a colleague's page. The state row and its button are hidden
+    because the button would punch the *viewer* — but the forgotten check-out
+    below is exactly what an admin came here to find, so it stays.
+    {% endcomment %}
   {% elif today_record and today_record.is_complete %}
     <div class="punch-state punch-state-done">
-      <div class="punch-state-meta">
-        <span class="punch-state-label">Today</span>
-        <span class="punch-state-time">
-          {{ today_record.check_in|date:"g:i A" }} &rarr; {{ today_record.check_out|date:"g:i A" }}
-        </span>
+      <div class="punch-main">
+        <span class="punch-icon" aria-hidden="true">{% icon 'circle-check' %}</span>
+        <div class="punch-copy">
+          <span class="punch-label">Checked out</span>
+          <span class="punch-sub">
+            {{ today_record.check_in|date:"g:i A" }} → {{ today_record.check_out|date:"g:i A" }}
+            · Shift {{ shift_label }}
+            · {% include "attendance/partials/_late_note.html" %}
+          </span>
+        </div>
       </div>
-      <span class="pill resolved">{{ today_record.worked_formatted }}</span>
+      <div class="punch-actions">
+        <span class="punch-elapsed">{{ today_record.worked_formatted }}</span>
+      </div>
+    </div>
+
+  {% elif today_record and today_record.is_open_today %}
+    <div class="punch-state punch-state-open">
+      <div class="punch-main">
+        <span class="punch-icon" aria-hidden="true">{% icon 'clock' %}</span>
+        <div class="punch-copy">
+          <span class="punch-label">On the clock since {{ today_record.check_in|date:"g:i A" }}</span>
+          <span class="punch-sub">
+            Shift {{ shift_label }}
+            · {% include "attendance/partials/_late_note.html" %}
+          </span>
+        </div>
+      </div>
+      <div class="punch-actions">
+        <span class="punch-elapsed" x-text="elapsed">{{ today_record.elapsed_formatted }}</span>
+        {% include "attendance/partials/_punch_form.html" with label="Check out" icon="log-out" variant="out" %}
+      </div>
     </div>
 
   {% else %}
     <div class="punch-state punch-state-ready">
-      <div class="punch-state-meta">
-        <span class="punch-state-label">Not checked in yet</span>
-        <span class="punch-state-time">Today</span>
+      <div class="punch-main">
+        <span class="punch-icon" aria-hidden="true">{% icon 'clock' %}</span>
+        <div class="punch-copy">
+          <span class="punch-label">Not checked in</span>
+          <span class="punch-sub">
+            Shift {{ shift_label }}
+            {% if starts_in_minutes %} · starts in {{ starts_in_minutes }}m{% endif %}
+          </span>
+        </div>
       </div>
-      <form method="post" action="{% url 'attendance:punch' %}"
-            hx-post="{% url 'attendance:punch' %}" hx-target="#punch-control" hx-swap="outerHTML">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary punch-btn punch-btn-in">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
-          Check in
-        </button>
-      </form>
+      <div class="punch-actions">
+        {% include "attendance/partials/_punch_form.html" with label="Check in" icon="arrow-right" variant="in" %}
+      </div>
     </div>
   {% endif %}
 
-  {% if message %}<p class="punch-message">{{ message }}</p>{% endif %}
+  {% if missing_checkouts %}
+    <div class="punch-warn">
+      <span class="punch-warn-icon" aria-hidden="true">{% icon 'triangle-alert' %}</span>
+      <div class="punch-warn-copy">
+        <strong>{{ missing_checkouts|length }} earlier day{{ missing_checkouts|length|pluralize }} with no check-out</strong>
+        <span>
+          {% for r in missing_checkouts %}{{ r.date|date:"M j" }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          — your hours there are counted from check-in and capped at one working
+          day until an admin closes {{ missing_checkouts|length|pluralize:"it,them" }} out.
+        </span>
+      </div>
+    </div>
+  {% endif %}
+
+  {% comment %}
+  `aria-live` so a screen reader hears the result of a punch. The elapsed
+  counter above is deliberately *not* live — it refreshes every 30 seconds and
+  would interrupt whatever was being read.
+  {% endcomment %}
+  {% if message %}
+    <p class="punch-message" role="status" aria-live="polite">{{ message }}</p>
+  {% endif %}
 </div>

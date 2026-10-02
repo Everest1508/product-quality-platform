@@ -120,7 +120,7 @@ def working_day_list(company, start, end):
 
 
 def leave_days_in_period(company, user, start, end):
-    """Unpaid and paid leave days clipped to one cycle.
+    """Paid and unpaid leave days clipped to one cycle.
 
     A leave request can straddle two cycles (25 Oct - 4 Nov), so the days are
     recomputed from the date range rather than read off
@@ -129,9 +129,22 @@ def leave_days_in_period(company, user, start, end):
     Only days the person would actually have been paid for are counted: a
     weekend or a company holiday inside the leave span is skipped, otherwise
     leave covering a holiday would deduct pay for a day that was already free.
+
+    The paid/unpaid split is the request's own, not its policy's -- an approver
+    can mark a spell unpaid that the type would normally pay for, and payroll
+    has to price the decision that was actually made. A request with no stored
+    split predates the field and falls back to its policy, which is the only
+    record of the decision that existed then.
+
+    **Paid days are billed from the start of the request**, which is the
+    ordering `leave.service.auto_split` used when it decided the split. Given 3
+    paid and 2 unpaid over a span crossing the cycle boundary, October's two
+    working days are paid and November bills the remaining paid day then the
+    unpaid ones. Both halves have to agree or the same request costs a different
+    amount depending on which cycle is being run.
     """
-    unpaid = Decimal("0.00")
     paid = Decimal("0.00")
+    unpaid = Decimal("0.00")
     holidays = holiday_dates(company, start, end)
     for request in LeaveRequest.objects.filter(
         company=company,
@@ -140,15 +153,43 @@ def leave_days_in_period(company, user, start, end):
         start_date__lte=end,
         end_date__gte=start,
     ).select_related("policy"):
-        first = max(request.start_date, start)
-        last = min(request.end_date, end)
-        for day in _weekdays(first, last):
-            if day in holidays:
+        # Walk the request's *whole* billable span, not just the part inside
+        # this cycle, so each day's bucket is decided once and in order. Slicing
+        # to the cycle first and then re-applying the full split to the slice
+        # would hand every straddling cycle the request's entire paid allowance
+        # again: a 3 paid + 2 unpaid spell crossing the boundary would be paid
+        # 3 days in October *and* 3 in November, six paid days out of five.
+        split = request.split
+        # Half the span, so a half-day request inside the cycle stays 0.5.
+        share = HALF_DAY if request.is_half_day else DAY
+        paid_left = split["paid"]
+        unpaid_left = split["unpaid"]
+        # The request's holidays are fetched for its *own* span, not this
+        # cycle's: a holiday sitting outside the cycle still removes a billable
+        # day from the request, and skipping it here would hand its share to
+        # whichever day follows.
+        request_holidays = (
+            holidays
+            if request.start_date >= start and request.end_date <= end
+            else holiday_dates(company, request.start_date, request.end_date)
+        )
+        for day in _weekdays(request.start_date, request.end_date):
+            if day in request_holidays:
                 continue
-            if request.policy.is_paid:
-                paid += HALF_DAY if request.is_half_day else DAY
+            # Consume the bucket for *every* day in the span, including the ones
+            # belonging to an earlier cycle. Skipping them instead would restart
+            # the allowance here and let each straddling cycle be paid the full
+            # amount again.
+            bucket = "paid" if paid_left > 0 else "unpaid"
+            if bucket == "paid":
+                paid_left -= share
             else:
-                unpaid += HALF_DAY if request.is_half_day else DAY
+                unpaid_left -= share
+            if start <= day <= end:
+                if bucket == "paid":
+                    paid += share
+                else:
+                    unpaid += share
     return {"paid_days": paid, "unpaid_days": unpaid}
 
 

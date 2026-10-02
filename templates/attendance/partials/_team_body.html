@@ -68,34 +68,18 @@
         </td>
         <td>
           {{ row.record.date|date:"M d" }}
-          {% if row.is_stale %}<span class="pill high">stale</span>{% endif %}
+          {% if row.is_stale %}<span class="pill high" title="Checked in {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>{% endif %}
         </td>
         <td style="text-align:right;">
           <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">
-            Edit
+            {% if row.is_stale %}Set check-out{% else %}Edit{% endif %}
           </button>
         </td>
       </tr>
 
       <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
         <td colspan="5" style="background:var(--panel);">
-          <form method="post" action="{% url 'attendance:attendance_edit' row.record.pk %}"
-                style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:6px 0;">
-            {% csrf_token %}
-            <div>
-              <label class="text-sm text-muted" for="edit_check_in_{{ row.record.pk }}" style="display:block;margin-bottom:4px;">Check in</label>
-              <input id="edit_check_in_{{ row.record.pk }}" type="datetime-local" name="check_in" value="{{ row.record.check_in|date:'Y-m-d\\TH:i' }}" class="form-input" style="padding:6px 10px;">
-            </div>
-            <div>
-              <label class="text-sm text-muted" for="edit_check_out_{{ row.record.pk }}" style="display:block;margin-bottom:4px;">Check out</label>
-              <input id="edit_check_out_{{ row.record.pk }}" type="datetime-local" name="check_out" value="{{ row.record.check_out|date:'Y-m-d\\TH:i' }}" class="form-input" style="padding:6px 10px;">
-            </div>
-            <div style="flex:1;min-width:160px;">
-              <label class="text-sm text-muted" for="edit_notes_{{ row.record.pk }}" style="display:block;margin-bottom:4px;">Notes</label>
-              <input id="edit_notes_{{ row.record.pk }}" type="text" name="notes" value="{{ row.record.notes }}" class="form-input" style="padding:6px 10px;" placeholder="Optional">
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save</button>
-          </form>
+          {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
         </td>
       </tr>
       {% endfor %}
@@ -123,6 +107,7 @@
         <th>Check out</th>
         <th>Worked</th>
         <th>Status</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -137,19 +122,36 @@
         <td>{{ row.record.check_out|date:"g:i A"|default:"—" }}</td>
         <td>
           {% if row.record and row.record.is_complete %}{{ row.record.worked_formatted }}
-          {% elif row.record and row.record.is_open %}<span class="text-muted">running</span>
+          {% elif row.record and row.record.is_open %}<span class="text-muted">{{ row.record.elapsed_formatted }}</span>
           {% else %}<span class="text-muted">—</span>{% endif %}
         </td>
         <td>
           {% if row.on_leave %}<span class="pill open" title="On approved leave">On leave</span>
-          {% elif row.record and row.record.is_open %}<span class="pill open">On clock</span>
+          {% elif row.record and row.record.is_stale %}<span class="pill high" title="Checked in on {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>
+          {% elif row.record and row.record.is_open_today %}<span class="pill open">On clock</span>
           {% elif row.record and row.record.is_complete %}<span class="pill resolved">Complete</span>
           {% else %}<span class="pill closed">Absent</span>{% endif %}
         </td>
+        <td style="text-align:right;">
+          {% if row.record and row.record.is_open %}
+            <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">
+              {% if row.record.is_stale %}Set check-out{% else %}Edit{% endif %}
+            </button>
+          {% endif %}
+        </td>
       </tr>
+      {# A sibling <tr>, never a <tr> nested in a <td> -- the browser would
+         hoist it out and the form would land in the wrong row. #}
+      {% if row.record and row.record.is_open %}
+      <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
+        <td colspan="7" style="background:var(--panel);">
+          {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
+        </td>
+      </tr>
+      {% endif %}
       {% empty %}
       <tr>
-        <td colspan="6">
+        <td colspan="7">
           <div class="empty">
             <h3>No team members</h3>
           </div>

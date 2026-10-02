@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load dropdown_tags %}
 
 {% block title %}Team — PQ Platform{% endblock %}
 
@@ -37,13 +38,7 @@
       {% if current_role %}<input type="hidden" name="role" value="{{ current_role }}">{% endif %}
       {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
     </form>
-    <select aria-label="Sort" class="sort-select" onchange="window.location=buildUrl({sort:this.value})">
-      <option value="-role" {% if current_sort == '-role' %}selected{% endif %}>Role (high first)</option>
-      <option value="role" {% if current_sort == 'role' %}selected{% endif %}>Role (low first)</option>
-      <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name A-Z</option>
-      <option value="-joined" {% if current_sort == '-joined' %}selected{% endif %}>Newest first</option>
-      <option value="joined" {% if current_sort == 'joined' %}selected{% endif %}>Oldest first</option>
-    </select>
+    {% dropdown "sort" "-role:Role (high first)|role:Role (low first)|name:Name A-Z|-joined:Newest first|joined:Oldest first"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
   </div>
 
   <table>

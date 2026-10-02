@@ -65,6 +65,6 @@ class DSREntryForm(forms.ModelForm):
             return Decimal("0.00")
         if hours <= 0:
             raise forms.ValidationError("Log more than zero hours.")
-        if hours > MAX_HOURS:
+        if "hours_spent" in self.changed_data and hours > MAX_HOURS:
             raise forms.ValidationError(f"A single entry cannot exceed {MAX_HOURS} hours.")
         return hours

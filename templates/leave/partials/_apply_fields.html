@@ -6,19 +6,47 @@
 
 <div class="form-group" style="margin-bottom:16px;">
   <label class="form-section-label" style="display:block;" for="{{ form.policy_id.id_for_label }}">Leave type</label>
-  {{ form.policy_id }}
+  <span hx-post="{% url 'leave:split_preview' %}"
+        hx-trigger="change"
+        hx-target="#leave-split-preview"
+        hx-swap="innerHTML"
+        hx-include="#apply-policy, #apply-start, #apply-end, #apply-half">
+    {{ form.policy_id }}
+  </span>
   {% for error in form.policy_id.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 </div>
 
+{% comment %}
+Every input that changes the arithmetic asks the preview endpoint to re-price
+the span. `hx-include` has to name the sibling inputs explicitly because htmx
+only posts the element it is attached to, and the split depends on all four.
+
+`hx-trigger="change"` (not `keyup`) is deliberate: a date input fires change
+when the browser has a complete date, which is the first moment there is
+anything meaningful to price. Keying on keystrokes would re-price a half-typed
+"2026-1" and flash the panel in and out.
+{% endcomment %}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
   <div class="form-group">
     <label class="form-section-label" style="display:block;" for="{{ form.start_date.id_for_label }}">Start date</label>
-    {{ form.start_date }}
+    <span hx-post="{% url 'leave:split_preview' %}"
+          hx-trigger="change"
+          hx-target="#leave-split-preview"
+          hx-swap="innerHTML"
+          hx-include="#apply-policy, #apply-start, #apply-end, #apply-half">
+      {{ form.start_date }}
+    </span>
     {% for error in form.start_date.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
   </div>
   <div class="form-group">
     <label class="form-section-label" style="display:block;" for="{{ form.end_date.id_for_label }}">End date</label>
-    {{ form.end_date }}
+    <span hx-post="{% url 'leave:split_preview' %}"
+          hx-trigger="change"
+          hx-target="#leave-split-preview"
+          hx-swap="innerHTML"
+          hx-include="#apply-policy, #apply-start, #apply-end, #apply-half">
+      {{ form.end_date }}
+    </span>
     <div class="field-hint">Leave this blank for a single day.</div>
     {% for error in form.end_date.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
   </div>
@@ -26,7 +54,13 @@
 
 <div class="form-group" style="margin-bottom:16px;">
   <label class="filter-check" style="font-size:14px;font-weight:500;">
-    {{ form.is_half_day }} Half day (counts as 0.5 against your balance)
+    <span hx-post="{% url 'leave:split_preview' %}"
+          hx-trigger="change"
+          hx-target="#leave-split-preview"
+          hx-swap="innerHTML"
+          hx-include="#apply-policy, #apply-start, #apply-end, #apply-half">
+      {{ form.is_half_day }} Half day (counts as 0.5 against your balance)
+    </span>
   </label>
   {% for error in form.is_half_day.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 </div>

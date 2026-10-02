@@ -98,7 +98,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+# Asia/Kolkata, not UTC. `WorkShift.start_time` is 10:00 and every lateness
+# band, every `date:"g:i A"` in a template and every cycle boundary is read in
+# this zone, so a UTC default silently shifted the whole company four and a half
+# hours: a 10:00 IST arrival punched at 10:00 was stored as 04:30 local and read
+# as five and a half hours early, and nobody was ever late. Storage is still
+# UTC (`USE_TZ`); only display and all day-boundary arithmetic change.
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -115,7 +121,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.0.0")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.0.1")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth

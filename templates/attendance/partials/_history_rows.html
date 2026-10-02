@@ -1,3 +1,8 @@
+{% comment %}
+`editing` lives on a wrapper so the per-row Edit buttons work; the partial is
+also included on its own from the htmx punch path, which never renders rows.
+{% endcomment %}
+<div x-data="{ editing: null }">
 {% if records %}
 <table>
   <thead>
@@ -8,27 +13,55 @@
       <th>Worked</th>
       <th>Status</th>
       <th>Notes</th>
+      {% if can_edit %}<th></th>{% endif %}
     </tr>
   </thead>
   <tbody>
+    {% comment %}
+    `is_open` alone cannot label a row. It is true both for somebody working
+    right now and for a punch nobody ever closed, and both used to render as
+    "On clock" with a counter that kept ticking -- so a forgotten check-out
+    looked exactly like a live one. Split into `is_open_today` and `is_stale`.
+    {% endcomment %}
     {% for record in records %}
-    <tr>
+    <tr{% if record.is_stale %} style="background:var(--orange-bg);"{% endif %}>
       <td class="date">{{ record.date|date:"D, M d" }}</td>
       <td>{{ record.check_in|date:"g:i A"|default:"—" }}</td>
-      <td>{{ record.check_out|date:"g:i A"|default:"—" }}</td>
       <td>
-        {% if record.is_complete %}{{ record.worked_formatted }}
-        {% elif record.is_open %}<span class="text-muted">running</span>
+        {% if record.is_complete %}{{ record.check_out|date:"g:i A" }}
+        {% elif record.is_stale %}<span class="pill high">not checked out</span>
         {% else %}<span class="text-muted">—</span>{% endif %}
       </td>
       <td>
-        {% if record.is_open %}<span class="pill open">On clock</span>
+        {% if record.is_complete %}{{ record.worked_formatted }}
+        {% elif record.is_open %}<span class="text-muted">{{ record.effective_formatted|default:record.elapsed_formatted }}</span>
+        {% else %}<span class="text-muted">—</span>{% endif %}
+      </td>
+      <td>
+        {% if record.is_stale %}<span class="pill high" title="Checked in {{ record.open_days }} day(s) ago and never checked out. Hours shown are capped at one working day until this is corrected.">No check-out</span>
+        {% elif record.is_open_today %}<span class="pill open">On clock</span>
         {% elif record.is_complete %}<span class="pill resolved">Complete</span>
         {% else %}<span class="pill closed">No punch</span>{% endif %}
         {% if record.is_edited %}<span class="pill info">edited</span>{% endif %}
       </td>
       <td class="sub">{{ record.notes|default:""|truncatechars:40 }}</td>
+      {% if can_edit %}
+      <td style="text-align:right;">
+        {% if record.is_open %}
+        <button type="button" class="btn btn-sm" @click="editing = editing === {{ record.pk }} ? null : {{ record.pk }}">
+          {% if record.is_stale %}Set check-out{% else %}Edit{% endif %}
+        </button>
+        {% endif %}
+      </td>
+      {% endif %}
     </tr>
+    {% if can_edit and record.is_open %}
+    <tr x-show="editing === {{ record.pk }}" style="display:none;">
+      <td colspan="7" style="background:var(--panel);">
+        {% include "attendance/partials/_record_edit_form.html" with record=record next=next %}
+      </td>
+    </tr>
+    {% endif %}
     {% endfor %}
   </tbody>
 </table>
@@ -39,3 +72,4 @@
   <p>Use the check-in button above to record your first day.</p>
 </div>
 {% endif %}
+</div>

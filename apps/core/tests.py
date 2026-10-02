@@ -1,8 +1,10 @@
 """Tests for the version footer and the changelog API behind it."""
 
+import fnmatch
 import tempfile
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
@@ -275,6 +277,59 @@ class ChangelogFileTest(TestCase):
                 changelog_module._cache.clear()
                 self.assertEqual(changelog_module.get_changelog(), [])
 
+    def test_a_missing_changelog_is_logged_rather_than_silently_empty(self):
+        """The dialog opening empty is indistinguishable from an empty file.
+
+        That is how a `*.md` line in `.dockerignore` shipped production with no
+        release notes and nothing in the logs to say so.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "nope.md"
+            with override_settings(CHANGELOG_PATH=missing):
+                changelog_module._cache.clear()
+                with self.assertLogs("apps.core.changelog", "WARNING") as caught:
+                    changelog_module.get_changelog()
+                self.assertIn("Changelog not found", caught.output[0])
+                self.assertIn(".dockerignore", caught.output[0])
+
+    def test_a_missing_changelog_is_logged_once_not_on_every_request(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "nope.md"
+            with override_settings(CHANGELOG_PATH=missing):
+                changelog_module._cache.clear()
+                with self.assertLogs("apps.core.changelog", "WARNING") as caught:
+                    for _ in range(5):
+                        changelog_module.get_changelog()
+                self.assertEqual(len(caught.output), 1)
+
+    def test_the_shipped_changelog_reaches_the_docker_image(self):
+        """`.dockerignore` had `*.md`, which excluded CHANGELOG.md from the
+        build context. Every test here reads the file from the working tree, so
+        the suite was green while production served an empty dialog. This is the
+        only assertion that can see the difference.
+        """
+        dockerignore = Path(settings.BASE_DIR) / ".dockerignore"
+        self.assertTrue(dockerignore.exists(), ".dockerignore is missing")
+        patterns = [
+            line.strip()
+            for line in dockerignore.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        self.assertTrue(patterns, ".dockerignore is empty")
+
+        # Docker applies patterns in order and the last match wins, so a later
+        # negation overrides an earlier `*.md`.
+        excluded = False
+        for pattern in patterns:
+            negated = pattern.startswith("!")
+            if fnmatch.fnmatch("CHANGELOG.md", pattern.lstrip("!")):
+                excluded = not negated
+        self.assertFalse(
+            excluded,
+            "CHANGELOG.md is excluded by .dockerignore, so production shows no "
+            "changelog. Add a `!CHANGELOG.md` line after the `*.md` pattern.",
+        )
+
     def test_result_is_cached_until_the_file_changes(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "CHANGELOG.md"
@@ -322,7 +377,10 @@ class VersionApiTest(TestCase):
         response = self.client.get("/api/v1/version/")
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["version"], "1.0.0")
+        # Read the setting rather than repeating it: asserting the literal meant
+        # every version bump broke four tests in three classes, which is a
+        # version bump being a manual edit in five places.
+        self.assertEqual(payload["version"], settings.APP_VERSION)
         self.assertIn("latest_release", payload)
         self.assertIn("release_count", payload)
 
@@ -331,7 +389,7 @@ class VersionApiTest(TestCase):
         response = self.client.get("/api/v1/changelog/")
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["version"], "1.0.0")
+        self.assertEqual(payload["version"], settings.APP_VERSION)
         dates = [r["date"] for r in payload["releases"]]
         self.assertEqual(dates, sorted(dates, reverse=True))
         for release in payload["releases"]:
@@ -366,12 +424,12 @@ class VersionFooterUiTest(TestCase):
         body = self.client.get("/tickets/").content.decode()
         self.assertIn("data-changelog-open", body)
         self.assertIn('aria-haspopup="dialog"', body)
-        self.assertIn("v1.0.0", body)
+        self.assertIn(f"v{settings.APP_VERSION}", body)
 
     def test_version_label_describes_what_the_button_does(self):
         self.client.force_login(self.user)
         body = self.client.get("/tickets/").content.decode()
-        self.assertIn('aria-label="What\'s new in v1.0.0"', body)
+        self.assertIn(f'aria-label="What\'s new in v{settings.APP_VERSION}"', body)
 
     def test_dialog_is_present_and_reads_from_the_api(self):
         self.client.force_login(self.user)

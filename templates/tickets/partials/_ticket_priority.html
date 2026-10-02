@@ -1,11 +1,7 @@
-<form method="post" action="{% url 'tickets:ticket_priority' pk=ticket.pk %}"
+{% load dropdown_tags %}<form method="post" action="{% url 'tickets:ticket_priority' pk=ticket.pk %}"
       hx-post="{% url 'tickets:ticket_priority' pk=ticket.pk %}"
       hx-target="#detail-priority"
       hx-swap="innerHTML">
   {% csrf_token %}
-  <select name="priority" aria-label="Priority" onchange="this.form.requestSubmit()" class="filter-select" style="font-size:12px;padding:2px 6px;">
-    {% for val, label in priority_choices %}
-    <option value="{{ val }}" {% if ticket.priority == val %}selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-  </select>
+  {% dropdown "priority" priority_choices ticket.priority placeholder="Priority" label="Change priority" submit=True %}
 </form>

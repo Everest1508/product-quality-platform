@@ -34,8 +34,11 @@
       {% else %}<span class="pill closed">unpaid</span>{% endif %}
     </div>
     {% if balance.is_unlimited %}
-      <div style="font-size:24px;font-weight:600;margin-top:8px;">Unlimited</div>
-      <div class="field-hint">no annual cap · up to {{ balance.policy.max_consecutive_days|default:"any" }}{% if balance.policy.max_consecutive_days %} days per spell{% endif %}</div>
+      {# "No cap", not "Unlimited": a cap of 0 is a real setting, so reading an
+         uncapped type as unlimited suggests 0 could not be chosen. Same wording
+         as the policy editor's placeholder and the approval rows. #}
+      <div style="font-size:24px;font-weight:600;margin-top:8px;">No cap</div>
+      <div class="field-hint">{{ balance.policy.annual_limit_label }}{% if balance.policy.max_consecutive_days %} · {{ balance.policy.consecutive_limit_label }}{% endif %}</div>
     {% else %}
       <div style="font-size:24px;font-weight:600;margin-top:8px;">
         {{ balance.remaining_label }}
@@ -43,7 +46,7 @@
       </div>
       <div class="field-hint">
         {{ balance.approved_label }} approved{% if balance.has_pending %} · {{ balance.pending_label }} pending{% endif %}
-        {% if balance.policy.max_consecutive_days %} · max {{ balance.policy.max_consecutive_days|floatformat:"-2" }} at a time{% endif %}
+        {% if balance.policy.max_consecutive_days %} · {{ balance.policy.consecutive_limit_label }}{% endif %}
       </div>
     {% endif %}
   </div>
@@ -72,7 +75,21 @@
       <tr>
         <td><strong>{{ leave.policy.name }}</strong></td>
         <td>{{ leave.span_label }}</td>
-        <td>{{ leave.days_label }}</td>
+        <td>
+          {{ leave.days_label }}
+          {# The paid/unpaid split is the applicant's own decision input: they
+             are the one deciding whether to file a spell that will cost them
+             pay, so they have to be able to see what they filed. Not shown on a
+             rejected or withdrawn request -- nobody is being charged for those,
+             and a stale split beside "rejected" reads as a bill. #}
+          <div class="sub">
+            {% if leave.status == 'pending' or leave.status == 'approved' %}
+              {% if leave.is_fully_paid %}<span class="pill resolved">paid</span>
+              {% elif leave.is_fully_unpaid %}<span class="pill closed">unpaid</span>
+              {% else %}<span class="pill progress">{{ leave.split_label }}</span>{% endif %}
+            {% endif %}
+          </div>
+        </td>
         <td>
           {% if leave.status == 'pending' %}<span class="pill info">pending</span>
           {% elif leave.status == 'approved' %}<span class="pill resolved">approved</span>

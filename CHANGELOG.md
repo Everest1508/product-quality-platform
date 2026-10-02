@@ -9,6 +9,196 @@ engineering invariants live.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not
 yet versioned. Older releases are below the newest.
 
+## [Unreleased] — 2026-10-02 · long-running tickets & DSR day close
+
+### Fixed
+
+- **Your dashboard no longer breaks on a long-running ticket.** A ticket left
+  open for weeks used to log an absurd number of hours against your name, and
+  that was enough to crash the dashboard with an error — taking your timesheet
+  and everything else on the page with it. Hours are now counted over a far wider
+  range, so long-running work finally shows up as the figure it really is.
+
+### Added
+
+- **Today's timesheet closes at midnight.** Fill in your daily status report
+  until 11:59pm and it is submitted; you no longer have to get it exactly right
+  the first time. A day that has not happened yet is closed to everyone, so
+  nobody can log hours they have not worked.
+- **Older days stay open for checking.** Every past report is still readable, so
+  you can look back at any earlier day, copy its summary and compare it, without
+  being able to rewrite what you already submitted.
+- **Managers can still put right a closed day.** An owner or admin can correct a
+  past report for anyone, so a forgotten entry or a typo is never stuck.
+
+## [Unreleased] — 2026-10-02 · one dropdown across the app
+
+### Improved
+
+- **Every dropdown in the app now looks the same.** Filters, sort menus, status
+  and priority pickers, leave types, colours, categories and employee pickers all
+  share one control instead of the browser's plain grey box, so the app reads as a
+  single product rather than a mix of styles.
+- **Filters still work the moment the page loads.** Choosing an option reloads
+  the list exactly as before, and a filter you have not touched is still sent
+  along, so nothing quietly drops out of your results.
+- **"All" is back where it should be.** Clearing a filter to see everything is
+  available again on every list screen.
+- **People are shown by name, properly.** Dropdowns listing team members used to
+  show the wrong text for some entries; they now show each person's name and fall
+  back to their username, the same as everywhere else in the app.
+- **Leave-type colours and the staff rows in the timesheet** use the new control
+  too, without losing their colour coding.
+
+### Fixed
+
+- **Leave settings no longer look unlabelled.** The colour picker and the day
+  limits are each clearly marked, so it is obvious what each number means.
+- **The activity log filters** and the ticket filters no longer leave a filter
+  with no way back to showing everything once you picked one.
+
+## [1.0.1] — 2026-10-02 · punch panel, forgotten check-outs & leave caps
+
+Every earlier release note is kept below this one. The reasoning behind all of
+it, and the questions still open, are in [context.md](context.md).
+
+**The short version:** confirmation messages never appeared anywhere in the app,
+nobody was ever charged for being late, the punch button wouldn't tell you what
+time you arrived, a forgotten check-out cost you the day, and going over your
+leave allowance was refused instead of charged. All five are fixed.
+
+### New
+
+- **A leave request that runs past your allowance is now accepted, not refused.**
+  The days up to your limit are paid and **the rest is simply unpaid**, so you no
+  longer have to guess how much to ask for and get it turned away.
+  - The split is decided when the request is made and stored with it, so a later
+    change to the policy cannot rewrite a decision that has already been made.
+  - Payroll reads the stored split, so editing a leave type later never restates
+    a payslip that has already been issued.
+- **You can see which days will be unpaid before you submit.** The apply screen
+  prices the request as you choose your dates, so a spell that runs past your
+  limit tells you on the spot instead of after it is approved.
+  - The panel stays empty while the dates are incomplete or a range contains no
+    working days, rather than claiming "0 paid" for something you haven't
+    finished typing.
+- **Approvers can correct the dates and the paid/unpaid split** when they
+  approve, on the same screen, using the same numbers the applicant saw.
+  - Rejecting still costs nothing, and never records a split — there is nothing
+    to pay for a request that was turned down.
+- **Working days are counted as you'd expect.** Friday to Monday is 2 days, not
+  4, and a half day is charged as half.
+
+### Improved
+
+- **The punch button now tells you when you came in, and whether you were late.**
+  It used to say "on the clock" and then print a *duration*, so the one number
+  you actually wanted was nowhere on the screen — and it said nothing about
+  lateness at all.
+  - Your office hours sit right under the button, and the time ticks up while you
+    work.
+  - Lateness is spelled out the moment it happens — "45m late" — using exactly
+    the same figure your payslip is built from, so the two can't disagree. Half a
+    day says so.
+  - Before you've arrived there is no arrival time, so nothing claims you're late.
+  - Every state carries both the hours and the lateness. A punch used to swap
+    "on the clock, late 45m" for "checked out" and lose both.
+  - The check-in and check-out buttons are now visually distinct; they were
+    styled identically, because the two styles they asked for had never been
+    written.
+  - The result is announced to screen readers. The running timer deliberately is
+    not — it refreshes every 30 seconds and would interrupt you constantly.
+  - Clicking twice in a row used to make the panel claim you'd "already checked
+    in and out". The button now waits for the first punch to land. The button
+    also works if your browser has JavaScript turned off.
+- **A forgotten check-out is now something you find out about, not something you
+  find in a payslip.** If you clocked in and never clocked out, the punch panel
+  lists the day and explains what it is costing you.
+  - Your hours on that day are counted from when you arrived, so you do not lose
+    the day outright — but they are capped at one full working day until an admin
+    closes it, because nobody can know when you actually left. The cap matters:
+    without it a forgotten punch from last month would report hundreds of hours.
+  - The warning covers **every** month, not just the one you are looking at.
+  - Today's own open punch is never listed as forgotten — that would put the
+    warning on every working day and stop it meaning anything.
+  - This **cannot change anyone's pay**: payslips are priced in days, and only
+    your arrival time can carry a late penalty.
+- **Managers can fix a forgotten check-out from wherever they see it** — inline
+  next to the day on the team page, and as a link on the calendar, which has no
+  room for a form but has room for a link.
+  - Leaving the check-out box empty fills it with closing time, since that is
+    what the cap already assumes, so nobody has to retype 19:00 by hand.
+  - Clearing the box on purpose keeps the day open.
+  - Opening somebody else's attendance as a manager no longer hides the whole
+    punch panel. The button is hidden, because it would punch *you*, but the
+    warning about them stays — which is the reason you opened the page.
+- **The approver's dialog is wide enough to use.** It holds two date boxes, a
+  switch and two day boxes, and at its old width they stacked into unreadable
+  slivers.
+- **Panels driven by the page state no longer flash on load** before the page
+  settles.
+
+### Fixed
+
+- **Confirmation messages never appeared — anywhere.** Every "Saved", "Approved",
+  "Edited" and every error message in the app rendered nothing: **79 places in
+  the app** asked for a confirmation and none of them showed one. The messages
+  were being handed to the page before it was ready to receive them, so the
+  whole queue was quietly discarded.
+  - Nothing had gone wrong with the actions themselves, which is what made this
+    so confusing: the edit worked, and the app said nothing.
+  - **A handful of actions never asked for one at all**, and were found by
+    auditing every save handler rather than by the pages people happened to
+    visit. Deleting DSR time, deleting a milestone, and advancing a milestone's
+    status all finished silently; a status change with no confirmation looks
+    exactly like a dead button. They report what happened now — and the
+    milestone reports what it *became*, not just that you clicked it.
+- **The app was running four and a half hours behind India.** Times were shown,
+  and — more seriously — **lateness was scored in the wrong zone, so nobody was
+  ever charged for being late.** A 10:45 arrival was recorded as 05:15, compared
+  against a 10:00 start, and came out as *on time*; the punch button also
+  cheerfully printed "05:15 AM" for a morning shift.
+  - An arrival of 10:45 now reads as 10:45 and lands in the Rs 100 band, as the
+    policy always said it should.
+  - The lateness bands now sit where you set them: up to 15 minutes is on time,
+    up to 30 costs Rs 50, up to an hour costs Rs 100, later than that costs half
+    a day.
+  - Everything is stored in UTC behind the scenes; only what is shown to you, and
+    where a day starts and ends, changed.
+  - **Your existing attendance history is not rewritten**, so records taken
+    before this change will read some hours off. Ask an admin to correct them, or
+    re-seed the demo workspace.
+- **The "What's new" panel was empty in production.** Release notes were dropped
+  from the container image entirely, so the button in the sidebar opened onto
+  nothing — no error, nothing in the logs, and every check on your machine looked
+  fine because the file was right there.
+  - A missing changelog is now written to the logs once, so if it ever goes
+    missing again the cause is on the server rather than a guess.
+  - A deployed image needs rebuilding to pick this up.
+- **The timesheet and dashboard counted a forgotten check-out as zero hours**,
+  which quietly cost you the day until somebody noticed.
+- **Opening a colleague's attendance as a manager showed you your own
+  forgotten days** instead of theirs, on any day they had not yet punched.
+- **Day counts could crash a leave page.** A whole number of days was being
+  formatted as though it were always a fraction, so a request of 12 days could
+  raise an error in the middle of an approval.
+- **The demo team arrived at 06:30 for a 10:00 shift.** The seeder was avoiding
+  late penalties by inventing early arrivals; it now seeds a realistic spread
+  around your office hours, including genuinely late ones.
+- **Clicking the punch button twice made the panel say you had already checked
+  in and out.** The second click was correctly ignored, and then reported the
+  opposite of what happened.
+
+### Known issues (pre-existing, not addressed here)
+
+- `apps.accounts.tests.test_tenant_isolation`: `test_signup_creates_user`
+  (`NoReverseMatch` for `accounts:signup` — self-signup is not wired up). Still
+  the only failing test, and it is a product question about whether signup should
+  exist at all, not a regression.
+- The three older release blocks below are still tagged **Unreleased**, so the
+  dialog labels them "In development". They describe shipped work; only this
+  block has been versioned.
+
 ## [Unreleased] — 2026-09-30 · attendance, leave & payroll
 
 Three new sections — Attendance, Leave and Payroll — plus a home page built around

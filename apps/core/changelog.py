@@ -17,10 +17,13 @@ matter more than completeness:
 """
 
 import html
+import logging
 import re
 from pathlib import Path
 
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 # "## [Unreleased] - 2026-09-30 - office policy & sidebar"
 # The separator is an em dash with a middot title in this file, but plain
@@ -235,15 +238,42 @@ def get_changelog():
     try:
         stamp = path.stat().st_mtime_ns
     except OSError:
-        return []
-    if _cache.get("stamp") == stamp:
+        return _report_missing(path)
+    if _cache.get("path") == str(path) and _cache.get("stamp") == stamp:
         return _cache["releases"]
     try:
         releases = parse_changelog(path.read_text(encoding="utf-8"))
     except OSError:
-        return []
-    _cache.update(stamp=stamp, releases=releases)
+        return _report_missing(path)
+    _cache.pop("missing", None)
+    _cache.update(path=str(path), stamp=stamp, releases=releases)
     return releases
+
+
+def _report_missing(path):
+    """Return no releases, but say so once.
+
+    A missing changelog used to be indistinguishable from an empty one: the
+    sidebar "What's new" dialog simply opened empty, with no error and nothing
+    in the logs, which is how a `*.md` pattern in `.dockerignore` shipped an app
+    whose release notes were missing from production without anyone noticing.
+    An empty panel is a correct response to a genuinely empty file, so the
+    distinction has to come from a log line, not from the return value.
+
+    The miss is cached per path so this is one `stat()` and one line per
+    process, not one per page view.
+    """
+    if _cache.get("missing") != str(path):
+        _cache["missing"] = str(path)
+        _cache.pop("path", None)
+        _cache.pop("stamp", None)
+        logger.warning(
+            "Changelog not found at %s, so the What's new dialog is empty. If "
+            "this is a container build, check .dockerignore: a `*.md` pattern "
+            "excludes CHANGELOG.md from the image.",
+            path,
+        )
+    return []
 
 
 def get_version_info():

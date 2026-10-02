@@ -258,22 +258,70 @@ class PrivilegedScopeTest(AttendanceTestBase):
         )
         self.assertEqual(response.status_code, 404)
 
+    def punch_control_of(self, response):
+        body = response.content.decode()
+        start = body.index('id="punch-control"')
+        end = body.find('class="att-stats"', start)
+        return body[start:end]
+
     def test_admin_viewing_other_hides_punch_button(self):
-        """The button renders the target's state but would punch the admin."""
+        """The button renders the target's state but would punch the admin.
+
+        The panel itself is deliberately still rendered, read-only: hiding the
+        whole thing also hid the forgotten-check-out warning, which is the very
+        reason an admin opens somebody else's attendance page.
+        """
+        from apps.attendance.models import AttendanceRecord
+
+        day = timezone.localdate() - timedelta(days=2)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+            check_in=timezone.make_aware(
+                datetime.combine(day, time(10, 0)), timezone.get_current_timezone()
+            ),
+        )
         self.client.login(username="owner", password="pass1234")
 
         own = self.client.get(reverse("attendance:my_attendance"))
         self.assertIsNone(own.context["focus_user"])
-        self.assertContains(own, 'id="punch-control"')
+        self.assertTrue(own.context["can_punch"])
+        self.assertContains(own, "<button")
 
         focused = self.client.get(
             reverse("attendance:my_attendance"), {"user_id": self.dev.pk}
         )
         self.assertEqual(focused.context["focus_user"], self.dev)
-        self.assertNotContains(focused, 'id="punch-control"')
+        control = self.punch_control_of(focused)
+        self.assertNotIn("<button", control)
+        self.assertNotIn("hx-post", control)
+        self.assertIn("no check-out", control)
         # And the page says whose data it is, instead of claiming "My Attendance".
         self.assertContains(focused, "dev")
         self.assertNotContains(focused, "<h1>My Attendance</h1>")
+
+    def test_the_read_only_panel_reports_the_colleagues_days_not_the_admins(self):
+        """`record.user` is None on a day the colleague has not punched, so the
+        panel used to fall back to the *admin* and warn about the wrong person."""
+        from apps.attendance.models import AttendanceRecord
+
+        mine = timezone.localdate() - timedelta(days=4)
+        theirs = timezone.localdate() - timedelta(days=2)
+        for day, who in ((mine, self.viewer), (theirs, self.dev)):
+            AttendanceRecord.objects.create(
+                company=self.company, user=who, date=day,
+                check_in=timezone.make_aware(
+                    datetime.combine(day, time(10, 0)),
+                    timezone.get_current_timezone(),
+                ),
+            )
+        self.client.login(username="owner", password="pass1234")
+        control = self.punch_control_of(
+            self.client.get(
+                reverse("attendance:my_attendance"), {"user_id": self.dev.pk}
+            )
+        )
+        self.assertIn(f"{theirs:%b} {theirs.day}", control)
+        self.assertNotIn(f"{mine:%b} {mine.day}", control)
 
     def test_member_always_sees_own_punch_panel(self):
         self.client.login(username="dev", password="pass1234")
@@ -868,3 +916,570 @@ class LatePenaltyTest(AttendanceTestBase):
             ),
             [],
         )
+
+
+class MissingCheckoutTest(AttendanceTestBase):
+    """A punch with no check-out must be visibly different from a live one.
+
+    `is_open` is true both for somebody working right now and for a punch
+    somebody forgot to close weeks ago. Both used to render as "On clock" with
+    a counter that kept ticking, so the second one was invisible.
+    """
+
+    def open_record(self, days_ago=0, check_in_hour=10):
+        day = timezone.localdate() - timedelta(days=days_ago)
+        check_in = timezone.make_aware(
+            datetime.combine(day, time(check_in_hour, 0)),
+            timezone.get_current_timezone(),
+        )
+        return AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day, check_in=check_in,
+        )
+
+    def month_of(self, record):
+        """The ?month= that shows `record`.
+
+        The month views are month-scoped, and a punch a few days back can easily
+        fall in the previous month -- on the 2nd of one, "2 days ago" is a
+        September punch and October's grid is empty. Every assertion below has
+        to ask for the right month rather than assume the current one.
+        """
+        return f"{record.date:%Y-%m}"
+
+    # --- the three states are distinguishable ---
+
+    def test_an_open_day_today_is_on_the_clock(self):
+        record = self.open_record(days_ago=0)
+        self.assertTrue(record.is_open)
+        self.assertTrue(record.is_open_today)
+        self.assertFalse(record.is_stale)
+        self.assertEqual(record.missing_checkout_label, "today")
+
+    def test_an_open_day_from_a_previous_day_is_stale_not_on_the_clock(self):
+        record = self.open_record(days_ago=3)
+        self.assertTrue(record.is_open)
+        self.assertFalse(record.is_open_today)
+        self.assertTrue(record.is_stale)
+        self.assertEqual(record.missing_checkout_label, "3d")
+
+    def test_a_closed_day_is_neither(self):
+        day = timezone.localdate() - timedelta(days=2)
+        at = timezone.make_aware(
+            datetime.combine(day, time(10, 0)), timezone.get_current_timezone()
+        )
+        record = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day, check_in=at, check_out=at,
+        )
+        self.assertFalse(record.is_open)
+        self.assertFalse(record.is_open_today)
+        self.assertFalse(record.is_stale)
+        self.assertEqual(record.open_days, 0)
+
+    def test_the_service_reads_staleness_off_the_record(self):
+        """`get_who_is_in` computed `is_stale` privately, so nothing else could.
+
+        Two definitions of the same fact is how the other four screens ended up
+        unable to tell the cases apart.
+        """
+        self.open_record(days_ago=5)
+        today = self.open_record(days_ago=0)
+        rows = {r["record"].pk: r for r in service.get_who_is_in(self.company)}
+        self.assertTrue(rows[list(rows)[0]]["is_stale"])
+        self.assertFalse(rows[today.pk]["is_stale"])
+
+    # --- an unclosed day counts for the hours it demonstrably worked ---
+
+    def test_the_raw_span_stays_zero_because_the_punches_say_nothing(self):
+        record = self.open_record(days_ago=2)
+        self.assertEqual(record.worked_minutes, 0)
+
+    def test_an_unclosed_day_counts_its_elapsed_time(self):
+        record = self.open_record(days_ago=0)
+        record.check_in = timezone.now() - timedelta(minutes=300)
+        record.save()
+        shift = service.shift_for(self.company)
+        self.assertEqual(service.effective_span_for(record, shift), 300)
+        self.assertEqual(service.net_minutes_for(record, shift), 300)
+
+    def test_a_long_open_day_is_capped_at_one_working_day(self):
+        """Without the cap a forgotten punch accrues hours forever.
+
+        A record left open since October would otherwise report its full elapsed
+        span -- hundreds of hours -- inside a single month.
+        """
+        record = self.open_record(days_ago=30)
+        shift = service.shift_for(self.company)
+        day = shift.worked_minutes_per_day
+        record.check_in = timezone.now() - timedelta(days=30)
+        record.save()
+        self.assertEqual(service.effective_span_for(record, shift), day)
+        # The cap is already net of the break, so it is not deducted twice.
+        self.assertEqual(service.net_minutes_for(record, shift), day)
+
+    def test_a_closed_day_is_unaffected_by_the_cap(self):
+        day = timezone.localdate() - timedelta(days=1)
+        at = timezone.make_aware(
+            datetime.combine(day, time(10, 0)), timezone.get_current_timezone()
+        )
+        record = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+            check_in=at, check_out=at + timedelta(hours=9),
+        )
+        shift = service.shift_for(self.company)
+        self.assertEqual(service.effective_span_for(record, shift), 540)
+        self.assertEqual(service.net_minutes_for(record, shift), 480)
+
+    def test_no_check_in_means_no_hours_at_all(self):
+        day = timezone.localdate() - timedelta(days=1)
+        record = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+        )
+        shift = service.shift_for(self.company)
+        self.assertEqual(service.effective_span_for(record, shift), 0)
+        self.assertEqual(service.net_minutes_for(record, shift), 0)
+
+    def test_an_unclosed_day_does_not_create_a_late_penalty(self):
+        """The cap changes reporting only. Payroll reads `check_in` alone."""
+        day = timezone.localdate() - timedelta(days=1)
+        late = timezone.make_aware(
+            datetime.combine(day, time(10, 50)), timezone.get_current_timezone()
+        )
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day, check_in=late,
+        )
+        penalties = service.late_penalties_in_period(
+            self.company, self.dev, day, day,
+        )
+        self.assertEqual(len(penalties), 1)
+        self.assertEqual(penalties[0]["band"], "major")
+
+    # --- and it is visible, and fixable, on every screen that shows a day ---
+
+    def my_page(self, **params):
+        self.client.login(username="dev", password="pass1234")
+        url = reverse("attendance:my_attendance")
+        return self.client.get(url, params)
+
+    def team_page(self):
+        self.client.login(username="owner", password="pass1234")
+        return self.client.get(reverse("attendance:team_attendance"))
+
+    def test_my_own_page_says_it_when_i_forgot_to_check_out(self):
+        """The page that started this: no flag at all, just an empty cell."""
+        record = self.open_record(days_ago=2)
+        body = self.my_page(month=self.month_of(record)).content.decode()
+        self.assertIn("not checked out", body)
+        self.assertIn("No check-out", body)
+
+    def test_my_own_page_does_not_call_a_live_punch_a_forgotten_one(self):
+        record = self.open_record(days_ago=0)
+        body = self.my_page(month=self.month_of(record)).content.decode()
+        # Today's open punch is legitimately "on clock" -- the flag is the
+        # absence of a forgotten-check-out warning, not its presence.
+        self.assertNotIn("not checked out", body)
+        self.assertIn("on clock", body)
+
+    def test_the_team_page_lists_it_and_offers_the_fix(self):
+        self.open_record(days_ago=4)
+        body = self.team_page().content.decode()
+        self.assertIn("No check-out", body)
+        self.assertIn("Set check-out", body)
+
+    def test_the_timesheet_counts_it_per_employee(self):
+        stale = self.open_record(days_ago=2)
+        self.open_record(days_ago=0)  # today's is legitimately open, not a fault
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.get(
+            reverse("attendance:timesheet"), {"month": self.month_of(stale)}
+        )
+        body = response.content.decode()
+        self.assertIn("No check-out", body)
+        rows = response.context["rows"]
+        dev_row = next(r for r in rows if r["user"] == self.dev)
+        self.assertEqual(dev_row["open_days"], 1)
+
+    def test_the_calendar_grid_flags_the_day_and_links_the_edit(self):
+        record = self.open_record(days_ago=1)
+        self.client.login(username="owner", password="pass1234")
+        body = self.client.get(
+            reverse("attendance:timesheet_detail", args=[self.dev.pk]),
+            {"month": self.month_of(record)},
+        ).content.decode()
+        self.assertIn("no out", body)
+        self.assertIn(reverse("attendance:attendance_edit", args=[record.pk]), body)
+
+    def test_the_edit_form_is_reachable_as_a_plain_link(self):
+        """The grid has no room for an inline form, but it has room for a link."""
+        record = self.open_record(days_ago=1)
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.get(reverse("attendance:attendance_edit",
+                                           args=[record.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No check-out was recorded")
+        self.assertContains(response, f'id="edit_check_out_{record.pk}"')
+
+    def test_a_non_admin_cannot_open_the_edit_form(self):
+        record = self.open_record(days_ago=1)
+        self.client.login(username="dev", password="pass1234")
+        response = self.client.get(reverse("attendance:attendance_edit",
+                                           args=[record.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_the_edit_form_is_prefilled_with_the_end_of_the_shift(self):
+        """The admin is correcting a forgotten punch, not typing six fields.
+
+        Prefilled with closing time because the whole point of the cap is to
+        assume they left then; making the admin retype it defeats that.
+        """
+        record = self.open_record(days_ago=1)
+        shift = service.shift_for(self.company)
+        self.client.login(username="owner", password="pass1234")
+        body = self.client.get(reverse("attendance:attendance_edit",
+                                       args=[record.pk])).content.decode()
+        self.assertIn(
+            f'value="{record.date:%Y-%m-%d}T{shift.end_time:%H:%M}"', body
+        )
+
+    def test_an_admin_can_still_see_the_inline_edit_on_a_colleagues_page(self):
+        record = self.open_record(days_ago=2)
+        self.client.login(username="owner", password="pass1234")
+        body = self.client.get(
+            reverse("attendance:my_attendance"),
+            {"user_id": self.dev.pk, "month": self.month_of(record)},
+        ).content.decode()
+        self.assertIn("Set check-out", body)
+        self.assertIn(reverse("attendance:attendance_edit", args=[record.pk]), body)
+
+    def test_an_employee_gets_no_edit_button_on_their_own_page(self):
+        """The edit form is a payroll mutation, so it is admin-only.
+
+        Rendering it for everyone would mean posting to a URL that 403s.
+        """
+        record = self.open_record(days_ago=2)
+        body = self.my_page(month=self.month_of(record)).content.decode()
+        self.assertNotIn("Set check-out", body)
+        self.assertNotIn(reverse("attendance:attendance_edit", args=[record.pk]), body)
+
+    # --- setting the check-out resolves every surface at once ---
+
+    def test_setting_the_check_out_clears_the_flag_everywhere(self):
+        record = self.open_record(days_ago=2)
+        day = record.date
+        end = timezone.make_aware(
+            datetime.combine(day, time(19, 0)), timezone.get_current_timezone()
+        )
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(
+            reverse("attendance:attendance_edit", args=[record.pk]),
+            {"check_in": f"{day:%Y-%m-%d}T10:00", "check_out": f"{day:%Y-%m-%d}T19:00"},
+        )
+        self.assertEqual(response.status_code, 302)
+        record.refresh_from_db()
+        self.assertFalse(record.is_stale)
+        self.assertEqual(record.worked_minutes, 540)
+        self.assertNotIn(
+            "not checked out", self.my_page(month=self.month_of(record)).content.decode()
+        )
+
+    def test_clearing_the_check_out_keeps_the_day_open(self):
+        """An admin may want it left open; the box can be emptied deliberately."""
+        record = self.open_record(days_ago=2)
+        day = record.date
+        self.client.login(username="owner", password="pass1234")
+        self.client.post(
+            reverse("attendance:attendance_edit", args=[record.pk]),
+            {"check_in": f"{day:%Y-%m-%d}T10:00", "check_out": ""},
+        )
+        record.refresh_from_db()
+        self.assertTrue(record.is_stale)
+        self.assertIsNone(record.check_out)
+
+    def test_it_returns_to_where_the_admin_started_editing(self):
+        record = self.open_record(days_ago=1)
+        day = record.date
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(
+            reverse("attendance:attendance_edit", args=[record.pk]),
+            {"check_in": f"{day:%Y-%m-%d}T10:00", "check_out": f"{day:%Y-%m-%d}T19:00",
+             "next": f"{reverse('attendance:timesheet_detail', args=[self.dev.pk])}?month=2026-01"},
+        )
+        self.assertRedirects(
+            response,
+            f"{reverse('attendance:timesheet_detail', args=[self.dev.pk])}?month=2026-01",
+        )
+
+    def test_an_off_site_next_is_refused(self):
+        """`next` is a redirect target from user input; `//evil.test` is a host."""
+        record = self.open_record(days_ago=1)
+        day = record.date
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.post(
+            reverse("attendance:attendance_edit", args=[record.pk]),
+            {"check_in": f"{day:%Y-%m-%d}T10:00", "check_out": f"{day:%Y-%m-%d}T19:00",
+             "next": "//evil.test/pwn"},
+        )
+        self.assertRedirects(response, reverse("attendance:team_attendance"))
+
+
+class PunchPanelTest(AttendanceTestBase):
+    """The punch control is the page's only job, so its content is a contract."""
+
+    def punch_in(self, at):
+        from apps.attendance.models import AttendanceRecord
+
+        today = timezone.localdate()
+        return AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=today, check_in=at,
+        )
+
+    def panel(self):
+        self.client.login(username="dev", password="pass1234")
+        return self.client.get(reverse("attendance:my_attendance")).content.decode()
+
+    def panel_markup(self):
+        """Just the punch control, without the stylesheet.
+
+        Asserting words like "late" against the whole page matches `.punch-late`
+        in the CSS and passes for the wrong reason.
+        """
+        body = self.panel()
+        start = body.index('id="punch-control"')
+        # `att-stats` is a class; anchoring on an id that does not exist silently
+        # slices to the end of the page and matches words in later markup.
+        end = body.find('class="att-stats"', start)
+        self.assertNotEqual(end, -1, "punch panel is no longer before the stats")
+        return body[start:end]
+
+    def htmx_panel(self):
+        self.client.login(username="dev", password="pass1234")
+        return self.client.post(
+            reverse("attendance:punch"), headers={"HX-Request": "true"}
+        ).content.decode()
+
+    def at(self, hour, minute=0, days_ago=0):
+        day = timezone.localdate() - timedelta(days=days_ago)
+        return timezone.make_aware(
+            datetime.combine(day, time(hour, minute)), timezone.get_current_timezone()
+        )
+
+    def test_it_says_when_you_checked_in_not_only_how_long(self):
+        """The label said "since" and then printed a duration.
+
+        The clock time is the number an employee actually wants, and it was
+        nowhere on the panel.
+        """
+        self.punch_in(self.at(10, 2))
+        body = self.panel()
+        self.assertIn("On the clock since", body)
+        self.assertIn("10:02 AM", body)
+
+    def test_it_shows_the_office_hours(self):
+        """Arriving late is priced, so the shift has to be visible at the button."""
+        body = self.panel()
+        self.assertIn("Shift 10:00–19:00", body)
+
+    def test_it_says_late_the_moment_it_happens(self):
+        """Otherwise the first notice of a penalty is a payslip weeks later."""
+        self.punch_in(self.at(10, 45))
+        body = self.panel()
+        self.assertIn("45m late", body)
+        self.assertNotIn("on time", body)
+
+    def test_a_half_day_arrival_says_so(self):
+        self.punch_in(self.at(11, 20))
+        self.assertIn("half day", self.panel())
+
+    def test_arriving_on_time_says_on_time(self):
+        self.punch_in(self.at(10, 5))
+        body = self.panel()
+        self.assertIn("on time", body)
+        self.assertNotIn("m late", body)
+
+    def test_it_does_not_invent_lateness_before_you_arrive(self):
+        """No punch yet means no arrival time, so there is nothing to be late."""
+        body = self.panel_markup()
+        self.assertNotIn("late", body)
+        self.assertNotIn("on time", body)
+
+    def test_the_lateness_it_shows_is_the_one_the_payslip_charges(self):
+        """Same `late_penalty_for` call, so the panel cannot quote a different
+        number from the payslip line it is warning about."""
+        record = self.punch_in(self.at(10, 45))
+        band = service.late_penalty_for(record, service.shift_for(self.company))["band"]
+        self.assertEqual(band, "major")
+        self.assertIn("45m late", self.panel_markup())
+
+    def test_the_elapsed_counter_is_not_announced_every_thirty_seconds(self):
+        """`aria-live` on a counter that refreshes every 30s interrupts forever."""
+        self.punch_in(self.at(10, 2))
+        body = self.panel_markup()
+        self.assertIn('x-text="elapsed"', body)
+        self.assertNotIn('aria-live', body)
+
+    def test_the_elapsed_counter_still_shows_a_value_without_javascript(self):
+        """Alpine only ticks the counter client-side; the server renders the
+        first value, or the box is blank until htmx and Alpine both boot."""
+        self.punch_in(self.at(10, 2))
+        body = self.panel_markup()
+        self.assertRegex(body, r'x-text="elapsed">\d+h \d{2}m<')
+
+    def test_the_punch_result_is_announced(self):
+        body = self.htmx_panel()
+        self.assertIn('role="status"', body)
+        self.assertIn("Checked in at", body)
+
+    def test_a_double_click_cannot_send_a_second_punch(self):
+        """The panel re-renders in place, so two rapid clicks both posted.
+
+        `punch` answered the second with its `unchanged` no-op, which replaced
+        "Checked in at 10:02 AM." with "already checked in and out" — the
+        employee saw the opposite of what happened.
+        """
+        body = self.panel()
+        self.assertIn('hx-disabled-elt="this"', body)
+
+    def test_the_button_still_works_without_javascript(self):
+        self.assertIn('method="post"', self.panel())
+        self.assertIn(f'action="{reverse("attendance:punch")}"', self.panel())
+
+    def test_both_buttons_exist_and_are_labelled(self):
+        """Once "on the clock", so the check-out button is reachable."""
+        self.assertIn("Check in", self.panel())
+        self.punch_in(self.at(10, 2))
+        self.assertIn("Check out", self.panel())
+
+    def test_the_two_buttons_are_visually_distinct(self):
+        """`punch-btn-in` / `punch-btn-out` were used but never defined, so both
+        buttons rendered as the same plain `.btn`."""
+        self.punch_in(self.at(10, 2))
+        body = self.panel()
+        self.assertIn("punch-btn punch-btn-out", body)
+        for selector in (".punch-btn-in{", ".punch-btn-out{"):
+            self.assertIn(selector, body)
+
+    def test_the_panel_warns_about_a_forgotten_check_out(self):
+        """The complaint that started this: the panel said nothing about it."""
+        from apps.attendance.models import AttendanceRecord
+
+        today = timezone.localdate()
+        for offset in (1, 5):
+            day = today - timedelta(days=offset)
+            AttendanceRecord.objects.create(
+                company=self.company, user=self.dev, date=day,
+                check_in=self.at(10, 0, days_ago=offset),
+            )
+        body = self.panel()
+        self.assertIn("2 earlier days with no check-out", body)
+        self.assertIn("capped at one working", body)
+
+    def test_the_warning_lists_the_days_and_is_readable(self):
+        from apps.attendance.models import AttendanceRecord
+
+        day = timezone.localdate() - timedelta(days=3)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+            check_in=self.at(10, 0, days_ago=3),
+        )
+        body = self.panel()
+        self.assertIn(f"{day:%b} {day.day}", body)
+        self.assertIn("until an admin closes it out", body)
+
+    def test_no_warning_when_every_day_is_closed(self):
+        self.punch_in(self.at(10, 2))
+        body = self.panel()
+        self.assertNotIn("no check-out", body)
+
+    def test_todays_open_punch_is_not_reported_as_a_forgotten_one(self):
+        """Today's record is legitimately open; calling it forgotten would make
+        the warning appear on every working day and stop meaning anything."""
+        self.punch_in(self.at(10, 2))
+        self.assertNotIn("no check-out", self.panel())
+
+    def test_the_warning_spans_every_month_not_the_one_on_screen(self):
+        """A punch from last month still costs the days between check-in and
+        closing time until it is fixed, so a month filter would hide it."""
+        from apps.attendance.models import AttendanceRecord
+
+        old = timezone.localdate() - timedelta(days=60)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=old,
+            check_in=timezone.make_aware(
+                datetime.combine(old, time(10, 0)), timezone.get_current_timezone()
+            ),
+        )
+        self.client.login(username="dev", password="pass1234")
+        self.assertIn("no check-out", self.panel_markup())
+
+    def test_a_colleagues_forgotten_day_does_not_warn_you(self):
+        from apps.attendance.models import AttendanceRecord
+
+        day = timezone.localdate() - timedelta(days=2)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.viewer, date=day,
+            check_in=self.at(10, 0, days_ago=2),
+        )
+        self.assertNotIn("no check-out", self.panel())
+
+    def test_an_admin_reading_a_colleague_sees_that_colleagues_warning(self):
+        from apps.attendance.models import AttendanceRecord
+
+        day = timezone.localdate() - timedelta(days=2)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+            check_in=self.at(10, 0, days_ago=2),
+        )
+        self.client.login(username="owner", password="pass1234")
+        body = self.client.get(
+            reverse("attendance:my_attendance"), {"user_id": self.dev.pk}
+        ).content.decode()
+        self.assertIn("no check-out", body)
+
+    def test_the_htmx_re_render_keeps_the_same_information(self):
+        """The punch response re-renders the partial, and a panel that loses the
+        shift hours or the lateness on the first click is worse than the old one."""
+        self.punch_in(self.at(10, 45))
+        self.client.login(username="dev", password="pass1234")
+        body = self.client.post(
+            reverse("attendance:punch"), headers={"HX-Request": "true"}
+        ).content.decode()
+        # Every state carries the shift and the lateness, so a punch cannot
+        # swap one for the other and lose the penalty the employee just incurred.
+        for state in ("Checked out", "45m late", "Shift 10:00–19:00"):
+            self.assertIn(state, body)
+        self.assertNotIn("punch-panel", body)
+
+    def test_a_first_punch_returns_a_complete_panel_not_a_stub(self):
+        self.client.login(username="dev", password="pass1234")
+        body = self.client.post(
+            reverse("attendance:punch"), headers={"HX-Request": "true"}
+        ).content.decode()
+        self.assertIn("Checked in at", body)
+        self.assertIn("Shift 10:00–19:00", body)
+        self.assertIn("Check out", body)
+
+    def test_an_admin_reading_a_colleague_is_offered_no_button(self):
+        """The button would punch the viewer, not the person on screen."""
+        self.client.login(username="owner", password="pass1234")
+        body = self.client.get(
+            reverse("attendance:my_attendance"), {"user_id": self.dev.pk}
+        ).content.decode()
+        control = body[body.index('id="punch-control"'):]
+        control = control[:control.index('class="att-stats"')]
+        self.assertNotIn("<button", control)
+        self.assertNotIn('hx-post', control)
+        self.assertNotIn("Check in", control)
+        self.assertNotIn("Check out", control)
+
+    def test_it_uses_the_shared_icon_set_not_hand_written_svg(self):
+        """`{% icon %}` is the project mechanism; this partial still had raw SVG
+        bodies, so the punch panel did not share the nav's stroke set."""
+        punch = self.panel_markup()
+        svgs = re.findall(r"<svg[^>]*>", punch)
+        self.assertTrue(svgs, "the punch panel draws no icon at all")
+        for svg in svgs:
+            self.assertIn('class="ic"', svg)
+
+    def test_there_is_no_dead_punch_panel_wrapper_left(self):
+        """`.punch-panel` was `justify-content:space-between` around exactly one
+        child, so the flex was doing nothing."""
+        self.assertNotIn("punch-panel", self.panel())

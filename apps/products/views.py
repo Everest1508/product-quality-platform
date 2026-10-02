@@ -794,6 +794,10 @@ class ProductMilestoneToggleView(CompanyMemberRequiredMixin, View):
             milestone.completed_at = None
 
         milestone.save()
+        messages.success(
+            request,
+            f"\"{milestone.title}\" is now {milestone.get_status_display().lower()}.",
+        )
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_milestone_tree.html", {
@@ -809,7 +813,9 @@ class ProductMilestoneDeleteView(CompanyMemberRequiredMixin, View):
         milestone = get_object_or_404(ProductMilestone, pk=pk, company=request.company)
         require_product_access(request, milestone.product)
         product = milestone.product
+        title = milestone.title
         milestone.delete()
+        messages.success(request, f"Milestone \"{title}\" deleted.")
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_milestone_tree.html", {
