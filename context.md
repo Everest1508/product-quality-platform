@@ -29,6 +29,8 @@ entry here is unfinished.
 | Office hours / lateness | `apps/attendance/models.py::WorkShift`, `service.late_*` | Penalties are **derived, never stored**; there is no `LatePenalty` model |
 | Leave | `apps/leave/{models,service,views,forms}.py` | The paid/unpaid split is **stored** on the request; payroll trusts it |
 | DSR | `apps/dsr/{service,views,forms,models}.py` | A day is submitted **on the day** — `service.submission_window` is the only rule; `auto_log_ticket_dsr` writes **unvalidated** |
+| Sign-in | `apps/accounts/{views,forms}.py`, `templates/accounts/login.html`, `apps/core/redirects.py` | `base.html` owns `.auth-shell`; `?next=` must go through `safe_next`; `{# #}` is **line-scoped** |
+| Icons | `apps/core/icons.py`, `apps/core/templatetags/icon_tags.py` | `render_icon()` emits **no** `width`/`height` — every `{% icon %}` consumer needs a CSS size rule or it renders 300x150 |
 | Payroll | `apps/payroll/service.py` | Pay = payable days × daily rate. No overtime, no hours input |
 | Dashboard | `apps/dashboards/service.py` | Personal-first; company-wide numbers gated behind `is_privileged` |
 | Tickets / errors | `apps/tickets/`, `apps/errors/`, `apps/products/views.py` | Same logic **twice**: global + product-scoped. Both must stay in sync |
@@ -44,8 +46,14 @@ entry here is unfinished.
 - Branch `main`, **47 uncommitted paths** (many untracked). The 2026-10-02 work is
   real and uncommitted — do not assume a clean tree, and do not discard untracked
   files without checking this file first.
-- Release **1.0.1**. Full suite **694 tests, 1 failure**
-  (`test_signup_creates_user` — pre-existing, see Q6).
+- Release **1.0.1**. Full suite **768 tests, 2 failures**, both pre-existing and
+  unrelated to any recent work: `test_signup_creates_user` (`accounts:signup`
+  route no longer exists — a product question, see Q6) and
+  `test_attendance_reflects_only_my_own_punches` (time-of-day dependent; it
+  only fails when the suite runs late in the day).
+- Sign-in: `/login/` renders as two columns on desktop, form only under 860px;
+  brand panel is decorative and collapses first.
+  `apps/accounts/tests/test_login.py` is the net — 34 tests.
 - Suite takes ~3.5 min. Background it.
 - No CI, no lint, no typecheck. `manage.py check` (expect only
   `staticfiles.W004`) plus the suite is the whole gate.
@@ -59,6 +67,158 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-03 (sign-in) — the login page rebuilt, and `{# #}` is line-scoped
+
+**What changed.** `templates/accounts/login.html` was rewritten around a
+two-column layout (brand panel + form) with `apps/accounts/forms.py`,
+`apps/accounts/views.py` and the auth CSS in `templates/core/base.html`.
+New `apps/core/redirects.py::safe_next` now backs both login's `?next=` and
+`apps/attendance/views.py::_safe_next`. Coverage lives in
+`apps/accounts/tests/test_login.py` (31 tests).
+
+**Four real bugs, all of the same shape: a thing that looked right in the
+template and was wrong in the rendered HTML.**
+
+1. **Multi-line `{# … #}` comments are not comments.** Django's `{# #}` is
+   *line-scoped*; a second line is ordinary text. Three multi-line comments in
+   `login.html` rendered verbatim, so developer notes about the form appeared
+   in the visitor's browser as body copy. `{% comment %}` is the multi-line
+   form. **`test_no_template_comment_reaches_the_page` now pins this** — it was
+   the single highest-value test in the file.
+2. **`.auth-shell` was doubled.** `base.html` already wraps
+   `{% block content_full_only %}` in `.auth-shell` (that's how the logged-out
+   branch works), and the template added its own. Nested, it is two
+   `min-height:100vh` grids, so the page centred twice and scrolled. The
+   template now supplies only `.auth-wrap`.
+3. **The password toggle carried `tabindex="-1"`** — invisible to every
+   keyboard user while plainly visible on the page. It is now a real
+   `type="button"`, reachable, with `aria-pressed`/`aria-controls`.
+   `test_the_password_toggle_is_reachable_by_keyboard` splits the markup on
+   the button's own tag and asserts `tabindex` is absent, so the assertion
+   can't drift onto some other element.
+4. **The only heading on the page was an `<h2>`.** It is now the single
+   `<h1>Sign in</h1>`, and the brand tagline is a `<p>` — a tagline above the
+   `<h1>` is decoration, and promoting it put a subheading before the title.
+   The CSS selector changed with it (`.auth-brand h2` → `.auth-brand
+   .brand-line`); a selector left behind would have silently killed the style.
+
+**Two test lessons worth more than the code.** `base.html` inlines the whole
+stylesheet into every page, so `aria-invalid`, `<svg` and `h2` all appear in the
+response **as CSS selectors**. Six of the first nine tests failed for that
+reason alone — the clean-form test "found" `aria-invalid` in
+`.auth-input[aria-invalid="true"]`, and `test_no_hand_written_svg_survives`
+demanded zero `<svg>` from a page whose whole icon system renders `<svg
+class="ic">`. The `body()` helper strips `<style>`/`<script>` and slices from
+`<body>`; assertions now target markup. Also: `id_for_label` is on the
+**BoundField**, not the Field — `form[name].id_for_label`, not
+`field.id_for_label`.
+
+**Security.** `safe_next` uses `url_has_allowed_host_and_scheme` with no
+allowed hosts, so only relative paths survive; `//host/`, `/\host/` and
+absolute URLs (including our own host) are dropped. `?next` is validated on
+GET, carried in a hidden input, re-validated on POST, and ignored if invalid.
+The failure message is now "Incorrect username or password." rather than
+"Invalid credentials.", so the form no longer distinguishes a wrong password
+from a nonexistent account.
+
+**A DEBUG-gated demo-credentials panel was built, then removed.** The seeded
+logins are printed by `seed_data` for whoever is setting the app up; putting
+them on the login page as well was judged a bad trade and was deleted rather
+than switched off — `DEMO_LOGIN_HINT`, the `demo_users` context value and the
+`.auth-demo` CSS are all gone. `NoCredentialsOnTheLoginPageTest` now pins the
+absence instead, in DEBUG *and* production, and asserts `DEMO_LOGIN_HINT` is no
+longer a setting. The reasoning: the gate is one settings flip from being
+wrong, and the seeded accounts are exactly the ones someone would try against a
+real deployment.
+
+**Visual register: deliberately plain.** The background is a 22px dot grid
+(`--border` dots on `--panel`) rather than coloured radial blobs, and the brand
+panel is flat `#182b4d` rather than a blue gradient. The panel copy was also cut
+down — it had been written as landing-page copy ("Every product signal, in one
+place", "before it becomes a customer call") and now only states which parts of
+the app are covered. **Do not reintroduce gradient blobs or marketing register
+on this page**; it is a login form for an internal tool, and the `.brand-line`
+was dropped from 27px to 15px for the same reason.
+
+**Deliberately not changed.** No password-reset link — there is no such route
+anywhere in the project, and a dead link is worse than none. No change to the
+`accounts:dashboard` default redirect, which the dashboard test depends on.
+No per-page `<style>` and no second stylesheet: the auth CSS still lives in
+`base.html`'s single block, per `AGENTS.md`.
+
+**Verification.** `venv/bin/python manage.py test apps.accounts.tests.test_login`
+→ **31 tests, OK**. `apps.accounts apps.core apps.dashboards apps.attendance`
+→ 329 tests, only the two known pre-existing failures. `apps.leave` → 124 OK,
+which includes `PolicyScreenTest.test_every_vendored_icon_is_inert` over the
+two new `eye` / `eye-off` icons. Checked visually via `Client().get('/login/')`
+under `override_settings(ALLOWED_HOSTS=['testserver'])` — a bare `Client()` in
+`manage.py shell` raises `DisallowedHost` because it bypasses the test runner's
+`setup_test_environment`.
+
+Re-verified after the demo-panel removal and the visual pass: login suite still
+**31 tests OK**; `apps.accounts apps.leave apps.core` → 268 tests with only the
+known `test_signup_creates_user` error. Full suite was **765 tests, 2 known
+failures** immediately before those edits.
+
+**Open, and found while working.** Twelve **pre-existing** multi-line `{# #}`
+comments in ten other templates leak the same way (`my_attendance.html:128`,
+`base.html:1129`, `my_leave.html:37,80`, `_apply_form.html:24`,
+`_split_preview.html:26`, `_approval_list.html:26,44`, `_team_body.html:143`,
+`_month_grid.html:19,31`, `_record_edit_form.html:22`). Not touched — out of
+scope for the sign-in work, and each renders only when its branch is taken. They
+are the next candidate sweep.
+
+#### Same day, later: the eye icon, and two silent regressions it exposed
+
+**What changed.** `apps/core/icons.py` gained vendored Aria/Lucide `eye` and
+`eye-off` (Lucide collection, geometry checked against local `lucide-react`
+0.460.0 — `AGENTS.md`'s suggested `GET /api/v1/icon?id=lucide:<name>` endpoint
+does not exist in this repo). `templates/accounts/oauth_authorize.html` dropped
+its two hand-written Feather-style SVGs and `tabindex="-1"` for `{% icon %}`, and
+its `<h2>`/unlabelled password label became `<h1>`/`for="id_password"`.
+
+**Why the icon looked wrong: size, not path.** `render_icon()` emits a `viewBox`
+and no `width`/`height`, so an SVG falls back to the CSS replaced-element default
+of **300x150px** and bursts out of the 30px `.pw-toggle` button. The path data was
+correct all along. Every `{% icon %}` consumer therefore needs a CSS size rule;
+`base.html` now has `.pw-toggle .ic{width:16px;height:16px;flex-shrink:0;}`.
+
+**Two regressions found while verifying, both mine, both silent.**
+
+1. **`.auth-card` was deleted from `base.html` during the auth rewrite, and
+   `oauth_authorize.html` still uses it** — the whole Serop sign-in screen came
+   back as unstyled bare text. **No test failed, because no test rendered that
+   page.** The rules are restored, deliberately kept separate from `.auth-wrap`,
+   and `LoginPageMarkupTest.test_every_auth_class_used_is_actually_styled` now
+   walks the `auth-*` classes both auth templates use and asserts each has a rule
+   in `base.html`. That is the general form of the bug: **class names are the
+   contract between templates and the single stylesheet, and nothing checked it.**
+2. **The password `<label>` was moved inside `.pw-wrap`**, which broke the
+   toggle's alignment. `.pw-toggle` is `top:50%` of `.pw-wrap`, so the wrapper
+   must hold only the input; with the label inside, the wrapper grew to
+   label+input and the button centred across both, landing on the label about
+   12px too high. At `HEAD` the label was a sibling, as on the OAuth page. Fixed,
+   and pinned by
+   `test_the_password_label_sits_outside_the_toggle_wrapper`.
+
+**Verification.** Both new tests were confirmed to **fail with the regression
+reintroduced** and pass with it fixed — a test that passes on broken code is
+worthless. Reintroducing `.auth-card`'s removal produces
+`templates/accounts/oauth_authorize.html uses .auth-card but base.html never
+styles it`. `apps.accounts.tests.test_login` → **34 tests OK**; `apps.accounts`
+→ 53 tests with only the known `test_signup_creates_user` error. `apps.core`
+(changelog parser + history) → 94 OK. **Full suite → 768 tests, the same 2 known
+pre-existing failures** — `test_signup_creates_user` and
+`test_attendance_reflects_only_my_own_punches`. 768 is 765 plus the three tests
+added here.
+
+**Asserting on these pages.** Use the `body()` helper in `test_login.py`: it
+strips `<style>`/`<script>`, because `base.html` inlines the whole stylesheet and
+a naive `'pw-wrap' in html` or `'<h2' not in html` matches **CSS selectors, not
+markup**. Likewise `{% icon %}` *emits* `<svg>`, so "no hand-written SVG" is
+asserted as `'<svg' not in html.replace('<svg class="ic"', '')` — never as
+"no `<svg`".
 
 ### 2026-10-02 (DSR) — long-running tickets no longer break the dashboard
 

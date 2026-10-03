@@ -10,6 +10,7 @@ from django.views import View
 from apps.attendance import service
 from apps.attendance.models import AttendanceRecord, format_minutes, punch
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
 
 User = get_user_model()
@@ -326,18 +327,12 @@ class TimesheetDetailView(CompanyAdminRequiredMixin, View):
 def _safe_next(raw):
     """A same-site path to return to after an edit, or None.
 
-    `next` is an attacker-supplied string that becomes a redirect target, so it
-    is validated rather than trusted: it must be a single leading slash and must
-    not start with "//" or "/\\", which browsers read as an absolute URL to
-    another host. Anything else is dropped, which lands the admin on the team
-    view rather than wherever the link wanted to send them.
+    Delegates to `apps.core.redirects.safe_next`, which owns the rule: `next` is
+    an attacker-supplied string that becomes a redirect target, so it is
+    validated rather than trusted. Kept as a local name because it is called
+    from a dozen places in this module.
     """
-    if not raw:
-        return None
-    value = raw.strip()
-    if not value.startswith("/") or value.startswith("//") or value.startswith("/\\"):
-        return None
-    return value
+    return safe_next(raw)
 
 
 class AttendanceEditView(CompanyAdminRequiredMixin, View):

@@ -1,44 +1,117 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}Sign In — PQ Platform{% endblock %}
 
+{% comment %}
+  base.html already wraps `content_full_only` in .auth-shell, so this block
+  supplies only .auth-wrap. Nesting a second .auth-shell here would double the
+  viewport height and the centering.
+{% endcomment %}
+
 {% block content_full_only %}
-<div class="auth-card">
-  <h2>Sign in</h2>
-  <p>Welcome back to PQ Platform.</p>
+<div class="auth-wrap">
 
-  {% if form.non_field_errors %}
-  <div style="padding:10px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;margin-bottom:16px;">
-    {% for error in form.non_field_errors %}
-    <p class="text-sm" style="color:var(--red);">{{ error }}</p>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <form method="post">
-    {% csrf_token %}
-    <div class="form-group">
-      <label for="{{ form.username.id_for_label }}">Username or email</label>
-      {{ form.username }}
+  <aside class="auth-brand">
+    <div class="brand">
+      <span class="mark">{% icon 'target' %}</span>
+      <span>PQ Platform</span>
     </div>
-    <div class="form-group" x-data="{ show: false }">
-      <label>Password</label>
-      <div class="pw-wrap">
-        {{ form.password }}
-        <button type="button" class="pw-toggle" @click="show = !show"
-                :aria-label="show ? 'Hide password' : 'Show password'"
-                :aria-pressed="show ? 'true' : 'false'"
-                tabindex="-1">
-          <template x-if="!show">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          </template>
-          <template x-if="show">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 5.2A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.3 6.4A17.6 17.6 0 0 0 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.1-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>
-          </template>
-        </button>
+
+    {% comment %}
+      Plain description, not a slogan. The form's <h1> is the page title; a
+      competing headline above it is decoration that has to be maintained.
+    {% endcomment %}
+    <p class="brand-line">Errors, tickets, feedback, attendance and payroll — kept
+      per product.</p>
+
+    <ul class="auth-points">
+      <li>
+        {% icon 'chart-column' %}
+        <div><b>Errors</b><span>Grouped by fingerprint, ranked by volume.</span></div>
+      </li>
+      <li>
+        {% icon 'ticket' %}
+        <div><b>Tickets</b><span>Raised by hand or by rule, tied to the product.</span></div>
+      </li>
+      <li>
+        {% icon 'clock' %}
+        <div><b>Time</b><span>Attendance, leave and payroll from the same records.</span></div>
+      </li>
+    </ul>
+  </aside>
+
+  <div class="auth-form" x-data="{ show: false, busy: false }">
+    <h1>Sign in</h1>
+    <p class="auth-sub">Welcome back. Enter your details to continue.</p>
+
+    {% if form.non_field_errors %}
+    {% comment %}
+      role="alert" so a failure is announced rather than only coloured red.
+      This page has no other live region for a visitor who is not logged in.
+    {% endcomment %}
+    <div class="auth-alert" role="alert">
+      {% icon 'triangle-alert' %}
+      <div><ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+    </div>
+    {% endif %}
+
+    {% comment %}
+      No-JS is the baseline: a real <button> in a real form. Alpine only adds the
+      pending state, so a blocked script cannot leave a user pressing a dead
+      button. Note the default label carries no x-cloak -- that is display:none
+      until Alpine boots, which would leave a no-JS button with no text at all.
+    {% endcomment %}
+    <form method="post" novalidate x-on:submit="if (!$event.defaultPrevented) busy = true">
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+      <div class="auth-field">
+        <label class="auth-label" for="{{ form.username.id_for_label }}">
+          <span>Username or email <span class="req" aria-hidden="true">*</span></span>
+        </label>
+        {{ form.username }}
+        {% if form.username.errors %}
+        <p class="auth-err" id="{{ form.username.id_for_label }}-err">
+          {% icon 'triangle-alert' %}<span>{{ form.username.errors.0 }}</span>
+        </p>
+        {% endif %}
       </div>
-    </div>
-    <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;margin-top:8px;">Sign In</button>
-  </form>
+
+      <div class="auth-field">
+        <label class="auth-label" for="{{ form.password.id_for_label }}">
+          <span>Password <span class="req" aria-hidden="true">*</span></span>
+        </label>
+        <div class="pw-wrap">
+          {{ form.password }}
+          {% comment %}
+            Reachable by keyboard: this button previously carried tabindex="-1",
+            which hid the control from every keyboard user while leaving it
+            plainly visible on the page.
+          {% endcomment %}
+          <button type="button" class="pw-toggle" @click="show = !show"
+                  :aria-label="show ? 'Hide password' : 'Show password'"
+                  :aria-pressed="show ? 'true' : 'false'"
+                  :aria-controls="{{ form.password.id_for_label }}">
+            <template x-if="!show">{% icon 'eye' %}</template>
+            <template x-if="show">{% icon 'eye-off' %}</template>
+          </button>
+        </div>
+        {% if form.password.errors %}
+        <p class="auth-err" id="{{ form.password.id_for_label }}-err">
+          {% icon 'triangle-alert' %}<span>{{ form.password.errors.0 }}</span>
+        </p>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary auth-submit" x-bind:disabled="busy">
+        <span x-show="!busy">Sign in</span>
+        <span x-show="busy" style="display:none;"><span class="spinner" aria-hidden="true"></span>Signing in…</span>
+      </button>
+    </form>
+
+    <div class="auth-foot">Need an account? Ask your workspace owner to invite you.</div>
+  </div>
+
 </div>
 {% endblock %}

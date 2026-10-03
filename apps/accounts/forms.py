@@ -46,18 +46,47 @@ class SignupForm(UserCreationForm):
 
 
 class LoginForm(forms.Form):
+    # `autocomplete` is not cosmetic here. Without "username" the browser has
+    # no idea which field is the account identifier, so it either offers nothing
+    # or -- worse -- offers a *sign-up* credential on a sign-in form, and the
+    # user then swears the password is right while the form is silently
+    # submitting the wrong value. "current-password" likewise distinguishes
+    # this from a saved sign-in for some other site.
     username = forms.CharField(widget=forms.TextInput(attrs={
-        "class": "form-input",
+        "class": "auth-input",
         "placeholder": "Username or email",
         "autofocus": True,
+        "autocomplete": "username",
+        "autocapitalize": "none",
+        "autocorrect": "off",
+        "spellcheck": "false",
     }))
     password = forms.CharField(widget=forms.PasswordInput(attrs={
-        "class": "form-input",
+        "class": "auth-input",
         "placeholder": "Password",
+        "autocomplete": "current-password",
         # Flipped by the eye button in the surrounding .pw-wrap; inert where no
         # Alpine scope wraps the field.
         "x-bind:type": "show ? 'text' : 'password'",
     }))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Mirror the server's error state onto the input, so the red border and
+        # the state a screen reader announces are the same decision. Writing
+        # `aria-invalid` by hand in the template means two places to forget --
+        # and a field that looks invalid to nobody but is announced as invalid
+        # is worse than either alone.
+        if not self.is_bound:
+            return
+        for name, errors in self.errors.items():
+            if not errors:
+                continue
+            attrs = self.fields[name].widget.attrs
+            attrs["aria-invalid"] = "true"
+            if self.auto_id:
+                # Matches the id the template prints on the .auth-err block.
+                attrs["aria-describedby"] = f"{self.auto_id}_{name}-err"
 
 
 class CompanyCreateForm(forms.ModelForm):

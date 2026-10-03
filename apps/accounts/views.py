@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
 from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
+from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
 
 User = get_user_model()
@@ -39,12 +40,22 @@ def _is_loopback_redirect(redirect_uri):
 
 
 class LoginView(View):
+    """Sign in, optionally resuming wherever the user was originally headed.
+
+    Login is the one page that is reached *because* something went wrong with
+    access, so losing the destination on success is the worst possible time to
+    drop it. `?next=` is carried through the POST and validated by
+    `safe_next` on the way out, because an unvalidated redirect target is how a
+    link with your own domain on it becomes an open redirect.
+    """
+
     def get(self, request):
         if request.user.is_authenticated:
             return redirect("accounts:dashboard")
-        return render(request, "accounts/login.html", {"form": LoginForm()})
+        return self._render(request, LoginForm(), request.GET.get("next"))
 
     def post(self, request):
+        destination = safe_next(request.POST.get("next"))
         form = LoginForm(request.POST)
         if form.is_valid():
             username_or_email = form.cleaned_data["username"]
@@ -56,9 +67,23 @@ class LoginView(View):
                 authenticated = authenticate(request, username=user.username, password=password)
                 if authenticated:
                     login(request, authenticated)
-                    return redirect("accounts:dashboard")
-            form.add_error(None, "Invalid credentials.")
-        return render(request, "accounts/login.html", {"form": form})
+                    return redirect(destination or "accounts:dashboard")
+            # Deliberately one message for "no such user" and "wrong password".
+            # Naming which half was wrong turns the form into a probe for
+            # whether an account exists.
+            form.add_error(None, "Incorrect username or password.")
+        return self._render(request, form, request.POST.get("next"))
+
+    def _render(self, request, form, next_url):
+        """One place that builds the login context, for GET and for failed POST.
+
+        The bound form carries the typed username back into the field, so a
+        mistake in the password does not also mean retyping the email.
+        """
+        return render(request, "accounts/login.html", {
+            "form": form,
+            "next": safe_next(next_url) or "",
+        })
 
 
 class LogoutView(View):

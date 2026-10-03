@@ -9,6 +9,65 @@ engineering invariants live.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not
 yet versioned. Older releases are below the newest.
 
+## [Unreleased] — 2026-10-03 · the sign-in page
+
+### Improved
+
+- **The sign-in page was rebuilt.** It now has a proper two-column layout on a
+  laptop and desktop, dropping to a single clean column on a phone, instead of a
+  small grey card floating in the middle of an empty screen.
+- **Signing in shows that it is working.** The button reports that it is signing
+  you in rather than sitting there looking broken while the page thinks about it.
+- **You can see what you typed.** A button beside the password reveals what you
+  entered, so a stray capital or a keyboard stuck in the wrong layout no longer
+  means a failed sign-in and no idea why.
+- **Browsers now fill the right fields.** Signing in offers your existing
+  username and password rather than pushing you to save a new set.
+- **Errors are actually announced.** A failed sign-in is read out to screen
+  readers instead of only turning red, and each field's label says which field
+  went wrong.
+
+### Fixed
+
+- **The eye icon beside the password was a giant blob.** It was drawn correctly
+  but never told how big to be, so it ballooned across the field instead of
+  sitting neatly inside the button.
+- **The sign-in page offered by desktop apps had lost its styling entirely.** It
+  fell back to bare text with no card, no spacing and no padding.
+- **The "reveal password" button on that page sat too high,** overlapping the
+  word "Password" rather than sitting beside the box.
+- **Technical notes were printing themselves on the sign-in page.** Comments left
+  in the page markup were being shown to visitors as if they were part of the
+  page.
+- **The "show password" button could not be reached with a keyboard.** It was on
+  screen and looked usable, but any keyboard user tabbing through the page would
+  skip straight past it.
+- **The sign-in page had no top-level heading.** The page title was a second-level
+  heading, which is why assistive technology described a page with no title. The
+  branding line is now ordinary text and the page has one proper title.
+- **A wrong username and a wrong password gave different messages**, which meant
+  the page could tell you which accounts exist. They now read the same.
+- **The page was laid out twice over**, making it unusually tall and awkward to
+  scroll.
+- **Signing in no longer loses your destination.** Following a link that needed
+  authentication now returns you to that link afterwards instead of dropping you
+  on the dashboard.
+
+### Changed
+
+- **The sign-in page has a quiet dotted background** instead of coloured light
+  spilling in from the corners, and the panel beside the form is a flat dark
+  blue rather than a bright gradient.
+- **The text beside the form now just describes the app.** It listed what the
+  product can do in the style of an advert; it now says plainly which parts of
+  the app are covered.
+
+### Known issues
+
+- **Comments still print themselves as visible text on ten other screens** —
+  the timesheet, team attendance, the leave calendar and its request screens.
+  Each shows on the pages that render it. Not yet fixed.
+
 ## [Unreleased] — 2026-10-02 · long-running tickets & DSR day close
 
 ### Fixed
