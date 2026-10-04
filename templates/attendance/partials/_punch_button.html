@@ -24,6 +24,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
      x-data="{
        since: {% if since_ms %}{{ since_ms }}{% else %}null{% endif %},
        end: {{ end_ms }},
+       dayEnd: {% if day_end_ms %}{{ day_end_ms }}{% else %}null{% endif %},
        span: {{ span_minutes }},
        now: Date.now(),
        tickId: null,
@@ -39,7 +40,18 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
          if (m <= 0) return 'Shift is over';
          return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm left';
        },
-       get over() { return this.now > this.end; }
+       get over() { return this.now > this.end; },
+       get leftSecs() { return this.dayEnd ? Math.max(0, Math.floor((this.dayEnd - this.now) / 1000)) : 0; },
+       get countdown() {
+         const s = this.leftSecs;
+         return Math.floor(s / 3600) + 'h ' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + 'm ' + String(s % 60).padStart(2, '0') + 's';
+       },
+       get dayDone() { return !!this.dayEnd && this.now >= this.dayEnd; },
+       get extra() {
+         const m = this.dayEnd ? Math.max(0, Math.floor((this.now - this.dayEnd) / 60000)) : 0;
+         return '+' + Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+       },
+       get dayPct() { return this.dayEnd && this.since ? Math.min(100, Math.round((this.now - this.since) / (this.dayEnd - this.since) * 100)) : 0; }
      }"
      x-init="start()">
 
@@ -52,8 +64,9 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
 
   {% elif today_record and today_record.is_complete %}
     <div class="punch-hero punch-state punch-state-done">
-      <div class="punch-ring is-done" aria-hidden="true">
-        {% icon 'circle-check' %}
+      <div class="punch-big">
+        <span class="punch-big-num">{{ today_record.worked_formatted }}</span>
+        <span class="punch-big-cap">worked today</span>
       </div>
       <div class="punch-copy">
         <span class="punch-label">Checked out</span>
@@ -75,15 +88,9 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
 
   {% elif today_record and today_record.is_open_today %}
     <div class="punch-hero punch-state punch-state-open">
-      <div class="punch-ring" aria-hidden="true">
-        <svg viewBox="0 0 120 120">
-          <circle class="ring-track" cx="60" cy="60" r="52"/>
-          <circle class="ring-fill" :class="{ 'is-over': over }" cx="60" cy="60" r="52" stroke-dasharray="326.7" :stroke-dashoffset="ring"/>
-        </svg>
-        <div class="ring-center">
-          <span class="ring-time"><span class="ring-main" x-text="elapsed">{{ today_record.elapsed_formatted }}</span><span class="ring-secs" x-text="seconds">:00</span></span>
-          <span class="ring-cap">on the clock</span>
-        </div>
+      <div class="punch-big">
+        <span class="punch-big-num" x-text="dayDone ? extra : countdown">{{ remaining_formatted }}</span>
+        <span class="punch-big-cap" x-text="dayDone ? 'past your full day' : 'left in your day'">left in your day</span>
       </div>
       <div class="punch-copy">
         <span class="punch-label">On the clock since {{ today_record.check_in|date:"g:i A" }}</span>
@@ -92,8 +99,11 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
           · {% include "attendance/partials/_late_note.html" %}
         </span>
         <div class="punch-facts">
-          <span><b x-text="pct + '%'">0%</b> of the shift</span>
-          <span><b x-text="left">&nbsp;</b> until {{ shift_end_label }}</span>
+          <span><b x-text="elapsed">{{ today_record.elapsed_formatted }}</b> on the clock</span>
+          <span>Full day done at <b>{{ day_end_label }}</b></span>
+          <span>Shift ends {{ shift_end_label }}</span>
+        </div>
+        <div class="punch-bar" aria-hidden="true"><i :style="'width:' + dayPct + '%'" style="width:0%"></i>
         </div>
       </div>
       <div class="punch-actions">
@@ -103,11 +113,9 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
 
   {% else %}
     <div class="punch-hero punch-state punch-state-ready">
-      <div class="punch-ring" aria-hidden="true">
-        <div class="ring-center">
-          <span class="ring-time"><span class="ring-main ring-clock" x-text="clock">{{ now_label }}</span></span>
-          <span class="ring-cap">right now</span>
-        </div>
+      <div class="punch-big">
+        <span class="punch-big-num punch-big-clock" x-text="clock">{{ now_label }}</span>
+        <span class="punch-big-cap">right now</span>
       </div>
       <div class="punch-copy">
         <span class="punch-label">Not checked in</span>
