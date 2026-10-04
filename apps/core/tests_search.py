@@ -46,7 +46,7 @@ class SearchTest(TestCase):
 
     def test_a_member_finds_tickets_they_can_open(self):
         groups = self.search("dev", "invoice")
-        self.assertEqual(self.titles(groups, "Tickets"), [f"#{self.open_ticket.pk} Invoice emails go to spam"])
+        self.assertEqual(self.titles(groups, "Tickets"), [f"{self.open_ticket.key} Invoice emails go to spam"])
 
     def test_a_member_never_sees_a_product_they_have_no_access_to(self):
         groups = self.search("dev", "vault")
@@ -71,11 +71,11 @@ class SearchTest(TestCase):
     def test_a_ticket_number_finds_the_ticket(self):
         for q in (str(self.open_ticket.pk), f"#{self.open_ticket.pk}"):
             groups = self.search("dev", q)
-            self.assertIn(self.open_ticket.pk, [int(t["title"].split()[0][1:]) for t in groups["Tickets"]])
+            self.assertIn(self.open_ticket.key, [t["title"].split()[0] for t in groups["Tickets"]])
 
     def test_a_ticket_number_does_not_reveal_one_you_cannot_open(self):
         groups = self.search("dev", str(self.secret_ticket.pk))
-        self.assertNotIn(f"#{self.secret_ticket.pk} Invoice vault leak", self.titles(groups, "Tickets"))
+        self.assertNotIn(f"{self.secret_ticket.key} Invoice vault leak", self.titles(groups, "Tickets"))
 
     def test_results_link_to_real_pages(self):
         item = self.search("dev", "invoice")["Tickets"][0]

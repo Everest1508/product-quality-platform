@@ -284,7 +284,7 @@ class AuditWiringTest(TestCase):
             ActivityLog.objects.filter(
                 company=self.company,
                 event_type="ticket_created",
-                title__startswith="Ticket #",
+                title__regex=r"^Ticket [A-Z][A-Z0-9]+-\d{3} created$",
             ).exists()
         )
 
