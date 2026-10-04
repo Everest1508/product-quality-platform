@@ -89,3 +89,31 @@ self.addEventListener("fetch", (event) => {
 
   if (CDN_HOSTS.includes(url.hostname)) event.respondWith(staleWhileRevalidate(request));
 });
+
+// Web push: show the notification, and open the page it points at when tapped.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: "PQ Platform", body: event.data && event.data.text() }; }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "PQ Platform", {
+      body: data.body || "",
+      icon: "/brand/pwa-192.png",
+      badge: "/brand/favicon-32.png",
+      tag: data.tag,
+      data: { url: data.url || "/notifications/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || "/notifications/", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if ("focus" in w) { w.navigate(target); return w.focus(); }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
+});

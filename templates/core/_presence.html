@@ -42,6 +42,7 @@ document.addEventListener('alpine:init', function () {
       ws.onmessage = function (e) {
         var msg; try { msg = JSON.parse(e.data); } catch (err) { return; }
         if (msg.event === 'presence') self.users = msg.users;
+        else if (msg.event === 'notification' && Alpine.store('notifications')) Alpine.store('notifications').receive(msg);
       };
       ws.onclose = function (e) {
         self.connected = false; clearInterval(self._beat);

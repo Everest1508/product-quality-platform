@@ -39,6 +39,9 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
         self.company_id = company_id
         self.group_name = f"presence_{company_id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
+        # Same socket carries this person's notifications (see apps.notifications).
+        self.notify_group = f"notify_{user.pk}"
+        await self.channel_layer.group_add(self.notify_group, self.channel_name)
         await self.accept()
         await self._create_session()
         await self._broadcast()
@@ -48,6 +51,7 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
             return
         await self._delete_session()
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await self.channel_layer.group_discard(self.notify_group, self.channel_name)
         await self._broadcast()
 
     async def receive_json(self, content, **kwargs):
@@ -62,6 +66,15 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
             return
         if changed:
             await self._broadcast()
+
+    async def notification_new(self, event):
+        # A person in two workspaces gets both groups on one socket; only show the
+        # one this tab is looking at.
+        if event.get("company_id") != self.company_id:
+            return
+        await self.send_json(
+            {"event": "notification", "notification": event["notification"], "unread": event["unread"]}
+        )
 
     async def presence_changed(self, event):
         await self.send_json({"event": "presence", "users": event["users"]})

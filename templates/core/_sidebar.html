@@ -190,6 +190,7 @@
 
   <div class="side-foot">
     {% with u=request.resolver_match.url_name %}
+    {% include "core/_bell.html" %}
     {% include "core/_presence_sidebar.html" %}
 
     <button type="button" class="side-item side-version" data-changelog-open

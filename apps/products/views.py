@@ -441,7 +441,7 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.product = product
             ticket.source = "manual"
             ticket.save()
-            ticket.set_assignees(form.cleaned_data["assignees"])
+            ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",

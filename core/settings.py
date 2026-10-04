@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "apps.payroll",
     "apps.serop",
     "apps.presence",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -91,6 +92,7 @@ TEMPLATES = [
                 "apps.core.context_processors.product_context",
                 "apps.core.context_processors.workspace_context",
                 "apps.core.context_processors.version_context",
+                "apps.notifications.context_processors.webpush",
             ],
         },
     },
@@ -199,6 +201,14 @@ else:
     # No Redis configured (a plain `runserver`): live updates still work inside
     # this one process. Set REDIS_URL when running more than one worker.
     CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+
+# Web push (notifications when the app is closed). Generate a key pair with
+#   python -c "from py_vapid import Vapid; v=Vapid(); v.generate_keys(); print(v.private_pem().decode()); print(v.public_key)"
+# or `npx web-push generate-vapid-keys`. With no private key the feature is off
+# and the bell still works.
+WEBPUSH_VAPID_PUBLIC_KEY = os.environ.get("WEBPUSH_VAPID_PUBLIC_KEY", "")
+WEBPUSH_VAPID_PRIVATE_KEY = os.environ.get("WEBPUSH_VAPID_PRIVATE_KEY", "")
+WEBPUSH_VAPID_SUBJECT = os.environ.get("WEBPUSH_VAPID_SUBJECT", "mailto:admin@example.com")
 
 # Fernet key used to encrypt shared-server passwords (apps.serop.models.SeropSharedServer).
 # Generate one with:

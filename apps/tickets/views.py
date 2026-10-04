@@ -181,7 +181,7 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.created_by = request.user
             ticket.source = "manual"
             ticket.save()
-            ticket.set_assignees(form.cleaned_data["assignees"])
+            ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",
@@ -216,7 +216,7 @@ class TicketEditView(CompanyMemberRequiredMixin, View):
         form = TicketEditForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save()
-            ticket.set_assignees(form.cleaned_data["assignees"])
+            ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
             log_activity(
                 request.company, "ticket_updated",
                 f"Ticket #{ticket.pk} updated",
@@ -354,7 +354,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
                 pk__in=assignee_ids,
                 memberships__company=request.company,
             )
-            ticket.set_assignees(assignees)
+            ticket.set_assignees(assignees, actor=request.user)
             if ticket.status == "open":
                 ticket.status = "assigned"
                 ticket.save(update_fields=["status", "updated_at"])

@@ -1,0 +1,38 @@
+{% load icon_tags %}
+{# Sidebar entry for notifications: an unread badge and a popover with the latest. #}
+<div class="side-bell" x-data="{ open: false, pos: '' }" @keydown.escape.window="open = false" @click.outside="open = false">
+  <button type="button" class="side-item" aria-haspopup="true" :aria-expanded="open.toString()" data-label="Notifications"
+          @click="
+            const r = $el.getBoundingClientRect();
+            pos = window.innerWidth > 860 ? `left:${r.right + 8}px;bottom:${window.innerHeight - r.bottom}px;` : '';
+            open = !open">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    <span class="side-label">Notifications</span>
+    <span class="side-badge bell-badge" x-show="$store.notifications.unread > 0" style="display:none;" x-text="$store.notifications.unread > 99 ? '99+' : $store.notifications.unread">0</span>
+  </button>
+  <div class="bell-pop" x-show="open" x-transition.opacity.duration.100ms :style="pos" style="display:none;" role="dialog" aria-label="Notifications">
+    <header class="bell-head">
+      <h2>Notifications</h2>
+      <button type="button" class="link-btn" x-show="$store.notifications.unread > 0" @click="$store.notifications.markAllRead()">Mark all read</button>
+    </header>
+    <ul class="bell-list" x-show="$store.notifications.items.length" style="display:none;">
+      <template x-for="n in $store.notifications.items" :key="n.id">
+        <li>
+          <a :href="n.url" class="bell-row" :class="{ 'is-unread': !n.read }">
+            <span class="bell-dot" aria-hidden="true"></span>
+            <span class="bell-text">
+              <strong x-text="n.title"></strong>
+              <span x-show="n.body" x-text="n.body"></span>
+              <em x-text="(n.actor ? n.actor + ' · ' : '') + $store.notifications.ago(n.created_at)"></em>
+            </span>
+          </a>
+        </li>
+      </template>
+    </ul>
+    <p class="bell-empty" x-show="!$store.notifications.items.length" x-text="$store.notifications.loaded ? 'You are all caught up.' : 'Loading...'"></p>
+    <footer class="bell-foot">
+      <a href="{% url 'notifications:list' %}">See all</a>
+      <button type="button" class="link-btn" x-show="$store.notifications.pushSupported && !$store.notifications.pushOn" @click="$store.notifications.enablePush()">Turn on alerts</button>
+    </footer>
+  </div>
+</div>
