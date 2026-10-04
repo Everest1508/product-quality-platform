@@ -1,4 +1,8 @@
 {% load icon_tags %}<aside class="sidebar">
+  <a href="{% url 'dashboards:index' %}" class="side-brand" aria-label="PQ Platform home">
+    <span class="side-brand-mark">{% brand_mark %}</span>
+    <span class="side-label">PQ Platform</span>
+  </a>
   {% include "core/_company_switcher.html" %}
 
   {% comment %}
