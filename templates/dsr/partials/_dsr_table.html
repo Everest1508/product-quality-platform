@@ -103,6 +103,30 @@
 
   <textarea id="hidden-dsr-summary" style="display:none;">{{ copy_summary_text }}</textarea>
 
+  {% if can_submit and work_suggestions %}
+  <div class="dsr-sugg" aria-label="Suggested from your work">
+    <div class="dsr-sugg-head"><b>From your work today</b><span class="text-sm text-muted">Confirm the hours and add it in one click.</span></div>
+    {% for s in work_suggestions %}
+    <form method="post" class="dsr-sugg-row"
+          action="{% url 'dsr:dsr_suggestion_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+          hx-post="{% url 'dsr:dsr_suggestion_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+          hx-target="#dsr-content" hx-swap="innerHTML" hx-disabled-elt="find button">
+      {% csrf_token %}
+      <input type="hidden" name="ticket_id" value="{{ s.number }}">
+      <span class="dsr-sugg-what">
+        <span class="dsr-sugg-title">#{{ s.number }} {{ s.title }}</span>
+        <span class="dsr-sugg-did">{% if s.product %}{{ s.product }} · {% endif %}{{ s.did }}</span>
+      </span>
+      <label class="dsr-sugg-hours"><span class="sr-only">Hours for #{{ s.number }}</span>
+        <input type="number" name="hours" class="form-input" step="0.25" min="0.25" max="24" value="{{ s.hours }}" inputmode="decimal">
+        <span>h</span>
+      </label>
+      <button type="submit" class="btn btn-sm btn-primary">Add</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% if can_submit %}
   <div x-show="addOpen" x-cloak
        class="dc-wrap">

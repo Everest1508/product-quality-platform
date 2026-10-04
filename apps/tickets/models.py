@@ -133,12 +133,31 @@ class Ticket(TenantScopedModel):
             except Exception:
                 pass
 
-    def set_assignees(self, users):
-        """Replace the assignee set and keep the primary ``assigned_to`` in sync."""
+    def set_assignees(self, users, actor=None):
+        """Replace the assignee set and keep the primary ``assigned_to`` in sync.
+
+        Anyone newly added is notified (not the person who made the change).
+        """
+        before = set(self.assignees.values_list("pk", flat=True))
         self.assignees.set(users)
         primary = self.assignees.order_by("pk").first()
         self.assigned_to = primary
         self.save(update_fields=["assigned_to", "updated_at"])
+
+        added = self.assignees.exclude(pk__in=before)
+        if added:
+            from apps.notifications import service
+            from apps.notifications.models import Notification
+
+            service.notify_many(
+                added,
+                company=self.company,
+                kind=Notification.Kind.ASSIGNED,
+                title=f"You were assigned ticket #{self.pk}",
+                body=self.title,
+                url=f"/tickets/{self.pk}/",
+                actor=actor,
+            )
 
 
 class TicketComment(TenantScopedModel):
@@ -154,6 +173,12 @@ class TicketComment(TenantScopedModel):
         blank=True,
     )
     body = models.TextField()
+    # People named with @username who can open the ticket. See tickets/mentions.py.
+    mentions = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="+",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta(TenantScopedModel.Meta):

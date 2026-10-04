@@ -1,3 +1,4 @@
+{% load ticket_tags %}
 {% for comment in comments %}
 <div style="padding-bottom:12px;{% if not forloop.last %}border-bottom:1px solid var(--line);margin-bottom:12px;{% endif %}">
   <div class="flex-between">
@@ -9,7 +10,7 @@
     </span>
     <span class="date">{{ comment.created_at|timesince }} ago</span>
   </div>
-  <div class="text-sm" style="margin-top:6px;white-space:pre-wrap;">{{ comment.body }}</div>
+  <div class="text-sm" style="margin-top:6px;white-space:pre-wrap;">{{ comment|comment_html }}</div>
 </div>
 {% empty %}
 <p class="text-sm text-muted">No comments yet.</p>

@@ -40,6 +40,17 @@ class ErrorGroup(TenantScopedModel):
     last_seen = models.DateTimeField(auto_now=True)
     occurrence_count = models.PositiveIntegerField(default=1)
     affected_user_count = models.PositiveIntegerField(default=0)
+    # The release this error was first seen in, for "new in this release".
+    first_version = models.ForeignKey(
+        "products.ProductVersion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # Set when a resolved error fires again. The flag lasts until it is resolved.
+    regressed_at = models.DateTimeField(null=True, blank=True)
+    regression_count = models.PositiveIntegerField(default=0)
 
     class Meta(TenantScopedModel.Meta):
         unique_together = ("product", "fingerprint")

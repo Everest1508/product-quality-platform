@@ -1,0 +1,74 @@
+{% comment %}
+Command palette. Ctrl+K or Cmd+K (or "/" outside a field) opens it from any page.
+It searches /search/, which only returns what this person can open. A combobox:
+the input owns focus, arrows move the highlighted option, Enter follows it, and
+Escape closes. aria-activedescendant tells a screen reader which option is
+highlighted without moving focus off the input.
+{% endcomment %}
+<div x-data="palette()" x-init="init()" @keydown.window="onGlobalKey($event)" @pq-palette.window="show()">
+  <div class="palette-backdrop" x-show="open" x-transition.opacity.duration.120ms style="display:none;" @mousedown.self="close()">
+    <div class="palette" role="dialog" aria-modal="true" aria-label="Search">
+      <div class="palette-input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" x-ref="input" x-model="query" @input="debounced()" autocomplete="off" autocapitalize="off" spellcheck="false"
+               placeholder="Search tickets, errors, products, pages"
+               role="combobox" aria-autocomplete="list" aria-controls="palette-list" :aria-expanded="open.toString()"
+               :aria-activedescendant="flat.length ? 'palette-opt-' + active : ''"
+               @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)"
+               @keydown.home.prevent="active = 0" @keydown.end.prevent="active = Math.max(0, flat.length - 1)"
+               @keydown.enter.prevent="go()" @keydown.escape.prevent="close()">
+        <kbd>Esc</kbd>
+      </div>
+      <div id="palette-list" class="palette-results" role="listbox" aria-label="Results">
+        <template x-for="group in groups" :key="group.label">
+          <div role="group" :aria-label="group.label">
+            <div class="palette-group" x-text="group.label"></div>
+            <template x-for="item in group.items" :key="item.url + item.title">
+              <a :href="item.url" class="palette-item" role="option"
+                 :id="'palette-opt-' + item.index" :aria-selected="(item.index === active).toString()"
+                 :class="{ 'is-active': item.index === active }" @mousemove="active = item.index" @click="close()">
+                <span class="palette-title" x-text="item.title"></span>
+                <span class="palette-sub" x-text="item.subtitle"></span>
+              </a>
+            </template>
+          </div>
+        </template>
+        <p class="palette-empty" x-show="!flat.length && !loading" x-text="query.trim().length >= 2 ? 'No matches for “' + query.trim() + '”' : 'Start typing to search'"></p>
+      </div>
+      <div class="palette-foot"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> to move</span><span><kbd>Enter</kbd> to open</span></div>
+    </div>
+  </div>
+</div>
+<script>
+function palette() {
+  return {
+    open: false, query: '', groups: [], loading: false, active: 0, timer: null, ctl: null,
+    get flat() { return this.groups.flatMap(g => g.items); },
+    init() {},
+    onGlobalKey(e) {
+      const k = e.key.toLowerCase();
+      const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable;
+      if ((e.ctrlKey || e.metaKey) && k === 'k') { e.preventDefault(); this.open ? this.close() : this.show(); }
+      else if (k === '/' && !typing && !this.open && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); this.show(); }
+    },
+    show() { this.open = true; this.query = ''; this.fetchNow(); this.$nextTick(() => this.$refs.input.focus()); },
+    close() { this.open = false; if (this.ctl) this.ctl.abort(); },
+    move(d) { const n = this.flat.length; if (n) this.active = (this.active + d + n) % n; },
+    go() { const it = this.flat[this.active]; if (it) { this.close(); window.location.href = it.url; } },
+    debounced() { clearTimeout(this.timer); this.timer = setTimeout(() => this.fetchNow(), 150); },
+    fetchNow() {
+      if (this.ctl) this.ctl.abort();
+      this.ctl = new AbortController();
+      this.loading = true;
+      fetch('/search/?q=' + encodeURIComponent(this.query.trim()), { credentials: 'same-origin', signal: this.ctl.signal })
+        .then(r => r.ok ? r.json() : { groups: [] })
+        .then(d => {
+          let i = 0;
+          this.groups = d.groups.map(g => ({ label: g.label, items: g.items.map(it => Object.assign({}, it, { index: i++ })) }));
+          this.active = 0; this.loading = false;
+        })
+        .catch(e => { if (e.name !== 'AbortError') this.loading = false; });
+    },
+  };
+}
+</script>

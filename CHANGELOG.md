@@ -9,6 +9,48 @@ engineering invariants live.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not
 yet versioned. Older releases are below the newest.
 
+## [Unreleased] - 2026-10-04 - notifications, search, mentions, corrections and a leave calendar
+
+### Added
+
+- **A notification bell.** Being assigned a ticket, being mentioned, a comment on a
+  ticket you are on, a decision on your leave or attendance correction, and a
+  resolved error coming back all show up in the bell in the sidebar, live, with an
+  unread count. Click one to go straight to it. "Turn on alerts" in the bell lets
+  your phone or computer notify you even when the app is closed.
+- **Mentions in ticket comments.** Type @ and a few letters to pick a colleague. Only
+  people who can open the ticket are offered, they are told, and the mention is
+  highlighted in the comment. A ticket also shows who else has it open right now.
+- **Search from anywhere.** Press Ctrl+K (or Cmd+K, or / when you are not typing) to
+  find tickets, errors, products and pages. It only shows what you can open.
+  Searching a ticket number jumps to that ticket.
+- **Error trends.** Every error shows a 14 day chart. Errors are flagged when they
+  are new in the current release, when they came back after being resolved, and
+  when they are climbing. The error page has a 30 day chart and a count per release.
+- **Attendance corrections.** If a check-in or check-out is wrong, ask for a fix with
+  a reason instead of waiting for someone to notice. An owner or admin approves or
+  rejects it, and you are told. The "forgotten check-out" warning links straight to
+  the form for that day.
+- **A leave calendar.** See who is off on which day, with company holidays and
+  waiting requests shown dashed. On a phone it becomes a list of the days that
+  matter.
+- **Clash warnings for leave.** When someone asks for leave, the approvers are told
+  who else is already off and which day is busiest. The person applying sees it too.
+- **Your work on the DSR.** Tickets you worked on that day appear above the form with
+  a guess at the hours. Check the number and add it in one click.
+- **API documentation for each product.** Real field lists, example requests in curl,
+  Python, JavaScript and PHP, and what the errors mean.
+- **Rotating API keys.** Make a new key and keep the old one working for a day or a
+  week while you switch over, or stop it now. Keys also show when they were last used.
+
+### Fixed
+
+- **Any team member could create API keys, and revoke any key in the workspace** even
+  for a product they cannot open. Only owners, admins and developers with access to
+  the product can now.
+- **Applying for leave from the quick form did not tell the approvers or appear in
+  the audit log.** It now does both, the same as the full page.
+
 ## [Unreleased] - 2026-10-04 - live presence, a better punch panel, and an installable app
 
 ### Added

@@ -1,0 +1,84 @@
+{% comment %}
+The `notifications` Alpine store: loads the recent list once, then receives new
+ones over the presence socket. Included only for signed-in users.
+{% endcomment %}
+<script>
+document.addEventListener('alpine:init', function () {
+  var csrf = '{{ csrf_token }}';
+  var vapid = '{{ webpush_public_key|escapejs }}';
+
+  function b64ToBytes(b64) {
+    var pad = '='.repeat((4 - b64.length % 4) % 4);
+    var raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, function (c) { return c.charCodeAt(0); });
+  }
+
+  Alpine.store('notifications', {
+    items: [],
+    unread: 0,
+    loaded: false,
+    pushSupported: ('serviceWorker' in navigator) && ('PushManager' in window) && vapid !== '',
+    pushOn: false,
+
+    init() {
+      var self = this;
+      fetch('/notifications/feed/', { credentials: 'same-origin' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) { if (d) { self.items = d.items; self.unread = d.unread; } self.loaded = true; })
+        .catch(function () { self.loaded = true; });
+      if (this.pushSupported) {
+        navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); })
+          .then(function (sub) { self.pushOn = !!sub; }).catch(function () {});
+      }
+    },
+
+    receive(msg) {
+      this.items.unshift(msg.notification);
+      this.items = this.items.slice(0, 15);
+      this.unread = msg.unread;
+      window.dispatchEvent(new CustomEvent('django-message', {
+        detail: { text: msg.notification.title, tags: 'success' }
+      }));
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        try { new Notification(msg.notification.title, { body: msg.notification.body, icon: '/brand/pwa-192.png' }); } catch (e) {}
+      }
+    },
+
+    markAllRead() {
+      var self = this;
+      fetch('/notifications/read-all/', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'X-CSRFToken': csrf, 'Accept': 'application/json' }
+      }).then(function () {
+        self.items = self.items.map(function (n) { n.read = true; return n; });
+        self.unread = 0;
+      });
+    },
+
+    enablePush() {
+      var self = this;
+      if (!this.pushSupported) return;
+      Notification.requestPermission().then(function (perm) {
+        if (perm !== 'granted') return;
+        return navigator.serviceWorker.ready.then(function (reg) {
+          return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(vapid) });
+        }).then(function (sub) {
+          return fetch('/notifications/push/subscribe/', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/json' },
+            body: JSON.stringify(sub.toJSON())
+          });
+        }).then(function () { self.pushOn = true; });
+      }).catch(function () {});
+    },
+
+    ago(iso) {
+      var s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+      if (s < 60) return 'just now';
+      var m = Math.floor(s / 60); if (m < 60) return m + 'm ago';
+      var h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    },
+  });
+});
+</script>

@@ -1,6 +1,10 @@
+{% if rotated_from %}
+{# The old key's row, refreshed in place so its new end date shows without a reload. #}
+<div hx-swap-oob="outerHTML:#api-key-row-{{ rotated_from.pk }}">{% include "products/partials/_api_key_row.html" with api_key=rotated_from can_manage_keys=True %}</div>
+{% endif %}
 {% if raw_key %}
 <div style="padding:12px;background:var(--green-bg);border:1px solid var(--green);border-radius:6px;margin-top:12px;">
-  <p class="text-sm font-medium" style="color:var(--green);margin-bottom:8px;">API key generated. Copy it now — it won't be shown again.</p>
+  <p class="text-sm font-medium" style="color:var(--green);margin-bottom:8px;">{% if rotated_from %}New key ready.{% else %}API key generated.{% endif %} Copy it now. It will not be shown again.</p>
   <div style="display:flex;gap:8px;">
     <code style="flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;font-size:12px;word-break:break-all;">{{ raw_key }}</code>
     <button type="button" onclick="copyApiKey(this)" class="btn" style="white-space:nowrap;">Copy</button>

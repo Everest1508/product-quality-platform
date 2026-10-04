@@ -18,6 +18,7 @@
         Automation
         {% if product.rule_count %}<span class="n">{{ product.rule_count }}</span>{% endif %}
       </a>
+      <a href="{% url 'products:product_api' pk=product.pk %}" class="{% if request.path|slice:'-5:' == '/api/' %}active{% endif %}">API</a>
     </div>
     <div style="margin-top:auto;padding:12px 8px;border-top:1px solid var(--border);">
       <a href="{% url 'products:product_list' %}" style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;">

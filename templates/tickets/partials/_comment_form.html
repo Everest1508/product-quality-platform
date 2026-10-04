@@ -1,0 +1,58 @@
+{% comment %}
+The comment box with @mention autocomplete. `mention_candidates` is the list of
+people who can open this ticket, so only they are offered. Typing "@" and a few
+letters opens the list; arrows and Enter or Tab choose; Escape closes. The box
+still works as a plain textarea without JavaScript.
+{% endcomment %}
+{{ mention_candidates|json_script:"mention-data" }}
+<form method="post" action="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
+      hx-post="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
+      hx-target="#comment-list"
+      hx-swap="innerHTML"
+      hx-disabled-elt="find button[type=submit]"
+      hx-on::after-request="this.reset();"
+      class="comment-form"
+      x-data="{
+        people: JSON.parse(document.getElementById('mention-data').textContent),
+        open: false, query: '', start: -1, active: 0,
+        get matches() {
+          const q = this.query.toLowerCase();
+          return this.people.filter(p => p.username.toLowerCase().startsWith(q) || p.name.toLowerCase().includes(q)).slice(0, 6);
+        },
+        scan(el) {
+          const upto = el.value.slice(0, el.selectionStart);
+          const m = upto.match(/(?:^|[\s(])@([\w.+-]{0,30})$/);
+          if (m) { this.query = m[1]; this.start = upto.length - m[1].length - 1; this.active = 0; this.open = this.matches.length > 0; }
+          else { this.open = false; }
+        },
+        choose(p, el) {
+          const before = el.value.slice(0, this.start), after = el.value.slice(el.selectionStart);
+          el.value = before + '@' + p.username + ' ' + after;
+          const pos = (before + '@' + p.username + ' ').length;
+          el.setSelectionRange(pos, pos); el.focus(); this.open = false;
+        }
+      }"
+      @click.outside="open = false">
+  {% csrf_token %}
+  <div class="mention-wrap">
+    <textarea name="body" class="form-input" rows="3" placeholder="Add a comment... type @ to mention someone" required
+              role="combobox" aria-autocomplete="list" :aria-expanded="open.toString()" aria-controls="mention-list"
+              @input="scan($el)" @click="scan($el)" @keyup.left="scan($el)" @keyup.right="scan($el)"
+              @keydown.down.prevent="if (open) active = (active + 1) % matches.length"
+              @keydown.up.prevent="if (open) active = (active - 1 + matches.length) % matches.length"
+              @keydown.enter="if (open) { $event.preventDefault(); choose(matches[active], $el); }"
+              @keydown.tab="if (open) { $event.preventDefault(); choose(matches[active], $el); }"
+              @keydown.escape="open = false"></textarea>
+    <ul id="mention-list" class="mention-list" role="listbox" x-show="open" style="display:none;">
+      <template x-for="(p, i) in matches" :key="p.username">
+        <li role="option" :aria-selected="(i === active).toString()" :class="{ 'is-active': i === active }"
+            @mousedown.prevent="choose(p, $root.querySelector('textarea'))">
+          <strong x-text="p.name"></strong> <span x-text="'@' + p.username"></span>
+        </li>
+      </template>
+    </ul>
+  </div>
+  <div style="text-align:right;margin-top:8px;">
+    <button type="submit" class="btn btn-primary">Comment</button>
+  </div>
+</form>

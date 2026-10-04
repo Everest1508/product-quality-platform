@@ -1,0 +1,3 @@
+{% if error.is_regression %}<span class="flag flag-red" title="Resolved earlier, then seen again{% if error.regressed_at %} on {{ error.regressed_at|date:'M j' }}{% endif %}">Regression</span>{% endif %}
+{% if error.new_in_release %}<span class="flag flag-blue" title="First seen in the current release">New in {{ error.first_version_label }}</span>{% endif %}
+{% if error.trend.rising %}<span class="flag flag-orange" title="More occurrences in the last 3 days than the 3 before">Rising</span>{% endif %}

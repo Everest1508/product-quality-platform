@@ -5,6 +5,12 @@
   </a>
   {% include "core/_company_switcher.html" %}
 
+  <button type="button" class="side-search" onclick="window.dispatchEvent(new Event('pq-palette'))" aria-label="Search" data-label="Search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="side-label">Search</span>
+    <kbd class="side-kbd">Ctrl K</kbd>
+  </button>
+
   {% comment %}
   Active state is decided by comparing `request.resolver_match.url_name` against
   an explicit list, never with `'foo' in request.path`. A substring test lights
@@ -129,6 +135,11 @@
        class="side-item {% if u == 'my_leave' or u == 'apply' %}active{% endif %}">
       {% icon 'calendar-days' %} <span class="side-label">My leave</span>
     </a>
+    <a href="{% url 'leave:calendar' %}" data-label="Leave calendar"
+       {% if u == 'calendar' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'calendar' %}active{% endif %}">
+      {% icon 'calendar-days' %} <span class="side-label">Leave calendar</span>
+    </a>
     <a href="{% url 'dsr:dsr_sheet' %}" data-label="DSR Sheet"
        {% if u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' %}active{% endif %}">
@@ -153,6 +164,12 @@
        {% if u == 'timesheet' or u == 'timesheet_detail' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'timesheet' or u == 'timesheet_detail' %}active{% endif %}">
       {% icon 'calendar-days' %} <span class="side-label">Timesheet</span>
+    </a>
+    <a href="{% url 'attendance:corrections' %}" data-label="Corrections"
+       {% if u == 'corrections' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'corrections' %}active{% endif %}">
+      {% icon 'clock' %} <span class="side-label">Corrections</span>
+      {% if nav_pending_corrections %}<span class="side-badge">{{ nav_pending_corrections }}</span>{% endif %}
     </a>
     <a href="{% url 'leave:approvals' %}" data-label="Leave approvals"
        {% if u == 'approvals' or u == 'approval_detail' %}aria-current="page"{% endif %}
@@ -190,6 +207,7 @@
 
   <div class="side-foot">
     {% with u=request.resolver_match.url_name %}
+    {% include "core/_bell.html" %}
     {% include "core/_presence_sidebar.html" %}
 
     <button type="button" class="side-item side-version" data-changelog-open

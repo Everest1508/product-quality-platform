@@ -150,6 +150,9 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
           — your hours there are counted from check-in and capped at one working
           day until an admin closes {{ missing_checkouts|length|pluralize:"it,them" }} out.
         </span>
+        <span>
+          {% for r in missing_checkouts %}<a class="punch-warn-link" href="{% url 'attendance:correction_request' %}?date={{ r.date|date:'Y-m-d' }}">Fix {{ r.date|date:"M j" }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}
+        </span>
       </div>
     </div>
   {% endif %}

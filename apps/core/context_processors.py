@@ -86,6 +86,12 @@ def workspace_context(request):
                 .exclude(status__in=["resolved", "ignored"])
                 .count()
             )
+            if request.company_role in ("owner", "admin"):
+                from apps.attendance.models import AttendanceCorrection
+
+                ctx["nav_pending_corrections"] = AttendanceCorrection.objects.filter(
+                    company=company, status="pending"
+                ).count()
         except Exception:
             pass
 

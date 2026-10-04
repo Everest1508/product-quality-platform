@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
-from apps.attendance import service
-from apps.attendance.models import AttendanceRecord, format_minutes, punch
+from apps.attendance import corrections, service
+from apps.attendance.models import AttendanceCorrection, AttendanceRecord, format_minutes, punch
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
@@ -178,6 +178,10 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
 
         panel = _punch_context(request, today_record, person=user)
         panel["punch_readonly"] = focus_user is not None
+        my_corrections = (
+            AttendanceCorrection.objects.filter(company=request.company, user=request.user)[:5]
+            if focus_user is None else []
+        )
 
         return render(request, "attendance/my_attendance.html", {
             "today": today,
@@ -203,6 +207,7 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
             "next_month": f"{next_year:04d}-{next_month:02d}",
             "current_month": f"{year:04d}-{month:02d}",
             "today_month": timezone.localdate().strftime("%Y-%m"),
+            "my_corrections": my_corrections,
             **panel,
         })
 
@@ -520,7 +525,7 @@ class AttendanceEditView(CompanyAdminRequiredMixin, View):
                 _safe_next(request.POST.get("next")) or "attendance:team_attendance"
             )
 
-        problem = _punch_problem(record, parsed_in, parsed_out)
+        problem = service.punch_problem(record.date, parsed_in, parsed_out)
         if problem:
             messages.error(request, problem)
             return redirect(
@@ -566,42 +571,92 @@ class AttendanceEditView(CompanyAdminRequiredMixin, View):
         )
 
 
-def _punch_problem(record, check_in, check_out):
-    """Why an edited punch cannot be saved, or None when it is fine.
-
-    A punch has to belong to the record's own day (a night shift may close the
-    next morning) and cannot be in the future, otherwise a typo moves hours into
-    a different day or invents time that has not happened yet.
-    """
-    now = timezone.now()
-    for label, value in (("Check-in", check_in), ("Check-out", check_out)):
-        if value is None:
-            continue
-        if value > now + timedelta(minutes=5):
-            return f"{label} cannot be in the future."
-        offset = (timezone.localtime(value).date() - record.date).days
-        limit = (0, 1) if label == "Check-out" else (0, 0)
-        if not limit[0] <= offset <= limit[1]:
-            return f"{label} has to fall on {record.date:%b %d}" + (
-                " or the morning after." if label == "Check-out" else "."
-            )
-    return None
-
-
 def _parse_dt(raw):
-    """Parse a datetime-local input value into an aware datetime.
+    return service.parse_local_dt(raw)
 
-    Returns None for empty input, which is how a record is cleared back to
-    "not punched".
-    """
-    raw = raw.strip()
-    if not raw:
-        return None
+
+
+def _day_param(raw):
     try:
-        naive = datetime.strptime(raw, "%Y-%m-%dT%H:%M")
+        return date.fromisoformat((raw or "").strip())
     except ValueError:
+        return timezone.localdate()
+
+
+class CorrectionRequestView(CompanyMemberRequiredMixin, View):
+    """An employee asks for new times on one day. Nothing changes until an owner
+    or admin approves."""
+
+    template_name = "attendance/correction_form.html"
+
+    def _context(self, request, day, values=None):
+        record = AttendanceRecord.objects.filter(company=request.company, user=request.user, date=day).first()
+        today = timezone.localdate()
+        return {
+            "day": day,
+            "record": record,
+            "min_date": today - timedelta(days=corrections.MAX_AGE_DAYS),
+            "max_date": today,
+            "values": values or {},
+            "max_age_days": corrections.MAX_AGE_DAYS,
+            "recent": AttendanceCorrection.objects.filter(company=request.company, user=request.user)[:10],
+        }
+
+    def get(self, request):
+        return render(request, self.template_name, self._context(request, _day_param(request.GET.get("date"))))
+
+    def post(self, request):
+        day = _day_param(request.POST.get("date"))
+        values = {k: request.POST.get(k, "") for k in ("check_in", "check_out", "reason", "out_next_day")}
         try:
-            naive = datetime.strptime(raw, "%Y-%m-%d %H:%M")
-        except ValueError:
-            return None
-    return timezone.make_aware(naive, timezone.get_current_timezone())
+            check_in = corrections.build_datetime(day, values["check_in"])
+            check_out = corrections.build_datetime(day, values["check_out"], next_day=bool(values["out_next_day"]))
+            corrections.request_correction(request.user, request.company, day, check_in, check_out, values["reason"])
+        except corrections.CorrectionError as exc:
+            messages.error(request, str(exc))
+            return render(request, self.template_name, self._context(request, day, values), status=400)
+        messages.success(request, f"Request sent for {day:%b %d}. You will be told when it is decided.")
+        return redirect("attendance:my_attendance")
+
+
+class CorrectionCancelView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        correction = get_object_or_404(AttendanceCorrection, pk=pk, company=request.company, user=request.user)
+        try:
+            corrections.cancel(correction.pk, request.user)
+            messages.success(request, "Request cancelled.")
+        except corrections.CorrectionError as exc:
+            messages.error(request, str(exc))
+        return redirect("attendance:my_attendance")
+
+
+class CorrectionQueueView(CompanyAdminRequiredMixin, View):
+    """Owners and admins: what is waiting, and what was decided lately."""
+
+    def get(self, request):
+        pending = list(
+            AttendanceCorrection.objects.filter(company=request.company, status="pending").select_related("user")
+        )
+        for item in pending:
+            item.can_decide = corrections.can_decide(request.user, item)
+            item.is_mine = item.user_id == request.user.pk
+        decided = (
+            AttendanceCorrection.objects.filter(company=request.company)
+            .exclude(status="pending")
+            .select_related("user", "decided_by")[:30]
+        )
+        return render(request, "attendance/corrections.html", {"pending": pending, "decided": decided})
+
+
+class CorrectionDecisionView(CompanyAdminRequiredMixin, View):
+    def post(self, request, pk, action):
+        if action not in ("approve", "reject"):
+            return HttpResponseForbidden("Unknown action.")
+        correction = get_object_or_404(AttendanceCorrection, pk=pk, company=request.company)
+        try:
+            done = corrections.decide(correction.pk, request.user, action == "approve", request.POST.get("note", ""))
+            who = done.user.get_full_name() or done.user.username
+            messages.success(request, f"{who}'s correction for {done.date:%b %d} {done.get_status_display().lower()}.")
+        except corrections.CorrectionError as exc:
+            messages.error(request, str(exc))
+        return redirect("attendance:corrections")

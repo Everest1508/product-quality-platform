@@ -281,3 +281,68 @@ class WorkShift(TenantScopedModel):
         if late_minutes <= self.major_band_end_minutes:
             return "major"
         return "half_day"
+
+
+class AttendanceCorrection(TenantScopedModel):
+    """An employee's request to fix a day, decided by an owner or admin.
+
+    The employee asks for times; nothing on the record changes until someone else
+    approves. `corrections.decide` applies it, so the same validation and audit
+    trail apply as for an admin edit.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="attendance_corrections",
+    )
+    date = models.DateField()
+    record = models.ForeignKey(
+        AttendanceRecord,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="corrections",
+    )
+    # Either may be empty: only the times given are changed.
+    requested_check_in = models.DateTimeField(null=True, blank=True)
+    requested_check_out = models.DateTimeField(null=True, blank=True)
+    # What the day looked like when it was asked, so the queue can show before and after
+    # even after the record has changed.
+    original_check_in = models.DateTimeField(null=True, blank=True)
+    original_check_out = models.DateTimeField(null=True, blank=True)
+    reason = models.CharField(max_length=500)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "user", "date"],
+                condition=models.Q(status="pending"),
+                name="one_pending_correction_per_day",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id} {self.date} ({self.status})"
+
+    @property
+    def is_pending(self):
+        return self.status == self.Status.PENDING

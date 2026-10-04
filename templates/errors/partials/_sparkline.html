@@ -1,0 +1,11 @@
+{# 14 days of occurrences as a tiny chart. Red when the last three days are climbing. #}
+<svg class="spark {% if error.trend.rising %}is-rising{% endif %}" viewBox="0 0 {{ error.trend.width }} {{ error.trend.height }}" width="{{ error.trend.width }}" height="{{ error.trend.height }}" role="img"
+     aria-label="{{ error.trend.total }} occurrence{{ error.trend.total|pluralize }} in the last 14 days{% if error.trend.rising %}, rising{% endif %}">
+  <title>{{ error.trend.total }} in the last 14 days{% if error.trend.rising %} (rising){% endif %}</title>
+  {% if error.trend.total %}
+  <polygon class="spark-area" points="{{ error.trend.area }}"/>
+  <polyline class="spark-line" points="{{ error.trend.line }}" fill="none"/>
+  {% else %}
+  <line class="spark-flat" x1="0" y1="{{ error.trend.height }}" x2="{{ error.trend.width }}" y2="{{ error.trend.height }}"/>
+  {% endif %}
+</svg>

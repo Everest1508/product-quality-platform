@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
@@ -141,6 +143,7 @@ class ProductDetailView(CompanyMemberRequiredMixin, View):
             "versions": versions,
             "api_keys": api_keys,
             "milestones": milestones,
+            "can_manage_keys": request.company_role in KEY_MANAGER_ROLES,
             "all_members": all_members,
             "allocated_ids": allocated_ids,
             "is_privileged": is_privileged,
@@ -190,11 +193,25 @@ class ProductDeleteView(CompanyAdminRequiredMixin, View):
         return redirect("products:product_list")
 
 
+# Who may create, rotate and revoke keys. A key lets an application write into the
+# product, so it is for the people who work on it, not for viewers or support.
+KEY_MANAGER_ROLES = ("owner", "admin", "developer")
+ROTATE_GRACE = {"now": None, "1d": timedelta(days=1), "7d": timedelta(days=7)}
+
+
+def _require_key_manager(request, product):
+    from django.core.exceptions import PermissionDenied
+
+    require_product_access(request, product)
+    if request.company_role not in KEY_MANAGER_ROLES:
+        raise PermissionDenied("Only owners, admins and developers can manage API keys.")
+
+
 class APIKeyCreateView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
-        require_product_access(request, product)
-        name = request.POST.get("name", "default")
+        _require_key_manager(request, product)
+        name = (request.POST.get("name") or "").strip()[:100] or "default"
         api_key, raw_key = APIKey.create_key(product=product, name=name)
         log_activity(
             request.company, "api_key_created",
@@ -212,7 +229,8 @@ class APIKeyCreateView(CompanyMemberRequiredMixin, View):
 
 class APIKeyRevokeView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
-        api_key = get_object_or_404(APIKey, pk=pk, product__company=request.company)
+        api_key = get_object_or_404(APIKey.objects.select_related("product"), pk=pk, product__company=request.company)
+        _require_key_manager(request, api_key.product)
         api_key.is_active = False
         api_key.revoked_at = timezone.now()
         api_key.save(update_fields=["is_active", "revoked_at"])
@@ -227,8 +245,71 @@ class APIKeyRevokeView(CompanyMemberRequiredMixin, View):
         messages.success(request, f"API key '{api_key.name}' revoked.")
 
         if request.headers.get("HX-Request") == "true":
-            return render(request, "products/partials/_api_key_row.html", {"api_key": api_key})
+            return render(request, "products/partials/_api_key_row.html", {"api_key": api_key, "can_manage_keys": True})
         return redirect("products:product_detail", pk=api_key.product.pk)
+
+
+class APIKeyRotateView(CompanyMemberRequiredMixin, View):
+    """Replace a key without an outage.
+
+    A new key is created straight away. The old one is revoked now, or keeps
+    working for a day or a week so the application can be switched over first.
+    The new key is shown once, like any other.
+    """
+
+    def post(self, request, pk):
+        old = get_object_or_404(APIKey.objects.select_related("product"), pk=pk, product__company=request.company)
+        _require_key_manager(request, old.product)
+        grace = request.POST.get("grace", "1d")
+        if grace not in ROTATE_GRACE:
+            return HttpResponseBadRequest("Unknown grace period.")
+        if not old.is_usable:
+            return HttpResponseBadRequest("Only a working key can be rotated.")
+
+        new_key, raw_key = APIKey.create_key(product=old.product, name=old.name)
+        now = timezone.now()
+        delta = ROTATE_GRACE[grace]
+        if delta is None:
+            old.is_active, old.revoked_at, old.expires_at = False, now, None
+        else:
+            end = now + delta
+            old.expires_at = min(old.expires_at, end) if old.expires_at else end
+        old.save(update_fields=["is_active", "revoked_at", "expires_at"])
+        log_activity(
+            request.company, "api_key_rotated",
+            f"API key '{old.name}' rotated for {old.product.name}",
+            description="Old key revoked now" if delta is None else f"Old key works until {old.expires_at:%b %d, %H:%M}",
+            actor=request.user,
+            target_content_type="api_key",
+            target_object_id=new_key.pk,
+            metadata={"product_id": old.product_id, "old_key_id": old.pk, "grace": grace},
+        )
+        return render(request, "products/partials/_api_key_created.html", {
+            "raw_key": raw_key,
+            "api_key": new_key,
+            "rotated_from": old,
+            "new_key": new_key,
+        })
+
+
+class ProductApiDocsView(CompanyMemberRequiredMixin, View):
+    """How to send errors, feedback and tickets to this product, with the real
+    field lists and copy-ready snippets in four languages."""
+
+    def get(self, request, pk):
+        from apps.ingestion import docs
+
+        product = get_object_or_404(Product, pk=pk, company=request.company)
+        require_product_access(request, product)
+        _attach_product_counts(product)
+        return render(request, "products/product_api.html", {
+            "product": product,
+            "base_url": request.build_absolute_uri("/"),
+            "endpoints": docs.build(request.build_absolute_uri("/")),
+            "error_codes": docs.ERRORS,
+            "keys": product.api_keys.all(),
+            "can_manage_keys": request.company_role in KEY_MANAGER_ROLES,
+        })
 
 
 class VersionCreateView(CompanyMemberRequiredMixin, View):
@@ -307,6 +388,8 @@ class ProductErrorListView(CompanyMemberRequiredMixin, View):
 
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
+        from apps.errors import trends
+        page.object_list = trends.attach_trends(page.object_list)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_error_list_body.html", {"page": page})
@@ -325,9 +408,12 @@ class ProductErrorDetailView(CompanyMemberRequiredMixin, View):
         _attach_product_counts(product)
         error_group = get_object_or_404(product.error_groups.select_related("product"), pk=error_pk)
         occurrences = error_group.occurrences.all()[:50]
+        from apps.errors import trends
         return render(request, "products/product_error_detail.html", {
             "product": product, "error_group": error_group, "occurrences": occurrences,
             "status_choices": error_group.STATUS_CHOICES,
+            "trend": trends.detail_trend(error_group),
+            "first_version": error_group.first_version,
         })
 
 
@@ -441,7 +527,7 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             ticket.product = product
             ticket.source = "manual"
             ticket.save()
-            ticket.set_assignees(form.cleaned_data["assignees"])
+            ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",
@@ -491,6 +577,7 @@ class ProductTicketBulkDeleteView(CompanyMemberRequiredMixin, View):
 
 class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk, ticket_pk):
+        from apps.tickets import mentions
         from apps.tickets.forms import TicketCommentForm
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
@@ -499,7 +586,7 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
             product.tickets.select_related("assigned_to", "created_by", "linked_error_group"),
             pk=ticket_pk,
         )
-        comments = ticket.comments.select_related("author").all()
+        comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
         members = __import__("django.contrib.auth", fromlist=["get_user_model"]).get_user_model().objects.filter(
             memberships__company=request.company
         ).order_by("username")
@@ -508,6 +595,7 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
         return render(request, "products/product_ticket_detail.html", {
             "product": product, "ticket": ticket, "comments": comments,
             "comment_form": TicketCommentForm(), "members": members,
+            "mention_candidates": mentions.candidates_json(ticket, request.company),
             "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": __import__("apps.tickets.models", fromlist=["Ticket"]).Ticket.Status.choices,
         })

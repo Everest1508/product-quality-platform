@@ -16,6 +16,8 @@ from apps.dashboards.service import log_activity
 from apps.leave import service
 from apps.leave.forms import LeaveDecisionForm, LeavePolicyForm, LeaveRequestForm
 from apps.leave.models import LeavePolicy, LeaveRequest
+from apps.notifications import service as notifications
+from apps.notifications.models import Notification
 
 
 def is_approver(user, company):
@@ -164,30 +166,59 @@ class LeaveApplyView(CompanyMemberRequiredMixin, View):
         if request.headers.get("HX-Request") == "true":
             if not form.is_valid():
                 return render(request, "leave/partials/_apply_form.html", context, status=400)
-            form.save(request.user)
+            leave = form.save(request.user)
+            _after_submit(request, leave)
             context["form"] = LeaveRequestForm(company=request.company, user=request.user)
             return render(request, "leave/partials/_apply_form.html", context)
 
         if form.is_valid():
             leave = form.save(request.user)
-            _log(
-                request,
-                "leave_requested",
-                f"{request.user.get_full_name() or request.user.username} applied for "
-                f"{leave.policy.name} leave",
-                leave,
-                description=f"{leave.span_label} · {leave.days_label}",
-                metadata={
-                    "policy": leave.policy.name,
-                    "start_date": leave.start_date.isoformat(),
-                    "end_date": leave.end_date.isoformat(),
-                    "days": str(leave.days),
-                },
-            )
+            _after_submit(request, leave)
             messages.success(request, "Leave request submitted for approval.")
             return redirect("leave:my_leave")
 
         return render(request, self.template_name, context)
+
+
+def _approvers(company):
+    """Everyone who can decide leave: owners, admins and flagged approvers."""
+    from django.db.models import Q
+
+    return [
+        m.user
+        for m in Membership.objects.filter(company=company)
+        .filter(Q(is_leave_approver=True) | Q(role__in=[Membership.Role.OWNER, Membership.Role.ADMIN]))
+        .select_related("user")
+    ]
+
+
+def _after_submit(request, leave):
+    """Log a new request and tell the approvers, with who else is off."""
+    who = request.user.get_full_name() or request.user.username
+    _log(
+        request,
+        "leave_requested",
+        f"{who} applied for {leave.policy.name} leave",
+        leave,
+        description=f"{leave.span_label} · {leave.days_label}",
+        metadata={
+            "policy": leave.policy.name,
+            "start_date": leave.start_date.isoformat(),
+            "end_date": leave.end_date.isoformat(),
+            "days": str(leave.days),
+        },
+    )
+    clash = service.clash_for(request.company, request.user, leave.start_date, leave.end_date, exclude_pk=leave.pk)
+    body = f"{leave.span_label} · {leave.days_label}. {service.clash_sentence(clash)}".strip()
+    notifications.notify_many(
+        _approvers(request.company),
+        company=request.company,
+        kind=Notification.Kind.LEAVE_REQUEST,
+        title=f"{who} asked for {leave.policy.name} leave",
+        body=body,
+        url=reverse("leave:approvals"),
+        actor=request.user,
+    )
 
 
 class LeaveSplitPreviewView(CompanyMemberRequiredMixin, View):
@@ -235,7 +266,9 @@ class LeaveSplitPreviewView(CompanyMemberRequiredMixin, View):
         result = service.auto_split(
             request.company, request.user, policy, first, last, days
         )
-        return panel(preview=result, policy=policy, days=days)
+        clash = service.clash_for(request.company, request.user, first, last)
+        return panel(preview=result, policy=policy, days=days, clash=clash if clash["people"] else None,
+                     clash_text=service.clash_sentence(clash))
 
 
 def _parse_dates(start, end):
@@ -313,6 +346,15 @@ class LeaveQueueView(LeaveApproverRequiredMixin, View):
             for value, label in LeaveRequest.Status.choices
         ]
 
+        requests = list(requests)
+        if status == LeaveRequest.Status.PENDING:
+            for leave in requests:
+                clash = service.clash_for(
+                    request.company, leave.user, leave.start_date, leave.end_date, exclude_pk=leave.pk
+                )
+                leave.clash_people = clash["people"]
+                leave.clash_text = service.clash_sentence(clash)
+
         context = _request_context(
             request,
             {
@@ -341,6 +383,9 @@ class LeaveQueueView(LeaveApproverRequiredMixin, View):
         items = []
         for leave in requests:
             preview = service.decision_preview(request.company, leave)
+            clash = service.clash_for(
+                request.company, leave.user, leave.start_date, leave.end_date, exclude_pk=leave.pk
+            )
             items.append(
                 {
                     "pk": leave.pk,
@@ -363,6 +408,8 @@ class LeaveQueueView(LeaveApproverRequiredMixin, View):
                     "auto_paid_label": preview["paid_label"],
                     "auto_unpaid_label": preview["unpaid_label"],
                     "reasons": preview["reasons"],
+                    "clash_people": clash["people"],
+                    "clash_text": service.clash_sentence(clash),
                     "approve_url": reverse(
                         "leave:decision", args=[leave.pk, "approve"]
                     ),
@@ -474,6 +521,15 @@ class LeaveDecisionView(LeaveApproverRequiredMixin, View):
 
     def _log_decision(self, request, leave, event, verb):
         who = leave.user.get_full_name() or leave.user.username
+        notifications.notify(
+            user=leave.user,
+            company=request.company,
+            kind=Notification.Kind.LEAVE_DECISION,
+            title=f"Your {leave.policy.name} leave was {verb}",
+            body=(leave.decision_note or f"{leave.span_label} · {leave.days_label}")[:200],
+            url=reverse("leave:my_leave"),
+            actor=request.user,
+        )
         _log(
             request,
             event,
@@ -568,3 +624,27 @@ class LeavePolicyUpdateView(CompanyAdminRequiredMixin, View):
             _report_errors(request, form)
 
         return redirect("leave:policies")
+
+class LeaveCalendarView(CompanyMemberRequiredMixin, View):
+    """Who is off when, for the whole team. Everyone in the workspace can see it;
+    the type of leave is shown to approvers only."""
+
+    def get(self, request):
+        today = timezone.localdate()
+        year, month = today.year, today.month
+        raw = (request.GET.get("month") or "").strip()
+        parts = raw.split("-")
+        if len(parts) == 2 and all(p.isdigit() for p in parts) and 1 <= int(parts[1]) <= 12 and 1900 <= int(parts[0]) <= 2200:
+            year, month = int(parts[0]), int(parts[1])
+        cal = service.month_calendar(request.company, year, month, show_types=is_approver(request.user, request.company))
+        prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
+        next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
+        return render(request, "leave/calendar.html", {
+            "cal": cal,
+            "month_label": cal["first"].strftime("%B %Y"),
+            "prev_month": f"{prev_year:04d}-{prev_month:02d}",
+            "next_month": f"{next_year:04d}-{next_month:02d}",
+            "is_current": (year, month) == (today.year, today.month),
+            "me_id": request.user.pk,
+            "show_types": is_approver(request.user, request.company),
+        })
