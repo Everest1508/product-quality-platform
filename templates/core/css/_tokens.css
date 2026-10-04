@@ -1,0 +1,31 @@
+:root{
+  /* Brand palette. Change colors here only; everything else reads these tokens. */
+  --navy:#0D1117; --navy-2:#1C2333; --blue-500:#1A5BFF; --blue-50:#EBF0FF;
+  --slate-50:#F5F7FC; --slate-100:#EDF0F8; --slate-200:#D1D8E8; --slate-300:#C2CEE8;
+  --stone:#6B7280; --stone-light:#8A93A6;
+
+  /* Surfaces and text */
+  --bg:#ffffff; --surface:#ffffff; --panel:var(--slate-50); --line:#E6EAF4;
+  --border:var(--slate-200); --border-strong:var(--slate-300);
+  --text:var(--navy); --muted:var(--stone); --muted-2:var(--stone-light);
+  --on-accent:#ffffff;
+
+  /* Accent and actions */
+  --accent:var(--blue-500); --accent-soft:var(--blue-50);
+  --primary:var(--navy); --primary-hover:#000;
+  --accent-line:#C9D8FF; --accent-strong:#1346CC;
+  --focus-ring:rgba(26,91,255,.16);
+  --overlay:rgba(13,17,23,.4);
+  --brand-dark:var(--navy-2);
+  --tooltip-bg:var(--navy); --tooltip-text:#F8FAFC;
+
+  /* Status colors (semantic, keep distinct from the accent) */
+  --red:#c0362c; --red-bg:#fbebea; --orange:#a15c07; --orange-bg:#fdf3e2;
+  --blue:var(--accent); --blue-bg:var(--accent-soft);
+  --green:#177a4c; --green-bg:#e8f5ee; --purple:#7c3aed; --purple-bg:#f3f0ff;
+  --gray:var(--stone); --gray-bg:#F1F3F9;
+
+  /* Charts */
+  --chart-error-a:#f87171; --chart-error-b:#dc2626;
+  --chart-burn-a:#6EA0FF; --chart-burn-b:var(--blue-500);
+}

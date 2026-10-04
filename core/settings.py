@@ -14,9 +14,23 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
+# Outside DEBUG the built-in development keys must not be used: the SECRET_KEY
+# signs sessions and the Fernet key protects shared-server passwords, and both
+# defaults are public in the repository.
+if not DEBUG:
+    from django.core.exceptions import ImproperlyConfigured
+
+    for _name in ("DJANGO_SECRET_KEY", "SHARED_SERVER_ENCRYPTION_KEY"):
+        if not os.environ.get(_name):
+            raise ImproperlyConfigured(f"{_name} must be set when DJANGO_DEBUG is off.")
+
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 INSTALLED_APPS = [
+    # First, so `manage.py runserver` is daphne's ASGI server and serves the
+    # WebSocket routes (/ws/presence/, /ws/inbox/) as well as HTTP. Without it
+    # runserver is plain WSGI and every WebSocket gets a 404.
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -45,6 +59,7 @@ INSTALLED_APPS = [
     "apps.leave",
     "apps.payroll",
     "apps.serop",
+    "apps.presence",
 ]
 
 MIDDLEWARE = [
@@ -149,11 +164,10 @@ ACCOUNT_LOGIN_BY_PASSWORD_ENABLED = True
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": [],
-    "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-    ],
+    # Ingestion views set their own per-key throttle (apps.ingestion.views).
+    "DEFAULT_THROTTLE_CLASSES": [],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/minute",
+        "apikey": "600/minute",
     },
     "UNAUTHENTICATED_USER": None,
 }
@@ -173,13 +187,18 @@ CORS_ALLOW_CREDENTIALS = False
 
 # Serop desktop app integration
 ASGI_APPLICATION = "core.asgi.application"
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [REDIS_URL]},
-    },
-}
+REDIS_URL = os.environ.get("REDIS_URL")
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        },
+    }
+else:
+    # No Redis configured (a plain `runserver`): live updates still work inside
+    # this one process. Set REDIS_URL when running more than one worker.
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # Fernet key used to encrypt shared-server passwords (apps.serop.models.SeropSharedServer).
 # Generate one with:

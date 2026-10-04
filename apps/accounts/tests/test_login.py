@@ -147,7 +147,7 @@ class LoginPageMarkupTest(TestCase):
         css = self.client.get(self.url).content.decode()
         templates = ["templates/accounts/login.html",
                      "templates/accounts/oauth_authorize.html"]
-        base = os.path.join(settings.BASE_DIR, "templates", "core", "base.html")
+        base = os.path.join(settings.BASE_DIR, "templates", "core", "css", "_app.css")
         with open(base) as fh:
             stylesheet = fh.read()
 
@@ -161,7 +161,7 @@ class LoginPageMarkupTest(TestCase):
                     self.assertRegex(
                         stylesheet,
                         r"\.%s\b" % re.escape(name),
-                        msg="%s uses .%s but base.html never styles it" % (rel, name),
+                        msg="%s uses .%s but _app.css never styles it" % (rel, name),
                     )
 
     def test_the_password_label_sits_outside_the_toggle_wrapper(self):

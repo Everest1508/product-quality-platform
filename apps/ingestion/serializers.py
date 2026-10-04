@@ -1,5 +1,7 @@
 import hashlib
 
+from django.db.models import F
+
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -7,6 +9,31 @@ from apps.dashboards.service import log_activity
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence, Feedback, IngestedTicket
 from apps.products.webhook import notify_error_captured, notify_feedback_created, notify_ticket_created
 from apps.tickets.models import Ticket
+
+
+_SECRET_KEY_HINTS = (
+    "password", "passwd", "secret", "token", "authorization", "api_key", "apikey",
+    "card", "cvv", "ssn", "cookie",
+)
+
+
+def scrub(value, depth=0):
+    """Redact values stored under secret-looking keys in a captured payload.
+
+    SDKs send whatever the failing request carried, which often includes
+    passwords and tokens. They are replaced before storage so they never reach
+    the database or the screen.
+    """
+    if depth > 8:
+        return "[truncated]"
+    if isinstance(value, dict):
+        return {
+            k: "[redacted]" if any(h in str(k).lower() for h in _SECRET_KEY_HINTS) else scrub(v, depth + 1)
+            for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [scrub(v, depth + 1) for v in value]
+    return value
 
 
 class ErrorCaptureSerializer(serializers.Serializer):
@@ -43,10 +70,18 @@ class ErrorCaptureSerializer(serializers.Serializer):
             },
         )
 
+        reopened = False
         if not created:
-            error_group.occurrence_count += 1
-            error_group.last_seen = timezone.now()
-            error_group.save(update_fields=["occurrence_count", "last_seen"])
+            # Done in the database, not read-modify-write: two simultaneous hits
+            # used to both write count+1, undercounting the threshold rules read.
+            updates = {"occurrence_count": F("occurrence_count") + 1, "last_seen": timezone.now()}
+            # A resolved error that fires again is a regression, so it reopens.
+            # Ignored stays ignored: someone chose to mute it.
+            if error_group.status == "resolved":
+                updates["status"] = "open"
+                reopened = True
+            ErrorGroup.objects.filter(pk=error_group.pk).update(**updates)
+            error_group.refresh_from_db()
 
         version_obj = None
         if validated_data.get("version"):
@@ -67,8 +102,8 @@ class ErrorCaptureSerializer(serializers.Serializer):
             device=validated_data.get("device") or "",
             os=validated_data.get("os") or "",
             browser=validated_data.get("browser") or "",
-            request_payload=validated_data.get("request_payload"),
-            raw_data=validated_data.get("extra"),
+            request_payload=scrub(validated_data.get("request_payload")),
+            raw_data=scrub(validated_data.get("extra")),
         )
 
         notify_error_captured(error_group, occurrence)
@@ -84,6 +119,7 @@ class ErrorCaptureSerializer(serializers.Serializer):
                 "occurrence_id": occurrence.id,
                 "severity": error_group.severity,
                 "created": created,
+                "reopened": reopened,
             },
         )
 

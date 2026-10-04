@@ -1490,3 +1490,65 @@ class LatenessOnScreenTest(PayrollTestBase):
             reverse("payroll:payslip", args=[slip.pk])
         ).content.decode()
         self.assertNotIn("Late arrivals", html)
+
+
+class RunIntegrityAndAuditTest(PayrollTestBase):
+    def test_a_failure_while_writing_payslips_leaves_the_old_ones_intact(self):
+        from unittest import mock
+
+        self.profile(self.dev)
+        self.profile(self.bot)
+        run, _ = service.generate_run(self.company, self.start, self.end)
+        before = list(run.payslips.values_list("pk", flat=True))
+        self.assertEqual(len(before), 2)
+
+        real_create = Payslip.objects.create
+        calls = {"n": 0}
+
+        def flaky(*args, **kwargs):
+            calls["n"] += 1
+            if calls["n"] == 2:
+                raise RuntimeError("disk full")
+            return real_create(*args, **kwargs)
+
+        with mock.patch.object(Payslip.objects, "create", side_effect=flaky):
+            with self.assertRaises(RuntimeError):
+                service.generate_run(self.company, self.start, self.end)
+        self.assertEqual(list(run.payslips.values_list("pk", flat=True)), before)
+
+    def test_locking_and_unlocking_a_run_is_logged(self):
+        from apps.dashboards.models import ActivityLog
+
+        self.profile(self.dev)
+        run, _ = service.generate_run(self.company, self.start, self.end)
+        self.client.login(username="owner", password="pass1234")
+        self.client.post(reverse("payroll:run_lock", args=[run.pk]))
+        self.client.post(reverse("payroll:run_lock", args=[run.pk]))
+        events = list(ActivityLog.objects.filter(company=self.company).values_list("event_type", flat=True))
+        self.assertIn("payroll_run_locked", events)
+        self.assertIn("payroll_run_unlocked", events)
+
+    def test_removing_a_holiday_is_logged(self):
+        from apps.dashboards.models import ActivityLog
+
+        holiday = Holiday.objects.create(company=self.company, date=date(2026, 11, 2), name="Fest")
+        self.client.login(username="owner", password="pass1234")
+        self.client.post(reverse("payroll:holiday_delete", args=[holiday.pk]))
+        self.assertTrue(
+            ActivityLog.objects.filter(company=self.company, event_type="holiday_removed").exists()
+        )
+
+    def test_saving_a_monthly_salary_does_not_log_zero_per_day(self):
+        from apps.accounts.models import Membership
+        from apps.dashboards.models import ActivityLog
+
+        membership = Membership.objects.get(user=self.dev, company=self.company)
+        self.client.login(username="owner", password="pass1234")
+        self.client.post(reverse("payroll:profiles"), {
+            "membership": membership.pk, "monthly_salary": "24000", "currency": "INR",
+            "effective_from": "2026-01-01", "is_on_payroll": "on",
+        })
+        entry = ActivityLog.objects.filter(company=self.company, event_type="payroll_profile_saved").first()
+        self.assertIsNotNone(entry)
+        self.assertIn("per month", entry.description)
+        self.assertNotIn("0.00 per day", entry.description)

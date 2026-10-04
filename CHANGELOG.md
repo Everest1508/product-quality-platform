@@ -9,6 +9,94 @@ engineering invariants live.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not
 yet versioned. Older releases are below the newest.
 
+## [Unreleased] - 2026-10-04 - live presence, a better punch panel, and an installable app
+
+### Added
+
+- **Online now.** A live list shows who is signed in and what they are doing,
+  such as "Viewing ticket #14" or "Filling in the DSR". It sits in the sidebar
+  on every page and beside the team attendance table, and it updates the moment
+  someone moves to another page. It also shows who is clocked in and how many
+  tickets each person has in progress. A person with the tab hidden or idle for
+  five minutes shows as away.
+- **Install it as an app.** On a phone or computer you can add PQ Platform to
+  your home screen or desktop and open it like any other app, with its own icon.
+  If the connection drops you get a clear "you are offline" page instead of a
+  browser error, and a notice when you are back.
+- **A new logo and favicon.** A ring with a Q tail, in the new blue and navy.
+  It appears in the sidebar, on the sign-in page and in the browser tab.
+- **Quick fill on the DSR.** Your open tickets show as one-click chips under the
+  task box, and the hours box has 0.5, 1, 2 and 4 hour shortcuts.
+
+### Improved
+
+- **The punch panel is live.** It shows a clock that ticks by the second, the
+  time you have been on the clock counting up in real time, a ring that fills as
+  the shift goes by, how much of the shift is done and how long is left, and a
+  bar for each day of this week. After checking out it says how far over or
+  under a full day you were.
+- **Team attendance is easier to read.** Your own row is first and marked, with a
+  "Your day" card above it. Every person has a seven day strip, and clicking a
+  name opens their attendance history. The counts at the top filter the table,
+  and forgotten check-outs from earlier days have their own list.
+- **Manual DSR entry was rebuilt.** One clear form with a big task box, category,
+  status, hours and an optional note, instead of six cramped fields in one row.
+- **Messages now appear in the bottom right** and stack neatly, instead of piling
+  on top of each other in the top corner.
+- **Phones and tablets.** Pages use the full width of a phone screen, stat cards
+  and forms stack instead of running off the edge, wide tables scroll sideways
+  inside their card, buttons are bigger to tap, and phones no longer zoom in when
+  you tap a field.
+- **New colors across the whole app.** One shared palette replaces the colors that
+  were set page by page, so every screen matches.
+
+### Fixed
+
+- **Tapping Check in twice no longer ends your day.** The second tap used to
+  check you out at once, record a day of zero hours, and stop you checking in
+  again. A tap in the first minute after checking in is now ignored with a note.
+- **You could not find your own attendance on the team page.** You now appear
+  first, marked. Forgotten check-outs from earlier days also show up there again.
+- **The elapsed time on the punch panel never counted up,** and the "Today" box
+  stayed empty while you were on the clock.
+- **Notes meant for developers were printing on the page** in leave, attendance
+  and on any page that showed a message. They no longer appear.
+- **Payroll runs are written all at once.** A failure part way through can no
+  longer leave a run with some payslips missing.
+- **Locking or unlocking a pay run and removing a holiday are now in the audit
+  log,** and saving a monthly salary no longer records "0.00 per day".
+- **Edited attendance times are checked.** A punch cannot be moved to a different
+  day or into the future. An overnight shift can still end the next morning.
+- **Attendance pages could break** if two shift records ever existed for a
+  company. Only one is allowed now.
+- **A resolved error that happens again reopens,** and several errors arriving at
+  the same moment are all counted.
+- **Customers behind one office network were rejected after 60 errors a minute.**
+  The limit is now per key, at 600 a minute.
+- **Passwords and tokens inside captured request data are hidden** before they
+  are stored.
+- **Live updates now work when you run the app with the standard start command,**
+  including the Serop inbox, which was unreachable that way.
+
+### Security
+
+- **Shared server passwords are limited to owners, admins and developers.** Viewers
+  and support staff can no longer read them, and only owners and admins can add a
+  server.
+- **Repeated wrong passwords lock sign-in for 15 minutes,** for that account on
+  that network and for any one network trying many accounts.
+- **Live updates only accept connections from this site,** so another website
+  cannot open one using your session.
+- **A production setup refuses to start on the built-in secret keys.** Set your own
+  before turning debug mode off.
+
+### Known issues
+
+- People added to a team from Serop start as viewers, so they cannot read shared
+  server passwords until an owner or admin changes their role.
+- Pages are not cached for offline use. The installed app needs a connection and
+  shows the offline page when there is none.
+
 ## [Unreleased] — 2026-10-03 · the sign-in page
 
 ### Improved

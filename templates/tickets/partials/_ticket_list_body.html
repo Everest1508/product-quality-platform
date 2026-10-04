@@ -34,7 +34,7 @@
     {% if ticket.assignees.all %}
     <div class="card-assignees" style="display:flex;align-items:center;">
       {% for a in ticket.assignees.all|slice:":3" %}
-      <span class="avatar avatar-sm" data-tooltip="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);margin-right:-4px;border:2px solid #fff;">{{ a.username.0|upper }}</span>
+      <span class="avatar avatar-sm" data-tooltip="{{ a.get_full_name|default:a.username }}" style="background:var(--accent-soft);color:var(--accent);margin-right:-4px;border:2px solid var(--surface);">{{ a.username.0|upper }}</span>
       {% endfor %}
       {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm" style="margin-left:4px;">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
     </div>

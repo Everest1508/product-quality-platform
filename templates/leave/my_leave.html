@@ -34,9 +34,9 @@
       {% else %}<span class="pill closed">unpaid</span>{% endif %}
     </div>
     {% if balance.is_unlimited %}
-      {# "No cap", not "Unlimited": a cap of 0 is a real setting, so reading an
+      {% comment %} "No cap", not "Unlimited": a cap of 0 is a real setting, so reading an
          uncapped type as unlimited suggests 0 could not be chosen. Same wording
-         as the policy editor's placeholder and the approval rows. #}
+         as the policy editor's placeholder and the approval rows. {% endcomment %}
       <div style="font-size:24px;font-weight:600;margin-top:8px;">No cap</div>
       <div class="field-hint">{{ balance.policy.annual_limit_label }}{% if balance.policy.max_consecutive_days %} · {{ balance.policy.consecutive_limit_label }}{% endif %}</div>
     {% else %}
@@ -77,11 +77,11 @@
         <td>{{ leave.span_label }}</td>
         <td>
           {{ leave.days_label }}
-          {# The paid/unpaid split is the applicant's own decision input: they
+          {% comment %} The paid/unpaid split is the applicant's own decision input: they
              are the one deciding whether to file a spell that will cost them
              pay, so they have to be able to see what they filed. Not shown on a
              rejected or withdrawn request -- nobody is being charged for those,
-             and a stale split beside "rejected" reads as a bill. #}
+             and a stale split beside "rejected" reads as a bill. {% endcomment %}
           <div class="sub">
             {% if leave.status == 'pending' or leave.status == 'approved' %}
               {% if leave.is_fully_paid %}<span class="pill resolved">paid</span>

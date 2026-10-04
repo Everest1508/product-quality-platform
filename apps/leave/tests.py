@@ -1709,7 +1709,7 @@ class SidebarActiveStateTest(LeaveTestBase):
         unlabelled icons. The label ellipsises via `.side-label`, which is where
         the clipping belongs.
         """
-        css = Path(settings.BASE_DIR / "templates/core/base.html").read_text()
+        css = Path(settings.BASE_DIR / "templates/core/css/_app.css").read_text()
         rule = re.search(r"\.side-item\{[^}]*\}", css)
         self.assertIsNotNone(rule)
         self.assertNotIn("overflow:hidden", rule.group(0))
@@ -1720,7 +1720,7 @@ class SidebarActiveStateTest(LeaveTestBase):
     def test_sections_are_divided_in_both_states(self):
         """Separators used to be collapsed-only, so the nav looked structured in
         one state and flat in the other."""
-        css = Path(settings.BASE_DIR / "templates/core/base.html").read_text()
+        css = Path(settings.BASE_DIR / "templates/core/css/_app.css").read_text()
         separator = re.search(r"\.nav-section \+ \.nav-section\{[^}]*\}", css)
         self.assertIsNotNone(separator)
         self.assertIn("border-top", separator.group(0))

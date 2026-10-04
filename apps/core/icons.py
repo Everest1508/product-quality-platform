@@ -232,6 +232,13 @@ ICONS = {
     ),
 }
 
+# The product mark. Same grid and stroke as the set above, but kept out of ICONS
+# because ICON_CHOICES (the leave policy picker) is built from that dict.
+BRAND_MARK = (
+    '<circle cx="11.5" cy="11.5" r="9" /> <circle cx="11.5" cy="11.5" r="3.6" />'
+    '<path d="M15 15l6.5 6.5" />'
+)
+
 ICON_CHOICES = tuple((name, name.replace("-", " ").title()) for name in ICONS)
 ICON_NAMES = frozenset(ICONS)
 
@@ -251,4 +258,15 @@ def render_icon(name, css_class="ic", size=None):
         css_class,
         f' width="{size}" height="{size}"' if size else "",
         mark_safe(ICONS[name]),
+    )
+
+
+def render_brand_mark(css_class="ic"):
+    """Inline the product mark. Hardcoded markup, so no escaping concerns."""
+    return format_html(
+        '<svg class="{}" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '
+        'aria-hidden="true" focusable="false">{}</svg>',
+        css_class,
+        mark_safe(BRAND_MARK),
     )

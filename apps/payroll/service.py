@@ -24,6 +24,8 @@ from calendar import monthrange
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.db import transaction
+
 from apps.attendance.service import late_penalties_in_period
 from apps.leave.models import LeaveRequest
 from apps.payroll.models import Holiday, Payslip, PayrollProfile, PayrollRun
@@ -391,6 +393,26 @@ def generate_run(company, start, end, created_by=None):
         return existing, False
 
     days, rows = preview(company, start, end)
+    # One transaction: deleting the old payslips and writing the new ones either
+    # all happens or none of it does, so a crash cannot leave a run half-empty.
+    with transaction.atomic():
+        run = _write_run(company, start, end, existing, days, rows)
+    if created_by is not None:
+        from apps.dashboards.service import log_activity
+
+        log_activity(
+            company,
+            "payroll_run",
+            f"Payroll run for {run.label}",
+            description=f"{len(rows)} payslip(s), {days} working days",
+            actor=created_by,
+            target_content_type="payroll_run",
+            target_object_id=run.pk,
+        )
+    return run, True
+
+
+def _write_run(company, start, end, existing, days, rows):
     run = existing or PayrollRun(company=company, period_start=start, period_end=end)
     run.working_days = days
     run.save()
@@ -419,16 +441,4 @@ def generate_run(company, start, end, created_by=None):
                 **row["breakdown"],
             },
         )
-    if created_by is not None:
-        from apps.dashboards.service import log_activity
-
-        log_activity(
-            company,
-            "payroll_run",
-            f"Payroll run for {run.label}",
-            description=f"{len(rows)} payslip(s), {days} working days",
-            actor=created_by,
-            target_content_type="payroll_run",
-            target_object_id=run.pk,
-        )
-    return run, True
+    return run

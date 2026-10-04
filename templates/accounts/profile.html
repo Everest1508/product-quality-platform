@@ -13,7 +13,7 @@
   </div>
 
   <!-- User Profile Summary Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:20px;width:100%;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;width:100%;">
     <div style="display:flex;align-items:center;gap:16px;min-width:0;">
       <div class="avatar" style="width:52px;height:52px;font-size:20px;font-weight:600;flex-shrink:0;">{{ request.user.username.0|upper }}</div>
       <div style="min-width:0;">
@@ -31,7 +31,7 @@
   </div>
 
   <!-- Main Settings Form -->
-  <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:28px;width:100%;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px;width:100%;">
     <form method="post">
       {% csrf_token %}
 

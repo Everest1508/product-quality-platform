@@ -19,9 +19,9 @@ on the team page; the view refuses an off-site value.
   </div>
   <div>
     <label class="text-sm text-muted" for="edit_check_out_{{ record.pk }}" style="display:block;margin-bottom:4px;">Check out</label>
-    {# Prefill a forgotten check-out with the end of the scheduled day. Emptying
+    {% comment %} Prefill a forgotten check-out with the end of the scheduled day. Emptying
        it is still possible: an admin who wants the day to stay open can clear
-       the box, and the form posts an empty string as "no check-out". #}
+       the box, and the form posts an empty string as "no check-out". {% endcomment %}
     <input id="edit_check_out_{{ record.pk }}" type="datetime-local" name="check_out"
            value="{% if record.check_out %}{{ record.check_out|date:'Y-m-d\\TH:i' }}{% elif record.is_open %}{{ record.date|date:'Y-m-d' }}T{{ shift.end_time|time:'H:i' }}{% endif %}"
            class="form-input" style="padding:6px 10px;">

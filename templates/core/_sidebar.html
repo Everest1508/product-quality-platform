@@ -1,4 +1,8 @@
 {% load icon_tags %}<aside class="sidebar">
+  <a href="{% url 'dashboards:index' %}" class="side-brand" aria-label="PQ Platform home">
+    <span class="side-brand-mark">{% brand_mark %}</span>
+    <span class="side-label">PQ Platform</span>
+  </a>
   {% include "core/_company_switcher.html" %}
 
   {% comment %}
@@ -186,11 +190,18 @@
 
   <div class="side-foot">
     {% with u=request.resolver_match.url_name %}
+    {% include "core/_presence_sidebar.html" %}
+
     <button type="button" class="side-item side-version" data-changelog-open
             aria-haspopup="dialog" aria-label="What's new in v{{ app_version }}">
       {% icon 'sparkles' %}
       <span class="side-label">What's new</span>
       <span class="side-badge">v{{ app_version }}</span>
+    </button>
+
+    <button type="button" class="side-item" data-pwa-install hidden>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      <span class="side-label">Install app</span>
     </button>
 
     <button type="button" class="side-collapse" data-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">

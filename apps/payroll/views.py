@@ -153,6 +153,14 @@ class PayrollRunLockView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
         run = get_object_or_404(PayrollRun, pk=pk, company=request.company)
         run.is_locked = not run.is_locked
         run.save(update_fields=["is_locked"])
+        state = "locked" if run.is_locked else "unlocked"
+        _log(
+            request,
+            f"payroll_run_{state}",
+            f"Payroll run {state}: {run.label}",
+            run,
+            metadata={"is_locked": run.is_locked},
+        )
         messages.success(
             request,
             f"{run.label} {'locked' if run.is_locked else 'unlocked'}.",
@@ -268,7 +276,18 @@ class HolidayDeleteView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
     def post(self, request, pk):
         holiday = get_object_or_404(Holiday, pk=pk, company=request.company)
         name = holiday.name
+        removed_date = holiday.date
+        pk = holiday.pk
         holiday.delete()
+        _log(
+            request,
+            "holiday_removed",
+            f"Holiday removed: {name}",
+            None,
+            description=str(removed_date),
+            content_type="holiday",
+            metadata={"holiday_id": pk},
+        )
         messages.success(request, f"{name} removed.")
         return redirect("payroll:holidays")
 
@@ -419,7 +438,11 @@ class PayrollProfileListView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
             "payroll_profile_saved",
             f"Payroll {action} for {membership.user.username}",
             saved,
-            description=f"{form.cleaned_data['daily_rate']} per day",
+            description=(
+                f"{form.cleaned_data['monthly_salary']} per month"
+                if form.cleaned_data.get("monthly_salary")
+                else f"{form.cleaned_data['daily_rate']} per day"
+            ),
             content_type="payroll_profile",
             metadata={"currency": form.cleaned_data["currency"]},
         )

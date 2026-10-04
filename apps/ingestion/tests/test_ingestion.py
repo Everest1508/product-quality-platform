@@ -116,3 +116,77 @@ class CrossTenantIngestionTest(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Feedback.objects.filter(product=self.product_a).count(), 1)
         self.assertEqual(Feedback.objects.filter(product=self.product_b).count(), 0)
+
+
+class IngestionHardeningTest(IngestionAPITest):
+    """Counting, reopening, scrubbing and rate limiting for the capture API."""
+
+    def capture(self, **extra):
+        payload = {"message": "Boom", "error_type": "Error", "stacktrace": "line 1"}
+        payload.update(extra)
+        return self.client.post("/api/v1/errors/capture/", payload, format="json")
+
+    def test_a_resolved_error_that_fires_again_reopens(self):
+        self.capture()
+        group = ErrorGroup.objects.get()
+        group.status = "resolved"
+        group.save(update_fields=["status"])
+        response = self.capture()
+        group.refresh_from_db()
+        self.assertEqual(group.status, "open")
+        self.assertEqual(group.occurrence_count, 2)
+        self.assertEqual(response.status_code, 201)
+
+    def test_an_ignored_error_stays_ignored(self):
+        self.capture()
+        group = ErrorGroup.objects.get()
+        group.status = "ignored"
+        group.save(update_fields=["status"])
+        self.capture()
+        group.refresh_from_db()
+        self.assertEqual(group.status, "ignored")
+        self.assertEqual(group.occurrence_count, 2)
+
+    def test_the_count_is_the_databases_not_a_stale_copy(self):
+        """A second writer between our read and our write used to be lost."""
+        self.capture()
+        ErrorGroup.objects.update(occurrence_count=10)
+        response = self.capture()
+        self.assertEqual(response.data["occurrence_count"], 11)
+
+    def test_secrets_in_a_payload_are_redacted_before_storage(self):
+        self.capture(
+            request_payload={"user": "ann", "password": "hunter2", "nested": {"api_key": "k", "ok": 1}},
+            extra={"Authorization": "Bearer abc", "note": "fine"},
+        )
+        occurrence = ErrorOccurrence.objects.get()
+        self.assertEqual(occurrence.request_payload["password"], "[redacted]")
+        self.assertEqual(occurrence.request_payload["nested"]["api_key"], "[redacted]")
+        self.assertEqual(occurrence.request_payload["nested"]["ok"], 1)
+        self.assertEqual(occurrence.request_payload["user"], "ann")
+        self.assertEqual(occurrence.raw_data["Authorization"], "[redacted]")
+        self.assertEqual(occurrence.raw_data["note"], "fine")
+
+    def test_the_limit_is_per_key_not_per_ip(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+        from rest_framework.throttling import SimpleRateThrottle
+
+        cache.clear()
+        rates = {"apikey": "3/minute"}
+        with override_settings():
+            with self.settings(REST_FRAMEWORK={
+                **__import__("django.conf").conf.settings.REST_FRAMEWORK,
+                "DEFAULT_THROTTLE_RATES": rates,
+            }):
+                SimpleRateThrottle.THROTTLE_RATES = rates
+                try:
+                    statuses = [self.capture(message=f"m{i}").status_code for i in range(4)]
+                    self.assertEqual(statuses, [201, 201, 201, 429])
+                    # A different key from the same address has its own budget.
+                    other_key, other_raw = APIKey.create_key(product=self.product, name="second")
+                    self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {other_raw}")
+                    self.assertEqual(self.capture(message="fresh").status_code, 201)
+                finally:
+                    SimpleRateThrottle.THROTTLE_RATES = {"apikey": "600/minute"}
+                    cache.clear()

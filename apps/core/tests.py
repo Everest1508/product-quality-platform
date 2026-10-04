@@ -502,3 +502,67 @@ class VersionFooterUiTest(TestCase):
         self.assertIn("data-filter", body)
         self.assertIn("closest('#pq-changelog-older')", body)
 
+
+
+class BrandFileTests(TestCase):
+    def test_favicon_and_touch_icon_are_served(self):
+        for url, kind in (("/favicon.ico", "image/"), ("/brand/favicon-32.png", "image/png"),
+                          ("/brand/apple-touch-icon.png", "image/png")):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertTrue(r["Content-Type"].startswith(kind), url)
+
+    def test_other_names_do_not_resolve(self):
+        for url in ("/brand/README.md", "/brand/nope.png", "/brand/..%2Fsvg%2Fmark-blue.svg"):
+            self.assertEqual(self.client.get(url).status_code, 404, url)
+
+
+class PwaTests(TestCase):
+    def test_manifest_is_valid_and_points_at_real_icons(self):
+        r = self.client.get("/manifest.webmanifest")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/manifest+json")
+        data = r.json()
+        self.assertEqual(data["display"], "standalone")
+        self.assertEqual(data["start_url"], "/")
+        purposes = {(i["sizes"], i["purpose"]) for i in data["icons"]}
+        self.assertIn(("192x192", "any"), purposes)
+        self.assertIn(("512x512", "maskable"), purposes)
+        for icon in data["icons"]:
+            self.assertEqual(self.client.get(icon["src"]).status_code, 200, icon["src"])
+
+    def test_service_worker_is_served_from_root_and_never_cached(self):
+        r = self.client.get("/sw.js")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r["Content-Type"].startswith("application/javascript"))
+        self.assertEqual(r["Service-Worker-Allowed"], "/")
+        self.assertIn("no-cache", r["Cache-Control"])
+        self.assertIn(settings.APP_VERSION, r.content.decode())
+
+    def test_offline_page_needs_no_login(self):
+        r = self.client.get("/offline/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "You are offline")
+
+    def test_pages_link_the_manifest_and_register_the_worker(self):
+        r = self.client.get("/login/")
+        self.assertContains(r, 'rel="manifest"')
+        self.assertContains(r, "viewport-fit=cover")
+        self.assertContains(r, "serviceWorker.register('/sw.js'")
+
+
+class TemplateCommentTest(TestCase):
+    """`{# ... #}` only works on one line. A multi-line one is not a comment: Django
+    prints it, so engineering notes ended up on the page (leave, attendance, and
+    every page that showed a message). Multi-line notes use {% comment %}."""
+
+    def test_no_template_has_a_multi_line_hash_comment(self):
+        import re
+
+        offenders = []
+        for path in Path(settings.BASE_DIR, "templates").rglob("*.html"):
+            text = path.read_text()
+            for match in re.finditer(r"\{#(?:(?!#\}).)*?\n", text):
+                line = text.count("\n", 0, match.start()) + 1
+                offenders.append(f"{path.relative_to(settings.BASE_DIR)}:{line}")
+        self.assertEqual(offenders, [], "use {% comment %} for notes that span lines")

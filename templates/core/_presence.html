@@ -1,0 +1,72 @@
+{% comment %}
+One WebSocket per tab, shared by every widget through the `presence` Alpine store.
+Included only for signed-in users. The server decides the activity label from the
+path, so all this sends is where the person is and whether they are really there.
+{% endcomment %}
+<script>
+document.addEventListener('alpine:init', function () {
+  Alpine.store('presence', {
+    users: [],
+    connected: false,
+    meId: {{ request.user.id }},
+    _ws: null, _retry: 0, _beat: null, _lastSent: '', _lastInput: Date.now(),
+
+    get online() { return this.users.filter(function (u) { return u.status === 'online'; }); },
+    get away() { return this.users.filter(function (u) { return u.status !== 'online'; }); },
+    get others() { var me = this.meId; return this.users.filter(function (u) { return u.user_id !== me; }); },
+
+    init() {
+      var self = this;
+      ['mousemove', 'keydown', 'pointerdown', 'scroll', 'touchstart'].forEach(function (evt) {
+        window.addEventListener(evt, function () { self._lastInput = Date.now(); }, { passive: true });
+      });
+      document.addEventListener('visibilitychange', function () { self._report(); });
+      window.addEventListener('pagehide', function () { if (self._ws) self._ws.close(); });
+      setInterval(function () { self._report(); }, 15000);
+      this.connect();
+    },
+
+    connect() {
+      var self = this;
+      var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+      var ws = new WebSocket(proto + location.host + '/ws/presence/');
+      this._ws = ws;
+      ws.onopen = function () {
+        self.connected = true; self._retry = 0; self._lastSent = '';
+        self._report();
+        clearInterval(self._beat);
+        self._beat = setInterval(function () {
+          if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'ping' }));
+        }, 25000);
+      };
+      ws.onmessage = function (e) {
+        var msg; try { msg = JSON.parse(e.data); } catch (err) { return; }
+        if (msg.event === 'presence') self.users = msg.users;
+      };
+      ws.onclose = function (e) {
+        self.connected = false; clearInterval(self._beat);
+        // 4401/4403 mean signed out or no workspace: retrying cannot help.
+        if (e.code === 4401 || e.code === 4403) return;
+        self._retry += 1;
+        setTimeout(function () { self.connect(); }, Math.min(30000, 1000 * Math.pow(2, self._retry)));
+      };
+    },
+
+    _report() {
+      if (!this._ws || this._ws.readyState !== 1) return;
+      var active = document.visibilityState === 'visible' && (Date.now() - this._lastInput) < 5 * 60 * 1000;
+      var payload = JSON.stringify({ type: 'activity', path: location.pathname, active: active });
+      if (payload === this._lastSent) return;
+      this._lastSent = payload;
+      this._ws.send(payload);
+    },
+
+    // Helpers the templates use.
+    initial(u) { return (u.name || '?').charAt(0).toUpperCase(); },
+    clock(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    },
+  });
+});
+</script>
