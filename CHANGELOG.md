@@ -21,7 +21,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 ### Better
 
 - **No more circle.** Before you check in the card shows the time in large numbers. After you check out it shows the hours you worked. A thin bar under the countdown shows how far through the day you are.
-- **The check-in and check-out buttons are full width** under the card text.
+- **The check-in and check-out buttons are full width.** They sit under the card text.
 
 ## [1.2.1] — 2026-10-05 · products on the DSR
 
