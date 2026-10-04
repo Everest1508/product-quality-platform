@@ -8,6 +8,10 @@ document.addEventListener('alpine:init', function () {
   Alpine.store('presence', {
     users: [],
     connected: false,
+    // 'connecting' until the first answer, then 'live' (socket) or 'polling'
+    // (socket blocked, refreshing over plain HTTP every 25 seconds).
+    mode: 'connecting',
+    _tab: Math.random().toString(36).slice(2, 10), _poll: null, _everOpened: false,
     meId: {{ request.user.id }},
     _ws: null, _retry: 0, _beat: null, _lastSent: '', _lastInput: Date.now(),
 
@@ -33,6 +37,7 @@ document.addEventListener('alpine:init', function () {
       this._ws = ws;
       ws.onopen = function () {
         self.connected = true; self._retry = 0; self._lastSent = '';
+        self._everOpened = true; self.mode = 'live'; self._stopPolling();
         self._report();
         clearInterval(self._beat);
         self._beat = setInterval(function () {
@@ -47,10 +52,39 @@ document.addEventListener('alpine:init', function () {
       ws.onclose = function (e) {
         self.connected = false; clearInterval(self._beat);
         // 4401/4403 mean signed out or no workspace: retrying cannot help.
-        if (e.code === 4401 || e.code === 4403) return;
+        if (e.code === 4401 || e.code === 4403) { self.mode = 'offline'; return; }
         self._retry += 1;
+        // A proxy that drops the Upgrade header makes every attempt fail at once.
+        // Do not leave the panel on "connecting": poll instead and keep retrying
+        // the socket in the background.
+        if (self._retry >= 2 || self._everOpened) self._startPolling();
         setTimeout(function () { self.connect(); }, Math.min(30000, 1000 * Math.pow(2, self._retry)));
       };
+    },
+
+    _startPolling() {
+      if (this._poll) return;
+      var self = this;
+      this.mode = 'polling';
+      this._pollOnce();
+      this._poll = setInterval(function () { self._pollOnce(); }, 25000);
+    },
+
+    _stopPolling() {
+      clearInterval(this._poll); this._poll = null;
+    },
+
+    _pollOnce() {
+      var self = this;
+      var active = document.visibilityState === 'visible' && (Date.now() - this._lastInput) < 5 * 60 * 1000;
+      fetch('{% url "presence:beat" %}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ tab: this._tab, path: location.pathname, active: active }),
+      }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) { if (data && self.mode === 'polling') self.users = data.users; })
+        .catch(function () {});
     },
 
     _report() {

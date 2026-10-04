@@ -12,7 +12,7 @@
 
 <div class="head">
   <div>
-    <h1>{{ product.name }} — Errors <span class="count">{{ page.paginator.count }} group{{ page.paginator.count|pluralize }}</span></h1>
+    <h1>{{ product.name }} — Errors <span class="count">{{ page.paginator.count }} group{{ page.paginator.count|pluralize }} · {{ open_count }} open</span></h1>
     <p class="text-sm text-muted" style="margin-top:4px;">Error groups for {{ product.name }} only.</p>
   </div>
   <div class="head-actions">
@@ -42,7 +42,7 @@
       <th>Error</th>
       <th style="width:90px">Severity</th>
       <th style="width:100px">Status</th>
-      <th style="width:70px">Count</th>
+      <th style="width:140px">Count</th>
       <th style="width:100px">Last Seen</th>
       <th style="width:70px"></th>
     </tr>

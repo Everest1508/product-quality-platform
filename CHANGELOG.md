@@ -6,10 +6,65 @@ No class names, no field names, no test names, no file paths — if a change nee
 that kind of detail it belongs in `AGENTS.md` instead, which is where the
 engineering invariants live.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/); this project is not
-yet versioned. Older releases are below the newest.
+Format follows [Keep a Changelog](https://keepachangelog.com/). Version 1.1.0 covers
+every note down to the 1.0.1 heading, so it appears as several cards in the dialog.
+Older releases are below the newest.
 
-## [Unreleased] - 2026-10-04 - notifications, search, mentions, corrections and a leave calendar
+## [1.1.0] — 2026-10-04 · a calmer interface, honest counts and real reports
+
+### Added
+
+- **A welcome tile on the home page.** It greets you, shows the time from your own
+  device with seconds, and has a short line to keep you going. Press the arrow next
+  to the line for another one. Only the line changes, the page does not reload. New
+  ticket, Attendance and Request leave are one click away from the same tile.
+- **Reports with charts.** Five tiles at the top show tickets created, tickets
+  resolved, errors captured, errors resolved and all activity. Each one says how it
+  moved against the same number of days just before. Under them, a column chart shows
+  every day, two rings show how much got finished, and bars rank your busiest
+  products and the most common events. The exact tables are still there, folded away.
+  Pick Today, Yesterday, Last 7 days, Last 30 days or This month without a reload.
+- **Guides.** Short how-tos for attendance and leave, the DSR, tickets and errors,
+  reports and live presence are written up in the guides folder of the repository.
+
+### Improved
+
+- **The home page is a bento grid.** The tiles now fill each row, with wide and narrow
+  ones side by side, instead of leaving gaps.
+- **The DSR reads like a work log.** Each entry is a row with its times on the left, a
+  colored bar for its status, the task and note in the middle, and hours, status and
+  delete on the right. The three summary boxes became two tiles and a name. Every row
+  saves itself when you change it.
+- **Attendance has fewer boxes.** The five separate number boxes are one strip, and the
+  punch panel no longer sits inside a second card.
+- **Product cards show open work.** The errors and tickets numbers say "Open" and are
+  colored, and the number box inside each card is gone.
+- **The collapsed sidebar is easier to use.** Hover or tab to any icon to see its name.
+  An unread count shows as a dot on the icon, and sections are separated by a line.
+- **Ticket and error lists fit their columns.** Long titles wrap to two lines, times
+  say "2 days ago" instead of "2 days, 3 hours ago", and the sparkline no longer sits
+  on top of the last seen time.
+
+### Fixed
+
+- **The ticket list was shifted one column.** A hidden checkbox column left every
+  cell under the wrong heading, so the ticket number sat under "Ticket Details" and the
+  title was squeezed into a narrow strip.
+- **Sidebar and page counts disagreed.** The sidebar counted open work and the page
+  header counted everything. Headers now read "15 tickets · 9 open", and with no filter
+  that open number is the sidebar number. The same applies on each product's pages.
+- **Several dropdowns could be open at once.** Opening one now closes the others.
+  Clicking elsewhere or pressing Escape closes it, and so does picking a value.
+- **Choosing a category on one DSR row cleared it on another.** Rows share the same
+  radio names, which the browser treated as one group. Each row is now its own form.
+- **A DSR row went read-only after the first edit.** The row that came back from the
+  save had lost its edit controls.
+- **"Connecting to the live feed" never went away behind some proxies.** When the
+  WebSocket cannot connect, the Online now list refreshes every 25 seconds instead, and
+  the badge says so. If it stays on "Every 25s", see the presence guide for the proxy
+  setting.
+
+## [1.1.0] — 2026-10-04 · notifications, search, mentions, corrections and a leave calendar
 
 ### Added
 
@@ -51,7 +106,7 @@ yet versioned. Older releases are below the newest.
 - **Applying for leave from the quick form did not tell the approvers or appear in
   the audit log.** It now does both, the same as the full page.
 
-## [Unreleased] - 2026-10-04 - live presence, a better punch panel, and an installable app
+## [1.1.0] — 2026-10-04 · live presence, a better punch panel, and an installable app
 
 ### Added
 
@@ -139,7 +194,7 @@ yet versioned. Older releases are below the newest.
 - Pages are not cached for offline use. The installed app needs a connection and
   shows the offline page when there is none.
 
-## [Unreleased] — 2026-10-03 · the sign-in page
+## [1.1.0] — 2026-10-03 · the sign-in page
 
 ### Improved
 
@@ -198,7 +253,7 @@ yet versioned. Older releases are below the newest.
   the timesheet, team attendance, the leave calendar and its request screens.
   Each shows on the pages that render it. Not yet fixed.
 
-## [Unreleased] — 2026-10-02 · long-running tickets & DSR day close
+## [1.1.0] — 2026-10-02 · long-running tickets & DSR day close
 
 ### Fixed
 
@@ -220,7 +275,7 @@ yet versioned. Older releases are below the newest.
 - **Managers can still put right a closed day.** An owner or admin can correct a
   past report for anyone, so a forgotten entry or a typo is never stuck.
 
-## [Unreleased] — 2026-10-02 · one dropdown across the app
+## [1.1.0] — 2026-10-02 · one dropdown across the app
 
 ### Improved
 

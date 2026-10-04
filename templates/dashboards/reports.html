@@ -29,10 +29,14 @@
     <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">Generate report</button>
   </form>
 
-  <div style="display:flex;gap:6px;align-items:center;">
-    <a href="{% url 'dashboards:reports' %}" class="btn btn-sm">Today</a>
-    <a href="{% url 'dashboards:reports' %}?start_date={{ yesterday|date:'Y-m-d' }}&end_date={{ yesterday|date:'Y-m-d' }}" class="btn btn-sm">Yesterday</a>
-    <a href="{% url 'dashboards:reports' %}?start_date={{ week_ago|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}" class="btn btn-sm">Last 7 days</a>
+  <div class="rchips" role="group" aria-label="Quick ranges">
+    {% for label, s, e in presets %}
+    <a href="{% url 'dashboards:reports' %}?start_date={{ s|date:'Y-m-d' }}&end_date={{ e|date:'Y-m-d' }}"
+       class="rchip{% if s == start_date and e == end_date %} active{% endif %}"
+       hx-get="{% url 'dashboards:reports' %}?start_date={{ s|date:'Y-m-d' }}&end_date={{ e|date:'Y-m-d' }}"
+       hx-target="#report-content" hx-swap="innerHTML" hx-push-url="true"
+       onclick="document.querySelectorAll('.rchips .rchip').forEach(function(c){c.classList.remove('active')});this.classList.add('active');">{{ label }}</a>
+    {% endfor %}
   </div>
 </div>
 

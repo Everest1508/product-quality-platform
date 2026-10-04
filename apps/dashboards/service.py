@@ -487,11 +487,26 @@ def get_summary_report(company, start_date, end_date, user=None):
             })
             current += timedelta(days=1)
 
+    total_events = logs.count()
+    summary = {
+        "tickets_created": by_type.get("ticket_created", 0),
+        "tickets_resolved": transitions_to(ticket_status_events, "resolved"),
+        "errors_captured": by_type.get("error_captured", 0) + by_type.get("error_created", 0),
+        "errors_resolved": errors_resolved,
+        "total_events": total_events,
+    }
+
     return {
         "scope": scope,
         "start_date": start_date,
         "end_date": end_date,
-        "total_events": logs.count(),
+        "total_events": total_events,
+        "kpis": _report_kpis(company, start_date, end_date, user if scope == "mine" else None, summary),
+        "daily_bars": _daily_bars(daily),
+        "product_bars": _product_bars(product_rows),
+        "event_mix": _event_mix(by_type),
+        "resolution_rate": _rate(summary["tickets_resolved"], summary["tickets_created"]),
+        "error_fix_rate": _rate(summary["errors_resolved"], summary["errors_captured"]),
         "by_type": by_type,
         "tickets_created": by_type.get("ticket_created", 0),
         "tickets_status_changed": ticket_status_events.count(),
@@ -517,6 +532,103 @@ def get_summary_report(company, start_date, end_date, user=None):
             .order_by("-created_at")[:25]
         ),
     }
+
+
+def _rate(done, total):
+    """Whole-number percentage, or None when there is nothing to divide by."""
+    return round(100 * done / total) if total else None
+
+
+def _change(now, before):
+    """How a number moved against the previous period, for the KPI tiles."""
+    if before == 0:
+        return {"before": 0, "pct": None, "dir": "up" if now else "flat"}
+    pct = round(100 * (now - before) / before)
+    return {"before": before, "pct": abs(pct), "dir": "up" if pct > 0 else ("down" if pct < 0 else "flat")}
+
+
+def _report_kpis(company, start_date, end_date, mine_user, summary):
+    """The five headline numbers, each with its change against the period just
+    before this one (same length, ending the day before ``start_date``)."""
+    from datetime import datetime, time
+
+    from apps.dashboards.models import ActivityLog
+
+    days = (end_date - start_date).days + 1
+    prev_end = start_date - timedelta(days=1)
+    prev_start = prev_end - timedelta(days=days - 1)
+    prev = ActivityLog.objects.filter(
+        company=company,
+        created_at__range=(datetime.combine(prev_start, time.min), datetime.combine(prev_end, time.max)),
+    )
+    if mine_user is not None:
+        prev = prev.filter(actor=mine_user)
+    by_type = dict(prev.values_list("event_type").annotate(c=Count("id")).order_by("event_type"))
+    status = prev.filter(event_type="ticket_status_changed")
+    estatus = prev.filter(event_type="error_status_changed")
+    before = {
+        "tickets_created": by_type.get("ticket_created", 0),
+        "tickets_resolved": status.filter(metadata__to="resolved").count(),
+        "errors_captured": by_type.get("error_captured", 0) + by_type.get("error_created", 0),
+        "errors_resolved": by_type.get("error_resolved", 0) + estatus.filter(metadata__to="resolved").count(),
+        "total_events": prev.count(),
+    }
+    labels = [
+        ("tickets_created", "Tickets created", "blue"),
+        ("tickets_resolved", "Tickets resolved", "green"),
+        ("errors_captured", "Errors captured", "red"),
+        ("errors_resolved", "Errors resolved", "green"),
+        ("total_events", "All activity", "gray"),
+    ]
+    return [
+        {"key": key, "label": label, "tone": tone, "value": summary[key], **_change(summary[key], before[key])}
+        for key, label, tone in labels
+    ]
+
+
+def _daily_bars(daily):
+    """Bar heights as percentages of the busiest day, so the template needs no maths."""
+    if not daily:
+        return []
+    peak = max(max(d["tickets_created"], d["tickets_resolved"], d["errors_captured"], d["errors_resolved"]) for d in daily) or 1
+    step = max(1, len(daily) // 8)
+    bars = []
+    for i, d in enumerate(daily):
+        bars.append({
+            "date": d["date"],
+            "label": i % step == 0,
+            "created": round(100 * d["tickets_created"] / peak),
+            "resolved": round(100 * d["tickets_resolved"] / peak),
+            "captured": round(100 * d["errors_captured"] / peak),
+            "fixed": round(100 * d["errors_resolved"] / peak),
+            "row": d,
+        })
+    return bars
+
+
+def _product_bars(rows):
+    scored = []
+    for r in rows:
+        total = r["tickets_created"] + r["tickets_resolved"] + r["errors_captured"] + r["errors_resolved"] + r["feedback"]
+        if total:
+            scored.append({**r, "total": total})
+    scored.sort(key=lambda r: -r["total"])
+    peak = scored[0]["total"] if scored else 1
+    for r in scored:
+        r["pct"] = max(4, round(100 * r["total"] / peak))
+    return scored[:8]
+
+
+def _event_mix(by_type):
+    from apps.dashboards.models import ActivityLog
+
+    names = dict(ActivityLog.EventType.choices)
+    ranked = sorted(by_type.items(), key=lambda kv: -kv[1])[:7]
+    peak = ranked[0][1] if ranked else 1
+    return [
+        {"label": names.get(k, k.replace("_", " ").title()), "count": v, "pct": max(4, round(100 * v / peak))}
+        for k, v in ranked
+    ]
 
 
 def _personal_attendance(company, user, today):

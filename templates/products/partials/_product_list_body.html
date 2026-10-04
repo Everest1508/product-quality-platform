@@ -82,12 +82,12 @@
 
       <div class="stat-mini-grid">
         <div class="stat-cell">
-          <div class="v">{{ product.card_data.open_errors }}</div>
-          <div class="l">Errors</div>
+          <div class="v{% if not product.card_data.open_errors %} is-zero{% endif %}">{{ product.card_data.open_errors }}</div>
+          <div class="l">Open errors</div>
         </div>
         <div class="stat-cell">
-          <div class="v">{{ product.card_data.open_tickets }}</div>
-          <div class="l">Tickets</div>
+          <div class="v{% if not product.card_data.open_tickets %} is-zero{% endif %}">{{ product.card_data.open_tickets }}</div>
+          <div class="l">Open tickets</div>
         </div>
         <div class="stat-cell">
           <div class="v">{{ product.version_cnt }}</div>
@@ -95,7 +95,7 @@
         </div>
         <div class="stat-cell">
           <div class="v">{{ product.api_key_cnt }}</div>
-          <div class="l">API Keys</div>
+          <div class="l">API keys</div>
         </div>
       </div>
     </div>

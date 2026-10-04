@@ -1,6 +1,7 @@
 from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, TransactionTestCase
 
@@ -171,3 +172,46 @@ class PresenceSocketTest(TransactionTestCase):
             last_seen=timezone.now() - timedelta(minutes=2)
         )
         self.assertEqual(service.snapshot(self.company), [])
+
+
+class PresenceBeatTest(TestCase):
+    """The HTTP fallback used when the WebSocket cannot connect."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from apps.accounts.models import Company, Membership
+
+        User = get_user_model()
+        self.company = Company.objects.create(name="Beat Co", slug="beat-co")
+        self.user = User.objects.create_user("beat", "b@example.com", "pw")
+        Membership.objects.create(user=self.user, company=self.company, role="owner")
+        self.client.force_login(self.user)
+        session = self.client.session
+        session[settings.ACTIVE_COMPANY_SESSION_KEY] = self.company.pk
+        session.save()
+
+    def _beat(self, **body):
+        import json
+        return self.client.post(
+            "/presence/beat/", data=json.dumps(body), content_type="application/json"
+        )
+
+    def test_beat_records_the_tab_and_lists_the_person(self):
+        res = self._beat(tab="abc123", path="/tickets/7/", active=True)
+        self.assertEqual(res.status_code, 200)
+        users = res.json()["users"]
+        self.assertEqual([u["username"] for u in users], ["beat"])
+        self.assertEqual(users[0]["activity"], "Viewing ticket #7")
+
+    def test_beat_twice_keeps_one_row(self):
+        self._beat(tab="abc123", path="/tickets/")
+        self._beat(tab="abc123", path="/errors/")
+        self.assertEqual(PresenceSession.objects.filter(user=self.user).count(), 1)
+
+    def test_beat_needs_login(self):
+        from django.test import Client
+        res = Client().post("/presence/beat/", data="{}", content_type="application/json")
+        self.assertIn(res.status_code, (401, 302, 403))
+
+    def test_beat_is_post_only(self):
+        self.assertEqual(self.client.get("/presence/beat/").status_code, 405)

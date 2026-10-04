@@ -1,4 +1,4 @@
-{% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ total }} ticket{{ total|pluralize }}</span>{% endif %}
+{% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ total }} ticket{{ total|pluralize }} · {{ open_count }} open</span>{% endif %}
 {% for col in columns %}
 <div class="kanban-col" data-status="{{ col.key }}">
   <div class="kanban-header">

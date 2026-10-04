@@ -6,7 +6,7 @@
             const r = $el.getBoundingClientRect();
             pos = window.innerWidth > 860 ? `left:${r.right + 8}px;bottom:${window.innerHeight - r.bottom}px;` : '';
             open = !open">
-    <span class="presence-dot" :class="$store.presence.connected ? 'is-live' : 'is-off'" aria-hidden="true"></span>
+    <span class="presence-dot" :class="($store.presence.mode === 'live' || $store.presence.mode === 'polling') ? 'is-live' : 'is-off'" aria-hidden="true"></span>
     <span class="side-label">Online now</span>
     <span class="side-badge" x-text="$store.presence.online.length">0</span>
   </button>

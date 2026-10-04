@@ -1,4 +1,4 @@
-{% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }} · every product</span>{% endif %}
+{% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }} · {{ open_count }} open</span>{% endif %}
 <table>
   <thead>
     <tr>
