@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.utils import timezone
@@ -393,3 +393,39 @@ def late_penalties_in_period(company, user, start_date, end_date):
         date__lte=end_date,
     ).order_by("date")
     return [p for p in (late_penalty_for(r, shift) for r in records) if p]
+
+
+def parse_local_dt(raw):
+    """A datetime-local input value as an aware datetime, or None when empty or bad."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"):
+        try:
+            return timezone.make_aware(datetime.strptime(raw, fmt), timezone.get_current_timezone())
+        except ValueError:
+            continue
+    return None
+
+
+def punch_problem(day, check_in, check_out):
+    """Why a punch cannot be saved for `day`, or None when it is fine.
+
+    A punch has to belong to its own day (a night shift may close the next
+    morning) and cannot be in the future, otherwise a typo moves hours into a
+    different day or invents time that has not happened yet. Shared by the admin
+    edit form and by attendance corrections, so the two cannot disagree.
+    """
+    now = timezone.now()
+    for label, value in (("Check-in", check_in), ("Check-out", check_out)):
+        if value is None:
+            continue
+        if value > now + timedelta(minutes=5):
+            return f"{label} cannot be in the future."
+        offset = (timezone.localtime(value).date() - day).days
+        limit = (0, 1) if label == "Check-out" else (0, 0)
+        if not limit[0] <= offset <= limit[1]:
+            return f"{label} has to fall on {day:%b %d}" + (
+                " or the morning after." if label == "Check-out" else "."
+            )
+    return None

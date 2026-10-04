@@ -1,3 +1,4 @@
+import datetime as dt
 from datetime import timedelta
 from decimal import Decimal
 
@@ -443,3 +444,136 @@ def validate_request(
     return validate_and_split(
         company, user, policy, start_date, end_date, is_half_day, exclude_pk=exclude_pk
     )["days"]
+
+
+# --- Team calendar and clashes ---------------------------------------------
+
+
+def _holiday_dates(company, start, end):
+    """Company holidays in a range. Imported late: payroll imports this module."""
+    from apps.payroll.models import Holiday
+
+    return {h.date: h.name for h in Holiday.objects.filter(company=company, date__gte=start, date__lte=end)}
+
+
+def _weekdays_between(start, end):
+    days, cursor = [], start
+    while cursor <= end:
+        if cursor.weekday() < 5:
+            days.append(cursor)
+        cursor += dt.timedelta(days=1)
+    return days
+
+
+def team_size(company):
+    from apps.accounts.models import Membership
+
+    return Membership.objects.filter(company=company).count()
+
+
+def clash_for(company, user, start, end, exclude_pk=None):
+    """Who else is off on the working days between `start` and `end`.
+
+    Only approved leave counts: a pending request is a wish, not an absence.
+    Weekends and company holidays are skipped, because nobody is missed on them.
+    Returns the people (by name), the busiest day with its head count, and the
+    team size, so a screen can say "3 of 6 are away on Oct 14".
+    """
+    others = (
+        LeaveRequest.objects.filter(
+            company=company, status="approved", start_date__lte=end, end_date__gte=start
+        )
+        .exclude(user=user)
+        .select_related("user")
+    )
+    if exclude_pk:
+        others = others.exclude(pk=exclude_pk)
+    holidays = _holiday_dates(company, start, end)
+    working = [d for d in _weekdays_between(start, end) if d not in holidays]
+    per_day = {}
+    for leave in others:
+        name = leave.user.get_full_name() or leave.user.username
+        for day in _weekdays_between(max(start, leave.start_date), min(end, leave.end_date)):
+            if day in working:
+                per_day.setdefault(day, set()).add(name)
+    people = sorted({n for names in per_day.values() for n in names})
+    peak_day, peak = None, 0
+    for day in sorted(per_day):
+        if len(per_day[day]) > peak:
+            peak_day, peak = day, len(per_day[day])
+    return {
+        "people": people,
+        "peak": peak,
+        "peak_day": peak_day,
+        "team": team_size(company),
+        "per_day": per_day,
+    }
+
+
+def clash_sentence(clash):
+    """One line for a screen or a notification, or '' when nobody else is off."""
+    if not clash["people"]:
+        return ""
+    who = ", ".join(clash["people"][:3]) + (f" and {len(clash['people']) - 3} more" if len(clash["people"]) > 3 else "")
+    return (
+        f"{who} {'is' if len(clash['people']) == 1 else 'are'} also off. "
+        f"Busiest day {clash['peak_day']:%b %d}: {clash['peak']} of {clash['team']} away."
+    )
+
+
+def month_calendar(company, year, month, show_types=False):
+    """Weeks (Monday first) for a month: holidays and who is off each day.
+
+    Approved leave is solid, pending is shown dashed. Rejected and cancelled
+    requests are not shown. Leave type is only included when `show_types` is
+    set, so a colleague's "sick" is not visible to everyone.
+    """
+    first = dt.date(year, month, 1)
+    last = (first.replace(day=28) + dt.timedelta(days=4)).replace(day=1) - dt.timedelta(days=1)
+    grid_start = first - dt.timedelta(days=first.weekday())
+    grid_end = last + dt.timedelta(days=6 - last.weekday())
+
+    holidays = _holiday_dates(company, grid_start, grid_end)
+    requests = LeaveRequest.objects.filter(
+        company=company, status__in=["approved", "pending"], start_date__lte=grid_end, end_date__gte=grid_start
+    ).select_related("user", "policy")
+
+    by_day = {}
+    for leave in requests:
+        name = leave.user.get_full_name() or leave.user.username
+        for day in _weekdays_between(max(grid_start, leave.start_date), min(grid_end, leave.end_date)):
+            if day in holidays:
+                continue
+            by_day.setdefault(day, []).append(
+                {
+                    "user_id": leave.user_id,
+                    "name": name,
+                    "first": name.split()[0],
+                    "initial": name[:1].upper(),
+                    "status": leave.status,
+                    "half": leave.is_half_day,
+                    "policy": leave.policy.name if show_types else "",
+                }
+            )
+
+    today = timezone.localdate()
+    weeks, cursor = [], grid_start
+    while cursor <= grid_end:
+        week = []
+        for _ in range(7):
+            entries = sorted(by_day.get(cursor, []), key=lambda e: (e["status"] != "approved", e["name"].lower()))
+            week.append(
+                {
+                    "date": cursor,
+                    "in_month": cursor.month == month,
+                    "is_today": cursor == today,
+                    "is_weekend": cursor.weekday() >= 5,
+                    "holiday": holidays.get(cursor, ""),
+                    "entries": entries,
+                    "off_count": sum(1 for e in entries if e["status"] == "approved"),
+                }
+            )
+            cursor += dt.timedelta(days=1)
+        weeks.append(week)
+    agenda = [d for w in weeks for d in w if d["in_month"] and (d["entries"] or d["holiday"])]
+    return {"weeks": weeks, "agenda": agenda, "first": first, "last": last, "team": team_size(company)}

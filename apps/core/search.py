@@ -37,6 +37,7 @@ def _pages(request):
         ("Surveys", reverse("feedback:survey_list"), "feedback forms", False),
         ("My attendance", reverse("attendance:my_attendance"), "check in out punch clock", False),
         ("My leave", reverse("leave:my_leave"), "time off vacation holiday", False),
+        ("Leave calendar", reverse("leave:calendar"), "who is off team holidays", False),
         ("DSR sheet", reverse("dsr:dsr_sheet"), "daily status report timesheet", False),
         ("My payslips", reverse("payroll:my_payslips"), "salary pay", False),
         ("My profile", reverse("accounts:profile"), "account password", False),

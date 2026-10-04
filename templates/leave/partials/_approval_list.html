@@ -20,7 +20,10 @@
           <div class="sub">{{ leave.user.username }}</div>
         </td>
         <td>{{ leave.policy.name }}</td>
-        <td>{{ leave.span_label }}</td>
+        <td>
+          {{ leave.span_label }}
+          {% if leave.clash_people %}<div class="sub"><span class="pill high" title="{{ leave.clash_text }}">{{ leave.clash_people|length }} also off</span></div>{% endif %}
+        </td>
         <td>
           {{ leave.days_label }}{% if leave.is_half_day %} <span class="pill draft">half</span>{% endif %}
           {% comment %} The split, on the row rather than only in the dialog: a queue of

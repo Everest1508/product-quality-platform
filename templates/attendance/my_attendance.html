@@ -22,6 +22,9 @@
     <p class="text-sm text-muted" style="margin-top:4px;">{% if focus_user %}Read-only view of this employee's days.{% else %}Check in when you start your day and check out when you leave.{% endif %}</p>
   </div>
   <div class="head-actions">
+    {% if not focus_user %}
+    <a href="{% url 'attendance:correction_request' %}" class="btn" style="gap:6px;">Request a correction</a>
+    {% endif %}
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
     <a href="{% url 'attendance:team_attendance' %}" class="btn" style="gap:6px;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
@@ -43,6 +46,30 @@ forgotten-check-out warning, which is the reason they opened the page.
 <div class="card" style="padding:18px;margin-bottom:20px;">
   {% include "attendance/partials/_punch_button.html" %}
 </div>
+
+{% if my_corrections %}
+<section class="card corr-list" aria-label="Your correction requests">
+  <header><h2>Your correction requests</h2></header>
+  {% for c in my_corrections %}
+  <div class="corr-row">
+    <span class="corr-day">{{ c.date|date:"D, M j" }}</span>
+    <span class="corr-what">
+      {% if c.requested_check_in %}In {{ c.requested_check_in|date:"g:i A" }}{% endif %}
+      {% if c.requested_check_in and c.requested_check_out %} · {% endif %}
+      {% if c.requested_check_out %}Out {{ c.requested_check_out|date:"g:i A" }}{% endif %}
+    </span>
+    <span class="pill {% if c.status == 'approved' %}resolved{% elif c.status == 'pending' %}open{% else %}closed{% endif %}">{{ c.get_status_display }}</span>
+    {% if c.decision_note %}<span class="text-sm text-muted corr-note">{{ c.decision_note }}</span>{% endif %}
+    {% if c.is_pending %}
+    <form method="post" action="{% url 'attendance:correction_cancel' c.pk %}" style="margin-left:auto;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm">Cancel</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
 
 <div class="att-stats">
   <div class="card stat">

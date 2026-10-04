@@ -13,6 +13,7 @@ urlpatterns = [
         name="split_preview",
     ),
     path("<int:pk>/cancel/", views.LeaveCancelView.as_view(), name="cancel"),
+    path("calendar/", views.LeaveCalendarView.as_view(), name="calendar"),
     path("approvals/", views.LeaveQueueView.as_view(), name="approvals"),
     path(
         "<int:pk>/<str:action>/",

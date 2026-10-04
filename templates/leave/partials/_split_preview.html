@@ -38,5 +38,8 @@ there the reader has to judge the number.
     Your approver can change this when they review it.
   </div>
   {% endif %}
+  {% if clash %}
+  <div class="field-hint lc-clash-hint" style="margin-top:8px;">{{ clash_text }}</div>
+  {% endif %}
 </div>
 {% endif %}

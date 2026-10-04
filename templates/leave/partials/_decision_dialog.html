@@ -37,6 +37,10 @@ ends up with two different splits depending on which control was touched.
           <strong>Reason:</strong> <span x-text="current?.reason"></span>
         </p>
 
+        <p class="lc-clash" x-show="current?.clash_people && current.clash_people.length" role="status">
+          <strong>Heads up.</strong> <span x-text="current?.clash_text"></span>
+        </p>
+
         <form method="post" :action="current?.approve_url" x-ref="form">
           {% csrf_token %}
 

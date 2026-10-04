@@ -1,0 +1,76 @@
+{% extends "core/base.html" %}
+
+{% block title %}Request a correction — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'attendance:my_attendance' %}">Attendance</a>
+  <span class="sep">/</span>
+  <span class="current">Request a correction</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Request a correction</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Forgot to check out, or the times are wrong? Tell us what they should be. An owner or admin decides, and nothing changes until they approve.</p>
+  </div>
+</div>
+
+<div class="corr-grid">
+  <form method="post" class="card corr-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="dc-label" for="corr-date">Day</label>
+      <input id="corr-date" type="date" name="date" class="form-input" value="{{ day|date:'Y-m-d' }}"
+             min="{{ min_date|date:'Y-m-d' }}" max="{{ max_date|date:'Y-m-d' }}" required
+             onchange="window.location='?date=' + this.value">
+      <p class="text-sm text-muted" style="margin-top:4px;">Up to {{ max_age_days }} days back.</p>
+    </div>
+
+    <div class="corr-now">
+      <span class="dc-label">What is recorded now</span>
+      {% if record and record.check_in %}
+        <span>In <b>{{ record.check_in|date:"g:i A" }}</b> · Out <b>{{ record.check_out|date:"g:i A"|default:"not recorded" }}</b></span>
+      {% else %}
+        <span>Nothing is recorded for {{ day|date:"M j" }}.</span>
+      {% endif %}
+    </div>
+
+    <div class="corr-times">
+      <div class="form-group">
+        <label class="dc-label" for="corr-in">Check-in</label>
+        <input id="corr-in" type="time" name="check_in" class="form-input" value="{{ values.check_in }}">
+      </div>
+      <div class="form-group">
+        <label class="dc-label" for="corr-out">Check-out</label>
+        <input id="corr-out" type="time" name="check_out" class="form-input" value="{{ values.check_out }}">
+      </div>
+    </div>
+    <label class="corr-check"><input type="checkbox" name="out_next_day" value="1" {% if values.out_next_day %}checked{% endif %}> The check-out was after midnight</label>
+    <p class="text-sm text-muted">Fill in only what is wrong. A time you leave empty stays as recorded.</p>
+
+    <div class="form-group">
+      <label class="dc-label" for="corr-reason">Why</label>
+      <textarea id="corr-reason" name="reason" class="form-input" rows="3" maxlength="500" required
+                placeholder="For example: left at 6:30 PM and forgot to check out">{{ values.reason }}</textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <a href="{% url 'attendance:my_attendance' %}" class="btn">Cancel</a>
+      <button type="submit" class="btn btn-primary">Send request</button>
+    </div>
+  </form>
+
+  <aside class="card corr-recent">
+    <h2>Recent requests</h2>
+    {% for c in recent %}
+    <div class="corr-row">
+      <span class="corr-day">{{ c.date|date:"M j" }}</span>
+      <span class="pill {% if c.status == 'approved' %}resolved{% elif c.status == 'pending' %}open{% else %}closed{% endif %}">{{ c.get_status_display }}</span>
+    </div>
+    {% empty %}
+    <p class="text-sm text-muted">You have not asked for any corrections.</p>
+    {% endfor %}
+  </aside>
+</div>
+{% endblock %}

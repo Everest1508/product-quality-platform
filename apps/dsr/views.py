@@ -12,7 +12,7 @@ from apps.accounts.models import Membership
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
-from apps.dsr.service import submission_window
+from apps.dsr.service import submission_window, suggestions
 
 User = get_user_model()
 
@@ -105,7 +105,10 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
                 {"number": t.pk, "title": t.title, "label": f"#{t.pk} {t.title}"[:255]}
             )
 
+    work_suggestions = suggestions(company, target_user, selected_date) if can_submit else []
+
     return {
+        "work_suggestions": work_suggestions,
         "ticket_suggestions": ticket_suggestions,
         "selected_date": selected_date,
         "today": today,
@@ -280,3 +283,69 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
             return render(request, "dsr/partials/_dsr_table.html", context)
 
         return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
+
+
+
+class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
+    """Log one suggested ticket with the hours the person confirms.
+
+    Only a ticket the sheet actually suggested can be added, so this cannot be
+    used to log arbitrary tickets, and the day's submission window applies exactly
+    as it does for a manual entry.
+    """
+
+    def post(self, request):
+        today = timezone.localdate()
+        target_date = _parse_date(request.GET.get("date") or request.POST.get("date"), today)
+        is_privileged = _is_privileged(request.user, request.company)
+        target_user_id = request.GET.get("user_id") or request.POST.get("user_id")
+        if target_user_id and is_privileged:
+            target_user = get_object_or_404(User, pk=target_user_id, memberships__company=request.company)
+        else:
+            target_user = request.user
+
+        def respond():
+            if request.headers.get("HX-Request") == "true":
+                context = _get_dsr_context(request.company, target_user, target_date, is_privileged)
+                return render(request, "dsr/partials/_dsr_table.html", context)
+            return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
+
+        can_submit, reason = submission_window(target_date, is_privileged)
+        if not can_submit:
+            messages.error(request, reason)
+            return respond()
+
+        try:
+            ticket_id = int(request.POST.get("ticket_id", ""))
+            hours = Decimal(request.POST.get("hours", ""))
+        except (ValueError, ArithmeticError):
+            messages.error(request, "Enter the hours as a number.")
+            return respond()
+        # NaN and Infinity parse as Decimals and blow up on comparison, so they are
+        # refused before the range check.
+        if not hours.is_finite() or hours <= 0 or hours > 24:
+            messages.error(request, "Hours must be more than 0 and at most 24.")
+            return respond()
+
+        match = next(
+            (r for r in suggestions(request.company, target_user, target_date, limit=50) if r["number"] == ticket_id),
+            None,
+        )
+        if match is None:
+            messages.error(request, "That ticket is not in your suggestions for this day.")
+            return respond()
+
+        ticket = match["ticket"]
+        DSREntry.objects.create(
+            company=request.company,
+            user=target_user,
+            date=target_date,
+            ticket=ticket,
+            task_name=f"#{ticket.pk} {ticket.title}"[:255],
+            category=match["category"],
+            hours_spent=hours.quantize(Decimal("0.01")),
+            status=match["status"],
+            is_auto_logged=False,
+        )
+        messages.success(request, f"Added #{ticket.pk} with {hours.normalize():f}h.")
+        return respond()

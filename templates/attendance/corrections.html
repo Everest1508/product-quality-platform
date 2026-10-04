@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+
+{% block title %}Attendance corrections — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'attendance:my_attendance' %}">Attendance</a>
+  <span class="sep">/</span>
+  <span class="current">Corrections</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Attendance corrections <span class="count">{{ pending|length }} waiting</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Approving changes the person's record and is logged. Rejecting leaves it as it is.</p>
+  </div>
+</div>
+
+{% for c in pending %}
+<section class="card corr-card">
+  <header>
+    <div class="person">
+      <span class="avatar">{{ c.user.get_full_name|default:c.user.username|make_list|first|upper }}</span>
+      <span><span class="title">{{ c.user.get_full_name|default:c.user.username }}{% if c.is_mine %} <em class="you">You</em>{% endif %}</span><span class="sub">{{ c.date|date:"l, F j" }} · asked {{ c.created_at|timesince }} ago</span></span>
+    </div>
+  </header>
+  <div class="corr-diff">
+    <div>
+      <span class="dc-label">Check-in</span>
+      <span>{{ c.original_check_in|date:"g:i A"|default:"none" }}</span>
+      {% if c.requested_check_in %}<span class="corr-arrow">→</span><b>{{ c.requested_check_in|date:"g:i A" }}</b>{% else %}<span class="text-muted"> unchanged</span>{% endif %}
+    </div>
+    <div>
+      <span class="dc-label">Check-out</span>
+      <span>{{ c.original_check_out|date:"g:i A"|default:"none" }}</span>
+      {% if c.requested_check_out %}<span class="corr-arrow">→</span><b>{{ c.requested_check_out|date:"g:i A" }}{% if c.requested_check_out.date != c.date %} <small>next day</small>{% endif %}</b>{% else %}<span class="text-muted"> unchanged</span>{% endif %}
+    </div>
+  </div>
+  <p class="corr-reason">&ldquo;{{ c.reason }}&rdquo;</p>
+  {% if c.can_decide %}
+  <form method="post" class="corr-actions" x-data>
+    {% csrf_token %}
+    <input type="text" name="note" class="form-input" maxlength="255" placeholder="Note to {{ c.user.first_name|default:c.user.username }} (optional)" aria-label="Note">
+    <button type="submit" class="btn" formaction="{% url 'attendance:correction_decision' c.pk 'reject' %}">Reject</button>
+    <button type="submit" class="btn btn-primary" formaction="{% url 'attendance:correction_decision' c.pk 'approve' %}">Approve</button>
+  </form>
+  {% else %}
+  <p class="text-sm text-muted">This is your own request, so another owner or admin has to decide it.</p>
+  {% endif %}
+</section>
+{% empty %}
+<section class="card"><div class="empty"><h3>Nothing waiting</h3><p>Requests from your team show up here.</p></div></section>
+{% endfor %}
+
+{% if decided %}
+<section class="card" style="padding:0;overflow:hidden;margin-top:20px;">
+  <div style="padding:14px 18px;border-bottom:1px solid var(--border);"><h2 style="font-size:15px;font-weight:600;margin:0;">Recently decided</h2></div>
+  <table>
+    <thead><tr><th>Person</th><th>Day</th><th>Result</th><th>By</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for c in decided %}
+      <tr>
+        <td>{{ c.user.get_full_name|default:c.user.username }}</td>
+        <td>{{ c.date|date:"M j" }}</td>
+        <td><span class="pill {% if c.status == 'approved' %}resolved{% else %}closed{% endif %}">{{ c.get_status_display }}</span></td>
+        <td>{{ c.decided_by.get_full_name|default:c.decided_by.username|default:"" }}</td>
+        <td class="text-sm text-muted">{{ c.decision_note }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}
