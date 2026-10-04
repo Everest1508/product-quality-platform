@@ -92,6 +92,10 @@ Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app 
 
 `Product.key` (2 to 6 capitals, unique per company, suggested from the name by `apps/products/keys.py`) plus `Ticket.number` give `ticket.key`, shown as `AUM-014`. `Ticket.save()` assigns the number from `Product.ticket_counter` in one atomic UPDATE, so numbers never repeat and are not reused after a delete; moving a ticket to another product renumbers it. URLs, the API and foreign keys still use the database id. Show `ticket.key` (not `#{{ ticket.pk }}`) in any new template or message, and `select_related("product")` on lists, because the key reads the product. A ticket with no product falls back to `#<id>`.
 
+### Changelog
+
+`CHANGELOG.md` is what the sidebar "What's new" dialog shows, via `apps/core/changelog.py` and `/api/v1/changelog/`. Write each release as `## [1.2.0] — date · title`, then a `> In short: ...` sentence, then `### New`, `### Better`, `### Fixed`, `### Security` lists. Start every bullet with a bold lead that is a whole sentence (`**Ticket names like AUM-014.** Detail...`), because the dialog shows that lead as the item's title. Plain words, no class or file names. A test fails if `APP_VERSION` is not the newest release tag, if either of the two newest releases has no summary, or if one of their bold leads stops mid-sentence. Cutting a release means bumping `APP_VERSION` in `core/settings.py` in the same change.
+
 ### Auth
 
 Custom `accounts.User` (`AbstractUser` + `discord_id`). django-allauth is installed but login/logout/signup are handled by `apps/accounts/views.py` (email + password). A user with no `Membership` is sent to `accounts:company_setup`, which creates a `Company` and an owner `Membership`.

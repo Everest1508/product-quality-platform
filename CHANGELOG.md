@@ -6,335 +6,97 @@ No class names, no field names, no test names, no file paths — if a change nee
 that kind of detail it belongs in `AGENTS.md` instead, which is where the
 engineering invariants live.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/). Version 1.1.0 covers
-every note down to the 1.0.1 heading, so it appears as several cards in the dialog.
-Older releases are below the newest.
+Format follows [Keep a Changelog](https://keepachangelog.com/). Each release starts
+with a line beginning `> In short:` that says what it is about in one sentence, then
+New, Better, Fixed and Security lists. Older releases are below the newest.
 
-## [Unreleased] — 2026-10-04 · tickets named after their product
+## [1.2.0] — 2026-10-04 · tickets named after their product
 
-### Added
+> In short: every ticket now has a readable name like AUM-014, and My attendance and this What's new window were redesigned.
 
-- **Ticket names like AUM-014.** Each ticket is now named after its product, with a
-  number that counts up inside that product. AU-Marketing tickets are AUM-001,
-  AUM-002 and so on, and AU-HRMS has its own AUH-001. The name shows in lists, on the
-  board, on the ticket, in the DSR, in notifications, in Discord and in the audit log.
-- **A ticket prefix on each product.** It fills in by itself while you type the product
-  name, and it skips any prefix the company already uses, so a second "Billing Portal"
-  becomes BIP2. Type in the box to choose your own and it stops following the name.
-  Owners and admins can change it later by editing the product, which renames every
-  ticket of that product.
-- **A month at a glance on My attendance.** Every day of the month is a square, dark green
-  for a full day, light green for a part day, blue for the day you are on the clock and
-  orange for a missing check-out. Next to it are counts for each, and the number strip
-  now shows hours worked this month and the daily average.
-- **Search by ticket name.** Type AUM-14, aum14 or aum 14 in search. Typing just AUM lists
-  that product's newest tickets. The old # numbers still work.
-- **The ticket API returns the name.** Creating a ticket now also returns
-  its name, such as AUM-014, next to the existing fields.
+### New
 
-### Improved
+- **Ticket names like AUM-014.** A ticket is named after its product, then a number that counts up inside that product. AU-Marketing tickets are AUM-001, AUM-002 and so on. AU-HRMS has its own AUH-001. You see the name in lists, on the board, on the ticket, in the DSR, in notifications, in Discord and in the audit log.
+- **A prefix on every product.** It fills in while you type the product name, and it skips any prefix the company already uses, so a second "Billing Portal" becomes BIP2. Type in the box to pick your own. Owners and admins can change it later, which renames every ticket of that product.
+- **Search by ticket name.** Type AUM-14, aum14 or aum 14. Type just AUM to list that product's newest tickets. The old # numbers still work.
+- **A month at a glance on My attendance.** Each day is a square. Dark green is a full day, light green a part day, blue the day you are on the clock, orange a missing check-out. A count for each kind sits beside it.
+- **A clearer What's new window.** Each version opens with one sentence on what it is about. New, Better, Fixed and Security have their own colors, and older versions fold away until you open them.
 
-- **My attendance is laid out in two columns.** The punch card sits beside the week,
-  each day of the week shows its hours, and the table of recent days has a small bar
-  under each worked time.
-- **Existing tickets were numbered for you.** Each product's tickets are numbered from 1
-  in the order they were created, so old tickets get names too.
+### Better
+
+- **My attendance uses two columns.** The punch card sits beside the week, every day of the week shows its hours, and each worked time in the table has a small bar under it.
+- **Hours this month.** The number strip now shows hours worked this month and your daily average.
+- **Old tickets got names too.** Each product's tickets were numbered from 1 in the order they were created.
+- **The ticket API returns the name.** Creating a ticket also returns its name, such as AUM-014, next to the existing fields.
+- **The changelog is shorter and plainer.** Every earlier note for 1.1.0 is now one entry.
 
 ### Known issues
 
-- DSR entries written before this change still show the old # number in their task text.
-  New entries use the ticket name.
+- DSR entries written before this release still show the old # number in their task text. New entries use the ticket name.
 
-## [1.1.0] — 2026-10-04 · a calmer interface, honest counts and real reports
+## [1.1.0] — 2026-10-04 · alerts, search, reports and a new look
 
-### Added
+> In short: you get told about things, can find anything with Ctrl K, see who is online, and the whole app was redrawn to work on a phone and install like an app.
 
-- **A welcome tile on the home page.** It greets you, shows the time from your own
-  device with seconds, and has a short line to keep you going. Press the arrow next
-  to the line for another one. Only the line changes, the page does not reload. New
-  ticket, Attendance and Request leave are one click away from the same tile.
-- **Reports with charts.** Five tiles at the top show tickets created, tickets
-  resolved, errors captured, errors resolved and all activity. Each one says how it
-  moved against the same number of days just before. Under them, a column chart shows
-  every day, two rings show how much got finished, and bars rank your busiest
-  products and the most common events. The exact tables are still there, folded away.
-  Pick Today, Yesterday, Last 7 days, Last 30 days or This month without a reload.
-- **Guides.** Short how-tos for attendance and leave, the DSR, tickets and errors,
-  reports and live presence are written up in the guides folder of the repository.
+### New
 
-### Improved
+- **A notification bell.** Being assigned a ticket, being mentioned, a comment on a ticket you are on, a decision on your leave or attendance request, and a resolved error coming back all show up live with an unread count. Turn on alerts and your phone or computer tells you even when the app is closed.
+- **Mentions in comments.** Type @ and a few letters to pick a colleague. Only people who can open the ticket are offered, and they are told.
+- **Search from anywhere.** Press Ctrl K (Cmd K on a Mac, or / when you are not typing) to find tickets, errors, products and pages. It only shows what you can open.
+- **Online now.** See who has the app open and what kind of page they are on, such as "Viewing ticket #14". It also shows who is clocked in. If your network blocks live updates, the list refreshes every 25 seconds instead.
+- **Error trends.** Every error has a 14 day chart. Errors are flagged when they are new in a release, when they come back after being resolved, and when they are rising.
+- **Attendance corrections.** If a punch is wrong, ask for a fix with a reason. An owner or admin approves or rejects it and you are told.
+- **A leave calendar.** See who is off on which day, with company holidays shown. When someone asks for leave, approvers see who else is already off.
+- **Reports with charts.** Five tiles compare each number with the same number of days before. A day by day chart, two completion rings and bars for busy products sit below. Pick Today, Yesterday, Last 7 days, Last 30 days or This month without a reload.
+- **A welcome tile on home.** It greets you, shows the time from your own device and has a short line to keep you going. Press the arrow for another one.
+- **Your work on the DSR.** Tickets you touched that day appear above the form with a guess at the hours. Check the number and add it in one click. Your open tickets also show as quick chips.
+- **API docs and key rotation.** Each product has a page with real field lists and example requests. Make a new API key and keep the old one working for a day or a week while you switch over.
+- **Install it as an app.** On a phone or computer, add PQ Platform to your home screen. It shows an offline page when the connection drops.
+- **A new logo and colors.** One shared palette replaces the mixed colors from before.
+- **Guides.** Short how-tos for attendance and leave, the DSR, tickets and errors, reports and live presence are written up in the guides folder of the repository.
 
-- **The home page is a bento grid.** The tiles now fill each row, with wide and narrow
-  ones side by side, instead of leaving gaps.
-- **The DSR reads like a work log.** Each entry is a row with its times on the left, a
-  colored bar for its status, the task and note in the middle, and hours, status and
-  delete on the right. The three summary boxes became two tiles and a name. Every row
-  saves itself when you change it.
-- **Attendance has fewer boxes.** The five separate number boxes are one strip, and the
-  punch panel no longer sits inside a second card.
-- **Product cards show open work.** The errors and tickets numbers say "Open" and are
-  colored, and the number box inside each card is gone.
-- **The collapsed sidebar is easier to use.** Hover or tab to any icon to see its name.
-  An unread count shows as a dot on the icon, and sections are separated by a line.
-- **Ticket and error lists fit their columns.** Long titles wrap to two lines, times
-  say "2 days ago" instead of "2 days, 3 hours ago", and the sparkline no longer sits
-  on top of the last seen time.
+### Better
+
+- **The punch panel is live.** A clock ticks by the second, the elapsed time counts up, and it tells you when you are late.
+- **The DSR reads like a work log.** Each entry is a row with its times, a colored status bar, the task and note, then hours, status and delete. Rows save themselves when you change them. Today's report closes at midnight, older days stay readable, and owners and admins can still correct a closed day.
+- **Team attendance is easier to read.** Your own row comes first and is marked.
+- **Home is a bento grid.** Its tiles fill each row.
+- **The sign-in page was rebuilt.** It has two columns on a laptop and one on a phone, shows that it is working, lets you reveal what you typed, lets browsers fill the right fields, and keeps your destination after you sign in.
+- **Every dropdown looks the same.** It shows people by name and has "All" back where it belongs.
+- **Fewer boxes.** My attendance has one strip of numbers, product cards show open errors and open tickets, and the lists fit their columns. Long titles wrap and times read "2 days ago".
+- **The collapsed sidebar shows names.** Hover or tab to an icon. An unread count becomes a dot.
+- **Messages appear in the bottom right.** They stack neatly.
+- **Phones and tablets use the full width.** The main pages fit a 390px screen.
 
 ### Fixed
 
-- **The ticket list was shifted one column.** A hidden checkbox column left every
-  cell under the wrong heading, so the ticket number sat under "Ticket Details" and the
-  title was squeezed into a narrow strip.
-- **Sidebar and page counts disagreed.** The sidebar counted open work and the page
-  header counted everything. Headers now read "15 tickets · 9 open", and with no filter
-  that open number is the sidebar number. The same applies on each product's pages.
-- **Several dropdowns could be open at once.** Opening one now closes the others.
-  Clicking elsewhere or pressing Escape closes it, and so does picking a value.
-- **Choosing a category on one DSR row cleared it on another.** Rows share the same
-  radio names, which the browser treated as one group. Each row is now its own form.
-- **A DSR row went read-only after the first edit.** The row that came back from the
-  save had lost its edit controls.
-- **"Connecting to the live feed" never went away behind some proxies.** When the
-  WebSocket cannot connect, the Online now list refreshes every 25 seconds instead, and
-  the badge says so. If it stays on "Every 25s", see the presence guide for the proxy
-  setting.
-
-## [1.1.0] — 2026-10-04 · notifications, search, mentions, corrections and a leave calendar
-
-### Added
-
-- **A notification bell.** Being assigned a ticket, being mentioned, a comment on a
-  ticket you are on, a decision on your leave or attendance correction, and a
-  resolved error coming back all show up in the bell in the sidebar, live, with an
-  unread count. Click one to go straight to it. "Turn on alerts" in the bell lets
-  your phone or computer notify you even when the app is closed.
-- **Mentions in ticket comments.** Type @ and a few letters to pick a colleague. Only
-  people who can open the ticket are offered, they are told, and the mention is
-  highlighted in the comment. A ticket also shows who else has it open right now.
-- **Search from anywhere.** Press Ctrl+K (or Cmd+K, or / when you are not typing) to
-  find tickets, errors, products and pages. It only shows what you can open.
-  Searching a ticket number jumps to that ticket.
-- **Error trends.** Every error shows a 14 day chart. Errors are flagged when they
-  are new in the current release, when they came back after being resolved, and
-  when they are climbing. The error page has a 30 day chart and a count per release.
-- **Attendance corrections.** If a check-in or check-out is wrong, ask for a fix with
-  a reason instead of waiting for someone to notice. An owner or admin approves or
-  rejects it, and you are told. The "forgotten check-out" warning links straight to
-  the form for that day.
-- **A leave calendar.** See who is off on which day, with company holidays and
-  waiting requests shown dashed. On a phone it becomes a list of the days that
-  matter.
-- **Clash warnings for leave.** When someone asks for leave, the approvers are told
-  who else is already off and which day is busiest. The person applying sees it too.
-- **Your work on the DSR.** Tickets you worked on that day appear above the form with
-  a guess at the hours. Check the number and add it in one click.
-- **API documentation for each product.** Real field lists, example requests in curl,
-  Python, JavaScript and PHP, and what the errors mean.
-- **Rotating API keys.** Make a new key and keep the old one working for a day or a
-  week while you switch over, or stop it now. Keys also show when they were last used.
-
-### Fixed
-
-- **Any team member could create API keys, and revoke any key in the workspace** even
-  for a product they cannot open. Only owners, admins and developers with access to
-  the product can now.
-- **Applying for leave from the quick form did not tell the approvers or appear in
-  the audit log.** It now does both, the same as the full page.
-
-## [1.1.0] — 2026-10-04 · live presence, a better punch panel, and an installable app
-
-### Added
-
-- **Online now.** A live list shows who is signed in and what they are doing,
-  such as "Viewing ticket #14" or "Filling in the DSR". It sits in the sidebar
-  on every page and beside the team attendance table, and it updates the moment
-  someone moves to another page. It also shows who is clocked in and how many
-  tickets each person has in progress. A person with the tab hidden or idle for
-  five minutes shows as away.
-- **Install it as an app.** On a phone or computer you can add PQ Platform to
-  your home screen or desktop and open it like any other app, with its own icon.
-  If the connection drops you get a clear "you are offline" page instead of a
-  browser error, and a notice when you are back.
-- **A new logo and favicon.** A ring with a Q tail, in the new blue and navy.
-  It appears in the sidebar, on the sign-in page and in the browser tab.
-- **Quick fill on the DSR.** Your open tickets show as one-click chips under the
-  task box, and the hours box has 0.5, 1, 2 and 4 hour shortcuts.
-
-### Improved
-
-- **The punch panel is live.** It shows a clock that ticks by the second, the
-  time you have been on the clock counting up in real time, a ring that fills as
-  the shift goes by, how much of the shift is done and how long is left, and a
-  bar for each day of this week. After checking out it says how far over or
-  under a full day you were.
-- **Team attendance is easier to read.** Your own row is first and marked, with a
-  "Your day" card above it. Every person has a seven day strip, and clicking a
-  name opens their attendance history. The counts at the top filter the table,
-  and forgotten check-outs from earlier days have their own list.
-- **Manual DSR entry was rebuilt.** One clear form with a big task box, category,
-  status, hours and an optional note, instead of six cramped fields in one row.
-- **Messages now appear in the bottom right** and stack neatly, instead of piling
-  on top of each other in the top corner.
-- **Phones and tablets.** Pages use the full width of a phone screen, stat cards
-  and forms stack instead of running off the edge, wide tables scroll sideways
-  inside their card, buttons are bigger to tap, and phones no longer zoom in when
-  you tap a field.
-- **New colors across the whole app.** One shared palette replaces the colors that
-  were set page by page, so every screen matches.
-
-### Fixed
-
-- **Tapping Check in twice no longer ends your day.** The second tap used to
-  check you out at once, record a day of zero hours, and stop you checking in
-  again. A tap in the first minute after checking in is now ignored with a note.
-- **You could not find your own attendance on the team page.** You now appear
-  first, marked. Forgotten check-outs from earlier days also show up there again.
-- **The elapsed time on the punch panel never counted up,** and the "Today" box
-  stayed empty while you were on the clock.
-- **Notes meant for developers were printing on the page** in leave, attendance
-  and on any page that showed a message. They no longer appear.
-- **Payroll runs are written all at once.** A failure part way through can no
-  longer leave a run with some payslips missing.
-- **Locking or unlocking a pay run and removing a holiday are now in the audit
-  log,** and saving a monthly salary no longer records "0.00 per day".
-- **Edited attendance times are checked.** A punch cannot be moved to a different
-  day or into the future. An overnight shift can still end the next morning.
-- **Attendance pages could break** if two shift records ever existed for a
-  company. Only one is allowed now.
-- **A resolved error that happens again reopens,** and several errors arriving at
-  the same moment are all counted.
-- **Customers behind one office network were rejected after 60 errors a minute.**
-  The limit is now per key, at 600 a minute.
-- **Passwords and tokens inside captured request data are hidden** before they
-  are stored.
-- **Live updates now work when you run the app with the standard start command,**
-  including the Serop inbox, which was unreachable that way.
+- **Sidebar and page counts disagreed.** Headers now read "15 tickets · 9 open", and with no filter the open number is the sidebar number.
+- **The ticket list was shifted one column.** Ticket numbers sat under the wrong heading.
+- **Several dropdowns could be open at once.** Opening one closes the others.
+- **DSR rows interfered with each other.** Choosing a category on one row cleared it on another, and a row went read-only after its first edit.
+- **Tapping Check in twice ended your day.** A second tap within 45 seconds is now ignored.
+- **You could not find your own attendance on the team page.**
+- **The punch panel's elapsed time never counted up.**
+- **Developer notes were printing on the page.** It happened in leave, attendance and the sign-in page.
+- **Payroll runs are written all at once.** A failure part way through can no longer leave a half-finished run.
+- **Locking a pay run, unlocking it and removing a holiday are in the audit log.**
+- **Edited attendance times are checked.** A punch cannot be moved to a different day or put after its own check-out.
+- **Attendance pages could break.** It happened if a company ever had two shift records.
+- **A resolved error that happens again reopens.** Several errors arriving at once are now counted correctly.
+- **Customers behind one office network were rejected after 60 errors a minute.** The limit is now per API key.
+- **A long-running ticket no longer breaks your dashboard.**
+- **The quick leave form now tells approvers.** It also appears in the audit log.
+- **Sign-in page faults.** The eye icon was a giant blob, the desktop app's sign-in page had lost its styling, the show-password button could not be reached with a keyboard, and a wrong username and a wrong password gave different messages.
+- **"Connecting to the live feed" never went away.** It happened behind some proxies.
 
 ### Security
 
-- **Shared server passwords are limited to owners, admins and developers.** Viewers
-  and support staff can no longer read them, and only owners and admins can add a
-  server.
-- **Repeated wrong passwords lock sign-in for 15 minutes,** for that account on
-  that network and for any one network trying many accounts.
-- **Live updates only accept connections from this site,** so another website
-  cannot open one using your session.
-- **A production setup refuses to start on the built-in secret keys.** Set your own
-  before turning debug mode off.
-
-### Known issues
-
-- People added to a team from Serop start as viewers, so they cannot read shared
-  server passwords until an owner or admin changes their role.
-- Pages are not cached for offline use. The installed app needs a connection and
-  shows the offline page when there is none.
-
-## [1.1.0] — 2026-10-03 · the sign-in page
-
-### Improved
-
-- **The sign-in page was rebuilt.** It now has a proper two-column layout on a
-  laptop and desktop, dropping to a single clean column on a phone, instead of a
-  small grey card floating in the middle of an empty screen.
-- **Signing in shows that it is working.** The button reports that it is signing
-  you in rather than sitting there looking broken while the page thinks about it.
-- **You can see what you typed.** A button beside the password reveals what you
-  entered, so a stray capital or a keyboard stuck in the wrong layout no longer
-  means a failed sign-in and no idea why.
-- **Browsers now fill the right fields.** Signing in offers your existing
-  username and password rather than pushing you to save a new set.
-- **Errors are actually announced.** A failed sign-in is read out to screen
-  readers instead of only turning red, and each field's label says which field
-  went wrong.
-
-### Fixed
-
-- **The eye icon beside the password was a giant blob.** It was drawn correctly
-  but never told how big to be, so it ballooned across the field instead of
-  sitting neatly inside the button.
-- **The sign-in page offered by desktop apps had lost its styling entirely.** It
-  fell back to bare text with no card, no spacing and no padding.
-- **The "reveal password" button on that page sat too high,** overlapping the
-  word "Password" rather than sitting beside the box.
-- **Technical notes were printing themselves on the sign-in page.** Comments left
-  in the page markup were being shown to visitors as if they were part of the
-  page.
-- **The "show password" button could not be reached with a keyboard.** It was on
-  screen and looked usable, but any keyboard user tabbing through the page would
-  skip straight past it.
-- **The sign-in page had no top-level heading.** The page title was a second-level
-  heading, which is why assistive technology described a page with no title. The
-  branding line is now ordinary text and the page has one proper title.
-- **A wrong username and a wrong password gave different messages**, which meant
-  the page could tell you which accounts exist. They now read the same.
-- **The page was laid out twice over**, making it unusually tall and awkward to
-  scroll.
-- **Signing in no longer loses your destination.** Following a link that needed
-  authentication now returns you to that link afterwards instead of dropping you
-  on the dashboard.
-
-### Changed
-
-- **The sign-in page has a quiet dotted background** instead of coloured light
-  spilling in from the corners, and the panel beside the form is a flat dark
-  blue rather than a bright gradient.
-- **The text beside the form now just describes the app.** It listed what the
-  product can do in the style of an advert; it now says plainly which parts of
-  the app are covered.
-
-### Known issues
-
-- **Comments still print themselves as visible text on ten other screens** —
-  the timesheet, team attendance, the leave calendar and its request screens.
-  Each shows on the pages that render it. Not yet fixed.
-
-## [1.1.0] — 2026-10-02 · long-running tickets & DSR day close
-
-### Fixed
-
-- **Your dashboard no longer breaks on a long-running ticket.** A ticket left
-  open for weeks used to log an absurd number of hours against your name, and
-  that was enough to crash the dashboard with an error — taking your timesheet
-  and everything else on the page with it. Hours are now counted over a far wider
-  range, so long-running work finally shows up as the figure it really is.
-
-### Added
-
-- **Today's timesheet closes at midnight.** Fill in your daily status report
-  until 11:59pm and it is submitted; you no longer have to get it exactly right
-  the first time. A day that has not happened yet is closed to everyone, so
-  nobody can log hours they have not worked.
-- **Older days stay open for checking.** Every past report is still readable, so
-  you can look back at any earlier day, copy its summary and compare it, without
-  being able to rewrite what you already submitted.
-- **Managers can still put right a closed day.** An owner or admin can correct a
-  past report for anyone, so a forgotten entry or a typo is never stuck.
-
-## [1.1.0] — 2026-10-02 · one dropdown across the app
-
-### Improved
-
-- **Every dropdown in the app now looks the same.** Filters, sort menus, status
-  and priority pickers, leave types, colours, categories and employee pickers all
-  share one control instead of the browser's plain grey box, so the app reads as a
-  single product rather than a mix of styles.
-- **Filters still work the moment the page loads.** Choosing an option reloads
-  the list exactly as before, and a filter you have not touched is still sent
-  along, so nothing quietly drops out of your results.
-- **"All" is back where it should be.** Clearing a filter to see everything is
-  available again on every list screen.
-- **People are shown by name, properly.** Dropdowns listing team members used to
-  show the wrong text for some entries; they now show each person's name and fall
-  back to their username, the same as everywhere else in the app.
-- **Leave-type colours and the staff rows in the timesheet** use the new control
-  too, without losing their colour coding.
-
-### Fixed
-
-- **Leave settings no longer look unlabelled.** The colour picker and the day
-  limits are each clearly marked, so it is obvious what each number means.
-- **The activity log filters** and the ticket filters no longer leave a filter
-  with no way back to showing everything once you picked one.
+- **API keys are limited to the right people.** Only owners, admins and developers with access to the product can create, rotate and revoke them. Before, any team member could revoke any key.
+- **Shared server passwords are limited.** Only owners, admins and developers can read them. Viewers no longer can.
+- **Repeated wrong passwords lock sign-in.** The account is locked for 15 minutes.
+- **Live updates only accept connections from this site.** Another website cannot open them with your cookies.
+- **Passwords and tokens in captured errors are hidden.** They are removed before the data is stored.
+- **A production setup refuses to start on the built-in secret keys.**
 
 ## [1.0.1] — 2026-10-02 · punch panel, forgotten check-outs & leave caps
 

@@ -592,3 +592,92 @@ class ShortAgoTest(TestCase):
         from apps.core.templatetags.time_tags import short_ago
 
         self.assertEqual(short_ago(None), "")
+
+
+class ChangelogSummaryTest(TestCase):
+    """The "In short" line under a release heading."""
+
+    TEXT = (
+        "## [1.0.0] - 2026-10-01 - first\n\n"
+        "> In short: it works and **fast**.\n"
+        "> Second line.\n\n"
+        "### New\n\n- **One.** Detail.\n\n"
+        "### Better\n\n- two\n"
+    )
+
+    def test_a_quote_under_the_heading_becomes_the_summary(self):
+        release = parse_changelog(self.TEXT)[0]
+        self.assertEqual(release["summary"], "In short: it works and <strong>fast</strong>. Second line.")
+
+    def test_a_release_without_one_has_an_empty_summary(self):
+        self.assertEqual(parse_changelog(UNRELEASED)[0]["summary"], "")
+
+    def test_a_quote_inside_a_section_is_not_a_summary(self):
+        text = "## [1.0.0] - 2026-10-01\n\n### New\n\n> not a summary\n\n- one\n"
+        self.assertEqual(parse_changelog(text)[0]["summary"], "")
+
+    def test_summary_text_is_escaped(self):
+        text = "## [1.0.0] - 2026-10-01\n\n> <script>x</script>\n\n### New\n\n- one\n"
+        self.assertNotIn("<script>", parse_changelog(text)[0]["summary"])
+
+    def test_new_and_better_headings_keep_their_filter_slugs(self):
+        sections = parse_changelog(self.TEXT)[0]["sections"]
+        self.assertEqual([(s["slug"], s["label"]) for s in sections], [("added", "New"), ("changed", "Better")])
+
+    def test_the_summary_is_in_the_api(self):
+        user = get_user_model().objects.create_user("cl", "c@t.local", "pass1234")
+        self.client.force_login(user)
+        newest = self.client.get("/api/v1/changelog/").json()["releases"][0]
+        self.assertIn("summary", newest)
+
+
+class ShippedChangelogTest(TestCase):
+    def setUp(self):
+        changelog_module._cache.clear()
+
+    def tearDown(self):
+        changelog_module._cache.clear()
+
+    def test_the_running_version_is_the_newest_release(self):
+        """A release that was cut but never bumped, or the reverse, shows here."""
+        newest = changelog_module.get_changelog()[0]
+        self.assertEqual(newest["tag"], settings.APP_VERSION)
+
+    def test_recent_releases_say_what_they_are_about(self):
+        released = [r for r in changelog_module.get_changelog() if r["released"]][:2]
+        for release in released:
+            self.assertTrue(release["summary"], f"{release['tag']} has no 'In short' line")
+
+    def test_every_title_line_in_a_recent_release_is_a_whole_sentence(self):
+        """The dialog shows a bold lead as a title; one that stops mid-sentence reads badly."""
+        import re
+
+        for release in [r for r in changelog_module.get_changelog() if r["released"]][:2]:
+            for section in release["sections"]:
+                for item in section["items"]:
+                    lead = re.match(r"<strong>([^<]*)</strong>", item)
+                    if lead:
+                        self.assertRegex(lead.group(1), r"[.!?]$", item[:80])
+
+
+class ChangelogDialogDesignTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("dlg", "d@t.local", "pass1234")
+        Company.objects.create(name="C", slug="c")
+        company = Company.objects.get(slug="c")
+        Membership.objects.create(user=self.user, company=company, role="owner")
+        self.client.force_login(self.user)
+
+    def body(self):
+        return self.client.get("/tickets/").content.decode()
+
+    def test_the_dialog_shows_the_summary_and_colored_sections(self):
+        body = self.body()
+        self.assertIn("changelog-summary", body)
+        self.assertIn("cl-sec cl-sec-", body)
+        self.assertIn("cl-lead", body)
+
+    def test_older_releases_fold_away(self):
+        body = self.body()
+        self.assertIn('<details class="changelog-rel is-old">', body)
+        self.assertIn("releaseHtml(rel, 'h4', true)", body)
