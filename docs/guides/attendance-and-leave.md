@@ -7,7 +7,13 @@ counter run live. Press **Check out** when you leave. A second punch within 45
 seconds is ignored, so a double click does not undo itself.
 
 The week strip shows how much of each day you worked. The strip of numbers
-below it covers today and the month you are viewing.
+below it covers today and the month you are viewing, including hours worked this
+month and the daily average.
+
+**The month grid** shows one square per day. Dark green is a full day (at least 90%
+of the scheduled hours), light green a part day, blue the day you are on the clock,
+orange a day with no check-out, and an outlined square a weekday with no punch.
+Hover a square for its hours. The list beside it counts each kind.
 
 ## A wrong or forgotten punch
 

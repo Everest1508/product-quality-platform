@@ -141,6 +141,63 @@ def _punch_context(request, record, message="", person=None):
     }
 
 
+def _month_summary(records, shift, first, last, today):
+    """Numbers and a day-by-day strip for the month being viewed.
+
+    Hours come from `effective_minutes` (set by `annotate_effective`), so an
+    unclosed day counts the same capped amount here as on the timesheet.
+    """
+    scheduled = max(1, shift.worked_minutes_per_day)
+    by_day = {r.date: r for r in records}
+    total = 0
+    present = 0
+    for r in records:
+        mins = getattr(r, "effective_minutes", 0)
+        r.day_pct = min(100, round(100 * mins / scheduled))
+        if r.check_in:
+            present += 1
+            total += mins
+
+    cells = []
+    day = first
+    while day <= last:
+        rec = by_day.get(day)
+        if rec is not None and rec.check_in:
+            mins = getattr(rec, "effective_minutes", 0)
+            if rec.is_stale:
+                state, note = "stale", "no check-out"
+            elif rec.is_open and day == today:
+                state, note = "open", "on the clock"
+            elif mins >= 0.9 * scheduled:
+                state, note = "full", format_minutes(mins)
+            else:
+                state, note = "part", format_minutes(mins)
+            pct = min(100, round(100 * mins / scheduled))
+        elif day > today:
+            state, note, pct = "future", "", 0
+        elif day.weekday() >= 5:
+            state, note, pct = "rest", "weekend", 0
+        else:
+            state, note, pct = "none", "no punch", 0
+        cells.append({
+            "day": day.day, "state": state, "pct": pct, "is_today": day == today,
+            "title": f"{day:%a, %b} {day.day}" + (f": {note}" if note else ""),
+        })
+        day += timedelta(days=1)
+
+    return {
+        "month_total_formatted": format_minutes(total),
+        "month_average_formatted": format_minutes(total // present) if present else "–",
+        "month_present_days": present,
+        "month_cells": cells,
+        "month_counts": {
+            state: sum(1 for c in cells if c["state"] == state)
+            for state in ("full", "part", "open", "stale", "none")
+        },
+        "month_leading_blanks": first.weekday(),
+    }
+
+
 class MyAttendanceView(CompanyMemberRequiredMixin, View):
     """Self-service: punch the clock and review your own days."""
 
@@ -174,6 +231,8 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
         prev_year, prev_month = service.month_shift(year, month, -1)
         next_year, next_month = service.month_shift(year, month, 1)
 
+        month_summary = _month_summary(month_records, shift, first, last, today)
+
         focus_user = user if user.pk != request.user.pk else None
 
         panel = _punch_context(request, today_record, person=user)
@@ -203,6 +262,7 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
             "next": request.get_full_path(),
             "focus_user": focus_user,
             "month_label": service.month_label(year, month),
+            **month_summary,
             "prev_month": f"{prev_year:04d}-{prev_month:02d}",
             "next_month": f"{next_year:04d}-{next_month:02d}",
             "current_month": f"{year:04d}-{month:02d}",
@@ -303,6 +363,8 @@ def _week_strip(request, owner, shift):
             "date": day,
             "minutes": minutes,
             "formatted": format_minutes(minutes),
+            # Compact for the small label under each bar: "8h 49", or a dash.
+            "short": f"{minutes // 60}h {minutes % 60:02d}" if minutes else "–",
             "pct": min(100, round(minutes / target * 100)),
             "is_today": day == today,
             "state": state,

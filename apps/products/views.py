@@ -98,6 +98,25 @@ def _process_form_milestones(product, request_post):
             )
 
 
+class ProductKeySuggestView(CompanyAdminRequiredMixin, View):
+    """The ticket prefix the form should offer for a name, as the name is typed.
+
+    Looked up on the server so it can avoid keys the company already uses, which the
+    browser cannot know. `product` is the product being edited, whose own key is not
+    a clash.
+    """
+
+    def get(self, request):
+        from apps.products.keys import unique_key
+
+        taken = Product.objects.filter(company=request.company)
+        exclude = request.GET.get("product", "")
+        if exclude.isdigit():
+            taken = taken.exclude(pk=int(exclude))
+        key = unique_key(request.GET.get("name", "")[:255], set(taken.values_list("key", flat=True)))
+        return JsonResponse({"key": key})
+
+
 class ProductCreateView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         form = ProductCreateForm()

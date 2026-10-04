@@ -134,6 +134,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
       <div class="week-day is-{{ d.state }}{% if d.is_today %} is-today{% endif %}" title="{{ d.date|date:'D, M j' }}: {% if d.state == 'leave' %}on leave{% else %}{{ d.formatted }}{% endif %}">
         <div class="week-bar"><i style="height:{{ d.pct }}%"></i></div>
         <span>{{ d.label }}</span>
+        <em class="week-hrs">{% if d.state == 'leave' %}leave{% elif d.state == 'future' or d.state == 'weekend' %}&nbsp;{% else %}{{ d.short }}{% endif %}</em>
       </div>
       {% endfor %}
     </div>

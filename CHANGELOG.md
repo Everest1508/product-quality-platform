@@ -18,9 +18,15 @@ Older releases are below the newest.
   number that counts up inside that product. AU-Marketing tickets are AUM-001,
   AUM-002 and so on, and AU-HRMS has its own AUH-001. The name shows in lists, on the
   board, on the ticket, in the DSR, in notifications, in Discord and in the audit log.
-- **A ticket prefix on each product.** It is made from the product name, and owners and
-  admins can change it when they edit the product. Changing it renames every ticket of
-  that product.
+- **A ticket prefix on each product.** It fills in by itself while you type the product
+  name, and it skips any prefix the company already uses, so a second "Billing Portal"
+  becomes BIP2. Type in the box to choose your own and it stops following the name.
+  Owners and admins can change it later by editing the product, which renames every
+  ticket of that product.
+- **A month at a glance on My attendance.** Every day of the month is a square, dark green
+  for a full day, light green for a part day, blue for the day you are on the clock and
+  orange for a missing check-out. Next to it are counts for each, and the number strip
+  now shows hours worked this month and the daily average.
 - **Search by ticket name.** Type AUM-14, aum14 or aum 14 in search. Typing just AUM lists
   that product's newest tickets. The old # numbers still work.
 - **The ticket API returns the name.** Creating a ticket now also returns
@@ -28,6 +34,9 @@ Older releases are below the newest.
 
 ### Improved
 
+- **My attendance is laid out in two columns.** The punch card sits beside the week,
+  each day of the week shows its hours, and the table of recent days has a small bar
+  under each worked time.
 - **Existing tickets were numbered for you.** Each product's tickets are numbered from 1
   in the order they were created, so old tickets get names too.
 

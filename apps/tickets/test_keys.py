@@ -156,3 +156,39 @@ class TicketKeyScreensTest(TestCase):
         self.product.refresh_from_db()
         self.assertEqual(self.product.key, "MKT")
         self.assertContains(self.client.get(reverse("tickets:ticket_list")), "MKT-001")
+
+
+class KeySuggestEndpointTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.owner = User.objects.create_user("own", "o@t.local", "pass1234")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        self.dev = User.objects.create_user("dev", "d@t.local", "pass1234")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
+        self.product = Product.objects.create(company=self.company, name="AU-Marketing", slug="aum")
+
+    def suggest(self, **params):
+        return self.client.get(reverse("products:product_key_suggest"), params)
+
+    def test_suggests_from_the_name_as_it_is_typed(self):
+        self.client.login(username="own", password="pass1234")
+        self.assertEqual(self.suggest(name="AU-HRMS").json(), {"key": "AUH"})
+
+    def test_avoids_a_key_the_company_already_uses(self):
+        self.client.login(username="own", password="pass1234")
+        self.assertEqual(self.suggest(name="AU Marketing").json(), {"key": "AUM2"})
+
+    def test_the_product_being_edited_does_not_clash_with_itself(self):
+        self.client.login(username="own", password="pass1234")
+        res = self.suggest(name="AU-Marketing", product=self.product.pk)
+        self.assertEqual(res.json(), {"key": "AUM"})
+
+    def test_only_owners_and_admins_can_ask(self):
+        self.client.login(username="dev", password="pass1234")
+        self.assertEqual(self.suggest(name="Anything").status_code, 403)
+
+    def test_the_create_form_wires_the_name_to_the_prefix(self):
+        self.client.login(username="own", password="pass1234")
+        body = self.client.get(reverse("products:product_create")).content.decode()
+        self.assertIn("product-name", body)
+        self.assertIn(reverse("products:product_key_suggest"), body)
