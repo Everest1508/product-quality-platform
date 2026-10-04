@@ -63,13 +63,13 @@ def notify_ticket_created(ticket):
     if assignees:
         fields.append({"name": "Assigned to", "value": _format_names(assignees), "inline": True})
     embed = {
-        "title": f"Ticket #{ticket.pk} Created",
+        "title": f"Ticket {ticket.key} Created",
         "color": 0x5865F2,
         "fields": fields,
         "timestamp": ticket.created_at.isoformat(),
     }
     mentions = _mention_all(assignees)
-    content = f"{mentions} you have been assigned ticket #{ticket.pk}: {ticket.title}" if mentions else ""
+    content = f"{mentions} you have been assigned ticket {ticket.key}: {ticket.title}" if mentions else ""
     send_discord_webhook(product.discord_webhook_url, embed, content=content)
 
 
@@ -78,7 +78,7 @@ def notify_ticket_status_changed(ticket, old_status):
     if not product or not product.discord_webhook_url:
         return
     embed = {
-        "title": f"Ticket #{ticket.pk} Status Changed",
+        "title": f"Ticket {ticket.key} Status Changed",
         "color": 0xFEE75C,
         "fields": [
             {"name": "Title", "value": ticket.title, "inline": False},
@@ -95,7 +95,7 @@ def notify_ticket_assigned(ticket):
     if not product or not product.discord_webhook_url:
         return
     embed = {
-        "title": f"Ticket #{ticket.pk} Assigned",
+        "title": f"Ticket {ticket.key} Assigned",
         "color": 0x57F287,
         "fields": [
             {"name": "Title", "value": ticket.title, "inline": False},
@@ -105,7 +105,7 @@ def notify_ticket_assigned(ticket):
         "timestamp": ticket.updated_at.isoformat(),
     }
     mention = _mention(ticket.assigned_to)
-    content = f"{mention} you have been assigned ticket #{ticket.pk}: {ticket.title}" if mention else ""
+    content = f"{mention} you have been assigned ticket {ticket.key}: {ticket.title}" if mention else ""
     send_discord_webhook(product.discord_webhook_url, embed, content=content)
 
 

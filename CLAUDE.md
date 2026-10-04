@@ -88,6 +88,10 @@ Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app 
 
 "Open" means not `resolved`/`closed` for tickets and not `resolved`/`ignored` for errors. The sidebar badge (`workspace_context`), the list headers ("15 tickets · 9 open", computed from the filtered queryset in the global and product-scoped views) and the product cards all use it. Keep them in step if a status is ever added. User-facing how-tos are in `docs/guides/`.
 
+### Ticket names
+
+`Product.key` (2 to 6 capitals, unique per company, suggested from the name by `apps/products/keys.py`) plus `Ticket.number` give `ticket.key`, shown as `AUM-014`. `Ticket.save()` assigns the number from `Product.ticket_counter` in one atomic UPDATE, so numbers never repeat and are not reused after a delete; moving a ticket to another product renumbers it. URLs, the API and foreign keys still use the database id. Show `ticket.key` (not `#{{ ticket.pk }}`) in any new template or message, and `select_related("product")` on lists, because the key reads the product. A ticket with no product falls back to `#<id>`.
+
 ### Auth
 
 Custom `accounts.User` (`AbstractUser` + `discord_id`). django-allauth is installed but login/logout/signup are handled by `apps/accounts/views.py` (email + password). A user with no `Membership` is sent to `accounts:company_setup`, which creates a `Company` and an owner `Membership`.

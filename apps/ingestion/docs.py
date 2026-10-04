@@ -113,8 +113,8 @@ ENDPOINTS = [
         "summary": "Open a ticket on the product, for example from a Report a problem button.",
         "serializer": TicketIngestSerializer,
         "example": {"title": "Invoice PDF is blank", "description": "Opened from the billing page", "ticket_type": "bug", "user_ref": "user-123"},
-        "response": {"ticket_id": 31, "ui_ticket_id": 204},
-        "notes": ["ticket_id is the id in the API. ui_ticket_id is the number your team sees in the app."],
+        "response": {"ticket_id": 31, "ui_ticket_id": 204, "ui_ticket_key": "AUM-014"},
+        "notes": ["ticket_id is the id in the API. ui_ticket_key is the name your team sees in the app, such as AUM-014. ui_ticket_id is the database id behind it."],
     },
     {
         "key": "status",

@@ -93,7 +93,7 @@ class Command(BaseCommand):
                         ticket.assignees.set([rule.assign_to])
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f"Created ticket #{ticket.pk} for error group #{eg.pk} "
+                            f"Created ticket {ticket.key} for error group #{eg.pk} "
                             f"(rule: {rule.name})"
                         )
                     )

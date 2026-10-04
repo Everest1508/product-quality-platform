@@ -10,6 +10,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Version 1.1.0 co
 every note down to the 1.0.1 heading, so it appears as several cards in the dialog.
 Older releases are below the newest.
 
+## [Unreleased] — 2026-10-04 · tickets named after their product
+
+### Added
+
+- **Ticket names like AUM-014.** Each ticket is now named after its product, with a
+  number that counts up inside that product. AU-Marketing tickets are AUM-001,
+  AUM-002 and so on, and AU-HRMS has its own AUH-001. The name shows in lists, on the
+  board, on the ticket, in the DSR, in notifications, in Discord and in the audit log.
+- **A ticket prefix on each product.** It is made from the product name, and owners and
+  admins can change it when they edit the product. Changing it renames every ticket of
+  that product.
+- **Search by ticket name.** Type AUM-14, aum14 or aum 14 in search. Typing just AUM lists
+  that product's newest tickets. The old # numbers still work.
+- **The ticket API returns the name.** Creating a ticket now also returns
+  its name, such as AUM-014, next to the existing fields.
+
+### Improved
+
+- **Existing tickets were numbered for you.** Each product's tickets are numbered from 1
+  in the order they were created, so old tickets get names too.
+
+### Known issues
+
+- DSR entries written before this change still show the old # number in their task text.
+  New entries use the ticket name.
+
 ## [1.1.0] — 2026-10-04 · a calmer interface, honest counts and real reports
 
 ### Added

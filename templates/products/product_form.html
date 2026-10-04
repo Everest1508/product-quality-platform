@@ -51,6 +51,12 @@
               {% dropdown "default_environment" "production:Production|staging:Staging"|opts form.default_environment.value placeholder="Production" label="Default Environment" %}
             </div>
           </div>
+          <div class="form-group" x-data="{ key: '{{ form.key.value|default:'' }}' }">
+            <label for="key">Ticket prefix</label>
+            <input id="key" type="text" name="key" x-model="key" @input="key = key.toUpperCase().replace(/[^A-Z0-9]/g, '')" maxlength="6" class="form-input" placeholder="Made from the name if left empty" autocomplete="off" style="max-width:240px;text-transform:uppercase;">
+            {% if form.key.errors %}<p class="field-error">{{ form.key.errors.0 }}</p>{% endif %}
+            <p class="field-hint">Tickets are named with it, for example <b x-text="(key || '{{ product.key|default:'AUM' }}') + '-001'"></b>.{% if editing %} Changing it renames every ticket of this product, so old links in chat will not match the new name.{% endif %}</p>
+          </div>
           <div class="form-group" style="margin-bottom:0;">
             <label for="description">Description</label>
             <textarea id="description" name="description" class="form-input" rows="3" placeholder="Optional description">{{ form.description.value|default:'' }}</textarea>

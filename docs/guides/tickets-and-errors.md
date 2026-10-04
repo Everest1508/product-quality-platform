@@ -11,6 +11,22 @@
 Open means not resolved or closed for tickets, and not resolved or ignored for
 errors. If the header and the sidebar disagree, a filter is on. Press **Clear**.
 
+## Ticket names
+
+A ticket is named after its product: the product key, a dash and a number that
+counts up inside that product, for example `AUM-014`. The key is made from the
+product name (AU-Marketing gives AUM) and owners and admins can change it under
+**Edit product, Ticket prefix**. It is 2 to 6 letters or digits, starts with a
+letter and is unique in the company.
+
+* Numbers are never reused, even after a ticket is deleted.
+* Changing the key renames every ticket of that product at once. Links to a ticket
+  keep working, but a name pasted into chat earlier will no longer match.
+* Moving a ticket to another product gives it the next number there.
+* A ticket with no product is shown as `#` and its id.
+* Search finds a ticket by `AUM-14`, `aum14` or `aum 14`. Typing just `AUM` lists
+  that product's newest tickets, and the old `#360` style number still works.
+
 ## Filters
 
 Each filter is a dropdown. Only one opens at a time, a click anywhere else

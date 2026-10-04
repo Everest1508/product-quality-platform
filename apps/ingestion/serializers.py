@@ -241,13 +241,13 @@ class TicketIngestSerializer(serializers.Serializer):
         notify_ticket_created(ticket)
         log_activity(
             company, "ticket_created",
-            f"Ticket #{ticket.id} created",
+            f"Ticket {ticket.key} created",
             description=validated_data["title"],
             target_content_type="ticket",
             target_object_id=ticket.id,
             metadata={"product_id": product.id, "source": "auto"},
         )
-        return {"ticket_id": ingested.id, "ui_ticket_id": ticket.id}
+        return {"ticket_id": ingested.id, "ui_ticket_id": ticket.id, "ui_ticket_key": ticket.key}
 
 
 class TicketStatusSerializer(serializers.Serializer):

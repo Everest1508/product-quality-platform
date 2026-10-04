@@ -1,14 +1,14 @@
 {% extends "core/base.html" %}
 {% load dropdown_tags %}
 
-{% block title %}{% if editing %}Edit Ticket #{{ ticket.pk }}{% else %}New Ticket{% endif %} — PQ Platform{% endblock %}
+{% block title %}{% if editing %}Edit Ticket {{ ticket.key }}{% else %}New Ticket{% endif %} — PQ Platform{% endblock %}
 
 {% block content %}
 <nav class="breadcrumbs">
   <a href="{% url 'tickets:ticket_board' %}">All tickets</a>
   <span class="sep">/</span>
   {% if editing %}
-  <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}">#{{ ticket.pk }}</a>
+  <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}">{{ ticket.key }}</a>
   <span class="sep">/</span>
   <span class="current">Edit Ticket</span>
   {% else %}
@@ -18,7 +18,7 @@
 
 <div class="head" style="margin-bottom:20px;">
   <div>
-    <h1>{% if editing %}Edit Ticket #{{ ticket.pk }}{% else %}New Ticket{% endif %}</h1>
+    <h1>{% if editing %}Edit Ticket {{ ticket.key }}{% else %}New Ticket{% endif %}</h1>
     <p class="text-sm text-muted" style="margin-top:4px;">{% if editing %}Update ticket details, assignees, priority, and deadline.{% else %}Create a new ticket to track work, bugs, or feature requests.{% endif %}</p>
   </div>
   <div class="head-actions">
@@ -37,7 +37,7 @@
     </div>
     <div>
       <h2>{% if editing %}Edit Ticket Details{% else %}Create Ticket{% endif %}</h2>
-      <p>{% if editing %}Update the title, description, assignees, and attributes for ticket #{{ ticket.pk }}.{% else %}Fill out the fields below to register a ticket in your company workspace.{% endif %}</p>
+      <p>{% if editing %}Update the title, description, assignees, and attributes for ticket {{ ticket.key }}.{% else %}Fill out the fields below to register a ticket in your company workspace.{% endif %}</p>
     </div>
   </div>
 

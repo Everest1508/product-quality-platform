@@ -250,14 +250,14 @@ class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
         )
         log_activity(
             request.company, "ticket_created",
-            f"Ticket #{ticket.pk} created from error #{error_group.pk}",
+            f"Ticket {ticket.key} created from error #{error_group.pk}",
             description=ticket.title,
             actor=request.user,
             target_content_type="ticket",
             target_object_id=ticket.pk,
             metadata={"product_id": error_group.product_id, "error_group_id": error_group.pk},
         )
-        messages.success(request, f"Ticket #{ticket.pk} created from error #{error_group.pk}.")
+        messages.success(request, f"Ticket {ticket.key} created from error #{error_group.pk}.")
         url_name, kwargs = _error_redirect(error_group)
         return redirect(url_name, **kwargs)
 

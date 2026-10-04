@@ -97,12 +97,12 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
         from apps.products.access import accessible_tickets
 
         for t in (
-            accessible_tickets(target_user, company)
+            accessible_tickets(target_user, company).select_related("product")
             .filter(assignees=target_user, status__in=["open", "assigned", "in_progress", "testing"])
             .order_by("-id")[:6]
         ):
             ticket_suggestions.append(
-                {"number": t.pk, "title": t.title, "label": f"#{t.pk} {t.title}"[:255]}
+                {"number": t.pk, "key": t.key, "title": t.title, "label": f"{t.key} {t.title}"[:255]}
             )
 
     work_suggestions = suggestions(company, target_user, selected_date) if can_submit else []
@@ -341,11 +341,11 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             user=target_user,
             date=target_date,
             ticket=ticket,
-            task_name=f"#{ticket.pk} {ticket.title}"[:255],
+            task_name=f"{ticket.key} {ticket.title}"[:255],
             category=match["category"],
             hours_spent=hours.quantize(Decimal("0.01")),
             status=match["status"],
             is_auto_logged=False,
         )
-        messages.success(request, f"Added #{ticket.pk} with {hours.normalize():f}h.")
+        messages.success(request, f"Added {ticket.key} with {hours.normalize():f}h.")
         return respond()

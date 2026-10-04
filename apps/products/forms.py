@@ -1,13 +1,36 @@
 from django import forms
 from django.utils.text import slugify
 
+from apps.products.keys import KEY_RE, MAX_LEN
 from apps.products.models import Product, ProductVersion
 
 
-class ProductCreateForm(forms.ModelForm):
+class TicketKeyMixin:
+    """The `key` field: three or four capitals that name the product's tickets.
+
+    Left blank on a new product, it is suggested from the name. It is unique within
+    the company because ticket numbers read AUM-001 across every product.
+    """
+
+    def clean_key(self):
+        key = (self.cleaned_data.get("key") or "").strip().upper()
+        if not key:
+            return ""
+        if not KEY_RE.match(key):
+            raise forms.ValidationError(
+                f"Use 2 to {MAX_LEN} letters or digits, starting with a letter."
+            )
+        company = getattr(self, "company", None) or getattr(self.instance, "company", None)
+        clash = Product.objects.filter(company=company, key=key).exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise forms.ValidationError(f"{clash.first().name} already uses {key}.")
+        return key
+
+
+class ProductCreateForm(TicketKeyMixin, forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "description", "default_environment", "discord_webhook_url"]
+        fields = ["name", "key", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={
                 "class": "form-input",
@@ -48,10 +71,10 @@ class ProductCreateForm(forms.ModelForm):
         return instance
 
 
-class ProductEditForm(forms.ModelForm):
+class ProductEditForm(TicketKeyMixin, forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "description", "default_environment", "discord_webhook_url"]
+        fields = ["name", "key", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
             "description": forms.Textarea(attrs={"class": "form-input", "rows": 3}),

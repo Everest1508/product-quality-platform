@@ -437,7 +437,7 @@ class Command(BaseCommand):
 
             log_activity(
                 company, "ticket_created",
-                f"Ticket #{ticket.pk} created",
+                f"Ticket {ticket.key} created",
                 description=title,
                 actor=users["owner"],
                 target_content_type="ticket",

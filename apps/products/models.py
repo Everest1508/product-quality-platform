@@ -22,12 +22,36 @@ class Product(TenantScopedModel):
         default="production",
     )
     discord_webhook_url = models.URLField(max_length=500, blank=True, default="")
+    # Short code that names this product's tickets: AUM gives AUM-001, AUM-002...
+    key = models.CharField(max_length=6, blank=True, default="")
+    # Last ticket number handed out. Only ever raised, so a deleted ticket's number
+    # is never reused by the next one.
+    ticket_counter = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta(TenantScopedModel.Meta):
         unique_together = ("company", "slug")
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "key"],
+                condition=~models.Q(key=""),
+                name="product_key_unique_per_company",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            from apps.products.keys import unique_key
+
+            taken = set(
+                Product.objects.filter(company_id=self.company_id)
+                .exclude(pk=self.pk)
+                .values_list("key", flat=True)
+            )
+            self.key = unique_key(self.name, taken)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.company.name} / {self.name}"

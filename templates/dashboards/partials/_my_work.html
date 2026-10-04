@@ -1,6 +1,6 @@
 {% for t in my_work %}
 <div class="dash-row">
-  <a class="lead" href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}">#{{ t.pk }} {{ t.title }}{% if t.product %} <span class="prod">· {{ t.product.name }}</span>{% endif %}</a>
+  <a class="lead" href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}">{{ t.key }} {{ t.title }}{% if t.product %} <span class="prod">· {{ t.product.name }}</span>{% endif %}</a>
   <span class="meta">{% if t.is_overdue %}<span class="overdue-text">overdue</span> · {% endif %}{{ t.get_status_display }}</span>
   <span class="dash-acts">
     {% if t.status == 'open' or t.status == 'assigned' %}

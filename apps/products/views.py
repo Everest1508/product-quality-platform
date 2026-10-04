@@ -535,14 +535,14 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",
-                f"Ticket #{ticket.pk} created",
+                f"Ticket {ticket.key} created",
                 description=ticket.title,
                 actor=request.user,
                 target_content_type="ticket",
                 target_object_id=ticket.pk,
                 metadata={"product_id": product.pk},
             )
-            messages.success(request, f"Ticket #{ticket.pk} created.")
+            messages.success(request, f"Ticket {ticket.key} created.")
             return redirect("products:product_ticket_detail", pk=product.pk, ticket_pk=ticket.pk)
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
@@ -564,11 +564,12 @@ class ProductTicketBulkDeleteView(CompanyMemberRequiredMixin, View):
             if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
                 continue
             ticket_id = ticket.pk
+            ticket_key = ticket.key
             title = ticket.title
             ticket.delete()
             log_activity(
                 request.company, "ticket_deleted",
-                f"Ticket #{ticket_id} deleted",
+                f"Ticket {ticket_key} deleted",
                 description=title,
                 actor=request.user,
                 target_content_type="ticket",

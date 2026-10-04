@@ -51,7 +51,7 @@ def auto_log_ticket_dsr(ticket, actor=None):
 
     category = DSREntry.Category.BUG_FIX if ticket.ticket_type == "bug" else DSREntry.Category.TICKET
 
-    task_name = f"#{ticket.pk}: {ticket.title}"
+    task_name = f"{ticket.key}: {ticket.title}"
     if ticket.product:
         task_name = f"[{ticket.product.name}] {task_name}"
 
@@ -152,6 +152,7 @@ def suggestions(company, user, day, limit=8):
             {
                 "ticket": ticket,
                 "number": ticket.pk,
+                "key": ticket.key,
                 "title": ticket.title,
                 "product": ticket.product.name if ticket.product else "",
                 "did": ", ".join(did).capitalize() if len(did) == 1 else ", ".join(did[:-1]).capitalize() + " and " + did[-1],

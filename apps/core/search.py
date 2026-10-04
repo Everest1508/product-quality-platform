@@ -7,6 +7,8 @@ only for owners and admins, who can open an attendance page for them; everyone
 else would get a name with nowhere to go.
 """
 
+import re
+
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.http import JsonResponse
@@ -16,6 +18,8 @@ from django.views import View
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.products.access import accessible_error_groups, accessible_products, accessible_tickets
 
+_TICKET_KEY = re.compile(r"^([A-Za-z][A-Za-z0-9]{1,5}?)[-\s]?0*(\d+)$")
+_BARE_KEY = re.compile(r"^[A-Za-z][A-Za-z0-9]{1,5}$")
 LIMITS = {"tickets": 6, "errors": 5, "products": 4, "people": 5, "pages": 6}
 MIN_QUERY = 2
 
@@ -75,6 +79,13 @@ def search(request, query):
     ticket_filter = Q(title__icontains=query)
     if number.isdigit():
         ticket_filter |= Q(pk=int(number))
+    # AUM-14, aum14 and "aum 14" find that product's ticket number 14. A bare key
+    # such as AUM lists the product's newest tickets.
+    keyed = _TICKET_KEY.match(query)
+    if keyed:
+        ticket_filter |= Q(product__key__iexact=keyed.group(1), number=int(keyed.group(2)))
+    elif _BARE_KEY.match(query):
+        ticket_filter |= Q(product__key__iexact=query)
     tickets = (
         accessible_tickets(user, company)
         .filter(ticket_filter)
@@ -83,7 +94,7 @@ def search(request, query):
     )
     ticket_items = [
         {
-            "title": f"#{t.pk} {t.title}",
+            "title": f"{t.key} {t.title}",
             "subtitle": " · ".join(x for x in (t.product.name if t.product else "", t.get_status_display()) if x),
             "url": reverse("tickets:ticket_detail", args=[t.pk]),
         }
