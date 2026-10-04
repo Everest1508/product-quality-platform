@@ -1,22 +1,40 @@
-<div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+<div id="api-key-row-{{ api_key.pk }}" class="key-row" style="padding:10px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
   <div class="flex-between">
     <span class="text-sm font-medium">{{ api_key.name }}</span>
-    {% if api_key.is_active %}
-    <span class="pill active">Active</span>
-    {% else %}
-    <span class="pill closed">Revoked</span>
-    {% endif %}
+    {% with state=api_key.state %}
+      {% if state == 'active' %}<span class="pill active">Active</span>
+      {% elif state == 'expiring' %}<span class="pill progress" title="Stops working {{ api_key.expires_at|date:'M j, H:i' }}">Ends {{ api_key.expires_at|timeuntil }} from now</span>
+      {% elif state == 'expired' %}<span class="pill high">Expired</span>
+      {% else %}<span class="pill closed">Revoked</span>{% endif %}
+    {% endwith %}
   </div>
-  <div class="text-sm text-muted" style="margin-top:2px;">{{ api_key.prefix }}...</div>
-  {% if api_key.is_active %}
-  <form method="post" action="{% url 'products:api_key_revoke' pk=api_key.pk %}"
-        hx-post="{% url 'products:api_key_revoke' pk=api_key.pk %}"
-        hx-target="closest div"
-        hx-swap="outerHTML"
-        hx-confirm="Revoke this API key?"
-        style="margin-top:4px;">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger" style="font-size:11px;padding:2px 8px;">Revoke</button>
-  </form>
+  <div class="text-sm text-muted" style="margin-top:2px;">
+    <code>{{ api_key.prefix }}...</code> · created {{ api_key.created_at|date:"M j, Y" }} ·
+    {% if api_key.last_used_at %}last used {{ api_key.last_used_at|timesince }} ago{% else %}never used{% endif %}
+  </div>
+  {% if api_key.is_usable and can_manage_keys %}
+  <div class="key-actions">
+    <form method="post" action="{% url 'products:api_key_rotate' pk=api_key.pk %}"
+          hx-post="{% url 'products:api_key_rotate' pk=api_key.pk %}"
+          hx-target="#api-key-created" hx-swap="innerHTML"
+          hx-confirm="Make a new key for this product? Update your app to use it.">
+      {% csrf_token %}
+      <label class="sr-only" for="grace-{{ api_key.pk }}">What happens to the old key</label>
+      <select id="grace-{{ api_key.pk }}" name="grace" class="form-input key-grace">
+        <option value="1d">Old key works 24 more hours</option>
+        <option value="7d">Old key works 7 more days</option>
+        <option value="now">Stop the old key now</option>
+      </select>
+      <button type="submit" class="btn" style="font-size:11px;padding:3px 9px;">Rotate</button>
+    </form>
+    <form method="post" action="{% url 'products:api_key_revoke' pk=api_key.pk %}"
+          hx-post="{% url 'products:api_key_revoke' pk=api_key.pk %}"
+          hx-target="closest .key-row"
+          hx-swap="outerHTML"
+          hx-confirm="Revoke this API key? Apps using it stop working immediately.">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger" style="font-size:11px;padding:3px 9px;">Revoke</button>
+    </form>
+  </div>
   {% endif %}
 </div>

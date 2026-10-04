@@ -1,0 +1,106 @@
+{% extends "core/base.html" %}
+
+{% block title %}API — {{ product.name }} — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">API</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Send data to {{ product.name }}</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Report errors, collect feedback and open tickets from your own app with one key and a few lines of code.</p>
+  </div>
+  <div class="head-actions">
+    <a href="{% url 'products:product_detail' pk=product.pk %}#api-key-list" class="btn btn-sm">Manage keys</a>
+  </div>
+</div>
+
+<div x-data="{ lang: 'curl', copied: '',
+  init() { try { const l = localStorage.getItem('pqApiLang'); if (l) this.lang = l; } catch (e) {} },
+  pick(l) { this.lang = l; try { localStorage.setItem('pqApiLang', l); } catch (e) {} },
+  copy(id) { const t = document.getElementById(id).textContent; navigator.clipboard.writeText(t).then(() => { this.copied = id; setTimeout(() => this.copied = '', 1800); }); }
+}" class="api-docs">
+
+  <section class="card api-card">
+    <h2>Start in three steps</h2>
+    <ol class="api-steps">
+      <li><b>Make a key.</b> Keys belong to one product. {% if can_manage_keys %}<a href="{% url 'products:product_detail' pk=product.pk %}#api-key-list">Create one</a> on the product page.{% else %}Ask an owner, admin or developer for one.{% endif %} It is shown once.</li>
+      <li><b>Send a request.</b> Put the key in an <code>Authorization: Bearer</code> header and POST JSON to <code>{{ base_url }}api/v1/errors/capture/</code>.</li>
+      <li><b>Look in <a href="{% url 'products:product_errors' pk=product.pk %}">Errors</a>.</b> It appears within a second, grouped with matching errors.</li>
+    </ol>
+    <dl class="api-meta">
+      <div><dt>Base URL</dt><dd><code>{{ base_url }}api/v1/</code></dd></div>
+      <div><dt>Authentication</dt><dd><code>Authorization: Bearer YOUR_API_KEY</code></dd></div>
+      <div><dt>Format</dt><dd>JSON in, JSON out</dd></div>
+      <div><dt>Limit</dt><dd>600 requests a minute per key</dd></div>
+    </dl>
+    <p class="text-sm text-muted" style="margin:10px 0 0;">Use <code>https</code> in production. Never put a key in front-end code that anyone can read. Send from your server, or use a key you are happy to rotate.</p>
+  </section>
+
+  <div class="api-langs" role="tablist" aria-label="Language">
+    <button type="button" role="tab" :aria-selected="(lang === 'curl').toString()" :class="{ 'is-on': lang === 'curl' }" @click="pick('curl')">curl</button>
+    <button type="button" role="tab" :aria-selected="(lang === 'python').toString()" :class="{ 'is-on': lang === 'python' }" @click="pick('python')">Python</button>
+    <button type="button" role="tab" :aria-selected="(lang === 'javascript').toString()" :class="{ 'is-on': lang === 'javascript' }" @click="pick('javascript')">JavaScript</button>
+    <button type="button" role="tab" :aria-selected="(lang === 'php').toString()" :class="{ 'is-on': lang === 'php' }" @click="pick('php')">PHP</button>
+  </div>
+
+  {% for e in endpoints %}
+  <section class="card api-card" id="{{ e.key }}">
+    <div class="api-endpoint"><span class="api-method m-{{ e.method|lower }}">{{ e.method }}</span><code>{{ e.path }}</code></div>
+    <h2>{{ e.title }}</h2>
+    <p>{{ e.summary }}</p>
+
+    {% if e.fields %}
+    <table class="api-fields">
+      <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>What it is</th></tr></thead>
+      <tbody>
+        {% for f in e.fields %}
+        <tr>
+          <td><code>{{ f.name }}</code></td>
+          <td>{{ f.type }}{% if f.limits %}<div class="sub">{{ f.limits }}</div>{% endif %}</td>
+          <td>{% if f.required %}<b>Yes</b>{% else %}No{% endif %}</td>
+          <td>{{ f.note }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <div class="api-code">
+      {% for lang_code, code in e.snippets.items %}
+      <div x-show="lang === '{{ lang_code }}'" {% if not forloop.first %}style="display:none;"{% endif %}>
+        <button type="button" class="api-copy" @click="copy('snip-{{ e.key }}-{{ lang_code }}')" x-text="copied === 'snip-{{ e.key }}-{{ lang_code }}' ? 'Copied' : 'Copy'">Copy</button>
+        <pre id="snip-{{ e.key }}-{{ lang_code }}"><code>{{ code }}</code></pre>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="api-resp"><span class="dc-label">Response</span><pre><code>{{ e.response }}</code></pre></div>
+    {% for n in e.notes %}<p class="api-note">{{ n }}</p>{% endfor %}
+  </section>
+  {% endfor %}
+
+  <section class="card api-card">
+    <h2>If something goes wrong</h2>
+    <table class="api-fields">
+      <tbody>{% for code, text in error_codes %}<tr><td><code>{{ code }}</code></td><td>{{ text }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+
+  <section class="card api-card">
+    <h2>Keys for this product</h2>
+    {% for k in keys %}
+    <div class="api-key"><code>{{ k.prefix }}...</code> <span>{{ k.name }}</span>
+      <span class="pill {% if k.state == 'active' %}active{% elif k.state == 'expiring' %}progress{% elif k.state == 'expired' %}high{% else %}closed{% endif %}">{{ k.state|title }}</span>
+      <span class="text-sm text-muted">{% if k.last_used_at %}used {{ k.last_used_at|timesince }} ago{% else %}never used{% endif %}</span>
+    </div>
+    {% empty %}<p class="text-sm text-muted">No keys yet.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

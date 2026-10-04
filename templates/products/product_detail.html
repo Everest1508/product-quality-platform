@@ -151,7 +151,7 @@
     <div class="text-sm font-medium">API Keys</div>
     <span class="count-badge">{{ product.api_keys.all|length }}</span>
   </div>
-  <p class="text-sm text-muted" style="margin-bottom:12px;">Use an API key to report errors and feedback from your application.</p>
+  <p class="text-sm text-muted" style="margin-bottom:12px;">Use an API key to report errors and feedback from your application. <a href="{% url 'products:product_api' pk=product.pk %}" style="color:var(--accent);font-weight:500;">See how to use it</a>.</p>
   <div id="api-key-list">
     {% for key in product.api_keys.all %}
     {% include "products/partials/_api_key_row.html" with api_key=key %}
@@ -160,6 +160,7 @@
     {% endfor %}
   </div>
   <div id="api-key-created"></div>
+  {% if can_manage_keys %}
   <form method="post" action="{% url 'products:api_key_create' pk=product.pk %}"
         hx-post="{% url 'products:api_key_create' pk=product.pk %}"
         hx-target="#api-key-created" hx-swap="innerHTML" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
@@ -169,6 +170,9 @@
       <button type="submit" class="btn btn-primary">Generate</button>
     </div>
   </form>
+  {% else %}
+  <p class="text-sm text-muted" style="margin-top:12px;">Owners, admins and developers can create and rotate keys.</p>
+  {% endif %}
 </div>
 
 {% if is_privileged %}

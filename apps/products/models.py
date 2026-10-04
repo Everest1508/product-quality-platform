@@ -138,6 +138,9 @@ class APIKey(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
+    # Set when a key is rotated with a grace period: it keeps working until then,
+    # so the application can be switched to the new key without an outage.
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     objects = APIKeyManager()
 
@@ -160,6 +163,21 @@ class APIKey(models.Model):
         )
         return api_key, raw_key
 
+    @property
+    def state(self):
+        """revoked, expired, expiring (still works, has an end date) or active."""
+        from django.utils import timezone
+
+        if not self.is_active or self.revoked_at:
+            return "revoked"
+        if self.expires_at:
+            return "expired" if self.expires_at <= timezone.now() else "expiring"
+        return "active"
+
+    @property
+    def is_usable(self):
+        return self.state in ("active", "expiring")
+
     @classmethod
     def validate_key(cls, raw_key):
         key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
@@ -170,6 +188,8 @@ class APIKey(models.Model):
                 revoked_at__isnull=True,
             )
             from django.utils import timezone
+            if api_key.expires_at and api_key.expires_at <= timezone.now():
+                return None
             api_key.last_used_at = timezone.now()
             api_key.save(update_fields=["last_used_at"])
             return api_key
