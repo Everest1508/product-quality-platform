@@ -36,6 +36,7 @@ also included on its own from the htmx punch path, which never renders rows.
         {% if record.is_complete %}{{ record.worked_formatted }}
         {% elif record.is_open %}<span class="text-muted">{{ record.effective_formatted|default:record.elapsed_formatted }}</span>
         {% else %}<span class="text-muted">—</span>{% endif %}
+        {% if record.day_pct %}<span class="day-bar" aria-hidden="true"><i style="width:{{ record.day_pct }}%"></i></span>{% endif %}
       </td>
       <td>
         {% if record.is_stale %}<span class="pill high" title="Checked in {{ record.open_days }} day(s) ago and never checked out. Hours shown are capped at one working day until this is corrected.">No check-out</span>

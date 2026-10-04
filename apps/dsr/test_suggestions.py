@@ -164,7 +164,7 @@ class AddViewTest(Base):
         self.add()
         e = DSREntry.objects.get()
         self.assertEqual((e.user, e.ticket, e.hours_spent, e.category, e.is_auto_logged), (self.dev, self.t, Decimal("1.50"), "bug_fix", False))
-        self.assertEqual(e.task_name, f"#{self.t.pk} Login bug")
+        self.assertEqual(e.task_name, f"{self.t.key} Login bug")
 
     def test_the_htmx_reply_is_the_refreshed_table_without_that_suggestion(self):
         page = self.client.post(self.url(), {"ticket_id": self.t.pk, "hours": "1", "date": self.today.isoformat()}, headers={"HX-Request": "true"})

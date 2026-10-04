@@ -28,7 +28,7 @@
     <button type="button" class="dc-chip" onclick="dsrFill(this)"
             data-target="{{ form.task_name.id_for_label }}" data-value="{{ t.label }}"
             data-category-target="{{ form.category.id_for_label }}" data-category="ticket"
-            title="{{ t.label }}">#{{ t.number }} {{ t.title|truncatechars:34 }}</button>
+            title="{{ t.label }}">{{ t.key }} {{ t.title|truncatechars:34 }}</button>
     {% endfor %}
   </div>
   {% endif %}

@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
 
-{% block title %}#{{ ticket.pk }} — PQ Platform{% endblock %}
+{% block title %}{{ ticket.key }} — PQ Platform{% endblock %}
 
 {% block content %}
 <nav class="breadcrumbs">
@@ -10,11 +10,11 @@
   <a href="{% url 'products:product_detail' pk=ticket.product.pk %}">{{ ticket.product.name }}</a>
   <span class="sep">/</span>
   {% endif %}
-  <span class="current">#{{ ticket.pk }}</span>
+  <span class="current">{{ ticket.key }}</span>
 </nav>
 
 <div class="head">
-  <h1>#{{ ticket.pk }} <span class="count">{{ ticket.title }}</span></h1>
+  <h1>{{ ticket.key }} <span class="count">{{ ticket.title }}</span></h1>
   {% include "tickets/partials/_ticket_viewers.html" %}
   <div class="head-actions">
     {% if ticket.product %}
@@ -27,7 +27,7 @@
       Edit Ticket
     </a>
     {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
-    <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
+    <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket {{ ticket.key }}? This cannot be undone.')" style="display:inline;">
       {% csrf_token %}
       <button type="submit" class="btn btn-danger" title="Delete ticket" aria-label="Delete ticket" style="display:inline-flex;align-items:center;gap:6px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>

@@ -67,10 +67,10 @@
       {% csrf_token %}
       <input type="hidden" name="ticket_id" value="{{ s.number }}">
       <span class="dsr-sugg-what">
-        <span class="dsr-sugg-title">#{{ s.number }} {{ s.title }}</span>
+        <span class="dsr-sugg-title">{{ s.key }} {{ s.title }}</span>
         <span class="dsr-sugg-did">{% if s.product %}{{ s.product }} · {% endif %}{{ s.did }}</span>
       </span>
-      <label class="dsr-sugg-hours"><span class="sr-only">Hours for #{{ s.number }}</span>
+      <label class="dsr-sugg-hours"><span class="sr-only">Hours for {{ s.key }}</span>
         <input type="number" name="hours" class="form-input" step="0.25" min="0.25" max="24" value="{{ s.hours }}" inputmode="decimal">
         <span>h</span>
       </label>

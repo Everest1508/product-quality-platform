@@ -43,13 +43,38 @@
           <div class="form-row">
             <div class="form-group">
               <label for="name">Name</label>
-              <input id="name" type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" placeholder="My App" required autofocus>
+              <input id="name" type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" placeholder="My App" required autofocus {% if not editing %}oninput="window.dispatchEvent(new CustomEvent('product-name', { detail: this.value }))"{% endif %}>
               {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
             </div>
             <div class="form-group">
               <span class="dd-label">Default Environment</span>
               {% dropdown "default_environment" "production:Production|staging:Staging"|opts form.default_environment.value placeholder="Production" label="Default Environment" %}
             </div>
+          </div>
+          {% comment %}
+          The prefix follows the name while it is being typed, until someone edits the
+          prefix by hand. An existing product keeps its prefix when renamed, because
+          every ticket name already uses it.
+          {% endcomment %}
+          <div class="form-group" x-data="{ key: '{{ form.key.value|default:'' }}', auto: {% if form.key.value %}false{% else %}true{% endif %}, busy: false,
+                 suggest(name) {
+                   if (!this.auto) return;
+                   clearTimeout(this._t);
+                   this._t = setTimeout(() => {
+                     if (!name.trim()) { this.key = ''; return; }
+                     this.busy = true;
+                     fetch('{% url 'products:product_key_suggest' %}?name=' + encodeURIComponent(name){% if editing %} + '&product={{ product.pk }}'{% endif %}, { credentials: 'same-origin' })
+                       .then(r => r.ok ? r.json() : null)
+                       .then(d => { if (d && this.auto) this.key = d.key; })
+                       .catch(() => {})
+                       .finally(() => { this.busy = false; });
+                   }, 250);
+                 } }"
+               @product-name.window="suggest($event.detail)">
+            <label for="key">Ticket prefix</label>
+            <input id="key" type="text" name="key" x-model="key" @input="auto = false; key = key.toUpperCase().replace(/[^A-Z0-9]/g, '')" maxlength="6" class="form-input" placeholder="Made from the name" autocomplete="off" style="max-width:240px;text-transform:uppercase;">
+            {% if form.key.errors %}<p class="field-error">{{ form.key.errors.0 }}</p>{% endif %}
+            <p class="field-hint">Tickets are named with it, for example <b x-text="(key || 'ABC') + '-001'"></b>. <span x-show="auto && key" style="display:none;">Taken from the name. Type here to choose your own.</span>{% if editing %} Changing it renames every ticket of this product, so old links in chat will not match the new name.{% endif %}</p>
           </div>
           <div class="form-group" style="margin-bottom:0;">
             <label for="description">Description</label>

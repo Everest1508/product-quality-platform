@@ -201,14 +201,14 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",
-                f"Ticket #{ticket.pk} created",
+                f"Ticket {ticket.key} created",
                 description=ticket.title,
                 actor=request.user,
                 target_content_type="ticket",
                 target_object_id=ticket.pk,
                 metadata={"product_id": ticket.product_id},
             )
-            messages.success(request, f"Ticket #{ticket.pk} created.")
+            messages.success(request, f"Ticket {ticket.key} created.")
             return redirect("tickets:ticket_detail", pk=ticket.pk)
         return render(request, "tickets/ticket_form.html", {"form": form})
 
@@ -235,14 +235,14 @@ class TicketEditView(CompanyMemberRequiredMixin, View):
             ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
             log_activity(
                 request.company, "ticket_updated",
-                f"Ticket #{ticket.pk} updated",
+                f"Ticket {ticket.key} updated",
                 description=ticket.title,
                 actor=request.user,
                 target_content_type="ticket",
                 target_object_id=ticket.pk,
                 metadata={"product_id": ticket.product_id},
             )
-            messages.success(request, f"Ticket #{ticket.pk} updated.")
+            messages.success(request, f"Ticket {ticket.key} updated.")
             url_name, kwargs = _ticket_redirect(ticket)
             return redirect(url_name, **kwargs)
         assignee_selected_ids = request.POST.getlist("assignees")
@@ -295,7 +295,7 @@ class TicketPriorityView(CompanyMemberRequiredMixin, View):
             ticket.save(update_fields=["priority", "updated_at"])
             log_activity(
                 request.company, "ticket_priority_changed",
-                f"Ticket #{ticket.pk} priority changed to {ticket.get_priority_display()}",
+                f"Ticket {ticket.key} priority changed to {ticket.get_priority_display()}",
                 actor=request.user,
                 target_content_type="ticket",
                 target_object_id=ticket.pk,
@@ -334,7 +334,7 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
             notify_ticket_status_changed(ticket, old_display)
             log_activity(
                 request.company, "ticket_status_changed",
-                f"Ticket #{ticket.pk} status changed",
+                f"Ticket {ticket.key} status changed",
                 description=f"{old_display} → {ticket.get_status_display()}",
                 actor=request.user,
                 target_content_type="ticket",
@@ -388,7 +388,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
         notify_ticket_assigned(ticket)
         log_activity(
             request.company, "ticket_assigned",
-            f"Ticket #{ticket.pk} assigned",
+            f"Ticket {ticket.key} assigned",
             description=f"Assigned to {names}",
             actor=request.user,
             target_content_type="ticket",
@@ -437,7 +437,7 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             self._notify(request, ticket, body, mentioned)
             log_activity(
                 request.company, "ticket_commented",
-                f"Comment on ticket #{ticket.pk}",
+                f"Comment on ticket {ticket.key}",
                 description=body[:200],
                 actor=request.user,
                 target_content_type="ticket",
@@ -465,7 +465,7 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             mentioned,
             company=request.company,
             kind=Notification.Kind.MENTION,
-            title=f"{who} mentioned you on ticket #{ticket.pk}",
+            title=f"{who} mentioned you on ticket {ticket.key}",
             body=snippet,
             url=url,
             actor=request.user,
@@ -478,7 +478,7 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             watchers,
             company=request.company,
             kind=Notification.Kind.COMMENT,
-            title=f"{who} commented on ticket #{ticket.pk}",
+            title=f"{who} commented on ticket {ticket.key}",
             body=snippet,
             url=url,
             actor=request.user,
@@ -497,7 +497,7 @@ class TicketDeadlineView(CompanyMemberRequiredMixin, View):
             ticket.save(update_fields=["deadline", "updated_at"])
             log_activity(
                 request.company, "ticket_deadline_changed",
-                f"Ticket #{ticket.pk} deadline changed",
+                f"Ticket {ticket.key} deadline changed",
                 description=(
                     f"from {old_deadline:%Y-%m-%d %H:%M} to {ticket.deadline:%Y-%m-%d %H:%M}"
                     if old_deadline and ticket.deadline
@@ -530,19 +530,20 @@ class TicketDeleteView(CompanyMemberRequiredMixin, View):
         if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
             return HttpResponseForbidden("You can only delete tickets you created.")
         ticket_id = ticket.pk
+        ticket_key = ticket.key
         product_id = ticket.product_id
         title = ticket.title
         ticket.delete()
         log_activity(
             request.company, "ticket_deleted",
-            f"Ticket #{ticket_id} deleted",
+            f"Ticket {ticket_key} deleted",
             description=title,
             actor=request.user,
             target_content_type="ticket",
             target_object_id=ticket_id,
             metadata={"product_id": product_id},
         )
-        messages.success(request, f"Ticket #{ticket_id} deleted.")
+        messages.success(request, f"Ticket {ticket_key} deleted.")
 
         if product_id:
             return redirect("products:product_board", pk=product_id)
@@ -567,12 +568,13 @@ class TicketBulkDeleteView(CompanyMemberRequiredMixin, View):
             if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
                 continue
             ticket_id = ticket.pk
+            ticket_key = ticket.key
             product_id = ticket.product_id
             title = ticket.title
             ticket.delete()
             log_activity(
                 request.company, "ticket_deleted",
-                f"Ticket #{ticket_id} deleted",
+                f"Ticket {ticket_key} deleted",
                 description=title,
                 actor=request.user,
                 target_content_type="ticket",

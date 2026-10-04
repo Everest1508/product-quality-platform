@@ -97,14 +97,62 @@ class Ticket(TenantScopedModel):
         blank=True,
         related_name="tickets",
     )
+    # Position within the product (1, 2, 3...). Shown as AUM-001 with the product key.
+    number = models.PositiveIntegerField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta(TenantScopedModel.Meta):
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "number"],
+                condition=models.Q(number__isnull=False),
+                name="ticket_number_unique_per_product",
+            ),
+        ]
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        # Remember which product the number was issued by, so moving a ticket to
+        # another product can hand it a number from that product instead.
+        instance._number_product_id = instance.__dict__.get("product_id")
+        return instance
+
+    def save(self, *args, **kwargs):
+        moved = (
+            not self._state.adding
+            and getattr(self, "_number_product_id", self.product_id) != self.product_id
+        )
+        if self.product_id is None:
+            self.number = None
+        elif self.number is None or moved:
+            self.number = self._next_number()
+        super().save(*args, **kwargs)
+        self._number_product_id = self.product_id
+
+    def _next_number(self):
+        from django.db import transaction
+        from django.db.models import F
+
+        from apps.products.models import Product
+
+        # One UPDATE, then a read, inside a transaction: two tickets created at the
+        # same moment cannot be given the same number.
+        with transaction.atomic():
+            Product.objects.filter(pk=self.product_id).update(ticket_counter=F("ticket_counter") + 1)
+            return Product.objects.values_list("ticket_counter", flat=True).get(pk=self.product_id)
+
+    @property
+    def key(self):
+        """AUM-001, or #12 for a ticket that has no product."""
+        if self.product_id and self.number:
+            return f"{self.product.key}-{self.number:03d}"
+        return f"#{self.pk}"
 
     def __str__(self):
-        return f"#{self.pk} {self.title}"
+        return f"{self.key} {self.title}"
 
     def can_transition_to(self, new_status):
         return new_status in dict(Ticket.Status.choices)
@@ -153,7 +201,7 @@ class Ticket(TenantScopedModel):
                 added,
                 company=self.company,
                 kind=Notification.Kind.ASSIGNED,
-                title=f"You were assigned ticket #{self.pk}",
+                title=f"You were assigned ticket {self.key}",
                 body=self.title,
                 url=f"/tickets/{self.pk}/",
                 actor=actor,

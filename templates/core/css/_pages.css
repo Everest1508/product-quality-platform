@@ -201,3 +201,58 @@ a.dsr-title:hover{color:var(--accent);}
 
 .count-cell{white-space:nowrap;}
 .overdue-badge{display:inline-block;font-size:11px;font-weight:600;color:var(--red);background:var(--red-bg);border-radius:4px;padding:1px 7px;}
+
+/* ---- My attendance ---- */
+@media (min-width:1000px){
+  /* Punch card on the left, the week beside it, instead of one tall column. */
+  .punch{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:14px;align-items:stretch;}
+  .punch > .punch-hero{grid-column:1;}
+  .punch > .punch-week{grid-column:2;display:flex;flex-direction:column;}
+  .punch > .punch-warn,.punch > .punch-message{grid-column:1 / -1;}
+  .punch-week .week-bars{flex:1;align-items:stretch;}
+  .punch-week .week-bar{height:100%;min-height:92px;max-width:none;}
+}
+.punch-hero{border-radius:18px;padding:24px 26px;}
+.punch-week{border-radius:18px;padding:16px 18px 14px;}
+.week-hrs{font-style:normal;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.week-day.is-today .week-hrs{color:var(--accent);font-weight:650;}
+
+.month-glance{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 18px 12px;margin-bottom:18px;}
+.month-glance-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.month-glance h2{font-size:15px;font-weight:650;margin:0;}
+.month-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);}
+.month-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+.month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;}
+.month-dows{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:6px;font-size:10.5px;color:var(--muted);text-align:center;}
+.mg{display:grid;place-items:center;aspect-ratio:auto;height:34px;border-radius:8px;font-size:11.5px;font-variant-numeric:tabular-nums;background:var(--panel);color:var(--muted);}
+.mg b{font-weight:600;}
+.mg-full{background:var(--green);color:var(--on-accent);}
+.mg-part{background:color-mix(in srgb,var(--green) 38%,var(--surface));color:var(--text);}
+.mg-open{background:var(--accent);color:var(--on-accent);}
+.mg-stale{background:var(--orange-bg);color:var(--orange);box-shadow:inset 0 0 0 1.5px var(--orange);}
+.mg-none{background:var(--surface);color:var(--muted);box-shadow:inset 0 0 0 1px var(--border);}
+.mg-rest,.mg-future{background:var(--panel);color:var(--muted-2);}
+.mg.is-today{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent);}
+.month-legend .mg-full{background:var(--green);}
+.month-legend .mg-part{background:color-mix(in srgb,var(--green) 38%,var(--surface));}
+.month-legend .mg-open{background:var(--accent);}
+.month-legend .mg-stale{background:var(--orange-bg);box-shadow:inset 0 0 0 1.5px var(--orange);}
+.month-legend .mg-none{background:var(--surface);box-shadow:inset 0 0 0 1px var(--border-strong);}
+.month-glance-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;}
+@media (min-width:1000px){.month-glance-grid{grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr);gap:32px;align-items:start;}}
+.month-key{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;align-self:center;}
+.month-key li{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.month-key li:last-child{border-bottom:none;}
+.month-key i{width:12px;height:12px;border-radius:4px;display:block;}
+.month-key b{font-variant-numeric:tabular-nums;font-size:15px;}
+.month-key .mg-full{background:var(--green);}
+.month-key .mg-part{background:color-mix(in srgb,var(--green) 38%,var(--surface));}
+.month-key .mg-open{background:var(--accent);}
+.month-key .mg-stale{background:var(--orange-bg);box-shadow:inset 0 0 0 1.5px var(--orange);}
+.month-key .mg-none{background:var(--surface);box-shadow:inset 0 0 0 1px var(--border-strong);}
+
+.day-bar{display:block;width:84px;height:4px;border-radius:99px;background:var(--line);margin-top:5px;overflow:hidden;}
+.day-bar i{display:block;height:100%;border-radius:99px;background:var(--green);}
+.history-card table td{padding-top:11px;padding-bottom:11px;}
+.history-card table tbody tr:hover td{background:var(--panel);}
+@media (max-width:640px){.mg{height:30px;}.month-legend{gap:8px 12px;}}
