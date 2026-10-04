@@ -14,6 +14,7 @@
 
 <div class="head">
   <h1 style="font-size:17px;">#{{ ticket.pk }} {{ ticket.title }}</h1>
+  {% include "tickets/partials/_ticket_viewers.html" %}
   <div class="head-actions">
     {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
     <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket #{{ ticket.pk }}? This cannot be undone.')" style="display:inline;">
@@ -70,15 +71,5 @@
 <div id="comment-list">
   {% include "tickets/partials/_comment_list.html" with comments=comments %}
 </div>
-<form method="post" action="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
-      hx-post="{% url 'tickets:ticket_comment' pk=ticket.pk %}"
-      hx-target="#comment-list"
-      hx-swap="innerHTML"
-      hx-on::after-request="this.reset();">
-  {% csrf_token %}
-  <div class="form-group">
-    <textarea name="body" class="form-input" rows="3" placeholder="Add a comment..." required></textarea>
-  </div>
-  <button type="submit" class="btn btn-primary">Add Comment</button>
-</form>
+{% include "tickets/partials/_comment_form.html" %}
 {% endblock %}

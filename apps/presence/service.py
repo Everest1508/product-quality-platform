@@ -45,6 +45,14 @@ _ACTIVITY = [
     (r"^/profile/", "On their profile"),
 ]
 _COMPILED = [(re.compile(pattern), label) for pattern, label in _ACTIVITY]
+# The ticket a page belongs to, so a ticket can show who else has it open. Only a
+# ticket number is exposed, the same number the activity label already carries.
+_TICKET_PATH = re.compile(r"^/(?:products/\d+/)?tickets/(\d+)/?$")
+
+
+def ticket_id_for(path):
+    match = _TICKET_PATH.match((path or "")[:255])
+    return int(match.group(1)) if match else None
 
 
 def activity_for(path):
@@ -110,6 +118,7 @@ def snapshot(company):
                 "status": "online" if active else "away",
                 "activity": lead.activity if active else "Away from the keyboard",
                 "tabs": len(user_sessions),
+                "ticket_id": ticket_id_for(lead.path) if active else None,
                 "clocked_in_at": clocked_in[user_id].isoformat() if user_id in clocked_in else None,
                 "tickets_in_progress": busy.get(user_id, 0),
                 "since": min(s.connected_at for s in user_sessions).isoformat(),

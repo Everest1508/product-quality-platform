@@ -15,8 +15,11 @@ from apps.products.access import (
     user_has_product_access,
 )
 from apps.products.models import Product
+from apps.notifications import service
+from apps.notifications.models import Notification
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
 from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
+from apps.tickets import mentions
 from apps.tickets.models import Ticket, TicketComment
 
 User = get_user_model()
@@ -246,7 +249,7 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             company=request.company,
         )
         require_ticket_access(request, ticket)
-        comments = ticket.comments.select_related("author").all()
+        comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
         comment_form = TicketCommentForm()
 
         members = User.objects.filter(
@@ -260,6 +263,7 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             "ticket": ticket,
             "comments": comments,
             "comment_form": comment_form,
+            "mention_candidates": mentions.candidates_json(ticket, request.company),
             "members": members,
             "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": Ticket.Status.choices,
@@ -408,16 +412,20 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
         form = TicketCommentForm(request.POST)
 
         if form.is_valid():
-            TicketComment.objects.create(
+            body = form.cleaned_data["body"]
+            comment = TicketComment.objects.create(
                 ticket=ticket,
                 company=request.company,
                 author=request.user,
-                body=form.cleaned_data["body"],
+                body=body,
             )
+            mentioned = mentions.resolve(body, ticket, request.company)
+            comment.mentions.set(mentioned)
+            self._notify(request, ticket, body, mentioned)
             log_activity(
                 request.company, "ticket_commented",
                 f"Comment on ticket #{ticket.pk}",
-                description=form.cleaned_data["body"][:200],
+                description=body[:200],
                 actor=request.user,
                 target_content_type="ticket",
                 target_object_id=ticket.pk,
@@ -426,12 +434,42 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             messages.success(request, "Comment added.")
 
         if request.headers.get("HX-Request") == "true":
-            comments = ticket.comments.select_related("author").all()
+            comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
             return render(request, "tickets/partials/_comment_list.html", {
                 "comments": comments,
             })
         url_name, kwargs = _ticket_redirect(ticket)
         return redirect(url_name, **kwargs)
+
+    @staticmethod
+    def _notify(request, ticket, body, mentioned):
+        """Mentioned people get a mention; the assignees and the creator get a
+        plain comment notice. Nobody gets both, and the author gets neither."""
+        who = request.user.get_full_name() or request.user.username
+        snippet = body.strip().replace("\n", " ")[:140]
+        url = f"/tickets/{ticket.pk}/"
+        service.notify_many(
+            mentioned,
+            company=request.company,
+            kind=Notification.Kind.MENTION,
+            title=f"{who} mentioned you on ticket #{ticket.pk}",
+            body=snippet,
+            url=url,
+            actor=request.user,
+        )
+        already = {u.pk for u in mentioned}
+        watchers = [u for u in ticket.assignees.all() if u.pk not in already]
+        if ticket.created_by and ticket.created_by.pk not in already:
+            watchers.append(ticket.created_by)
+        service.notify_many(
+            watchers,
+            company=request.company,
+            kind=Notification.Kind.COMMENT,
+            title=f"{who} commented on ticket #{ticket.pk}",
+            body=snippet,
+            url=url,
+            actor=request.user,
+        )
 
 
 class TicketDeadlineView(CompanyMemberRequiredMixin, View):

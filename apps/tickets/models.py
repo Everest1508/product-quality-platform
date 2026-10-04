@@ -173,6 +173,12 @@ class TicketComment(TenantScopedModel):
         blank=True,
     )
     body = models.TextField()
+    # People named with @username who can open the ticket. See tickets/mentions.py.
+    mentions = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="+",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta(TenantScopedModel.Meta):

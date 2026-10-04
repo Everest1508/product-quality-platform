@@ -491,6 +491,7 @@ class ProductTicketBulkDeleteView(CompanyMemberRequiredMixin, View):
 
 class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk, ticket_pk):
+        from apps.tickets import mentions
         from apps.tickets.forms import TicketCommentForm
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
@@ -499,7 +500,7 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
             product.tickets.select_related("assigned_to", "created_by", "linked_error_group"),
             pk=ticket_pk,
         )
-        comments = ticket.comments.select_related("author").all()
+        comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
         members = __import__("django.contrib.auth", fromlist=["get_user_model"]).get_user_model().objects.filter(
             memberships__company=request.company
         ).order_by("username")
@@ -508,6 +509,7 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
         return render(request, "products/product_ticket_detail.html", {
             "product": product, "ticket": ticket, "comments": comments,
             "comment_form": TicketCommentForm(), "members": members,
+            "mention_candidates": mentions.candidates_json(ticket, request.company),
             "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": __import__("apps.tickets.models", fromlist=["Ticket"]).Ticket.Status.choices,
         })
