@@ -90,7 +90,10 @@ class AuditLogFilterLabellingTest(TestCase):
         the label has to be. `assertTrue` still guards against this passing
         vacuously if the page ever stops rendering any dropdown at all.
         """
-        triggers = re.findall(r"<summary\b[^>]*>", self.body)
+        # Markup only: the changelog dialog's script builds <summary> strings of
+        # its own at runtime, which are not dropdowns on this page.
+        markup = re.sub(r"<script\b.*?</script>", "", self.body, flags=re.S)
+        triggers = re.findall(r"<summary\b[^>]*>", markup)
         self.assertTrue(triggers)
         for tag in triggers:
             with self.subTest(tag=tag):
