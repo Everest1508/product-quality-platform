@@ -86,28 +86,42 @@
   // The API already returns escaped, allow-listed HTML for each bullet (bold,
   // code and http/https links only), so items go in via innerHTML on purpose.
   // Anything interpolated here from the response shape is escaped first.
-  function releaseHtml(rel, headingTag) {
+  function releaseHtml(rel, headingTag, collapsible) {
     var sections = sectionsFor(rel);
     if (!sections.length) return '';
-    var html = '<section class="changelog-rel">';
-    html += '<div class="changelog-rel-head">';
-    html += '<' + headingTag + '>' + esc(rel.heading || rel.title || 'Updates') + '</' + headingTag + '>';
-    // A tag is only informative once something has been tagged; every block here
-    // still says "Unreleased", so it is a badge and not the heading.
-    html += rel.released
-      ? '<span class="changelog-tag">' + esc(rel.tag) + '</span>'
+    var total = countItems(rel, 'all');
+    var title = esc(rel.heading || rel.title || 'Updates');
+    // A tag is only informative once something has been tagged; a block still
+    // marked Unreleased gets a badge and not the heading.
+    var tag = rel.released
+      ? '<span class="changelog-tag">v' + esc(rel.tag) + '</span>'
       : '<span class="changelog-tag is-unreleased">In development</span>';
-    if (rel.date) html += '<span class="changelog-date">' + esc(fmtDate(rel.date)) + '</span>';
-    html += '</div>';
+    var date = rel.date ? '<span class="changelog-date">' + esc(fmtDate(rel.date)) + '</span>' : '';
+    var head = '<div class="changelog-rel-head">' + tag +
+               '<' + headingTag + '>' + title + '</' + headingTag + '>' + date + '</div>';
+
+    var inner = '';
+    if (rel.summary) inner += '<p class="changelog-summary">' + rel.summary + '</p>';
     sections.forEach(function (section) {
       var items = (section.items || []).filter(Boolean);
       if (!items.length) return;
-      html += '<h5>' + esc(section.label || section.name) +
-              '<span class="changelog-count">' + items.length + '</span></h5><ul>';
-      items.forEach(function (item) { html += '<li>' + item + '</li>'; });
-      html += '</ul>';
+      inner += '<h5 class="cl-sec cl-sec-' + esc(section.slug || 'changes') + '">' +
+               '<span class="cl-sec-label">' + esc(section.label || section.name) + '</span>' +
+               '<span class="changelog-count">' + items.length + '</span></h5><ul>';
+      items.forEach(function (item) {
+        // A bold lead that is a whole sentence becomes the item's title line.
+        // One that stops mid-sentence stays inline, so it still reads as prose.
+        inner += '<li>' + item.replace(/^<strong>([^<]*[.!?])<\/strong>/, '<strong class="cl-lead">$1</strong>') + '</li>';
+      });
+      inner += '</ul>';
     });
-    return html + '</section>';
+
+    if (collapsible) {
+      return '<details class="changelog-rel is-old"><summary>' + head +
+             '<span class="changelog-n">' + plural(total, 'change', 'changes') + '</span></summary>' +
+             '<div class="changelog-rel-body">' + inner + '</div></details>';
+    }
+    return '<section class="changelog-rel is-latest">' + head + inner + '</section>';
   }
 
   function renderFilters(releases) {
@@ -125,7 +139,7 @@
     if (chips.length < 3) { filters.hidden = true; return; }
     filters.hidden = false;
     filters.innerHTML = chips.map(function (c) {
-      return '<button type="button" class="changelog-chip" data-filter="' + esc(c.slug) + '"' +
+      return '<button type="button" class="changelog-chip cl-chip-' + esc(c.slug) + '" data-filter="' + esc(c.slug) + '"' +
              ' aria-pressed="' + (state.filter === c.slug ? 'true' : 'false') + '">' +
              esc(c.label) + ' <span class="changelog-chip-n">' + c.n + '</span></button>';
     }).join('');
@@ -161,7 +175,7 @@
       // heading with nothing under it.
       var olderHtml = '';
       if (state.older) {
-        older.forEach(function (rel) { olderHtml += releaseHtml(rel, 'h4'); });
+        older.forEach(function (rel) { olderHtml += releaseHtml(rel, 'h4', true); });
       }
       parts.push('<button type="button" class="changelog-older" id="pq-changelog-older" aria-expanded="' +
         (state.older ? 'true' : 'false') + '" aria-controls="pq-changelog-older-list">' +

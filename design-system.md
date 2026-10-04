@@ -89,6 +89,9 @@ radius. Page gutters are 36px on desktop, 24px on a small laptop, 16px on a phon
 - **Collapsed sidebar tooltips.** One fixed `.side-tip` element, filled from `data-label`,
   `aria-label` or the visible label. Give a new sidebar control a `data-label`.
   A count badge becomes a dot on the icon.
+- **What's new dialog.** Built in `core/_changelog_modal.html` from the changelog API. The newest
+  release is open with its summary line; older ones are `details` cards. Section colors come from
+  the slug (`added` blue, `changed` green, `fixed` orange, `security` red) in `_pages.css`.
 - **Row forms.** Put the controls of an editable list row in one `<form>`. Radios with the
   same name and no form share one group across the whole page.
 - **Icons.** Lucide, inline, 24px grid, 2px round stroke, through `{% icon 'name' %}`.

@@ -33,6 +33,9 @@ _RELEASE_RE = re.compile(
     r"(?:\s*[·–—-]\s*(?P<title>.+?))?\s*$"
 )
 _SECTION_RE = re.compile(r"^###\s+(?P<name>.+?)\s*$")
+# "> In short: ..." right under a release heading. One plain sentence that says
+# what the release is about, shown above the details.
+_SUMMARY_RE = re.compile(r"^>\s?(?P<text>.*)$")
 _BULLET_RE = re.compile(r"^[-*]\s+(?P<text>.*)$")
 # An indented bullet is detail under the bullet above it. `CHANGELOG.md` uses
 # one level, and only that level: a deeper indent is folded into the sub-bullet
@@ -51,7 +54,10 @@ _CODE_RE = re.compile(r"`([^`]+)`")
 # renaming a display label cannot silently break a filter.
 _SECTION_DISPLAY = {
     "Added": ("added", "New"),
+    "New": ("added", "New"),
     "Changed": ("changed", "Improved"),
+    "Better": ("changed", "Better"),
+    "Improved": ("changed", "Improved"),
     "Fixed": ("fixed", "Fixed"),
     "Security": ("security", "Security"),
     "Removed": ("removed", "Removed"),
@@ -146,6 +152,7 @@ def parse_changelog(text):
                 "date": match.group("date"),
                 "title": (match.group("title") or "").strip(),
                 "released": match.group("tag").strip().lower() != "unreleased",
+                "summary": "",
                 "sections": [],
             }
             section = None
@@ -161,6 +168,13 @@ def parse_changelog(text):
             continue
 
         if release is None:
+            continue
+
+        summary = _SUMMARY_RE.match(line)
+        if summary and section is None:
+            # Only before the first "###": a quote further down is just prose.
+            text = summary.group("text").strip()
+            release["summary"] = (release["summary"] + " " + text).strip()
             continue
 
         nested = _NESTED_BULLET_RE.match(line)
@@ -218,6 +232,7 @@ def parse_changelog(text):
                 )
         item["sections"] = kept
         item["item_count"] = sum(s["count"] for s in kept)
+        item["summary"] = _inline(item["summary"]) if item["summary"] else ""
         # Two blocks can share a tag and a date, so the title is what tells a
         # reader which is which. Fall back to something rather than nothing.
         item["heading"] = item["title"] or "General updates"
