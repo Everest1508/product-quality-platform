@@ -6,6 +6,7 @@ from django.views import View
 
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
+from apps.errors import trends
 from apps.errors.forms import ErrorCreateForm
 from apps.ingestion.models import ErrorGroup, ErrorOccurrence
 from apps.products.access import (
@@ -61,6 +62,7 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
         paginator = Paginator(qs, 25)
         page_num = request.GET.get("page", 1)
         page = paginator.get_page(page_num)
+        page.object_list = trends.attach_trends(page.object_list)
 
         products = accessible_products(request.user, request.company)
 
@@ -99,6 +101,8 @@ class ErrorDetailView(CompanyMemberRequiredMixin, View):
             "error_group": error_group,
             "occurrences": occurrences,
             "status_choices": ErrorGroup.STATUS_CHOICES,
+            "trend": trends.detail_trend(error_group),
+            "first_version": error_group.first_version,
         })
 
 

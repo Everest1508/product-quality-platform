@@ -307,6 +307,8 @@ class ProductErrorListView(CompanyMemberRequiredMixin, View):
 
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
+        from apps.errors import trends
+        page.object_list = trends.attach_trends(page.object_list)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_error_list_body.html", {"page": page})
@@ -325,9 +327,12 @@ class ProductErrorDetailView(CompanyMemberRequiredMixin, View):
         _attach_product_counts(product)
         error_group = get_object_or_404(product.error_groups.select_related("product"), pk=error_pk)
         occurrences = error_group.occurrences.all()[:50]
+        from apps.errors import trends
         return render(request, "products/product_error_detail.html", {
             "product": product, "error_group": error_group, "occurrences": occurrences,
             "status_choices": error_group.STATUS_CHOICES,
+            "trend": trends.detail_trend(error_group),
+            "first_version": error_group.first_version,
         })
 
 

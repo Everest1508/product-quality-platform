@@ -12,6 +12,7 @@
           {{ error.title }}
         </div>
         <div class="sub">{{ error.fingerprint|truncatechars:16 }}</div>
+        <div class="flags">{% include "errors/partials/_error_flags.html" %}</div>
       </div>
     </div>
   </td>
@@ -24,7 +25,7 @@
     {% elif error.status == 'ignored' %}<span class="pill closed">Ignored</span>
     {% endif %}
   </td>
-  <td class="text-sm" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'">{{ error.occurrence_count }}</td>
+  <td class="text-sm" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'"><div class="count-cell"><span>{{ error.occurrence_count }}</span>{% include "errors/partials/_sparkline.html" %}</div></td>
   <td class="date" onclick="window.location='{% url 'errors:error_detail' pk=error.pk %}'" title="{{ error.last_seen|date:'M j, Y, H:i' }}">{{ error.last_seen|timesince }} ago</td>
   <td>
     <div class="row-actions">

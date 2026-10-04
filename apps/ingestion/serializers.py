@@ -36,6 +36,29 @@ def scrub(value, depth=0):
     return value
 
 
+def _tell_admins_it_came_back(error_group, version):
+    """Owners and admins hear once, when a resolved error returns."""
+    from apps.accounts.models import Membership
+    from apps.notifications import service
+    from apps.notifications.models import Notification
+
+    people = [
+        m.user
+        for m in Membership.objects.filter(
+            company=error_group.company, role__in=[Membership.Role.OWNER, Membership.Role.ADMIN]
+        ).select_related("user")
+    ]
+    where = f" in {version.version_string}" if version else ""
+    service.notify_many(
+        people,
+        company=error_group.company,
+        kind=Notification.Kind.REGRESSION,
+        title=f"Resolved error came back: {error_group.title[:120]}",
+        body=f"{error_group.product.name}{where}. Seen {error_group.occurrence_count} times in total.",
+        url=f"/errors/{error_group.pk}/",
+    )
+
+
 class ErrorCaptureSerializer(serializers.Serializer):
     error_type = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True, default="")
     message = serializers.CharField(max_length=1000)
@@ -60,6 +83,14 @@ class ErrorCaptureSerializer(serializers.Serializer):
             f"{(validated_data.get('stacktrace') or '')[:500]}".encode()
         ).hexdigest()[:32]
 
+        version_obj = None
+        if validated_data.get("version"):
+            from apps.products.models import ProductVersion
+            version_obj = ProductVersion.objects.filter(
+                product=product,
+                version_string=validated_data["version"],
+            ).first()
+
         error_group, created = ErrorGroup.objects.get_or_create(
             product=product,
             fingerprint=fingerprint,
@@ -67,6 +98,7 @@ class ErrorCaptureSerializer(serializers.Serializer):
                 "company": company,
                 "title": validated_data["message"][:500],
                 "error_type": validated_data.get("error_type") or "",
+                "first_version": version_obj,
             },
         )
 
@@ -79,17 +111,11 @@ class ErrorCaptureSerializer(serializers.Serializer):
             # Ignored stays ignored: someone chose to mute it.
             if error_group.status == "resolved":
                 updates["status"] = "open"
+                updates["regressed_at"] = timezone.now()
+                updates["regression_count"] = F("regression_count") + 1
                 reopened = True
             ErrorGroup.objects.filter(pk=error_group.pk).update(**updates)
             error_group.refresh_from_db()
-
-        version_obj = None
-        if validated_data.get("version"):
-            from apps.products.models import ProductVersion
-            version_obj = ProductVersion.objects.filter(
-                product=product,
-                version_string=validated_data["version"],
-            ).first()
 
         occurrence = ErrorOccurrence.objects.create(
             error_group=error_group,
@@ -105,6 +131,9 @@ class ErrorCaptureSerializer(serializers.Serializer):
             request_payload=scrub(validated_data.get("request_payload")),
             raw_data=scrub(validated_data.get("extra")),
         )
+
+        if reopened:
+            _tell_admins_it_came_back(error_group, version_obj)
 
         notify_error_captured(error_group, occurrence)
 
