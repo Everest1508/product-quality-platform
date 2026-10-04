@@ -17,7 +17,7 @@ title, a subtitle, its actions and its body.
             gap:14px;align-items:center;}
   .pay-head{padding:9px 18px;border-bottom:1px solid var(--border);
             font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
-            color:#9a9aa2;}
+            color:var(--muted-2);}
   .pay-row{padding:13px 18px;border-bottom:1px solid var(--line);}
   .pay-row:last-of-type{border-bottom:none;}
   .pay-row:hover{background:var(--panel);}
@@ -40,11 +40,11 @@ title, a subtitle, its actions and its body.
                      border:1px solid var(--border);position:relative;flex:0 0 auto;
                      transition:background .15s ease,border-color .15s ease;}
   .pay-switch .track::after{content:"";position:absolute;top:1px;left:1px;width:14px;height:14px;
-                            border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);
+                            border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(13,17,23,.2);
                             transition:transform .15s ease;}
   .pay-switch input:checked + .track{background:var(--green);border-color:var(--green);}
   .pay-switch input:checked + .track::after{transform:translateX(14px);}
-  .pay-switch input:focus-visible + .track{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--blue);}
+  .pay-switch input:focus-visible + .track{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--blue);}
   .pay-switch .state{font-size:13px;color:var(--muted);}
   .pay-switch input:checked ~ .state{color:var(--green);font-weight:500;}
 

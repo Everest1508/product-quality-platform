@@ -6,13 +6,13 @@
 <style>
   .att-grid{border-collapse:separate;border-spacing:0;font-size:12px;}
   .att-grid th,.att-grid td{border:1px solid var(--line);padding:5px 4px;text-align:center;min-width:54px;vertical-align:middle;}
-  .att-day-head{background:#f8fafc;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
-  .att-total-head{background:#f8fafc;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;}
-  .att-cell{background:#fff;cursor:default;}
+  .att-day-head{background:var(--panel);font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .att-total-head{background:var(--panel);font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;}
+  .att-cell{background:var(--surface);cursor:default;}
   .att-cell.att-weekend{background:var(--panel);}
   .att-cell.att-today{box-shadow:inset 0 0 0 2px var(--blue);}
   .att-cell.att-leave{background:var(--orange-bg);}
-  .att-cell.att-absent{background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,.03) 4px,rgba(0,0,0,.03) 8px);}
+  .att-cell.att-absent{background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(13,17,23,.03) 4px,rgba(13,17,23,.03) 8px);}
   .att-hours{display:block;font-weight:600;color:var(--text);font-size:12.5px;}
   .att-range{display:block;color:var(--muted);font-size:10px;margin-top:1px;font-variant-numeric:tabular-nums;}
   .att-flag{display:inline-block;margin-top:2px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--green);}
@@ -20,7 +20,7 @@
   /* Lateness carries numbers and a reason, so it is not shouted in caps. */
   .att-flag-late{color:var(--red);text-transform:none;letter-spacing:0;font-size:9.5px;}
   .att-none{color:var(--border);}
-  .att-total{background:#fff;font-size:12.5px;}
+  .att-total{background:var(--surface);font-size:12.5px;}
   .att-grid tbody tr:hover td{background:var(--panel);}
 </style>
 

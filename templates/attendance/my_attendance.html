@@ -7,7 +7,7 @@
   /* Punch panel. One row: state on the left, elapsed + button on the right. */
   .punch{display:flex;flex-direction:column;gap:12px;}
   .punch-state{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
-               border:1px solid var(--border);border-radius:10px;padding:16px 18px;background:#fff;}
+               border:1px solid var(--border);border-radius:10px;padding:16px 18px;background:var(--surface);}
   .punch-main{display:flex;align-items:center;gap:14px;min-width:0;}
   .punch-icon{display:flex;align-items:center;justify-content:center;width:38px;height:38px;
               border-radius:50%;flex-shrink:0;background:var(--panel);color:var(--muted);}
@@ -19,7 +19,7 @@
   .punch-elapsed{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text);}
 
   .punch-state-open{background:var(--green-bg);border-color:var(--green);}
-  .punch-state-open .punch-icon{background:#fff;color:var(--green);}
+  .punch-state-open .punch-icon{background:var(--surface);color:var(--green);}
   .punch-state-open .punch-label,.punch-state-open .punch-elapsed{color:var(--green);}
   .punch-state-ready .punch-icon{background:var(--blue-bg);color:var(--blue);}
   .punch-state-ready .punch-label{color:var(--blue);}
@@ -36,9 +36,9 @@
      the day and needs to look like it. */
   .punch-btn{padding:10px 20px;font-size:14px;font-weight:600;gap:8px;display:inline-flex;align-items:center;}
   .punch-btn .ic{width:15px;height:15px;}
-  .punch-btn-in{background:var(--blue);border-color:var(--blue);color:#fff;}
-  .punch-btn-in:hover{background:#1a4f9c;}
-  .punch-btn-out{background:#fff;border-color:var(--green);color:var(--green);}
+  .punch-btn-in{background:var(--blue);border-color:var(--blue);color:var(--on-accent);}
+  .punch-btn-in:hover{background:var(--accent-strong);}
+  .punch-btn-out{background:var(--surface);border-color:var(--green);color:var(--green);}
   .punch-btn-out:hover{background:var(--green-bg);}
 
   .punch-warn{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:8px;
