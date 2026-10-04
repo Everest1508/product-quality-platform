@@ -65,6 +65,14 @@ radius. Page gutters are 36px on desktop, 24px on a small laptop, 16px on a phon
 - **Toasts.** Stack bottom right and, on a phone, run full width at the bottom.
   Trigger one with `window.dispatchEvent(new CustomEvent('django-message',
   { detail: { text, tags: 'success' | 'error' | 'warning' } }))`.
+- **Notifications.** The bell is `core/_bell.html`, fed by the `notifications` Alpine
+  store, which loads the recent list and then receives new ones over the presence
+  socket. Create one from Python with `apps.notifications.service.notify`. It skips the
+  person who caused the event.
+- **Search palette.** `core/_palette.html` is a keyboard combobox over `/search/`. Any
+  new place worth jumping to goes in `_pages` in `apps/core/search.py`.
+- **Flags and sparklines.** `.flag .flag-red|blue|orange` for small status tags, and
+  `errors/partials/_sparkline.html` for a 14 day chart from `errors.trends`.
 - **Presence.** `{% include "core/_presence_panel.html" %}` anywhere shows who is
   online. It reads the shared `presence` Alpine store, so it updates live.
 - **Icons.** Lucide, inline, 24px grid, 2px round stroke, through `{% icon 'name' %}`.
