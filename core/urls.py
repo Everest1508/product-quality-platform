@@ -5,9 +5,13 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 from apps.core.brand import brand_file, favicon_ico
+from apps.core.pwa import manifest, offline, service_worker
 
 urlpatterns = [
     path("favicon.ico", favicon_ico),
+    path("manifest.webmanifest", manifest),
+    path("sw.js", service_worker),
+    path("offline/", offline),
     path("brand/<str:name>", brand_file),
     path("admin/", admin.site.urls),
     path("api/", include("apps.ingestion.urls")),

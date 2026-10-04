@@ -5,7 +5,14 @@
 <head>
 <meta charset="UTF-8">
 <title>{% block title %}PQ Platform{% endblock %}</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PQ Platform">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 5 23 23' fill='none' stroke='%231A5BFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='16' cy='16' r='9'/%3E%3Ccircle cx='16' cy='16' r='3.6'/%3E%3Cpath d='M19.5 19.5L26 26'/%3E%3C/svg%3E">
 <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png">
 <link rel="icon" href="/favicon.ico" sizes="any">
@@ -17,6 +24,7 @@
 <style>
 {% include "core/css/_tokens.css" %}
 {% include "core/css/_app.css" %}
+{% include "core/css/_responsive.css" %}
 </style>
 {% block extra_head %}{% endblock %}
 <script>
@@ -133,6 +141,60 @@
    it. Escaped for a <script> block by toast_payload, not by hand. #}
 <script id="toast-seed" type="application/json">{% toast_payload messages "toast-seed" %}</script>
 {% endif %}
+
+<script>
+// PWA: register the worker, offer install, and say so when the connection drops.
+(function () {
+  function notify(text, tags) {
+    window.dispatchEvent(new CustomEvent('django-message', { detail: { text: text, tags: tags || 'info' } }));
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+    });
+  }
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = false; });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-pwa-install]') || !deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(function () {
+      deferredPrompt = null;
+      document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = true; });
+    });
+  });
+  window.addEventListener('appinstalled', function () {
+    document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = true; });
+  });
+  window.addEventListener('offline', function () { notify('You are offline. Changes will not save until you reconnect.', 'error'); });
+  window.addEventListener('online', function () { notify('Back online.', 'success'); });
+  document.addEventListener('htmx:sendError', function () { notify('Network error. Check your connection and try again.', 'error'); });
+})();
+</script>
+
+<script>
+// Wrap bare tables in a scroll container so wide tables scroll inside their card
+// instead of widening the page. Runs on load and after every htmx swap. The
+// wrapper has no styling above 860px, so desktop layout is unchanged.
+(function () {
+  function wrap(root) {
+    (root || document).querySelectorAll('table').forEach(function (t) {
+      var p = t.parentElement;
+      if (!p || p.classList.contains('table-scroll') || t.closest('.pq-datepicker-popover')) return;
+      var w = document.createElement('div');
+      w.className = 'table-scroll';
+      p.insertBefore(w, t);
+      w.appendChild(t);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function () { wrap(); });
+  document.addEventListener('htmx:afterSettle', function (e) { wrap(e.target); });
+})();
+</script>
 
 <div id="toast-container"
      x-data="{ messages: [], push(m) { this.messages.push(m); setTimeout(() => this.messages.shift(), 4000) } }"

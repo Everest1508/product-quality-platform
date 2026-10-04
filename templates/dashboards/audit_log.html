@@ -27,7 +27,7 @@
     {% dropdown "actor" members|obj_pairs:"pk:get_full_name" current_actor placeholder="Any member" label="Filter by member" navigate=True empty_value="" %}
   </div>
 
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:4px;">
       <label for="audit-from" class="text-sm text-muted" style="font-size:12px;">From</label>
       <input type="date" id="audit-from" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">

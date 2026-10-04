@@ -515,3 +515,37 @@ class BrandFileTests(TestCase):
     def test_other_names_do_not_resolve(self):
         for url in ("/brand/README.md", "/brand/nope.png", "/brand/..%2Fsvg%2Fmark-blue.svg"):
             self.assertEqual(self.client.get(url).status_code, 404, url)
+
+
+class PwaTests(TestCase):
+    def test_manifest_is_valid_and_points_at_real_icons(self):
+        r = self.client.get("/manifest.webmanifest")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/manifest+json")
+        data = r.json()
+        self.assertEqual(data["display"], "standalone")
+        self.assertEqual(data["start_url"], "/")
+        purposes = {(i["sizes"], i["purpose"]) for i in data["icons"]}
+        self.assertIn(("192x192", "any"), purposes)
+        self.assertIn(("512x512", "maskable"), purposes)
+        for icon in data["icons"]:
+            self.assertEqual(self.client.get(icon["src"]).status_code, 200, icon["src"])
+
+    def test_service_worker_is_served_from_root_and_never_cached(self):
+        r = self.client.get("/sw.js")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r["Content-Type"].startswith("application/javascript"))
+        self.assertEqual(r["Service-Worker-Allowed"], "/")
+        self.assertIn("no-cache", r["Cache-Control"])
+        self.assertIn(settings.APP_VERSION, r.content.decode())
+
+    def test_offline_page_needs_no_login(self):
+        r = self.client.get("/offline/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "You are offline")
+
+    def test_pages_link_the_manifest_and_register_the_worker(self):
+        r = self.client.get("/login/")
+        self.assertContains(r, 'rel="manifest"')
+        self.assertContains(r, "viewport-fit=cover")
+        self.assertContains(r, "serviceWorker.register('/sw.js'")
