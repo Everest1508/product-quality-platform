@@ -235,8 +235,8 @@ ICONS = {
 # The product mark. Same grid and stroke as the set above, but kept out of ICONS
 # because ICON_CHOICES (the leave policy picker) is built from that dict.
 BRAND_MARK = (
-    '<circle cx="11" cy="11" r="9" /> <circle cx="11" cy="11" r="4.5" />'
-    '<path d="m17.5 17.5 4 4" />'
+    '<circle cx="11.5" cy="11.5" r="9" /> <circle cx="11.5" cy="11.5" r="3.6" />'
+    '<path d="M15 15l6.5 6.5" />'
 )
 
 ICON_CHOICES = tuple((name, name.replace("-", " ").title()) for name in ICONS)
