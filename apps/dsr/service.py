@@ -62,6 +62,7 @@ def auto_log_ticket_dsr(ticket, actor=None):
             ticket=ticket,
             date=log_date,
             defaults={
+                "product": ticket.product,
                 "task_name": task_name,
                 "category": category,
                 "created_time": start_time,

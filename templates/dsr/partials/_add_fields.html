@@ -34,6 +34,11 @@
   {% endif %}
 </div>
 <div class="dc-field">
+  <label class="dc-label" for="{{ form.product.id_for_label }}">Product</label>
+  {{ form.product }}
+  {% for error in form.product.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
+</div>
+<div class="dc-field">
   <label class="dc-label" for="{{ form.category.id_for_label }}">Category</label>
   {{ form.category }}
 </div>

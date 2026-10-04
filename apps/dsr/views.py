@@ -39,11 +39,14 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
     next_date = min(next_date, today)
     can_submit, locked_reason = submission_window(selected_date, is_privileged)
 
+    from apps.products.access import accessible_products
+
+    products = accessible_products(target_user, company).order_by("name")
     entries = DSREntry.objects.filter(
         company=company,
         user=target_user,
         date=selected_date,
-    )
+    ).select_related("product", "ticket")
 
     raw_total = entries.aggregate(total=Sum("hours_spent"))["total"] or Decimal("0.00")
     total_hours_float = float(raw_total)
@@ -81,7 +84,9 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
         for idx, item in enumerate(entries, 1):
             badge = "[AUTO] " if item.is_auto_logged else ""
             cat = f" ({item.get_category_display()})"
-            dsr_lines.append(f"{idx}. {badge}{item.task_name}{cat} - {item.hours_spent}h [{item.get_status_display()}]")
+            # Ticket entries already name the product in their text.
+            where = f"[{item.product.name}] " if item.product and f"[{item.product.name}]" not in item.task_name else ""
+            dsr_lines.append(f"{idx}. {badge}{where}{item.task_name}{cat} - {item.hours_spent}h [{item.get_status_display()}]")
             if item.notes:
                 dsr_lines.append(f"   Note: {item.notes}")
     else:
@@ -130,8 +135,9 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
         "copy_summary_text": copy_summary_text,
         # Two prefixes: this form renders in the bar and again in the
         # empty-state row, and duplicate ids are invalid HTML.
-        "add_form": DSREntryForm(id_prefix="dsr-bar"),
-        "add_form_empty": DSREntryForm(id_prefix="dsr-row"),
+        "products": products,
+        "add_form": DSREntryForm(id_prefix="dsr-bar", products=products),
+        "add_form_empty": DSREntryForm(id_prefix="dsr-row", products=products),
         "category_choices": DSREntry.Category.choices,
         "status_choices": DSREntry.Status.choices,
     }
@@ -190,15 +196,21 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
             messages.error(request, "Hours must be a number.")
             hours = entry.hours_spent
 
+        from apps.products.access import accessible_products
+
+        products = accessible_products(entry.user, request.company)
         form = DSREntryForm(
             {
                 "task_name": request.POST.get("task_name", entry.task_name),
+                # Only a manual row posts a product; a ticket's row keeps its own.
+                "product": request.POST.get("product", entry.product_id or ""),
                 "category": category,
                 "hours_spent": hours,
                 "status": status,
                 "notes": request.POST.get("notes", entry.notes),
             },
             instance=entry,
+            products=products,
         )
         if not form.is_valid():
             messages.error(request, "Could not save those changes.")
@@ -207,7 +219,7 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
             form.save()
 
         if request.headers.get("HX-Request") == "true":
-            return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "can_submit": True, "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
+            return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "can_submit": True, "products": products.order_by("name"), "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
 
         return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
 
@@ -264,8 +276,12 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
                 return render(request, "dsr/partials/_dsr_table.html", context)
             return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
 
-        form = DSREntryForm(request.POST, id_prefix="dsr-bar")
-        if form.is_valid():
+        from apps.products.access import accessible_products
+
+        products = accessible_products(target_user, request.company).order_by("name")
+        form = DSREntryForm(request.POST, id_prefix="dsr-bar", products=products)
+        saved = form.is_valid()
+        if saved:
             entry = form.save(commit=False)
             entry.company = request.company
             entry.user = target_user
@@ -278,8 +294,12 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
 
         if request.headers.get("HX-Request") == "true":
             context = _get_dsr_context(request.company, target_user, target_date, is_privileged)
-            context["add_form"] = form
-            context["add_form_empty"] = DSREntryForm(id_prefix="dsr-row")
+            # After a save the form starts empty, so the next entry does not open
+            # with the last one's text. After a failure it keeps what was typed,
+            # with the errors. Either way it stays open for the next entry.
+            if not saved:
+                context["add_form"] = form
+            context["add_open"] = True
             return render(request, "dsr/partials/_dsr_table.html", context)
 
         return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
@@ -341,6 +361,7 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             user=target_user,
             date=target_date,
             ticket=ticket,
+            product=ticket.product,
             task_name=f"{ticket.key} {ticket.title}"[:255],
             category=match["category"],
             hours_spent=hours.quantize(Decimal("0.01")),

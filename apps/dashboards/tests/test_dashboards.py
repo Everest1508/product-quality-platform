@@ -370,7 +370,10 @@ class PersonalDashboardTest(TestCase):
         # A colleague working a full day today must not move my numbers.
         other = User.objects.create_user("mate", "mate@test.com", "pass1234")
         Membership.objects.create(user=other, company=self.company, role="developer")
-        colleague_minutes = 8 * 60
+        # Longer than the one-day cap an unclosed day is held to, so the
+        # comparison below holds whatever hour the suite runs at. At exactly 8h
+        # it failed every afternoon, once the open day had reached its cap.
+        colleague_minutes = 12 * 60
         colleague_out = at + timedelta(minutes=colleague_minutes)
         AttendanceRecord.objects.create(
             company=self.company, user=other, date=today,

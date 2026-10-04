@@ -2,9 +2,17 @@ from decimal import Decimal
 
 from django import forms
 
+from apps.products.models import Product
 from apps.dsr.models import DSREntry
 
 MAX_HOURS = Decimal("24")
+
+
+class ProductChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        # Product.__str__ is "Company / Product", which repeats the company in a
+        # list that only ever holds one company's products.
+        return obj.name
 
 
 class DSREntryForm(forms.ModelForm):
@@ -26,7 +34,14 @@ class DSREntryForm(forms.ModelForm):
         ),
     )
 
-    def __init__(self, *args, id_prefix="dsr-add", **kwargs):
+    product = ProductChoiceField(
+        queryset=Product.objects.none(),
+        required=False,
+        empty_label="No product",
+        widget=forms.Select(attrs={"class": "form-input"}),
+    )
+
+    def __init__(self, *args, id_prefix="dsr-add", products=None, **kwargs):
         """Stamp widget ids so two forms can share a page.
 
         The sheet renders the "log it" form twice -- once in the bar above the
@@ -36,12 +51,17 @@ class DSREntryForm(forms.ModelForm):
         auto_id from overriding it, so each instance is addressable.
         """
         super().__init__(*args, **kwargs)
+        # Only products the person can open, so a posted id for anything else is
+        # an invalid choice rather than a way to tag work against a product they
+        # cannot see. Without a list the field offers nothing.
+        if products is not None:
+            self.fields["product"].queryset = products
         for name, field in self.fields.items():
             field.widget.attrs["id"] = f"{id_prefix}-{name}"
 
     class Meta:
         model = DSREntry
-        fields = ["task_name", "category", "hours_spent", "status", "notes"]
+        fields = ["task_name", "product", "category", "hours_spent", "status", "notes"]
         widgets = {
             "category": forms.Select(attrs={"class": "form-input"}),
             "hours_spent": forms.NumberInput(

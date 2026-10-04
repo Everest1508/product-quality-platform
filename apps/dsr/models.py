@@ -37,6 +37,15 @@ class DSREntry(models.Model):
         blank=True,
         related_name="dsr_entries",
     )
+    # Which product the work was for. Optional: meetings and the like belong to
+    # none. Tickets bring their own product with them.
+    product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="dsr_entries",
+    )
     task_name = models.CharField(max_length=255)
     category = models.CharField(
         max_length=32,
