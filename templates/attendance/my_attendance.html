@@ -71,7 +71,7 @@ forgotten-check-out warning, which is the reason they opened the page.
 </section>
 {% endif %}
 
-<div class="stat-strip" role="list">
+<div class="att-stats"><div class="stat-strip" role="list">
   <div class="stat-strip-item" role="listitem">
     <span class="stat-strip-label">Worked today</span>
     <span class="stat-strip-value">{% if today_record and today_record.is_complete %}{{ today_record.worked_formatted }}{% elif today_record and today_record.is_open %}{{ today_record.effective_formatted }}{% else %}&ndash;{% endif %}</span>
@@ -79,9 +79,9 @@ forgotten-check-out warning, which is the reason they opened the page.
   <div class="stat-strip-item" role="listitem">
     <span class="stat-strip-label">Status</span>
     <span class="stat-strip-value">
-      {% if today_record and today_record.is_complete %}<span class="pill resolved">Done</span>
-      {% elif today_record and today_record.is_open %}<span class="pill open">On the clock</span>
-      {% else %}<span class="pill closed">Not in yet</span>{% endif %}
+      {% if today_record and today_record.is_complete %}<span class="pill resolved">done</span>
+      {% elif today_record and today_record.is_open %}<span class="pill open">on clock</span>
+      {% else %}<span class="pill closed">not in</span>{% endif %}
     </span>
   </div>
   <div class="stat-strip-item" role="listitem">
@@ -95,7 +95,7 @@ forgotten-check-out warning, which is the reason they opened the page.
     <span class="stat-strip-value"{% if unclosed_days %} style="color:var(--orange);"{% endif %}>{{ unclosed_days }}</span>
     {% if unclosed_days %}<span class="stat-strip-note">day{{ unclosed_days|pluralize }} need one</span>{% endif %}
   </div>
-</div>
+</div></div>
 
 <div class="card" style="padding:0;overflow:hidden;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">

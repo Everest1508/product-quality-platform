@@ -127,6 +127,7 @@ a.dsr-title:hover{color:var(--accent);}
 }
 
 /* ---- One strip of numbers instead of a box per number ---- */
+.att-stats:has(> .stat-strip){display:block;margin:0;}
 .stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
 .stat-strip-item{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-left:1px solid var(--line);min-width:0;}
 .stat-strip-item:first-child{border-left:none;}
