@@ -4,6 +4,18 @@
 {% block title %}Daily Status Report (DSR) — PQ Platform{% endblock %}
 
 {% block content %}
+<script>
+// Chips in the manual-entry form copy their data-* into the fields. Plain
+// buttons, so the form still works without them.
+function dsrFill(btn) {
+  var d = btn.dataset, el = document.getElementById(d.target);
+  if (el) { el.value = d.value; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); }
+  if (d.categoryTarget) {
+    var c = document.getElementById(d.categoryTarget);
+    if (c) { c.value = d.category; c.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+}
+</script>
 <style>
   .sheet-table-wrapper{background:var(--surface);border-radius:0 0 10px 10px;}
   .sheet-table{width:100%;border-collapse:collapse;font-size:13px;color:var(--text);border-spacing:0;}

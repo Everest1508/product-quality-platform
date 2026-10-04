@@ -3,11 +3,6 @@
 {% block title %}Team Attendance — PQ Platform{% endblock %}
 
 {% block content %}
-<style>
-  .att-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
-  @media (max-width:640px){.att-stats{grid-template-columns:repeat(2,1fr);}}
-</style>
-
 <nav class="breadcrumbs">
   <a href="{% url 'attendance:my_attendance' %}">Attendance</a>
   <span class="sep">/</span>

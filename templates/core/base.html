@@ -24,6 +24,7 @@
 <style>
 {% include "core/css/_tokens.css" %}
 {% include "core/css/_app.css" %}
+{% include "core/css/_components.css" %}
 {% include "core/css/_responsive.css" %}
 </style>
 {% block extra_head %}{% endblock %}
@@ -130,6 +131,7 @@
 })();
 </script>
 {% include "core/_changelog_modal.html" %}
+{% include "core/_presence.html" %}
 {% else %}
 <div class="auth-shell">
   {% block content_full_only %}{% endblock %}
@@ -137,8 +139,8 @@
 {% endif %}
 
 {% if messages %}
-{# The seed has to exist before the container's x-init runs, so it goes above
-   it. Escaped for a <script> block by toast_payload, not by hand. #}
+{% comment %} The seed has to exist before the container's x-init runs, so it goes above
+   it. Escaped for a <script> block by toast_payload, not by hand. {% endcomment %}
 <script id="toast-seed" type="application/json">{% toast_payload messages "toast-seed" %}</script>
 {% endif %}
 

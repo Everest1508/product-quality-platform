@@ -1,103 +1,143 @@
 {% load icon_tags %}
 {% comment %}
-Punch control — the one thing an employee opens this page to do.
+Punch control: the one thing an employee opens this page to do.
 
-Rendered from two places, `MyAttendanceView` on a page load and
-`AttendancePunchView` on an htmx punch, both through `_punch_context`, so the
-two can never disagree about what state the day is in. After a punch the server
-re-renders this partial, so the DOM is never stale; the Alpine `x-text` only
-ticks the elapsed counter locally between requests.
+Rendered from `MyAttendanceView` on a page load and `AttendancePunchView` on an
+htmx punch, both through `_punch_context`, so the two cannot disagree about the
+state of the day. After a punch the server re-renders this partial, so the DOM
+is never stale; Alpine only ticks the clock and counter between requests.
 
-Three things it has to get right:
+Markup rules the tests rely on, so keep them:
+* the counter is `x-text="elapsed"` and the server renders its first value as
+  "2h 03m", so the box is not blank before Alpine boots;
+* `Shift HH:MM–HH:MM` appears in every state;
+* lateness comes from `_late_note.html`, which quotes `late_penalty_for`, the
+  same call the payslip uses;
+* nothing here is `aria-live` except the punch result: a counter that changes
+  every second would interrupt a screen reader forever.
 
-* **Show when you checked in, not just how long you have been here.** The old
-  panel said "On the clock since" and then printed a *duration*, so the one
-  number an employee wanted — the time — was nowhere on the screen.
-* **Say "late" when it happens.** A late punch costs Rs 50 / Rs 100 / half a
-  day, and this panel used to not mention it at all, so the first notice was a
-  payslip weeks later. The band comes from `late_penalty_for`, the same call the
-  payslip makes, so the two cannot quote different numbers.
-* **Repeat a forgotten check-out from an earlier day.** It is the reason the
-  hours are capped, and hiding it here is how it went unnoticed for weeks.
-
-The three states are `is_complete` (day done), `is_open_today` (on the clock)
-and neither (not in yet). `is_open` alone cannot pick between the last two —
-see `apps/attendance/models.py`.
+The Alpine object is plain JS in an attribute. The since/end values are integers
+(epoch milliseconds) from the view, never an ISO string pasted in unquoted.
 {% endcomment %}
 <div id="punch-control"
      class="punch"
      x-data="{
-       since: {{ today_record.check_in|date:'c'|default:'null'|safe }},
-       mins: null,
-       tick() {
-         if (!this.since) return;
-         this.mins = Math.max(0, Math.floor((Date.now() - new Date(this.since).getTime()) / 60000));
+       since: {% if since_ms %}{{ since_ms }}{% else %}null{% endif %},
+       end: {{ end_ms }},
+       span: {{ span_minutes }},
+       now: Date.now(),
+       tickId: null,
+       start() { if (!this.tickId) this.tickId = setInterval(() => { this.now = Date.now(); }, 1000); },
+       get clock() { return new Date(this.now).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }); },
+       get secs() { return this.since ? Math.max(0, Math.floor((this.now - this.since) / 1000)) : 0; },
+       get elapsed() { const m = Math.floor(this.secs / 60); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; },
+       get seconds() { return ':' + String(this.secs % 60).padStart(2, '0'); },
+       get pct() { return Math.min(100, Math.round(this.secs / 60 / this.span * 100)); },
+       get ring() { return (326.7 * (1 - this.pct / 100)).toFixed(1); },
+       get left() {
+         const m = Math.floor((this.end - this.now) / 60000);
+         if (m <= 0) return 'Shift is over';
+         return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm left';
        },
-       get elapsed() {
-         const m = this.mins === null ? 0 : this.mins;
-         return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
-       }
+       get over() { return this.now > this.end; }
      }"
-     x-init="if (since) { tick(); setInterval(tick, 30000); }">
+     x-init="start()">
 
   {% if punch_readonly %}
     {% comment %}
-    An admin reading a colleague's page. The state row and its button are hidden
-    because the button would punch the *viewer* — but the forgotten check-out
-    below is exactly what an admin came here to find, so it stays.
+    An admin reading a colleague's page. The state block and its button are
+    hidden because the button would punch the *viewer*; the forgotten check-out
+    below is what an admin came here to find, so it stays.
     {% endcomment %}
+
   {% elif today_record and today_record.is_complete %}
-    <div class="punch-state punch-state-done">
-      <div class="punch-main">
-        <span class="punch-icon" aria-hidden="true">{% icon 'circle-check' %}</span>
-        <div class="punch-copy">
-          <span class="punch-label">Checked out</span>
-          <span class="punch-sub">
-            {{ today_record.check_in|date:"g:i A" }} → {{ today_record.check_out|date:"g:i A" }}
-            · Shift {{ shift_label }}
-            · {% include "attendance/partials/_late_note.html" %}
+    <div class="punch-hero punch-state punch-state-done">
+      <div class="punch-ring is-done" aria-hidden="true">
+        {% icon 'circle-check' %}
+      </div>
+      <div class="punch-copy">
+        <span class="punch-label">Checked out</span>
+        <span class="punch-sub">
+          {{ today_record.check_in|date:"g:i A" }} → {{ today_record.check_out|date:"g:i A" }}
+          · Shift {{ shift_label }}
+          · {% include "attendance/partials/_late_note.html" %}
+        </span>
+        <div class="punch-facts">
+          <span><b>{{ today_record.worked_formatted }}</b> worked</span>
+          <span>
+            {% if worked_delta > 0 %}<b class="punch-ontime">+{{ worked_delta_formatted }}</b> over the {{ target_formatted }} day
+            {% elif worked_delta < 0 %}<b class="punch-late">{{ worked_delta_formatted }}</b> short of the {{ target_formatted }} day
+            {% else %}<b class="punch-ontime">Exactly</b> the {{ target_formatted }} day{% endif %}
           </span>
         </div>
-      </div>
-      <div class="punch-actions">
-        <span class="punch-elapsed">{{ today_record.worked_formatted }}</span>
       </div>
     </div>
 
   {% elif today_record and today_record.is_open_today %}
-    <div class="punch-state punch-state-open">
-      <div class="punch-main">
-        <span class="punch-icon" aria-hidden="true">{% icon 'clock' %}</span>
-        <div class="punch-copy">
-          <span class="punch-label">On the clock since {{ today_record.check_in|date:"g:i A" }}</span>
-          <span class="punch-sub">
-            Shift {{ shift_label }}
-            · {% include "attendance/partials/_late_note.html" %}
-          </span>
+    <div class="punch-hero punch-state punch-state-open">
+      <div class="punch-ring" aria-hidden="true">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="52"/>
+          <circle class="ring-fill" :class="{ 'is-over': over }" cx="60" cy="60" r="52" stroke-dasharray="326.7" :stroke-dashoffset="ring"/>
+        </svg>
+        <div class="ring-center">
+          <span class="ring-time"><span class="ring-main" x-text="elapsed">{{ today_record.elapsed_formatted }}</span><span class="ring-secs" x-text="seconds">:00</span></span>
+          <span class="ring-cap">on the clock</span>
+        </div>
+      </div>
+      <div class="punch-copy">
+        <span class="punch-label">On the clock since {{ today_record.check_in|date:"g:i A" }}</span>
+        <span class="punch-sub">
+          Shift {{ shift_label }}
+          · {% include "attendance/partials/_late_note.html" %}
+        </span>
+        <div class="punch-facts">
+          <span><b x-text="pct + '%'">0%</b> of the shift</span>
+          <span><b x-text="left">&nbsp;</b> until {{ shift_end_label }}</span>
         </div>
       </div>
       <div class="punch-actions">
-        <span class="punch-elapsed" x-text="elapsed">{{ today_record.elapsed_formatted }}</span>
         {% include "attendance/partials/_punch_form.html" with label="Check out" icon="log-out" variant="out" %}
       </div>
     </div>
 
   {% else %}
-    <div class="punch-state punch-state-ready">
-      <div class="punch-main">
-        <span class="punch-icon" aria-hidden="true">{% icon 'clock' %}</span>
-        <div class="punch-copy">
-          <span class="punch-label">Not checked in</span>
-          <span class="punch-sub">
-            Shift {{ shift_label }}
-            {% if starts_in_minutes %} · starts in {{ starts_in_minutes }}m{% endif %}
-          </span>
+    <div class="punch-hero punch-state punch-state-ready">
+      <div class="punch-ring" aria-hidden="true">
+        <div class="ring-center">
+          <span class="ring-time"><span class="ring-main ring-clock" x-text="clock">{{ now_label }}</span></span>
+          <span class="ring-cap">right now</span>
+        </div>
+      </div>
+      <div class="punch-copy">
+        <span class="punch-label">Not checked in</span>
+        <span class="punch-sub">
+          Shift {{ shift_label }}
+          {% if starts_in_minutes %} · starts in {{ starts_in_minutes }}m{% endif %}
+        </span>
+        <div class="punch-facts">
+          <span>A {{ target_formatted }} working day</span>
+          <span>Ends {{ shift_end_label }}</span>
         </div>
       </div>
       <div class="punch-actions">
         {% include "attendance/partials/_punch_form.html" with label="Check in" icon="arrow-right" variant="in" %}
       </div>
     </div>
+  {% endif %}
+
+  {% if not punch_readonly %}
+  <div class="punch-week" role="img" aria-label="Hours worked this week, {{ week.total_formatted }}">
+    <div class="week-head"><span>This week</span><b>{{ week.total_formatted }}</b></div>
+    <div class="week-bars">
+      {% for d in week.days %}
+      <div class="week-day is-{{ d.state }}{% if d.is_today %} is-today{% endif %}" title="{{ d.date|date:'D, M j' }}: {% if d.state == 'leave' %}on leave{% else %}{{ d.formatted }}{% endif %}">
+        <div class="week-bar"><i style="height:{{ d.pct }}%"></i></div>
+        <span>{{ d.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
   {% endif %}
 
   {% if missing_checkouts %}
@@ -114,11 +154,6 @@ see `apps/attendance/models.py`.
     </div>
   {% endif %}
 
-  {% comment %}
-  `aria-live` so a screen reader hears the result of a punch. The elapsed
-  counter above is deliberately *not* live — it refreshes every 30 seconds and
-  would interrupt whatever was being read.
-  {% endcomment %}
   {% if message %}
     <p class="punch-message" role="status" aria-live="polite">{{ message }}</p>
   {% endif %}

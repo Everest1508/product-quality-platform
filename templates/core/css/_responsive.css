@@ -54,7 +54,8 @@ img,svg,video{max-width:100%;}
   .grid-2>*,.grid-3>*,.grid-4>*,.stat-grid>*{min-width:0;}
 
   .modal{width:min(92vw,440px);max-height:calc(100dvh - 32px);overflow-y:auto;}
-  .toast{left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));text-align:center;}
+  #toast-container{left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));align-items:stretch;}
+  .toast{text-align:center;max-width:none;}
 
   .head h1{overflow-wrap:anywhere;}
   .filter-select,.sort-select,input[type=date]{max-width:100%;min-width:0;}

@@ -23,10 +23,10 @@ there the reader has to judge the number.
     <span class="text-muted">charged as unpaid leave</span>
     {% endif %}
   </div>
-  {# `pluralize:"day"` is NOT "day or days" -- Django reads the argument as a
+  {% comment %} `pluralize:"day"` is NOT "day or days" -- Django reads the argument as a
      suffix pair, so "day" becomes singular="" / plural="day" and the template
      printed the bare word "day" after every count. `pluralize` with no argument
-     is the "add an s" filter, which is what a literal trailing word needs. #}
+     is the "add an s" filter, which is what a literal trailing word needs. {% endcomment %}
   <div class="field-hint" style="margin-top:10px;">
     of {{ days|leave_days }} working day{{ days|pluralize }}
     {% if policy.max_consecutive_days %}

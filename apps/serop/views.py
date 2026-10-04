@@ -43,6 +43,16 @@ def _member_json(membership):
     }
 
 
+# Serop adds new team members as `viewer`. A viewer may see that a shared server
+# exists, but the password and the right to add servers need a working role.
+CREDENTIAL_ROLES = (
+    Membership.Role.OWNER,
+    Membership.Role.ADMIN,
+    Membership.Role.DEVELOPER,
+)
+ADD_SERVER_ROLES = (Membership.Role.OWNER, Membership.Role.ADMIN)
+
+
 class BaseSeropView(APIView):
     authentication_classes = [ExternalTokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -148,6 +158,8 @@ class SharedServersView(BaseSeropView):
         membership = Membership.objects.filter(user=request.user, company_id=team_id).first()
         if not membership:
             return Response({"ok": False, "error": "Team not found."}, status=status.HTTP_400_BAD_REQUEST)
+        if membership.role not in ADD_SERVER_ROLES:
+            return Response({"ok": False, "error": "Only team owners/admins can add shared servers."}, status=status.HTTP_403_FORBIDDEN)
 
         name = (request.data.get("name") or "").strip()
         host = (request.data.get("host") or "").strip()
@@ -156,6 +168,8 @@ class SharedServersView(BaseSeropView):
             return Response({"ok": False, "error": "name, host, and username are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         password = request.data.get("password")
+        if password is not None and not isinstance(password, str):
+            return Response({"ok": False, "error": "password must be a string."}, status=status.HTTP_400_BAD_REQUEST)
         encrypted_password = _fernet().encrypt(password.encode()).decode() if password else None
 
         server = SeropSharedServer.objects.create(
@@ -175,8 +189,13 @@ class SharedServersView(BaseSeropView):
 class SharedServerCredentialsView(BaseSeropView):
     def get(self, request, server_id):
         server = SeropSharedServer.objects.filter(pk=server_id).first()
-        if not server or not Membership.objects.filter(user=request.user, company=server.company).exists():
+        membership = (
+            Membership.objects.filter(user=request.user, company=server.company).first() if server else None
+        )
+        if not membership:
             return Response({"ok": False, "error": "Shared server not found."}, status=status.HTTP_404_NOT_FOUND)
+        if membership.role not in CREDENTIAL_ROLES:
+            return Response({"ok": False, "error": "Your role cannot read shared server credentials."}, status=status.HTTP_403_FORBIDDEN)
 
         password = None
         if server.encrypted_password:

@@ -105,15 +105,18 @@
 
   {% if can_submit %}
   <div x-show="addOpen" x-cloak
-       style="padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--border);">
+       class="dc-wrap">
     <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
           hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
           hx-target="#dsr-content"
           hx-swap="innerHTML"
-          style="display:grid;grid-template-columns:2fr 1fr 100px 1fr 1fr auto;gap:10px;align-items:end;">
+          class="dsr-composer">
       {% csrf_token %}
       {% include "dsr/partials/_add_fields.html" with form=add_form %}
-      <button type="submit" class="btn btn-sm btn-primary">Log it</button>
+      <div class="dc-actions">
+        <span class="dc-hint">{{ total_hours }}h logged · target {{ target_goal }}h</span>
+        <button type="submit" class="btn btn-primary dc-submit">Log it</button>
+      </div>
     </form>
   </div>
   {% endif %}
@@ -151,10 +154,13 @@
                       hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
                       hx-target="#dsr-content"
                       hx-swap="innerHTML"
-                      style="display:grid;grid-template-columns:2fr 1fr 100px 1fr 1fr auto;gap:10px;align-items:end;">
+                      class="dsr-composer">
                   {% csrf_token %}
                   {% include "dsr/partials/_add_fields.html" with form=add_form_empty %}
-                  <button type="submit" class="btn btn-sm btn-primary">Log it</button>
+                  <div class="dc-actions">
+        <span class="dc-hint">{{ total_hours }}h logged · target {{ target_goal }}h</span>
+        <button type="submit" class="btn btn-primary dc-submit">Log it</button>
+      </div>
                 </form>
                 {% endif %}
               </div>

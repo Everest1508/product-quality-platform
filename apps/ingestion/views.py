@@ -4,6 +4,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
+from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from apps.ingestion.serializers import (
@@ -36,9 +37,27 @@ class IsAuthenticatedAPIKey(BasePermission):
         return isinstance(request.auth, APIKey)
 
 
+class APIKeyRateThrottle(SimpleRateThrottle):
+    """Rate limit per API key, not per IP.
+
+    The old default was DRF's anonymous throttle, which keys on the client IP.
+    These requests carry `request.user = None`, so every customer behind one NAT
+    shared a single 60/minute budget and real errors were rejected with 429.
+    """
+
+    scope = "apikey"
+
+    def get_cache_key(self, request, view):
+        key = getattr(request, "auth", None)
+        if key is None:
+            return self.get_ident(request)
+        return self.cache_format % {"scope": self.scope, "ident": f"key{key.pk}"}
+
+
 class ErrorCaptureView(APIView):
     authentication_classes = [APIKeyAuthentication]
     permission_classes = [IsAuthenticatedAPIKey]
+    throttle_classes = [APIKeyRateThrottle]
 
     def post(self, request):
         serializer = ErrorCaptureSerializer(
@@ -53,6 +72,7 @@ class ErrorCaptureView(APIView):
 class FeedbackView(APIView):
     authentication_classes = [APIKeyAuthentication]
     permission_classes = [IsAuthenticatedAPIKey]
+    throttle_classes = [APIKeyRateThrottle]
 
     def post(self, request):
         serializer = FeedbackSerializer(
@@ -67,6 +87,7 @@ class FeedbackView(APIView):
 class TicketIngestView(APIView):
     authentication_classes = [APIKeyAuthentication]
     permission_classes = [IsAuthenticatedAPIKey]
+    throttle_classes = [APIKeyRateThrottle]
 
     def post(self, request):
         serializer = TicketIngestSerializer(
@@ -81,6 +102,7 @@ class TicketIngestView(APIView):
 class TicketStatusView(APIView):
     authentication_classes = [APIKeyAuthentication]
     permission_classes = [IsAuthenticatedAPIKey]
+    throttle_classes = [APIKeyRateThrottle]
 
     def get(self, request, ticket_id):
         from apps.ingestion.models import IngestedTicket

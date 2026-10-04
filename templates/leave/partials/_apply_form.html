@@ -21,9 +21,9 @@
     <div style="font-size:19px;font-weight:600;margin-top:6px;">
       {% if balance.is_unlimited %}No cap{% else %}{{ balance.remaining_label }} left{% endif %}
     </div>
-    {# "No cap", not "Unlimited": a cap of 0 is a real setting, so an uncapped
+    {% comment %} "No cap", not "Unlimited": a cap of 0 is a real setting, so an uncapped
        type must not read as though 0 were impossible. The same wording the
-       policy editor and the approval rows use. #}
+       policy editor and the approval rows use. {% endcomment %}
     {% if balance.policy.max_consecutive_days %}
     <div class="field-hint">{{ balance.policy.consecutive_limit_label }} per spell</div>
     {% endif %}

@@ -1,38 +1,62 @@
 {% if form.non_field_errors %}
   {% for error in form.non_field_errors %}
-    <p class="text-sm" style="color:var(--red);grid-column:1/-1;">{{ error }}</p>
+    <p class="text-sm dc-error" style="grid-column:1/-1;">{{ error }}</p>
   {% endfor %}
 {% endif %}
 {% comment %}
-  The labels are siblings of their inputs, not wrappers, so without a `for` they
-  were associated with nothing: clicking "Task" did nothing and a screen reader
-  announced an unlabelled text field. `id_for_label` is the form's own idea of
-  the widget id, which `DSREntryForm(id_prefix=...)` makes unique -- the sheet
-  renders this partial twice (the bar above the table, and the table's empty
-  state), so a plain form would put the same id on the page twice.
+  The labels are siblings of their inputs, not wrappers, so each one carries a
+  `for`: clicking "Task" focuses the box and a screen reader announces a labelled
+  field. `id_for_label` is the form's own widget id, which
+  `DSREntryForm(id_prefix=...)` makes unique -- the sheet renders this partial
+  twice (the bar above the table and the table's empty state), so a plain form
+  would put the same id on the page twice.
 
-  Note: the id cannot be overridden from a template. `{{ f.as_widget(attrs=...) }}`
-  is a syntax error in Django's language, so the prefix has to live on the form.
+  The id cannot be overridden from a template (`{{ f.as_widget(attrs=...) }}` is
+  a syntax error in Django's language), so the prefix lives on the form.
+
+  The chips are plain buttons: `dsrFill` in dsr_sheet.html copies their data
+  attributes into the fields. They are shortcuts; the fields work without them.
 {% endcomment %}
-<div>
-  <label class="text-sm text-muted" for="{{ form.task_name.id_for_label }}" style="display:block;margin-bottom:4px;">Task</label>
+<div class="dc-task">
+  <label class="dc-label" for="{{ form.task_name.id_for_label }}">What did you work on?</label>
   {{ form.task_name }}
-  {% for error in form.task_name.errors %}<p class="text-sm" style="color:var(--red);">{{ error }}</p>{% endfor %}
+  {% for error in form.task_name.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
+  {% if ticket_suggestions %}
+  <div class="dc-chips" aria-label="Fill from one of your tickets">
+    <span class="dc-chips-label">Your tickets</span>
+    {% for t in ticket_suggestions %}
+    <button type="button" class="dc-chip" onclick="dsrFill(this)"
+            data-target="{{ form.task_name.id_for_label }}" data-value="{{ t.label }}"
+            data-category-target="{{ form.category.id_for_label }}" data-category="ticket"
+            title="{{ t.label }}">#{{ t.number }} {{ t.title|truncatechars:34 }}</button>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
-<div>
-  <label class="text-sm text-muted" for="{{ form.category.id_for_label }}" style="display:block;margin-bottom:4px;">Category</label>
+<div class="dc-field">
+  <label class="dc-label" for="{{ form.category.id_for_label }}">Category</label>
   {{ form.category }}
 </div>
-<div>
-  <label class="text-sm text-muted" for="{{ form.hours_spent.id_for_label }}" style="display:block;margin-bottom:4px;">Hours</label>
-  {{ form.hours_spent }}
-  {% for error in form.hours_spent.errors %}<p class="text-sm" style="color:var(--red);">{{ error }}</p>{% endfor %}
-</div>
-<div>
-  <label class="text-sm text-muted" for="{{ form.status.id_for_label }}" style="display:block;margin-bottom:4px;">Status</label>
+<div class="dc-field">
+  <label class="dc-label" for="{{ form.status.id_for_label }}">Status</label>
   {{ form.status }}
 </div>
-<div>
-  <label class="text-sm text-muted" for="{{ form.notes.id_for_label }}" style="display:block;margin-bottom:4px;">Notes</label>
+<div class="dc-field dc-hours">
+  <label class="dc-label" for="{{ form.hours_spent.id_for_label }}">Hours</label>
+  {{ form.hours_spent }}
+  <div class="dc-quick" aria-label="Quick hours">
+    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
+            data-target="{{ form.hours_spent.id_for_label }}" data-value="0.5">0.5h</button>
+    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
+            data-target="{{ form.hours_spent.id_for_label }}" data-value="1">1h</button>
+    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
+            data-target="{{ form.hours_spent.id_for_label }}" data-value="2">2h</button>
+    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
+            data-target="{{ form.hours_spent.id_for_label }}" data-value="4">4h</button>
+  </div>
+  {% for error in form.hours_spent.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
+</div>
+<div class="dc-notes">
+  <label class="dc-label" for="{{ form.notes.id_for_label }}">Note <span class="text-muted">(optional)</span></label>
   {{ form.notes }}
 </div>

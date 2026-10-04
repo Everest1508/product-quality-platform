@@ -89,7 +89,24 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
 
     copy_summary_text = "\n".join(dsr_lines)
 
+    # Open tickets assigned to this person, as one-click task names. Scoped with
+    # `accessible_tickets` like every other ticket list, so a suggestion can
+    # never name a ticket from a product they cannot open.
+    ticket_suggestions = []
+    if can_submit:
+        from apps.products.access import accessible_tickets
+
+        for t in (
+            accessible_tickets(target_user, company)
+            .filter(assignees=target_user, status__in=["open", "assigned", "in_progress", "testing"])
+            .order_by("-id")[:6]
+        ):
+            ticket_suggestions.append(
+                {"number": t.pk, "title": t.title, "label": f"#{t.pk} {t.title}"[:255]}
+            )
+
     return {
+        "ticket_suggestions": ticket_suggestions,
         "selected_date": selected_date,
         "today": today,
         "yesterday": today - timedelta(days=1),

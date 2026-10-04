@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -97,7 +97,29 @@ def _punch_context(request, record, message="", person=None):
         - (now.hour * 60 + now.minute)
     )
 
+    # Numbers the live counter needs, as plain integers. The old template pasted
+    # an unquoted ISO string into Alpine's x-data, which is a syntax error, so
+    # the counter never ticked.
+    today = timezone.localdate()
+    shift_start = timezone.make_aware(datetime.combine(today, shift.start_time))
+    shift_end = timezone.make_aware(datetime.combine(today, shift.end_time))
+    span_minutes = max(1, int((shift_end - shift_start).total_seconds() // 60))
+    since_ms = int(record.check_in.timestamp() * 1000) if record and record.check_in else None
+    out_ms = int(record.check_out.timestamp() * 1000) if record and record.check_out else None
+    worked = record.worked_minutes if record and record.is_complete else 0
+    target = shift.worked_minutes_per_day
+
     return {
+        "since_ms": since_ms,
+        "end_ms": int(shift_end.timestamp() * 1000),
+        "span_minutes": span_minutes,
+        "shift_end_label": f"{shift.end_time:%I:%M %p}".lstrip("0"),
+        "target_minutes": target,
+        "target_formatted": format_minutes(target),
+        "worked_delta": worked - target if worked else 0,
+        "worked_delta_formatted": format_minutes(abs(worked - target)) if worked else "",
+        "now_label": f"{now:%I:%M %p}".lstrip("0"),
+        "week": _week_strip(request, owner, shift),
         "today_record": record,
         "shift": shift,
         "is_open": bool(record and record.is_open),
@@ -144,6 +166,10 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
         shift = service.shift_for(request.company)
         for record in month_records:
             annotate_effective(record, shift)
+        # The "Today" stat reads `effective_formatted`, which was never set on
+        # today's record, so it showed nothing while someone was on the clock.
+        if today_record is not None:
+            annotate_effective(today_record, shift)
 
         prev_year, prev_month = service.month_shift(year, month, -1)
         next_year, next_month = service.month_shift(year, month, 1)
@@ -218,6 +244,8 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
                 },
             )
             message = f"Checked out. {record.worked_formatted} logged today."
+        elif action == "too_soon":
+            message = "You just checked in. Give it a minute before checking out."
         else:
             message = "You have already checked in and out for today."
 
@@ -236,23 +264,131 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
         return redirect("attendance:my_attendance")
 
 
+def _week_strip(request, owner, shift):
+    """Monday to Sunday for the current week: hours worked per day, for the bars
+    under the punch panel."""
+    today = timezone.localdate()
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    records = {
+        r.date: r
+        for r in AttendanceRecord.objects.filter(
+            company=request.company, user=owner, date__gte=monday, date__lte=sunday
+        )
+    }
+    on_leave = service.approved_leave_map(request.company, monday, sunday).get(owner.pk, set())
+    target = max(1, shift.worked_minutes_per_day)
+    days = []
+    for offset in range(7):
+        day = monday + timedelta(days=offset)
+        record = records.get(day)
+        minutes = service.net_minutes_for(record, shift) if record and record.check_in else 0
+        if day in on_leave:
+            state = "leave"
+        elif minutes:
+            state = "worked"
+        elif day > today:
+            state = "future"
+        elif day.weekday() >= 5:
+            state = "weekend"
+        else:
+            state = "none"
+        days.append({
+            "label": f"{day:%a}",
+            "date": day,
+            "minutes": minutes,
+            "formatted": format_minutes(minutes),
+            "pct": min(100, round(minutes / target * 100)),
+            "is_today": day == today,
+            "state": state,
+        })
+    return {
+        "days": days,
+        "total_formatted": format_minutes(sum(d["minutes"] for d in days)),
+    }
+
+
+def _last_week(company, user_ids, shift):
+    """For each user, the last seven days as small state dots (worked, leave,
+    none, weekend) and the minutes worked, from one query."""
+    today = timezone.localdate()
+    first = today - timedelta(days=6)
+    records = {}
+    for r in AttendanceRecord.objects.filter(
+        company=company, user_id__in=user_ids, date__gte=first, date__lte=today
+    ):
+        records[(r.user_id, r.date)] = r
+    on_leave = service.approved_leave_map(company, first, today)
+    out = {}
+    for uid in user_ids:
+        days = []
+        for offset in range(7):
+            day = first + timedelta(days=offset)
+            record = records.get((uid, day))
+            minutes = service.net_minutes_for(record, shift) if record and record.check_in else 0
+            if day in on_leave.get(uid, ()):
+                state = "leave"
+            elif record and record.check_in and record.is_stale:
+                state = "open"
+            elif minutes:
+                state = "worked"
+            elif day.weekday() >= 5:
+                state = "weekend"
+            else:
+                state = "none"
+            days.append({"date": day, "state": state, "formatted": format_minutes(minutes)})
+        out[uid] = days
+    return out
+
+
 class TeamAttendanceView(CompanyAdminRequiredMixin, View):
     """Admin: who is on the clock right now, and the whole team's today."""
 
     def get(self, request):
         on_clock = service.get_who_is_in(request.company)
         team = service.get_team_today(request.company)
+        shift = service.shift_for(request.company)
+
+        # Your own row first, marked, then everyone else. It used to be buried
+        # alphabetically, which read as "my attendance is not here".
+        weeks = _last_week(request.company, [row["user"].pk for row in team], shift)
+        for row in team:
+            row["is_me"] = row["user"].pk == request.user.pk
+            row["week"] = weeks[row["user"].pk]
+            record = row["record"]
+            if row["on_leave"]:
+                row["state"] = "leave"
+            elif record and record.is_stale:
+                row["state"] = "stale"
+            elif record and record.is_open_today:
+                row["state"] = "clock"
+            elif record and record.is_complete:
+                row["state"] = "done"
+            else:
+                row["state"] = "absent"
+            row["net_formatted"] = (
+                format_minutes(service.net_minutes_for(record, shift))
+                if record and record.check_in else ""
+            )
+            row["progress"] = (
+                min(100, round(service.net_minutes_for(record, shift) / max(1, shift.worked_minutes_per_day) * 100))
+                if record and record.check_in else 0
+            )
+        team.sort(key=lambda row: (not row["is_me"], row["user"].username.lower()))
+        me = next((row for row in team if row["is_me"]), None)
 
         context = {
             "on_clock": on_clock,
             "on_clock_count": len(on_clock),
             "stale_count": sum(1 for r in on_clock if r["is_stale"]),
             "team": team,
+            "me": me,
+            "team_count": len(team),
             "present_count": sum(1 for row in team if row["record"] and row["record"].check_in),
             # Someone on approved leave is not absent, so they are counted
             # separately instead of dragging the absent total up.
             "leave_count": sum(1 for row in team if row["on_leave"]),
-            "shift": service.shift_for(request.company),
+            "shift": shift,
             "next": request.get_full_path(),
             "absent_count": sum(
                 1 for row in team
@@ -384,6 +520,13 @@ class AttendanceEditView(CompanyAdminRequiredMixin, View):
                 _safe_next(request.POST.get("next")) or "attendance:team_attendance"
             )
 
+        problem = _punch_problem(record, parsed_in, parsed_out)
+        if problem:
+            messages.error(request, problem)
+            return redirect(
+                _safe_next(request.POST.get("next")) or "attendance:team_attendance"
+            )
+
         record.check_in = parsed_in
         record.check_out = parsed_out
         record.notes = request.POST.get("notes", "")[:255]
@@ -421,6 +564,28 @@ class AttendanceEditView(CompanyAdminRequiredMixin, View):
         return redirect(
             _safe_next(request.POST.get("next")) or "attendance:team_attendance"
         )
+
+
+def _punch_problem(record, check_in, check_out):
+    """Why an edited punch cannot be saved, or None when it is fine.
+
+    A punch has to belong to the record's own day (a night shift may close the
+    next morning) and cannot be in the future, otherwise a typo moves hours into
+    a different day or invents time that has not happened yet.
+    """
+    now = timezone.now()
+    for label, value in (("Check-in", check_in), ("Check-out", check_out)):
+        if value is None:
+            continue
+        if value > now + timedelta(minutes=5):
+            return f"{label} cannot be in the future."
+        offset = (timezone.localtime(value).date() - record.date).days
+        limit = (0, 1) if label == "Check-out" else (0, 0)
+        if not limit[0] <= offset <= limit[1]:
+            return f"{label} has to fall on {record.date:%b %d}" + (
+                " or the morning after." if label == "Check-out" else "."
+            )
+    return None
 
 
 def _parse_dt(raw):

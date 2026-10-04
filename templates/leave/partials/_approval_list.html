@@ -23,9 +23,9 @@
         <td>{{ leave.span_label }}</td>
         <td>
           {{ leave.days_label }}{% if leave.is_half_day %} <span class="pill draft">half</span>{% endif %}
-          {# The split, on the row rather than only in the dialog: a queue of
+          {% comment %} The split, on the row rather than only in the dialog: a queue of
              twenty is scanned, not opened one at a time, and "5 days" alone
-             cannot be approved -- somebody has to know 3 of them are paid. #}
+             cannot be approved -- somebody has to know 3 of them are paid. {% endcomment %}
           <div class="sub">
             {% if leave.is_fully_paid %}<span class="pill resolved">paid</span>
             {% elif leave.is_fully_unpaid %}<span class="pill closed">unpaid</span>
@@ -41,10 +41,10 @@
         </td>
         {% if status == 'pending' %}
         <td style="text-align:right;white-space:nowrap;">
-          {# One Review button opens the shared dialog, which carries the dates,
+          {% comment %} One Review button opens the shared dialog, which carries the dates,
              the paid/unpaid split and the note. The approve/reject pair that
              used to sit here could not express a paid decision at all -- it
-             posted the type's `is_paid` and left the approver no say. #}
+             posted the type's `is_paid` and left the approver no say. {% endcomment %}
           <button type="button" class="btn btn-sm btn-primary"
                   onclick="window.openLeaveDecision && window.openLeaveDecision({{ leave.pk }})">
             Review

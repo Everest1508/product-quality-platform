@@ -1,0 +1,29 @@
+{# The full "online now" list. Reads the shared presence store, so it updates live. #}
+<section class="card presence-panel" x-data aria-label="People online now">
+  <header class="presence-head">
+    <h2>Online now</h2>
+    <span class="presence-live" :class="$store.presence.connected ? 'is-live' : 'is-off'">
+      <i></i><span x-text="$store.presence.connected ? 'Live' : 'Reconnecting'"></span>
+    </span>
+  </header>
+  <ul class="presence-list" x-show="$store.presence.users.length" style="display:none;">
+    <template x-for="u in $store.presence.users" :key="u.user_id">
+      <li class="presence-row">
+        <span class="presence-avatar" :class="'is-' + u.status">
+          <span x-text="$store.presence.initial(u)"></span><i></i>
+        </span>
+        <span class="presence-who">
+          <strong><span x-text="u.name"></span><em x-show="u.user_id === $store.presence.meId"> (you)</em></strong>
+          <span class="presence-doing" x-text="u.activity"></span>
+        </span>
+        <span class="presence-meta">
+          <span x-show="u.clocked_in_at" class="presence-tag tag-green">In since <span x-text="$store.presence.clock(u.clocked_in_at)"></span></span>
+          <span x-show="u.tickets_in_progress" class="presence-tag tag-blue"><span x-text="u.tickets_in_progress"></span> in progress</span>
+        </span>
+      </li>
+    </template>
+  </ul>
+  <p class="presence-empty" x-show="!$store.presence.users.length">
+    <span x-text="$store.presence.connected ? 'Nobody is online right now.' : 'Connecting to the live feed...'"></span>
+  </p>
+</section>

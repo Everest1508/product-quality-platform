@@ -549,3 +549,20 @@ class PwaTests(TestCase):
         self.assertContains(r, 'rel="manifest"')
         self.assertContains(r, "viewport-fit=cover")
         self.assertContains(r, "serviceWorker.register('/sw.js'")
+
+
+class TemplateCommentTest(TestCase):
+    """`{# ... #}` only works on one line. A multi-line one is not a comment: Django
+    prints it, so engineering notes ended up on the page (leave, attendance, and
+    every page that showed a message). Multi-line notes use {% comment %}."""
+
+    def test_no_template_has_a_multi_line_hash_comment(self):
+        import re
+
+        offenders = []
+        for path in Path(settings.BASE_DIR, "templates").rglob("*.html"):
+            text = path.read_text()
+            for match in re.finditer(r"\{#(?:(?!#\}).)*?\n", text):
+                line = text.count("\n", 0, match.start()) + 1
+                offenders.append(f"{path.relative_to(settings.BASE_DIR)}:{line}")
+        self.assertEqual(offenders, [], "use {% comment %} for notes that span lines")

@@ -303,7 +303,9 @@
     .auth-submit .spinner{animation:none;}
   }
 
-  .toast{position:fixed;top:20px;right:20px;z-index:100;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;animation:fadeIn .2s;}
+  #toast-container{position:fixed;right:20px;bottom:20px;z-index:100;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;max-width:calc(100vw - 24px);}
+  .toast{position:relative;pointer-events:auto;max-width:min(380px,100%);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(13,17,23,.14);animation:toastIn .22s ease-out;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
   .toast.success{background:var(--green-bg);color:var(--green);border:1px solid var(--green);}
   .toast.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red);}
   .toast.warning{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange);}

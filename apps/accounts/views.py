@@ -13,6 +13,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
+from apps.accounts import throttle
 from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.core.redirects import safe_next
@@ -60,14 +61,21 @@ class LoginView(View):
         if form.is_valid():
             username_or_email = form.cleaned_data["username"]
             password = form.cleaned_data["password"]
+            if throttle.is_blocked(request, username_or_email):
+                form.add_error(None, throttle.BLOCKED_MESSAGE)
+                response = self._render(request, form, request.POST.get("next"))
+                response.status_code = 429
+                return response
             user = User.objects.filter(email=username_or_email).first()
             if not user:
                 user = User.objects.filter(username=username_or_email).first()
             if user:
                 authenticated = authenticate(request, username=user.username, password=password)
                 if authenticated:
+                    throttle.record_success(request, username_or_email)
                     login(request, authenticated)
                     return redirect(destination or "accounts:dashboard")
+            throttle.record_failure(request, username_or_email)
             # Deliberately one message for "no such user" and "wrong password".
             # Naming which half was wrong turns the form into a probe for
             # whether an account exists.
@@ -358,11 +366,18 @@ class OAuthAuthorizeView(View):
         if form.is_valid():
             username_or_email = form.cleaned_data["username"]
             password = form.cleaned_data["password"]
+            if throttle.is_blocked(request, username_or_email):
+                form.add_error(None, throttle.BLOCKED_MESSAGE)
+                return render(request, "accounts/oauth_authorize.html", {
+                    "form": form, "client_id": client_id, "redirect_uri": redirect_uri, "state": state,
+                }, status=429)
             user = User.objects.filter(email=username_or_email).first() or User.objects.filter(username=username_or_email).first()
             authenticated = authenticate(request, username=user.username, password=password) if user else None
             if authenticated:
+                throttle.record_success(request, username_or_email)
                 login(request, authenticated)
                 return self._issue_and_redirect(authenticated, client_id, redirect_uri, state)
+            throttle.record_failure(request, username_or_email)
             form.add_error(None, "Invalid credentials.")
 
         return render(request, "accounts/oauth_authorize.html", {

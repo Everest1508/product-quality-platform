@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.models import TenantScopedModel
@@ -137,42 +137,53 @@ def record_for_day(company, user, day):
     return AttendanceRecord.objects.filter(company=company, user=user, date=day).first()
 
 
+# A check-out this soon after a check-in is a double tap, not a day's work.
+# Without the guard the second tap closed the day at 0 minutes and the person
+# could not check in again.
+MIN_PUNCH_GAP = timedelta(seconds=45)
+
+
 def punch(company, user, moment=None, notes=""):
     """Toggle the clock for `user` on today's date.
 
     Returns (record, action) where action is one of:
       "checked_in"  - a new day was started
       "checked_out" - the open day was closed
+      "too_soon"    - a second tap right after checking in, ignored
       "unchanged"   - already closed for the day, no-op
+
+    One transaction around a get_or_create, so two simultaneous first punches
+    (a double tap, or a PWA retry) end up as one record instead of one of them
+    failing on the unique constraint.
     """
     moment = moment or timezone.now()
     day = timezone.localdate(moment)
 
-    record = AttendanceRecord.objects.filter(company=company, user=user, date=day).first()
-
-    if record is None:
-        record = AttendanceRecord.objects.create(
+    with transaction.atomic():
+        record, created = AttendanceRecord.objects.select_for_update().get_or_create(
             company=company,
             user=user,
             date=day,
-            check_in=moment,
-            notes=notes,
+            defaults={"check_in": moment, "notes": notes},
         )
-        return record, "checked_in"
+        if created:
+            return record, "checked_in"
 
-    if record.check_in is None:
-        record.check_in = moment
-        if notes:
-            record.notes = notes
-        record.save()
-        return record, "checked_in"
+        if record.check_in is None:
+            record.check_in = moment
+            if notes:
+                record.notes = notes
+            record.save()
+            return record, "checked_in"
 
-    if record.check_out is None:
-        record.check_out = max(moment, record.check_in)
-        if notes:
-            record.notes = notes
-        record.save()
-        return record, "checked_out"
+        if record.check_out is None:
+            if timedelta(0) <= moment - record.check_in < MIN_PUNCH_GAP:
+                return record, "too_soon"
+            record.check_out = max(moment, record.check_in)
+            if notes:
+                record.notes = notes
+            record.save()
+            return record, "checked_out"
 
     return record, "unchanged"
 
@@ -240,6 +251,9 @@ class WorkShift(TenantScopedModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta(TenantScopedModel.Meta):
+        constraints = [
+            models.UniqueConstraint(fields=["company"], name="one_work_shift_per_company"),
+        ]
         verbose_name = "Work Shift"
         verbose_name_plural = "Work Shifts"
 

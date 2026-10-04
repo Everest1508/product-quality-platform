@@ -57,7 +57,7 @@ class PunchToggleTest(AttendanceTestBase):
         self.assertEqual(record.worked_minutes, 240)
 
     def test_third_punch_same_day_is_a_noop(self):
-        punch(self.company, self.dev)
+        punch(self.company, self.dev, moment=timezone.now() - timedelta(minutes=3))
         punch(self.company, self.dev)
         record, action = punch(self.company, self.dev)
 
@@ -155,6 +155,10 @@ class PunchViewTest(AttendanceTestBase):
         record = AttendanceRecord.objects.get(user=self.dev)
         self.assertTrue(record.is_open)
 
+        # Age the check-in past the double-tap guard, as a real day would.
+        AttendanceRecord.objects.filter(pk=record.pk).update(
+            check_in=record.check_in - timedelta(minutes=5)
+        )
         self.client.post(reverse("attendance:punch"))
         record.refresh_from_db()
         self.assertTrue(record.is_complete)
@@ -162,6 +166,7 @@ class PunchViewTest(AttendanceTestBase):
     def test_punch_logs_activity(self):
         self.client.login(username="dev", password="pass1234")
         self.client.post(reverse("attendance:punch"))
+        AttendanceRecord.objects.update(check_in=timezone.now() - timedelta(minutes=5))
         self.client.post(reverse("attendance:punch"))
 
         events = set(
@@ -387,17 +392,22 @@ class TeamViewAccessTest(AttendanceTestBase):
 class AdminEditTest(AttendanceTestBase):
     def setUp(self):
         super().setUp()
-        self.record, _ = punch(self.company, self.dev)
-        self.record.check_out = self.record.check_in + timedelta(hours=8)
-        self.record.save()
+        # A finished day in the past. An edit may not put a punch in the future,
+        # so a record dated today would make these tests depend on the hour.
+        day = timezone.localdate() - timedelta(days=2)
+        check_in = timezone.make_aware(datetime.combine(day, time(10, 0)))
+        self.record = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+            check_in=check_in, check_out=check_in + timedelta(hours=8),
+        )
 
     def test_admin_can_edit_a_record(self):
         self.client.login(username="owner", password="pass1234")
         response = self.client.post(
             reverse("attendance:attendance_edit", args=[self.record.pk]),
             {
-                "check_in": "2026-01-05T09:00",
-                "check_out": "2026-01-05T17:30",
+                "check_in": f"{self.record.date:%Y-%m-%d}T09:00",
+                "check_out": f"{self.record.date:%Y-%m-%d}T17:30",
                 "notes": "forgot to check out",
             },
         )
@@ -447,7 +457,7 @@ class AdminEditTest(AttendanceTestBase):
         self.client.login(username="owner", password="pass1234")
         self.client.post(
             reverse("attendance:attendance_edit", args=[self.record.pk]),
-            {"check_in": "2026-01-05T09:00", "check_out": "2026-01-05T17:00"},
+            {"check_in": f"{self.record.date:%Y-%m-%d}T09:00", "check_out": f"{self.record.date:%Y-%m-%d}T17:00"},
         )
         self.assertTrue(
             ActivityLog.objects.filter(
@@ -459,7 +469,7 @@ class AdminEditTest(AttendanceTestBase):
 class ReportTest(AttendanceTestBase):
     def test_who_is_in_lists_only_open_records(self):
         open_record, _ = punch(self.company, self.dev)
-        punch(self.company, self.viewer)
+        punch(self.company, self.viewer, moment=timezone.now() - timedelta(minutes=3))
         punch(self.company, self.viewer)  # closes viewer's day
 
         on_clock = service.get_who_is_in(self.company)
@@ -1483,3 +1493,132 @@ class PunchPanelTest(AttendanceTestBase):
         """`.punch-panel` was `justify-content:space-between` around exactly one
         child, so the flex was doing nothing."""
         self.assertNotIn("punch-panel", self.panel())
+
+
+class DoubleTapAndConstraintTest(AttendanceTestBase):
+    """A double tap closed the day at 0 minutes and blocked checking in again."""
+
+    def test_a_second_tap_right_after_checking_in_is_ignored(self):
+        now = timezone.now()
+        record, first = punch(self.company, self.dev, moment=now)
+        _, second = punch(self.company, self.dev, moment=now + timedelta(seconds=2))
+        self.assertEqual((first, second), ("checked_in", "too_soon"))
+        record.refresh_from_db()
+        self.assertIsNone(record.check_out)
+
+    def test_a_real_check_out_after_the_gap_still_works(self):
+        now = timezone.now()
+        punch(self.company, self.dev, moment=now - timedelta(minutes=3))
+        record, action = punch(self.company, self.dev, moment=now)
+        self.assertEqual(action, "checked_out")
+        self.assertIsNotNone(record.check_out)
+
+    def test_the_view_tells_the_person_what_happened(self):
+        self.client.login(username="dev", password="pass1234")
+        self.client.post(reverse("attendance:punch"))
+        response = self.client.post(reverse("attendance:punch"), follow=True)
+        self.assertContains(response, "Give it a minute")
+        from apps.attendance.models import AttendanceRecord
+
+        record = AttendanceRecord.objects.get(company=self.company, user=self.dev)
+        self.assertIsNone(record.check_out)
+
+    def test_a_company_cannot_have_two_work_shifts(self):
+        from django.db import IntegrityError, transaction
+
+        from apps.attendance.models import WorkShift
+
+        WorkShift.objects.create(company=self.company)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            WorkShift.objects.create(company=self.company)
+
+    def test_shift_for_keeps_returning_the_one_row(self):
+        first = service.shift_for(self.company)
+        self.assertEqual(service.shift_for(self.company).pk, first.pk)
+
+
+class EditedPunchValidationTest(AttendanceTestBase):
+    def setUp(self):
+        super().setUp()
+        from apps.attendance.models import AttendanceRecord
+
+        self.day = timezone.localdate() - timedelta(days=2)
+        self.record = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=self.day,
+            check_in=timezone.make_aware(datetime.combine(self.day, time(10, 0))),
+        )
+        self.client.login(username="owner", password="pass1234")
+        self.url = reverse("attendance:attendance_edit", args=[self.record.pk])
+
+    def post(self, check_in, check_out):
+        return self.client.post(self.url, {"check_in": check_in, "check_out": check_out}, follow=True)
+
+    def test_a_punch_on_another_day_is_refused(self):
+        other = self.day - timedelta(days=5)
+        response = self.post(f"{other:%Y-%m-%d}T10:00", "")
+        self.assertContains(response, "has to fall on")
+        self.record.refresh_from_db()
+        self.assertEqual(timezone.localtime(self.record.check_in).date(), self.day)
+
+    def test_a_future_check_out_is_refused(self):
+        future = timezone.localdate() + timedelta(days=3)
+        response = self.post(f"{self.day:%Y-%m-%d}T10:00", f"{future:%Y-%m-%d}T19:00")
+        self.assertContains(response, "cannot be in the future")
+
+    def test_a_night_shift_may_close_the_next_morning(self):
+        next_day = self.day + timedelta(days=1)
+        response = self.post(f"{self.day:%Y-%m-%d}T22:00", f"{next_day:%Y-%m-%d}T06:00")
+        self.assertContains(response, "Updated")
+        self.record.refresh_from_db()
+        self.assertIsNotNone(self.record.check_out)
+
+
+class TeamPageShowsYouTest(AttendanceTestBase):
+    """An admin could not find their own row in the team view."""
+
+    def get(self, username="owner"):
+        self.client.login(username=username, password="pass1234")
+        return self.client.get(reverse("attendance:team_attendance"))
+
+    def test_your_own_row_is_first_and_marked(self):
+        response = self.get()
+        team = response.context["team"]
+        self.assertTrue(team[0]["is_me"])
+        self.assertEqual(team[0]["user"], self.owner)
+        self.assertContains(response, 'class="you"')
+        self.assertContains(response, "Your day")
+
+    def test_your_punch_shows_in_your_day_card(self):
+        punch(self.company, self.owner, moment=timezone.now() - timedelta(hours=2))
+        response = self.get()
+        self.assertEqual(response.context["me"]["state"], "clock")
+        self.assertContains(response, "On the clock since")
+
+    def test_every_row_links_to_that_persons_history(self):
+        response = self.get()
+        self.assertContains(response, f"?user_id={self.dev.pk}")
+
+    def test_each_row_carries_seven_days(self):
+        response = self.get()
+        self.assertTrue(all(len(row["week"]) == 7 for row in response.context["team"]))
+
+    def test_no_email_addresses_are_shown(self):
+        self.assertNotContains(self.get(), "@test.local")
+
+
+class PunchPanelLiveCounterTest(AttendanceTestBase):
+    """The counter's start time used to be pasted in as an unquoted ISO string,
+    which is a syntax error in Alpine, so it never ticked."""
+
+    def test_the_start_is_an_integer_not_a_bare_date(self):
+        record, _ = punch(self.company, self.dev, moment=timezone.now() - timedelta(hours=1))
+        self.client.login(username="dev", password="pass1234")
+        body = self.client.get(reverse("attendance:my_attendance")).content.decode()
+        expected = int(record.check_in.timestamp() * 1000)
+        self.assertIn(f"since: {expected},", body)
+        self.assertNotRegex(body, r"since: \d{4}-\d{2}-\d{2}T")
+
+    def test_the_week_strip_is_there(self):
+        self.client.login(username="dev", password="pass1234")
+        body = self.client.get(reverse("attendance:my_attendance")).content.decode()
+        self.assertEqual(body.count('class="week-day'), 7)

@@ -1,164 +1,193 @@
-<div x-data="{ editing: null }">
-<div class="att-stats">
-  <div class="card stat">
-    <div class="text-sm text-muted">On the clock</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--green);">{{ on_clock_count }}</div>
-  </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">Checked in today</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;">{{ present_count }}</div>
-  </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">Not checked in</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;">{{ absent_count }}</div>
-  </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">On leave</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--orange);">{{ leave_count }}</div>
-  </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">Forgotten check-outs</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;{% if stale_count %}color:var(--orange);{% endif %}">{{ stale_count }}</div>
-  </div>
-</div>
+{% load icon_tags %}
+<div x-data="{ editing: null, filter: 'all' }" class="team-att">
 
-{% if stale_count %}
-<div style="padding:10px 14px;background:var(--orange-bg);border:1px solid var(--orange);border-radius:6px;margin-bottom:16px;font-size:13px;color:var(--orange);">
-  {{ stale_count }} record(s) still on the clock from a previous day. Edit them below to close them out.
-</div>
-{% endif %}
+  {% if me %}
+  <section class="card me-card me-{{ me.state }}" aria-label="Your attendance today">
+    <div class="me-who">
+      <span class="avatar me-avatar">{{ me.user.get_full_name|default:me.user.username|make_list|first|upper }}</span>
+      <div>
+        <strong>Your day</strong>
+        <span class="text-sm text-muted">
+          {% if me.state == 'clock' %}On the clock since {{ me.record.check_in|date:"g:i A" }}
+          {% elif me.state == 'done' %}{{ me.record.check_in|date:"g:i A" }} → {{ me.record.check_out|date:"g:i A" }} · {{ me.net_formatted }} worked
+          {% elif me.state == 'leave' %}On approved leave today
+          {% elif me.state == 'stale' %}Checked in {{ me.record.date|date:"M j" }} and never checked out
+          {% else %}You have not checked in yet{% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="me-week" aria-label="Your last seven days">
+      {% for d in me.week %}<i class="dot is-{{ d.state }}" title="{{ d.date|date:'D, M j' }}: {{ d.formatted }}"></i>{% endfor %}
+    </div>
+    <a class="btn btn-sm btn-primary" href="{% url 'attendance:my_attendance' %}">Open my attendance</a>
+  </section>
+  {% endif %}
 
-<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
-  <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
-    <h2 style="font-size:15px;font-weight:600;margin:0;">On the clock right now</h2>
+  <div class="att-stats">
+    <button type="button" class="card stat kpi kpi-green" :class="{ 'is-on': filter === 'clock' }" @click="filter = filter === 'clock' ? 'all' : 'clock'">
+      <span class="kpi-icon">{% icon 'clock' %}</span>
+      <span class="kpi-num">{{ on_clock_count }}</span>
+      <span class="kpi-label">On the clock</span>
+    </button>
+    <div class="card stat kpi kpi-blue">
+      <span class="kpi-icon">{% icon 'circle-check' %}</span>
+      <span class="kpi-num">{{ present_count }}<small>/{{ team_count }}</small></span>
+      <span class="kpi-label">Checked in today</span>
+    </div>
+    <button type="button" class="card stat kpi kpi-gray" :class="{ 'is-on': filter === 'absent' }" @click="filter = filter === 'absent' ? 'all' : 'absent'">
+      <span class="kpi-icon">{% icon 'user' %}</span>
+      <span class="kpi-num">{{ absent_count }}</span>
+      <span class="kpi-label">Not checked in</span>
+    </button>
+    <button type="button" class="card stat kpi kpi-orange" :class="{ 'is-on': filter === 'leave' }" @click="filter = filter === 'leave' ? 'all' : 'leave'">
+      <span class="kpi-icon">{% icon 'calendar-days' %}</span>
+      <span class="kpi-num">{{ leave_count }}</span>
+      <span class="kpi-label">On leave</span>
+    </button>
+    <button type="button" class="card stat kpi {% if stale_count %}kpi-red{% else %}kpi-gray{% endif %}" :class="{ 'is-on': filter === 'stale' }" @click="filter = filter === 'stale' ? 'all' : 'stale'">
+      <span class="kpi-icon">{% icon 'triangle-alert' %}</span>
+      <span class="kpi-num">{{ stale_count }}</span>
+      <span class="kpi-label">Forgotten check-outs</span>
+    </button>
   </div>
-  {% if on_clock %}
-  <table>
-    <thead>
-      <tr>
-        <th>Employee</th>
-        <th>Since</th>
-        <th>Elapsed</th>
-        <th>Date</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in on_clock %}
-      <tr>
-        <td>
-          <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
-          <span class="title">{{ row.user.get_full_name|default:row.user.username }}</span>
-          <div class="sub">{{ row.role }}</div>
-        </td>
-        <td class="date">{{ row.record.check_in|date:"g:i A" }}</td>
-        <td>
-          <span x-data="{
-                     since: '{{ row.record.check_in|date:'c' }}',
-                     mins: null,
-                     tick() { this.mins = Math.max(0, Math.floor((Date.now() - new Date(this.since).getTime()) / 60000)); },
-                     get elapsed() {
-                       const m = this.mins === null ? 0 : this.mins;
-                       return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
-                     }
-                   }"
-                x-init="tick(); setInterval(tick, 30000)">
-            <span x-text="elapsed">{{ row.record.elapsed_formatted }}</span>
-          </span>
-        </td>
-        <td>
-          {{ row.record.date|date:"M d" }}
-          {% if row.is_stale %}<span class="pill high" title="Checked in {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>{% endif %}
-        </td>
-        <td style="text-align:right;">
-          <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">
-            {% if row.is_stale %}Set check-out{% else %}Edit{% endif %}
-          </button>
-        </td>
-      </tr>
 
-      <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
-        <td colspan="5" style="background:var(--panel);">
-          {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="empty">
-    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
-    <h3>Nobody is on the clock</h3>
-    <p>Team members appear here while they are checked in.</p>
+  {% if stale_count %}
+  <div class="alert alert-warn">
+    {{ stale_count }} record(s) still on the clock from a previous day. Use "Set check-out" below to close them out.
   </div>
   {% endif %}
-</div>
 
-<div class="card" style="padding:0;overflow:hidden;">
-  <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
-    <h2 style="font-size:15px;font-weight:600;margin:0;">Today — {{ today|date:"l, F d" }}</h2>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Employee</th>
-        <th>Role</th>
-        <th>Check in</th>
-        <th>Check out</th>
-        <th>Worked</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in team %}
-      <tr>
-        <td>
-          <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
-          <span class="title">{{ row.user.get_full_name|default:row.user.username }}</span>
-        </td>
-        <td class="sub">{{ row.role }}</td>
-        <td>{{ row.record.check_in|date:"g:i A"|default:"—" }}</td>
-        <td>{{ row.record.check_out|date:"g:i A"|default:"—" }}</td>
-        <td>
-          {% if row.record and row.record.is_complete %}{{ row.record.worked_formatted }}
-          {% elif row.record and row.record.is_open %}<span class="text-muted">{{ row.record.elapsed_formatted }}</span>
-          {% else %}<span class="text-muted">—</span>{% endif %}
-        </td>
-        <td>
-          {% if row.on_leave %}<span class="pill open" title="On approved leave">On leave</span>
-          {% elif row.record and row.record.is_stale %}<span class="pill high" title="Checked in on {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>
-          {% elif row.record and row.record.is_open_today %}<span class="pill open">On clock</span>
-          {% elif row.record and row.record.is_complete %}<span class="pill resolved">Complete</span>
-          {% else %}<span class="pill closed">Absent</span>{% endif %}
-        </td>
-        <td style="text-align:right;">
+  {% comment %} Open punches from earlier days. The roster below is today only, so without
+     this list a forgotten check-out from last week would not appear anywhere
+     except as a number in the stat strip. {% endcomment %}
+  {% if stale_count %}
+  <section class="card roster stale-card" aria-label="Open from earlier days">
+    <header class="roster-head"><h2>Open from earlier days</h2></header>
+    <table class="roster-table">
+      <thead><tr><th>Employee</th><th>Since</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        {% for row in on_clock %}{% if row.is_stale %}
+        <tr>
+          <td>
+            <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}">
+              <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
+              <span><span class="title">{{ row.user.get_full_name|default:row.user.username }}</span><span class="sub">{{ row.role }}</span></span>
+            </a>
+          </td>
+          <td>{{ row.record.check_in|date:"g:i A" }}</td>
+          <td>{{ row.record.date|date:"M d" }} <span class="pill high" title="Checked in {{ row.record.date|date:"M d" }} and never checked out">No check-out</span></td>
+          <td style="text-align:right;">
+            <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">Set check-out</button>
+          </td>
+        </tr>
+        <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
+          <td colspan="4" style="background:var(--panel);">
+            {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
+          </td>
+        </tr>
+        {% endif %}{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <div class="team-grid">
+    <section class="card roster" aria-label="Today's attendance">
+      <header class="roster-head">
+        <h2>Today <span class="text-muted">· {{ today|date:"l, F j" }}</span></h2>
+        <div class="chips" role="group" aria-label="Filter the roster">
+          <button type="button" class="chip" :class="{ 'is-on': filter === 'all' }" @click="filter = 'all'">All</button>
+          <button type="button" class="chip" :class="{ 'is-on': filter === 'clock' }" @click="filter = 'clock'">On the clock</button>
+          <button type="button" class="chip" :class="{ 'is-on': filter === 'absent' }" @click="filter = 'absent'">Not in</button>
+          <button type="button" class="chip" :class="{ 'is-on': filter === 'leave' }" @click="filter = 'leave'">On leave</button>
+        </div>
+      </header>
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Status</th>
+            <th>In</th>
+            <th>Out</th>
+            <th>Worked</th>
+            <th>Last 7 days</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in team %}
+          <tr x-show="filter === 'all' || filter === '{{ row.state }}'" class="{% if row.is_me %}is-me{% endif %}">
+            <td>
+              <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}" title="Open {{ row.user.get_full_name|default:row.user.username }}'s attendance history">
+                <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
+                <span>
+                  <span class="title">{{ row.user.get_full_name|default:row.user.username }}{% if row.is_me %} <em class="you">You</em>{% endif %}</span>
+                  <span class="sub">{{ row.role }}</span>
+                </span>
+              </a>
+            </td>
+            <td>
+              {% if row.on_leave %}<span class="pill open" title="On approved leave">On leave</span>
+              {% elif row.state == 'stale' %}<span class="pill high" title="Checked in on {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>
+              {% elif row.state == 'clock' %}<span class="pill open">On clock</span>
+              {% elif row.state == 'done' %}<span class="pill resolved">Complete</span>
+              {% else %}<span class="pill closed">Absent</span>{% endif %}
+            </td>
+            <td>{{ row.record.check_in|date:"g:i A"|default:"—" }}</td>
+            <td>{{ row.record.check_out|date:"g:i A"|default:"—" }}</td>
+            <td class="worked">
+              {% if row.record and row.record.is_complete %}
+                <span>{{ row.record.worked_formatted }}</span>
+                <span class="mini-bar"><i style="width:{{ row.progress }}%"></i></span>
+              {% elif row.record and row.record.is_open_today %}
+                <span x-data="{
+                       since: {{ row.record.check_in.timestamp|floatformat:0 }}000, now: Date.now(),
+                       get label() { const m = Math.max(0, Math.floor((this.now - this.since) / 60000)); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; }
+                     }" x-init="setInterval(() => now = Date.now(), 20000)">
+                  <span x-text="label">{{ row.record.elapsed_formatted }}</span>
+                </span>
+                <span class="mini-bar is-live"><i style="width:{{ row.progress }}%"></i></span>
+              {% elif row.record and row.record.is_open %}
+                <span class="text-muted">{{ row.record.elapsed_formatted }}</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td>
+              <span class="week-dots" aria-label="Last seven days">
+                {% for d in row.week %}<i class="dot is-{{ d.state }}" title="{{ d.date|date:'D, M j' }}: {% if d.state == 'leave' %}on leave{% else %}{{ d.formatted }}{% endif %}"></i>{% endfor %}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              {% if row.record and row.record.is_open %}
+                <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">
+                  {% if row.record.is_stale %}Set check-out{% else %}Edit{% endif %}
+                </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% comment %} A sibling <tr>, never a <tr> nested in a <td> -- the browser would
+             hoist it out and the form would land in the wrong row. {% endcomment %}
           {% if row.record and row.record.is_open %}
-            <button type="button" class="btn btn-sm" @click="editing = editing === {{ row.record.pk }} ? null : {{ row.record.pk }}">
-              {% if row.record.is_stale %}Set check-out{% else %}Edit{% endif %}
-            </button>
+          <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
+            <td colspan="7" style="background:var(--panel);">
+              {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
+            </td>
+          </tr>
           {% endif %}
-        </td>
-      </tr>
-      {# A sibling <tr>, never a <tr> nested in a <td> -- the browser would
-         hoist it out and the form would land in the wrong row. #}
-      {% if row.record and row.record.is_open %}
-      <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
-        <td colspan="7" style="background:var(--panel);">
-          {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
-        </td>
-      </tr>
-      {% endif %}
-      {% empty %}
-      <tr>
-        <td colspan="7">
-          <div class="empty">
-            <h3>No team members</h3>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+          {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="empty">
+                <h3>No team members</h3>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <aside class="team-side">
+      {% include "core/_presence_panel.html" %}
+    </aside>
+  </div>
 </div>

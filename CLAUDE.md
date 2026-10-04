@@ -25,7 +25,9 @@ venv/bin/python manage.py test apps.tickets.tests.test_tickets.TicketProductAcce
 
 Two tests in `apps.accounts.tests.test_tenant_isolation` fail on a clean checkout (`test_signup_creates_user`, `test_request_has_company_after_login`) — stale tests against an auth flow that was refactored (`accounts:signup` route is gone; `LOGIN_REDIRECT_URL = "/dashboard/"` points at a route that no longer exists). Not regressions.
 
-Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`. Also starts a `redis` service (`REDIS_URL`, used by Django Channels for `apps.serop`'s live inbox — see below). Outside Docker, run Redis locally or the WebSocket consumer just won't get a channel layer; `manage.py runserver` auto-detects Channels (it's in `INSTALLED_APPS`) and serves both HTTP and WS.
+Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`. Also starts a `redis` service (`REDIS_URL`, used by Django Channels for the live inbox and presence feeds). `daphne` is first in `INSTALLED_APPS`, which is what makes `manage.py runserver` an ASGI server that serves WebSockets as well as HTTP; without it every `/ws/...` URL is a 404. With no `REDIS_URL` set the channel layer is in-memory, which is fine for one process.
+
+Deploy and maintenance commands for Server Operator live in `.server-operator/*.serop` (see its README).
 
 There is no frontend build step. Templates render server-side; htmx and Alpine.js load from CDN in `templates/core/base.html`. All CSS is a single `<style>` block in `base.html` driven by CSS custom properties (`--accent`, `--panel`, `--border`, …). `static/` does not exist, so the `staticfiles.W004` check warning is expected.
 
@@ -66,9 +68,13 @@ The same domain logic exists in two places and both must be kept in sync:
 - **DSR auto-logging:** `Ticket.transition_to()` calls `apps/dsr/service.auto_log_ticket_dsr` when a ticket moves to `resolved`/`closed`, creating/updating a `DSREntry` timesheet row for each assignee.
 - **Automation:** `AutoTicketRule` is **not** evaluated inline. The `evaluate_rules` management command (run on a cron) scans recent `ErrorGroup`s per rule; when `occurrence_count >= threshold_count` within `window_minutes`, it creates an `[Auto]` ticket and records an `AutoTicketLog` (which also dedups re-triggers).
 
+### Presence (`apps/presence/`)
+
+`/ws/presence/` (routed in `core/asgi.py`) is one WebSocket per browser tab. It is session-cookie authenticated and wrapped in `AllowedHostsOriginValidator`, so another site cannot open it with a visitor's cookies; `/ws/inbox/` (Serop) is deliberately not wrapped, since it uses a bearer token. Each tab is a `PresenceSession` row kept alive by a 25s heartbeat; `service.snapshot` lists tabs seen in the last 75s, grouped by user, and the consumer broadcasts that snapshot to the company's group. The activity label is derived on the server from the page path (`service.activity_for`) and never contains a title or product name. The browser side is the `presence` Alpine store in `templates/core/_presence.html`.
+
 ### Templates
 
-Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app shell; the sidebar is `core/_sidebar.html`, fed by the `product_context` and `workspace_context` processors in `apps/core/context_processors.py` (these attach `product` + per-product counts, `nav_products`, and company-wide open counts). Partials are prefixed `_` and live in `<app>/partials/`. For an htmx request (`HX-Request: true` header) a view returns a `partials/` fragment instead of the full page.
+Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app shell; the sidebar is `core/_sidebar.html`, fed by the `product_context` and `workspace_context` processors in `apps/core/context_processors.py` (these attach `product` + per-product counts, `nav_products`, and company-wide open counts). Partials are prefixed `_` and live in `<app>/partials/`. CSS is four files under `templates/core/css/` (`_tokens`, `_app`, `_components`, `_responsive`) included into one inline `<style>`; colors come from `_tokens.css` only. See `design-system.md`. A multi-line template note must use `{% comment %}`, because a `{# #}` spanning lines prints on the page (a test enforces this). The PWA manifest, service worker and offline page are views in `apps/core/pwa.py`, and the favicon files in `brand/favicon/` are served by `apps/core/brand.py`, because there is no static pipeline. For an htmx request (`HX-Request: true` header) a view returns a `partials/` fragment instead of the full page.
 
 ### Auth
 

@@ -190,6 +190,8 @@
 
   <div class="side-foot">
     {% with u=request.resolver_match.url_name %}
+    {% include "core/_presence_sidebar.html" %}
+
     <button type="button" class="side-item side-version" data-changelog-open
             aria-haspopup="dialog" aria-label="What's new in v{{ app_version }}">
       {% icon 'sparkles' %}

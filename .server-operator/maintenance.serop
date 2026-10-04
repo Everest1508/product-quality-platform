@@ -1,0 +1,22 @@
+[Logs]
+sudo docker compose logs --tail 200 web
+
+[Follow Logs]
+sudo docker compose logs -f --tail 50 web
+
+[Migrate]
+sudo docker compose exec web python manage.py migrate --noinput
+
+[Backup Database]
+sudo mkdir -p backups
+sudo cp db.sqlite3 backups/db-$(date +%F-%H%M).sqlite3
+ls -lh backups
+
+[Run Automation Rules]
+sudo docker compose exec web python manage.py evaluate_rules
+
+[Django Check]
+sudo docker compose exec web python manage.py check
+
+[Shell]
+sudo docker compose exec web python manage.py shell
