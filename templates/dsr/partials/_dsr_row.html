@@ -29,11 +29,19 @@ choosing a category on one row cleared it on every other row.
     </div>
     <div class="dsr-sub">
       {% if can_submit %}
+      {% if entry.ticket_id %}
+      {% if entry.product %}<span class="dsr-tag dsr-product" title="Product">{{ entry.product.name }}</span>{% endif %}
+      {% else %}
+      <div class="dsr-pick dsr-pick-product">
+        {% dropdown "product" products|obj_pairs:"pk:name" entry.product_id|default_if_none:"" placeholder="No product" empty_value="" label="Product" trigger_class="sheet-select" %}
+      </div>
+      {% endif %}
       <div class="dsr-pick">
-        {% dropdown "category" category_choices entry.category placeholder="Category" label="Category" trigger_class="sheet-select category-select {{ entry.category }}" %}
+        {% dropdown "category" category_choices entry.category placeholder="Category" label="Category" trigger_class="sheet-select category-select "|add:entry.category %}
       </div>
       <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add a note" class="sheet-input dsr-note" aria-label="Notes">
       {% else %}
+      {% if entry.product %}<span class="dsr-tag dsr-product" title="Product">{{ entry.product.name }}</span>{% endif %}
       <span class="dsr-tag">{{ entry.get_category_display }}</span>
       {% if entry.notes %}<span class="dsr-note-text">{{ entry.notes }}</span>{% endif %}
       {% endif %}
@@ -47,7 +55,7 @@ choosing a category on one row cleared it on every other row.
       <input type="number" step="0.25" min="0" name="hours_spent" value="{{ entry.hours_spent }}" class="sheet-input num-input" inputmode="decimal"><span>h</span>
     </label>
     <div class="dsr-pick">
-      {% dropdown "status" status_choices entry.status placeholder="Status" label="Status" trigger_class="sheet-select status-select {{ entry.status }}" %}
+      {% dropdown "status" status_choices entry.status placeholder="Status" label="Status" trigger_class="sheet-select status-select "|add:entry.status %}
     </div>
     <button type="button" class="icon-btn icon-btn-danger" title="Delete entry" aria-label="Delete entry"
             hx-post="{% url 'dsr:dsr_delete' pk=entry.pk %}" hx-confirm="Delete this entry?"

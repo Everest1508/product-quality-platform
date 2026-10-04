@@ -12,8 +12,10 @@ that day. Auto entries are tagged **Auto**.
 Under **From your work today** you will see tickets you touched with a guess at
 the hours. Check the number and press **Add**.
 
-For anything else press **Add entry**, write what you did, pick a category and
-enter the hours. The 0.5h, 1h, 2h and 4h buttons fill the hours field.
+For anything else press **Add entry**, write what you did, pick the product (or leave
+it on "No product" for meetings), pick a category and enter the hours. The form stays
+open and empties itself after each entry, so you can log the next one straight away.
+You only see products you can open. The 0.5h, 1h, 2h and 4h buttons fill the hours field.
 
 ## Changing an entry
 

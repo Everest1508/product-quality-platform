@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.2.1] — 2026-10-05 · products on the DSR
+
+> In short: you can say which product a DSR entry was for, and the form starts empty after each entry.
+
+### New
+
+- **Pick a product on a DSR entry.** The new entry form has a Product box that lists only the products you can open. Leave it on "No product" for meetings and the like. You can change it on a row later.
+- **Product shows on every entry.** Entries made from a ticket take the ticket's product on their own, and older ticket entries were filled in. The copied summary names the product too.
+
+### Better
+
+- **The entry form stays open after you add one.** You can log the next entry straight away.
+
+### Fixed
+
+- **The form still held your last entry.** After adding a task, the text of that task was left in the form. It now starts empty. If an entry fails, what you typed stays so you can fix it.
+- **Category and status colors on DSR rows never showed.** They now do.
+
 ## [1.2.0] — 2026-10-04 · tickets named after their product
 
 > In short: every ticket now has a readable name like AUM-014, and My attendance and this What's new window were redesigned.
