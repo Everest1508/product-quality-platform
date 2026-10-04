@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.views import View
 
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.dashboards import quotes
 from apps.dashboards.models import ActivityLog
 from apps.dashboards.service import (
     get_personal_dashboard_data,
@@ -33,6 +34,7 @@ class DashboardView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         data = get_personal_dashboard_data(request.user, request.company)
         hour = timezone.localtime().hour
+        data["now"] = timezone.localtime()
         data["greeting"] = (
             "Good morning" if hour < 12
             else "Good afternoon" if hour < 18
@@ -42,7 +44,18 @@ class DashboardView(CompanyMemberRequiredMixin, View):
         if request.headers.get("HX-Request") == "true":
             return render(request, "dashboards/partials/_dashboard_content.html", data)
 
+        # Same line all day for one person, so a reload does not reshuffle it.
+        data["quote"] = quotes.pick(seed=timezone.localdate().toordinal() + request.user.pk)
         return render(request, "dashboards/dashboard.html", data)
+
+
+class QuoteView(CompanyMemberRequiredMixin, View):
+    """"Another one": swaps just the quote, without reloading the page."""
+
+    def get(self, request):
+        return render(request, "dashboards/partials/_quote.html", {
+            "quote": quotes.pick(exclude=request.GET.get("current", "")),
+        })
 
 
 class ProductDashboardView(CompanyMemberRequiredMixin, View):
@@ -123,6 +136,13 @@ class ReportsView(CompanyMemberRequiredMixin, View):
             "today": today,
             "yesterday": today - timedelta(days=1),
             "week_ago": today - timedelta(days=6),
+            "presets": [
+                ("Today", today, today),
+                ("Yesterday", today - timedelta(days=1), today - timedelta(days=1)),
+                ("Last 7 days", today - timedelta(days=6), today),
+                ("Last 30 days", today - timedelta(days=29), today),
+                ("This month", today.replace(day=1), today),
+            ],
         })
 
         if request.headers.get("HX-Request") == "true":

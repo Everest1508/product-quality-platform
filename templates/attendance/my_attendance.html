@@ -43,7 +43,7 @@ Always rendered, including when an admin reads a colleague's page: the partial
 hides its own button in that case (`punch_readonly`) but still shows the
 forgotten-check-out warning, which is the reason they opened the page.
 {% endcomment %}
-<div class="card" style="padding:18px;margin-bottom:20px;">
+<div style="margin-bottom:18px;">
   {% include "attendance/partials/_punch_button.html" %}
 </div>
 
@@ -71,40 +71,29 @@ forgotten-check-out warning, which is the reason they opened the page.
 </section>
 {% endif %}
 
-<div class="att-stats">
-  <div class="card stat">
-    <div class="text-sm text-muted">Today</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;">
-      {% if today_record and today_record.is_complete %}{{ today_record.worked_formatted }}
-      {% elif today_record and today_record.is_open %}{{ today_record.effective_formatted }}
-      {% else %}—{% endif %}
-    </div>
+<div class="stat-strip" role="list">
+  <div class="stat-strip-item" role="listitem">
+    <span class="stat-strip-label">Worked today</span>
+    <span class="stat-strip-value">{% if today_record and today_record.is_complete %}{{ today_record.worked_formatted }}{% elif today_record and today_record.is_open %}{{ today_record.effective_formatted }}{% else %}&ndash;{% endif %}</span>
   </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">Date</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;">{{ today|date:"M d" }}</div>
+  <div class="stat-strip-item" role="listitem">
+    <span class="stat-strip-label">Status</span>
+    <span class="stat-strip-value">
+      {% if today_record and today_record.is_complete %}<span class="pill resolved">Done</span>
+      {% elif today_record and today_record.is_open %}<span class="pill open">On the clock</span>
+      {% else %}<span class="pill closed">Not in yet</span>{% endif %}
+    </span>
   </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">Recorded days</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;">{{ records|length }}</div>
+  <div class="stat-strip-item" role="listitem">
+    <span class="stat-strip-label">Days recorded in {{ month_label }}</span>
+    <span class="stat-strip-value">{{ records|length }}</span>
   </div>
-  <div class="card stat">
-    <div class="text-sm text-muted">Status</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;">
-      {% if today_record and today_record.is_complete %}<span class="pill resolved">done</span>
-      {% elif today_record and today_record.is_open %}<span class="pill open">on clock</span>
-      {% else %}<span class="pill closed">not in</span>{% endif %}
-    </div>
-  </div>
-  {% comment %} A forgotten check-out on an *earlier* day is a different problem from
-     today's state, and the stat strip above only knows about today. Counted
-     over the month being viewed, not just today. {% endcomment %}
-  <div class="card stat">
-    <div class="text-sm text-muted">No check-out</div>
-    <div style="font-size:22px;font-weight:600;margin-top:4px;{% if unclosed_days %}color:var(--orange);{% endif %}">{{ unclosed_days }}</div>
-    {% if unclosed_days %}
-    <div class="text-sm text-muted" style="margin-top:2px;">day(s) this month need a check-out</div>
-    {% endif %}
+  {% comment %} A forgotten check-out on an earlier day is a different problem from
+     today's state, so it is counted over the month being viewed. {% endcomment %}
+  <div class="stat-strip-item" role="listitem">
+    <span class="stat-strip-label">Missing check-out</span>
+    <span class="stat-strip-value"{% if unclosed_days %} style="color:var(--orange);"{% endif %}>{{ unclosed_days }}</span>
+    {% if unclosed_days %}<span class="stat-strip-note">day{{ unclosed_days|pluralize }} need one</span>{% endif %}
   </div>
 </div>
 

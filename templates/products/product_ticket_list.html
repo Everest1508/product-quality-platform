@@ -12,7 +12,7 @@
 
 <div class="head" style="margin-bottom:20px;">
   <div>
-    <h1>{{ product.name }} — Tickets <span class="count" id="ticket-count">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }}</span></h1>
+    <h1>{{ product.name }} — Tickets <span class="count" id="ticket-count">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }} · {{ open_count }} open</span></h1>
     <p class="text-sm text-muted" style="margin-top:4px;">Tickets for {{ product.name }} only.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">

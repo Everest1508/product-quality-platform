@@ -70,7 +70,7 @@ The same domain logic exists in two places and both must be kept in sync:
 
 ### Presence (`apps/presence/`)
 
-`/ws/presence/` (routed in `core/asgi.py`) is one WebSocket per browser tab. It is session-cookie authenticated and wrapped in `AllowedHostsOriginValidator`, so another site cannot open it with a visitor's cookies; `/ws/inbox/` (Serop) is deliberately not wrapped, since it uses a bearer token. Each tab is a `PresenceSession` row kept alive by a 25s heartbeat; `service.snapshot` lists tabs seen in the last 75s, grouped by user, and the consumer broadcasts that snapshot to the company's group. The activity label is derived on the server from the page path (`service.activity_for`) and never contains a title or product name. The browser side is the `presence` Alpine store in `templates/core/_presence.html`.
+`/ws/presence/` (routed in `core/asgi.py`) is one WebSocket per browser tab. It is session-cookie authenticated and wrapped in `AllowedHostsOriginValidator`, so another site cannot open it with a visitor's cookies; `/ws/inbox/` (Serop) is deliberately not wrapped, since it uses a bearer token. Each tab is a `PresenceSession` row kept alive by a 25s heartbeat; `service.snapshot` lists tabs seen in the last 75s, grouped by user, and the consumer broadcasts that snapshot to the company's group. If the socket fails twice, the browser polls `POST /presence/beat/` (`apps/presence/views.py`), which writes the same `PresenceSession` row, so a proxy that drops the Upgrade header degrades to a 25 second refresh instead of a dead panel. The activity label is derived on the server from the page path (`service.activity_for`) and never contains a title or product name. The browser side is the `presence` Alpine store in `templates/core/_presence.html`.
 
 ### Notifications, search, corrections (newer pieces)
 
@@ -82,7 +82,11 @@ The same domain logic exists in two places and both must be kept in sync:
 
 ### Templates
 
-Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app shell; the sidebar is `core/_sidebar.html`, fed by the `product_context` and `workspace_context` processors in `apps/core/context_processors.py` (these attach `product` + per-product counts, `nav_products`, and company-wide open counts). Partials are prefixed `_` and live in `<app>/partials/`. CSS is four files under `templates/core/css/` (`_tokens`, `_app`, `_components`, `_responsive`) included into one inline `<style>`; colors come from `_tokens.css` only. See `design-system.md`. A multi-line template note must use `{% comment %}`, because a `{# #}` spanning lines prints on the page (a test enforces this). The PWA manifest, service worker and offline page are views in `apps/core/pwa.py`, and the favicon files in `brand/favicon/` are served by `apps/core/brand.py`, because there is no static pipeline. For an htmx request (`HX-Request: true` header) a view returns a `partials/` fragment instead of the full page.
+Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app shell; the sidebar is `core/_sidebar.html`, fed by the `product_context` and `workspace_context` processors in `apps/core/context_processors.py` (these attach `product` + per-product counts, `nav_products`, and company-wide open counts). Partials are prefixed `_` and live in `<app>/partials/`. CSS is five files under `templates/core/css/` (`_tokens`, `_app`, `_components`, `_pages`, `_responsive`) included into one inline `<style>`; colors come from `_tokens.css` only. See `design-system.md`. A multi-line template note must use `{% comment %}`, because a `{# #}` spanning lines prints on the page (a test enforces this). The PWA manifest, service worker and offline page are views in `apps/core/pwa.py`, and the favicon files in `brand/favicon/` are served by `apps/core/brand.py`, because there is no static pipeline. For an htmx request (`HX-Request: true` header) a view returns a `partials/` fragment instead of the full page.
+
+### Counts
+
+"Open" means not `resolved`/`closed` for tickets and not `resolved`/`ignored` for errors. The sidebar badge (`workspace_context`), the list headers ("15 tickets · 9 open", computed from the filtered queryset in the global and product-scoped views) and the product cards all use it. Keep them in step if a status is ever added. User-facing how-tos are in `docs/guides/`.
 
 ### Auth
 

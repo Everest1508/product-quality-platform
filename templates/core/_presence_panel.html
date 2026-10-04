@@ -2,8 +2,8 @@
 <section class="card presence-panel" x-data aria-label="People online now">
   <header class="presence-head">
     <h2>Online now</h2>
-    <span class="presence-live" :class="$store.presence.connected ? 'is-live' : 'is-off'">
-      <i></i><span x-text="$store.presence.connected ? 'Live' : 'Reconnecting'"></span>
+    <span class="presence-live" :class="$store.presence.mode === 'live' ? 'is-live' : 'is-off'">
+      <i></i><span x-text="{ live: 'Live', polling: 'Every 25s', offline: 'Offline', connecting: 'Connecting' }[$store.presence.mode]"></span>
     </span>
   </header>
   <ul class="presence-list" x-show="$store.presence.users.length" style="display:none;">
@@ -24,6 +24,6 @@
     </template>
   </ul>
   <p class="presence-empty" x-show="!$store.presence.users.length">
-    <span x-text="$store.presence.connected ? 'Nobody is online right now.' : 'Connecting to the live feed...'"></span>
+    <span x-text="($store.presence.mode === 'live' || $store.presence.mode === 'polling') ? 'Nobody else is online right now.' : ($store.presence.mode === 'offline' ? 'Sign in again to see who is online.' : 'Connecting...')"></span>
   </p>
 </section>

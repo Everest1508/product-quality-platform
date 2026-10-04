@@ -390,12 +390,13 @@ class ProductErrorListView(CompanyMemberRequiredMixin, View):
         page = paginator.get_page(request.GET.get("page", 1))
         from apps.errors import trends
         page.object_list = trends.attach_trends(page.object_list)
+        open_count = qs.exclude(status__in=("resolved", "ignored")).count()
 
         if request.headers.get("HX-Request") == "true":
-            return render(request, "products/partials/_product_error_list_body.html", {"page": page})
+            return render(request, "products/partials/_product_error_list_body.html", {"page": page, "open_count": open_count})
 
         return render(request, "products/product_error_list.html", {
-            "page": page, "product": product,
+            "page": page, "product": product, "open_count": open_count,
             "current_status": status, "current_severity": severity,
             "search": search, "current_sort": sort,
         })
@@ -458,14 +459,15 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
 
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
+        open_count = qs.exclude(status__in=("resolved", "closed")).count()
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_ticket_list_results.html",
-                          {"page": page, "product": product})
+                          {"page": page, "product": product, "open_count": open_count})
 
         return render(request, "products/product_ticket_list.html", {
             **ctx,
-            "page": page, "product": product,
+            "page": page, "product": product, "open_count": open_count,
             "members": product_users(product, request.company),
             "current_status": status,
             "status_choices": Ticket.Status.choices,
@@ -491,10 +493,11 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
             for v, label in Ticket.Status.choices
         ]
         total = sum(len(c["tickets"]) for c in columns)
+        open_count = sum(len(c["tickets"]) for c in columns if c["key"] not in ("resolved", "closed"))
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_kanban_columns.html",
-                          {"columns": columns, "total": total, "product": product})
+                          {"columns": columns, "total": total, "product": product, "open_count": open_count})
 
         return render(request, "products/product_ticket_kanban.html", {
             **ctx,
@@ -502,6 +505,7 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
             "columns": columns,
             "members": product_users(product, request.company),
             "total": total,
+            "open_count": open_count,
         })
 
 

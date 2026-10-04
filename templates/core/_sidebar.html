@@ -1,5 +1,5 @@
 {% load icon_tags %}<aside class="sidebar">
-  <a href="{% url 'dashboards:index' %}" class="side-brand" aria-label="PQ Platform home">
+  <a href="{% url 'dashboards:index' %}" class="side-brand" aria-label="PQ Platform home" data-label="PQ Platform">
     <span class="side-brand-mark">{% brand_mark %}</span>
     <span class="side-label">PQ Platform</span>
   </a>
@@ -210,7 +210,7 @@
     {% include "core/_bell.html" %}
     {% include "core/_presence_sidebar.html" %}
 
-    <button type="button" class="side-item side-version" data-changelog-open
+    <button type="button" class="side-item side-version" data-changelog-open data-label="What's new in v{{ app_version }}"
             aria-haspopup="dialog" aria-label="What's new in v{{ app_version }}">
       {% icon 'sparkles' %}
       <span class="side-label">What's new</span>
@@ -222,7 +222,7 @@
       <span class="side-label">Install app</span>
     </button>
 
-    <button type="button" class="side-collapse" data-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">
+    <button type="button" class="side-collapse" data-sidebar-toggle aria-label="Collapse sidebar" data-label="Expand sidebar">
       {% icon 'chevron-left' %}
       <span class="side-label">Collapse</span>
     </button>

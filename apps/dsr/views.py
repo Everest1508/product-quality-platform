@@ -207,7 +207,7 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
             form.save()
 
         if request.headers.get("HX-Request") == "true":
-            return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
+            return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "can_submit": True, "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
 
         return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
 

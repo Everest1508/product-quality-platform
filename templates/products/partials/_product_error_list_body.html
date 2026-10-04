@@ -1,13 +1,14 @@
+{% load time_tags %}
 {% for error in page %}
 <tr>
   <td onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'">
-    <div class="title">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;
+    <div class="title" style="display:flex;align-items:flex-start;gap:8px;">
+      <span style="flex:none;margin-top:6px;display:inline-block;width:8px;height:8px;border-radius:50%;
         {% if error.severity == 'critical' or error.severity == 'high' %}background:var(--red);
         {% elif error.severity == 'medium' %}background:var(--orange);
         {% elif error.severity == 'low' %}background:var(--blue);
         {% else %}background:var(--gray);{% endif %}"></span>
-      {{ error.title }}
+      <span class="clamp-2">{{ error.title }}</span>
     </div>
     <div class="sub">{{ error.fingerprint|truncatechars:16 }}</div>
         <div class="flags">{% include "errors/partials/_error_flags.html" %}</div>
@@ -20,7 +21,7 @@
     {% elif error.status == 'ignored' %}<span class="pill closed">Ignored</span>{% endif %}
   </td>
   <td class="text-sm" onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'"><div class="count-cell"><span>{{ error.occurrence_count }}</span>{% include "errors/partials/_sparkline.html" %}</div></td>
-  <td class="date" onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'" title="{{ error.last_seen|date:'M j, Y, H:i' }}">{{ error.last_seen|timesince }} ago</td>
+  <td class="date" style="white-space:nowrap;" onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'" title="{{ error.last_seen|date:'M j, Y, H:i' }}">{{ error.last_seen|short_ago }}</td>
   <td>
     <div class="row-actions">
       <a href="{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}" class="btn" title="View" aria-label="View" style="font-size:12px;padding:4px 7px;display:inline-flex;align-items:center;">

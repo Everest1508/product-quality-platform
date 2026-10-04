@@ -3,16 +3,42 @@
 {% block title %}Home — PQ Platform{% endblock %}
 
 {% block content %}
+<script>
+// Time and greeting come from the browser, so they are right wherever the person is.
+function heroClock(fallback) {
+  return {
+    greeting: fallback, date: '', hm: '', sec: '', ampm: '',
+    init() { this.tick(); setInterval(() => this.tick(), 1000); },
+    tick() {
+      const d = new Date(), h = d.getHours();
+      this.greeting = h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening');
+      this.date = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+      this.hm = (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0');
+      this.sec = String(d.getSeconds()).padStart(2, '0');
+      this.ampm = h < 12 ? 'AM' : 'PM';
+    },
+  };
+}
+</script>
 <div class="dash">
-  <div class="dash-head">
-    <div>
-      <h1>{{ greeting }}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h1>
-      <p class="text-sm text-muted">{{ today|date:"l, F j" }} · {{ request.company.name }}</p>
+  <section class="hero" x-data="heroClock('{{ greeting }}')" aria-label="Welcome">
+    <div class="hero-main">
+      <p class="hero-date" x-text="date">{{ today|date:"l, F j" }}</p>
+      <h1><span x-text="greeting">{{ greeting }}</span>{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h1>
+      <p class="hero-quote" id="dash-quote">
+        {% include "dashboards/partials/_quote.html" %}
+      </p>
+      <div class="hero-actions">
+        <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary">New ticket</a>
+        <a href="{% url 'attendance:my_attendance' %}" class="btn">Attendance</a>
+        <a href="{% url 'leave:apply' %}" class="btn">Request leave</a>
+      </div>
     </div>
-    <div class="dash-head-actions">
-      <a href="{% url 'leave:apply' %}" class="btn btn-primary" style="padding:8px 16px;">+ Request leave</a>
+    <div class="hero-clock" aria-live="off">
+      <span class="hero-time"><b x-text="hm">{{ now|date:"g:i" }}</b><i x-text="sec">00</i><em x-text="ampm">{{ now|date:"A" }}</em></span>
+      <span class="hero-zone">{{ request.company.name }}</span>
     </div>
-  </div>
+  </section>
 
   {% if attendance.on_leave_today %}
     <div class="pd-banner">

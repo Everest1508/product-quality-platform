@@ -10,10 +10,11 @@ different thing: it styles generated PDF documents. This file is for the web app
 | Colors and every other token | `templates/core/css/_tokens.css` |
 | Base styles (layout, sidebar, tables, forms, kanban) | `templates/core/css/_app.css` |
 | Presence, punch panel, team attendance, DSR form | `templates/core/css/_components.css` |
+| Page layouts: home bento, reports, DSR log, stat strip, product cards | `templates/core/css/_pages.css` |
 | Phone, tablet, touch, print, reduced motion | `templates/core/css/_responsive.css` |
 | Logo files, favicons, app icons | `brand/` (see `brand/README.md`) |
 
-`base.html` includes the four CSS files in that order, inside one `<style>`, so a
+`base.html` includes the five CSS files (`_tokens`, `_app`, `_components`, `_pages`, `_responsive`) in that order, inside one `<style>`, so a
 later file wins when specificity is equal. There is no build step and no static
 files folder. Do not add one for CSS. The Docker image runs daphne, which does
 not serve static files.
@@ -75,6 +76,21 @@ radius. Page gutters are 36px on desktop, 24px on a small laptop, 16px on a phon
   `errors/partials/_sparkline.html` for a 14 day chart from `errors.trends`.
 - **Presence.** `{% include "core/_presence_panel.html" %}` anywhere shows who is
   online. It reads the shared `presence` Alpine store, so it updates live.
+- **Bento.** `.bento` is a 12 column grid and `.tile` is one cell. Give a tile
+  `w-3`, `w-4` (the default), `w-5`, `w-6`, `w-7`, `w-8` or `w-12` for its width. Rows should add
+  up to 12. The home page reuses the older `.pd-grid` with spans set in `_pages.css`.
+- **Report tiles and bars.** `.rk-row` and `.rk` for a number with its change, `.cols`
+  for a column chart, `.hbar` for a horizontal bar, `.ring` for a percentage. Heights and
+  widths are computed in `apps/dashboards/service.py` so templates do no maths. No chart
+  library is loaded.
+- **Stat strip.** `.stat-strip` is one box with dividers, used instead of a card per number.
+- **One dropdown at a time.** Every `details.dd-wrap` closes when another opens, on an outside
+  click, on Escape and after a single choice. The script is in `base.html`.
+- **Collapsed sidebar tooltips.** One fixed `.side-tip` element, filled from `data-label`,
+  `aria-label` or the visible label. Give a new sidebar control a `data-label`.
+  A count badge becomes a dot on the icon.
+- **Row forms.** Put the controls of an editable list row in one `<form>`. Radios with the
+  same name and no form share one group across the whole page.
 - **Icons.** Lucide, inline, 24px grid, 2px round stroke, through `{% icon 'name' %}`.
   The logo is `{% brand_mark %}` and is kept out of the picker list on purpose.
 
@@ -132,10 +148,16 @@ to this site's origin. The server turns the page path into a label such as
 "Viewing ticket #14". Labels never contain titles or product names, because the
 people reading the list may not have access to them.
 
+If the socket cannot connect twice in a row, the `presence` store switches to polling
+`POST /presence/beat/` every 25 seconds. That endpoint writes the same `PresenceSession`
+row the socket does, so the person still counts as online. The store's `mode` is `live`,
+`polling`, `connecting` or `offline`. The user-facing explanation is in
+`docs/guides/presence-and-alerts.md`.
+
 ## Adding something new
 
 1. Look for an existing component and token first.
-2. Put new CSS in `_components.css` and read tokens only.
+2. Put new CSS in `_components.css` (widgets) or `_pages.css` (page layouts) and read tokens only.
 3. Check it at 360, 768 and 1440px wide, and with the keyboard.
 4. A multi-line note in a template needs `{% comment %}`. A `{# #}` that spans
    lines prints on the page. A test now catches it.

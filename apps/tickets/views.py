@@ -109,6 +109,11 @@ def sort_tickets(request, qs, default):
     return qs.order_by(*default)
 
 
+# Statuses that no longer count as work in progress. The sidebar badge, the
+# dashboard and the list headers all use this one definition, so the numbers agree.
+OPEN_EXCLUDED = ("resolved", "closed")
+
+
 class TicketListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
@@ -122,15 +127,19 @@ class TicketListView(CompanyMemberRequiredMixin, View):
 
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
+        open_count = qs.exclude(status__in=OPEN_EXCLUDED).count()
 
         if request.headers.get("HX-Request") == "true":
-            return render(request, "tickets/partials/_ticket_list_results.html", {"page": page})
+            return render(request, "tickets/partials/_ticket_list_results.html", {
+                "page": page, "open_count": open_count,
+            })
 
         members = User.objects.filter(memberships__company=request.company).order_by("username")
         products = accessible_products(request.user, request.company).order_by("name")
         return render(request, "tickets/ticket_list.html", {
             **ctx,
             "page": page,
+            "open_count": open_count,
             "members": members,
             "products": products,
             "current_status": status,
@@ -149,9 +158,12 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
             for v, label in Ticket.Status.choices
         ]
         total = sum(len(c["tickets"]) for c in columns)
+        open_count = sum(len(c["tickets"]) for c in columns if c["key"] not in OPEN_EXCLUDED)
 
         if request.headers.get("HX-Request") == "true":
-            return render(request, "tickets/partials/_kanban_columns.html", {"columns": columns, "total": total})
+            return render(request, "tickets/partials/_kanban_columns.html", {
+                "columns": columns, "total": total, "open_count": open_count,
+            })
 
         members = User.objects.filter(memberships__company=request.company).order_by("username")
         products = accessible_products(request.user, request.company).order_by("name")
@@ -161,6 +173,7 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
             "members": members,
             "products": products,
             "total": total,
+            "open_count": open_count,
         })
 
 

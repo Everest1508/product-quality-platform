@@ -63,16 +63,19 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
         page_num = request.GET.get("page", 1)
         page = paginator.get_page(page_num)
         page.object_list = trends.attach_trends(page.object_list)
+        open_count = qs.exclude(status__in=("resolved", "ignored")).count()
 
         products = accessible_products(request.user, request.company)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "errors/partials/_error_list_body.html", {
                 "page": page,
+                "open_count": open_count,
             })
 
         return render(request, "errors/error_list.html", {
             "page": page,
+            "open_count": open_count,
             "products": products,
             "current_product": product_id,
             "current_status": status,

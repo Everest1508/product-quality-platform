@@ -566,3 +566,29 @@ class TemplateCommentTest(TestCase):
                 line = text.count("\n", 0, match.start()) + 1
                 offenders.append(f"{path.relative_to(settings.BASE_DIR)}:{line}")
         self.assertEqual(offenders, [], "use {% comment %} for notes that span lines")
+
+
+class ShortAgoTest(TestCase):
+    """`short_ago` keeps table cells to one line."""
+
+    def test_keeps_only_the_largest_unit(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.core.templatetags.time_tags import short_ago
+
+        value = timezone.now() - timedelta(days=2, hours=3)
+        self.assertEqual(short_ago(value), "2 days ago")
+
+    def test_a_moment_ago(self):
+        from django.utils import timezone
+
+        from apps.core.templatetags.time_tags import short_ago
+
+        self.assertEqual(short_ago(timezone.now()), "just now")
+
+    def test_empty_value(self):
+        from apps.core.templatetags.time_tags import short_ago
+
+        self.assertEqual(short_ago(None), "")

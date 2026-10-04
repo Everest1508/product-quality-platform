@@ -12,7 +12,7 @@
 
 <div class="head">
   <div>
-    <h1>All errors <span class="count">{{ page.paginator.count }} group{{ page.paginator.count|pluralize }} · every product</span></h1>
+    <h1>All errors <span class="count">{{ page.paginator.count }} group{{ page.paginator.count|pluralize }} · {{ open_count }} open</span></h1>
     <p class="text-sm text-muted" style="margin-top:4px;">Error groups from every product you can access. Use the product filter to narrow to one.</p>
   </div>
   <div class="head-actions">
@@ -47,9 +47,9 @@
       <th style="width:110px">Product</th>
       <th style="width:90px">Severity</th>
       <th style="width:100px">Status</th>
-      <th style="width:70px">Count</th>
+      <th style="width:140px">Count</th>
       <th style="width:100px">Last Seen</th>
-      <th style="width:70px"></th>
+      <th style="width:96px"></th>
     </tr>
   </thead>
   <tbody id="error-list-body">

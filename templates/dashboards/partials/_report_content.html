@@ -1,102 +1,86 @@
 {% load event_tags %}
-<div class="text-sm text-muted mb-4" style="display:flex;justify-content:space-between;align-items:center;">
-  <span>Summary for <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong> &mdash; <strong>{{ total_events }}</strong> total event{{ total_events|pluralize }}{% if scope == 'mine' %} (your activity){% endif %}</span>
+<p class="text-sm text-muted mb-4">{{ start_date|date:"M j, Y" }} to {{ end_date|date:"M j, Y" }}{% if scope == 'mine' %}, your activity only{% endif %}. Arrows compare with the same number of days just before.</p>
+
+<div class="rk-row">
+  {% for k in kpis %}
+  <div class="rk tone-{{ k.tone }}">
+    <div class="rk-label">{{ k.label }}</div>
+    <div class="rk-value">{{ k.value }}</div>
+    <div class="rk-delta {{ k.dir }}">
+      {% if k.dir == 'up' %}&#9650;{% elif k.dir == 'down' %}&#9660;{% else %}&ndash;{% endif %}
+      {% if k.pct is not None %}{{ k.pct }}%{% elif k.dir == 'up' %}new{% else %}no change{% endif %}
+      <small>vs {{ k.before }} before</small>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
-<!-- 3 Organized Summary Metric Group Cards -->
-<div class="grid-3 mb-6">
-  <!-- Tickets Summary Card -->
-  <div class="card stat-card">
-    <div class="flex-between mb-3">
-      <div class="stat-label" style="font-weight:600;color:var(--text);font-size:13px;">Ticket Activity</div>
-      <div class="stat-icon blue">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
-      </div>
+<div class="bento">
+  {% if daily_bars %}
+  <section class="tile w-8">
+    <div class="tile-head"><h2>Day by day</h2><span class="count-badge">{{ daily_bars|length }} day{{ daily_bars|length|pluralize }}</span></div>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Tickets created</span>
+      <span><i style="background:var(--green)"></i>Tickets resolved</span>
+      <span><i style="background:var(--red);opacity:.75"></i>Errors captured</span>
+      <span><i style="background:var(--purple);opacity:.8"></i>Errors resolved</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;margin-top:8px;">
-      <div>
-        <div class="stat-val" style="font-size:22px;">{{ tickets_created }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Created</div>
+    <div class="cols" role="img" aria-label="Daily tickets and errors, created and resolved">
+      {% for d in daily_bars %}
+      <div class="cols-day" title="{{ d.date|date:'M j' }}: {{ d.row.tickets_created }} tickets created, {{ d.row.tickets_resolved }} resolved, {{ d.row.errors_captured }} errors captured, {{ d.row.errors_resolved }} resolved">
+        <span class="cols-bar created{% if not d.row.tickets_created %} zero{% endif %}" style="height:{{ d.created }}%"></span>
+        <span class="cols-bar resolved{% if not d.row.tickets_resolved %} zero{% endif %}" style="height:{{ d.resolved }}%"></span>
+        <span class="cols-bar captured{% if not d.row.errors_captured %} zero{% endif %}" style="height:{{ d.captured }}%"></span>
+        <span class="cols-bar fixed{% if not d.row.errors_resolved %} zero{% endif %}" style="height:{{ d.fixed }}%"></span>
       </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--green);">{{ tickets_resolved }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Resolved</div>
-      </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;">{{ tickets_closed }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Closed</div>
-      </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--blue);">{{ tickets_in_progress }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">In Progress</div>
-      </div>
+      {% endfor %}
     </div>
-    <div class="stat-foot" style="margin-top:12px;padding-top:10px;">
-      Assigned: <b>{{ tickets_assigned }}</b>
+    <div class="cols-axis" aria-hidden="true">
+      {% for d in daily_bars %}<span>{% if d.label %}{{ d.date|date:"M j" }}{% endif %}</span>{% endfor %}
     </div>
-  </div>
+  </section>
+  {% endif %}
 
-  <!-- Errors Summary Card -->
-  <div class="card stat-card">
-    <div class="flex-between mb-3">
-      <div class="stat-label" style="font-weight:600;color:var(--text);font-size:13px;">Error Monitoring</div>
-      <div class="stat-icon red">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      </div>
+  <section class="tile w-4">
+    <div class="tile-head"><h2>How much got finished</h2></div>
+    <div class="ring-row">
+      <div class="ring" style="--p:{{ resolution_rate|default:0 }}"><b>{% if resolution_rate is None %}&ndash;{% else %}{{ resolution_rate }}%{% endif %}</b></div>
+      <div class="ring-copy"><strong>Tickets</strong>{{ tickets_resolved }} resolved out of {{ tickets_created }} created. {{ tickets_in_progress }} moved to in progress.</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;margin-top:8px;">
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--red);">{{ errors_captured }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Captured</div>
-      </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--green);">{{ errors_resolved }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Resolved</div>
-      </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--orange);">{{ errors_investigated }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Investigated</div>
-      </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--muted);">{{ errors_ignored }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Ignored</div>
-      </div>
+    <div class="ring-row">
+      <div class="ring" style="--p:{{ error_fix_rate|default:0 }}"><b>{% if error_fix_rate is None %}&ndash;{% else %}{{ error_fix_rate }}%{% endif %}</b></div>
+      <div class="ring-copy"><strong>Errors</strong>{{ errors_resolved }} resolved out of {{ errors_captured }} captured. {{ errors_ignored }} ignored.</div>
     </div>
-    <div class="stat-foot" style="margin-top:12px;padding-top:10px;">
-      Total errors tracked
-    </div>
-  </div>
+  </section>
 
-  <!-- Feedback & Audit Summary Card -->
-  <div class="card stat-card">
-    <div class="flex-between mb-3">
-      <div class="stat-label" style="font-weight:600;color:var(--text);font-size:13px;">Feedback & Audit</div>
-      <div class="stat-icon green">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      </div>
+  <section class="tile w-6">
+    <div class="tile-head"><h2>Busiest products</h2><span class="text-sm text-muted">tickets, errors and feedback</span></div>
+    {% for r in product_bars %}
+    <div class="hbar">
+      <span class="hbar-name" title="{{ r.product.name }}">{{ r.product.name }}</span>
+      <span class="hbar-track"><span class="hbar-fill" style="width:{{ r.pct }}%"></span></span>
+      <span class="hbar-num">{{ r.total }}</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;margin-top:8px;">
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--blue);">{{ feedback_received }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Feedback</div>
-      </div>
-      <div>
-        <div class="stat-val" style="font-size:22px;color:var(--purple);">{{ survey_responses }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Survey Resps</div>
-      </div>
+    {% empty %}<p class="text-sm text-muted">No product activity in this range.</p>{% endfor %}
+  </section>
+
+  <section class="tile w-6">
+    <div class="tile-head"><h2>What happened most</h2><span class="text-sm text-muted">{{ total_events }} event{{ total_events|pluralize }}</span></div>
+    {% for e in event_mix %}
+    <div class="hbar">
+      <span class="hbar-name" title="{{ e.label }}">{{ e.label }}</span>
+      <span class="hbar-track"><span class="hbar-fill green" style="width:{{ e.pct }}%"></span></span>
+      <span class="hbar-num">{{ e.count }}</span>
     </div>
-    <div class="stat-foot" style="margin-top:24px;padding-top:10px;">
-      Total Audit Events: <b>{{ total_events }}</b>
-    </div>
-  </div>
+    {% empty %}<p class="text-sm text-muted">Nothing was logged in this range.</p>{% endfor %}
+    <p class="text-sm text-muted" style="margin:12px 0 0;">Feedback {{ feedback_received }} &middot; survey answers {{ survey_responses }} &middot; assigned {{ tickets_assigned }}</p>
+  </section>
 </div>
 
 {% if product_rows %}
-<div class="card mb-6">
-  <div class="flex-between mb-3">
-    <h2 style="font-size:15px;font-weight:600;margin:0;">Activity By Product</h2>
-    <span class="count-badge">{{ product_rows|length }} Products</span>
-  </div>
+<details class="card mb-6 report-fold">
+  <summary class="flex-between" style="cursor:pointer;list-style:none;"><h2 style="font-size:15px;font-weight:600;margin:0;">Numbers by product</h2><span class="count-badge">{{ product_rows|length }} Products</span></summary>
+  <div style="margin-top:12px;overflow-x:auto;">
   <table>
     <thead>
       <tr>
@@ -121,15 +105,14 @@
       {% endfor %}
     </tbody>
   </table>
-</div>
+  </div>
+</details>
 {% endif %}
 
 {% if daily %}
-<div class="card mb-6">
-  <div class="flex-between mb-3">
-    <h2 style="font-size:15px;font-weight:600;margin:0;">Daily Activity Breakdown</h2>
-    <span class="count-badge">{{ daily|length }} Days</span>
-  </div>
+<details class="card mb-6 report-fold">
+  <summary class="flex-between" style="cursor:pointer;list-style:none;"><h2 style="font-size:15px;font-weight:600;margin:0;">Numbers by day</h2><span class="count-badge">{{ daily|length }} Days</span></summary>
+  <div style="margin-top:12px;overflow-x:auto;">
   <table>
     <thead>
       <tr>
@@ -158,7 +141,8 @@
       {% endfor %}
     </tbody>
   </table>
-</div>
+  </div>
+</details>
 {% endif %}
 
 {% if recent %}
