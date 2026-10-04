@@ -109,10 +109,20 @@ def _punch_context(request, record, message="", person=None):
     worked = record.worked_minutes if record and record.is_complete else 0
     target = shift.worked_minutes_per_day
 
+    # A full day is `worked_minutes_per_day` of work plus the unpaid break, which is
+    # exactly the span `service.net_minutes_for` needs before it counts a day as
+    # complete. The countdown runs to that moment, measured from the actual check-in.
+    day_total = timedelta(minutes=target + shift.break_minutes)
+    day_end = record.check_in + day_total if record and record.check_in else None
+    remaining = max(0, int((day_end - timezone.now()).total_seconds())) if day_end else 0
+
     return {
         "since_ms": since_ms,
         "end_ms": int(shift_end.timestamp() * 1000),
         "span_minutes": span_minutes,
+        "day_end_ms": int(day_end.timestamp() * 1000) if day_end else None,
+        "day_end_label": f"{timezone.localtime(day_end):%I:%M %p}".lstrip("0") if day_end else "",
+        "remaining_formatted": f"{remaining // 3600}h {remaining % 3600 // 60:02d}m {remaining % 60:02d}s",
         "shift_end_label": f"{shift.end_time:%I:%M %p}".lstrip("0"),
         "target_minutes": target,
         "target_formatted": format_minutes(target),

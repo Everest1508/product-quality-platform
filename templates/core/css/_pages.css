@@ -327,3 +327,18 @@ details.changelog-rel:hover{border-color:var(--border-strong);}
 .dsr-sub .dsr-pick-product{width:150px;}
 @media (min-width:821px){.dsr-composer{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @media (min-width:641px) and (max-width:820px){.dsr-composer{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* ---- Punch panel: plain time, no ring ---- */
+.punch-big{display:flex;flex-direction:column;gap:4px;flex:none;min-width:0;padding-right:8px;}
+.punch-big-num{font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text);}
+.punch-big-clock{color:var(--accent);}
+.punch-state-open .punch-big-num{color:var(--green);}
+.punch-big-cap{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+.punch-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px;}
+.punch-bar i{display:block;height:100%;border-radius:99px;background:var(--green);transition:width 1s linear;}
+.punch-state{gap:28px;}
+@media (max-width:640px){.punch-big-num{font-size:36px;}}
+.punch-state{flex-wrap:wrap;}
+.punch-state .punch-actions{flex:1 1 100%;}
+.punch-state .punch-actions form{width:100%;}
+.punch-state .punch-btn{width:100%;justify-content:center;}

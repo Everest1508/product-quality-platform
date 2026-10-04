@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.2.2] — 2026-10-05 · a live countdown on the punch card
+
+> In short: the punch card shows plain time with no circle, and once you check in it counts down to the end of your full day.
+
+### New
+
+- **A countdown after you check in.** The card shows the time left in your day, ticking by the second, and the time you finish. A full day is 8 hours of work plus the unpaid break, counted from the moment you checked in. Once you pass it, the card shows how long you have gone over.
+
+### Better
+
+- **No more circle.** Before you check in the card shows the time in large numbers. After you check out it shows the hours you worked. A thin bar under the countdown shows how far through the day you are.
+- **The check-in and check-out buttons are full width** under the card text.
+
 ## [1.2.1] — 2026-10-05 · products on the DSR
 
 > In short: you can say which product a DSR entry was for, and the form starts empty after each entry.

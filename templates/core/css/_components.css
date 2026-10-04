@@ -242,20 +242,6 @@ html.sidebar-collapsed .side-search .side-kbd{display:none;}
 .punch-state-open{background:linear-gradient(135deg,var(--green-bg),var(--surface) 70%);border-color:var(--green);}
 .punch-state-ready{background:linear-gradient(135deg,var(--accent-soft),var(--surface) 70%);border-color:var(--accent-line);}
 .punch-state-done{background:linear-gradient(135deg,var(--green-bg),var(--surface) 70%);}
-.punch-ring{position:relative;width:132px;height:132px;flex-shrink:0;display:grid;place-items:center;}
-.punch-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
-.punch-ring .ring-track{fill:none;stroke:var(--line);stroke-width:9;}
-.punch-ring .ring-fill{fill:none;stroke:var(--green);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .9s linear;}
-.punch-ring .ring-fill.is-over{stroke:var(--orange);}
-.punch-state-ready .punch-ring{border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 9px var(--accent-soft);}
-.punch-ring.is-done{border-radius:50%;background:var(--green-bg);color:var(--green);}
-.punch-ring.is-done .ic{width:52px;height:52px;stroke-width:1.6;}
-.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;}
-.ring-time{display:inline-flex;align-items:baseline;gap:1px;font-variant-numeric:tabular-nums;}
-.ring-main{font-size:21px;font-weight:700;letter-spacing:-.02em;color:var(--text);}
-.ring-clock{font-size:19px;color:var(--accent);}
-.ring-secs{font-size:12px;font-weight:600;color:var(--muted);min-width:22px;}
-.ring-cap{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
 .punch-copy{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 240px;}
 .punch-label{font-size:18px;font-weight:650;letter-spacing:-.01em;color:var(--text);}
 .punch-state-open .punch-label{color:var(--green);}
@@ -365,8 +351,6 @@ button.kpi:hover{box-shadow:0 6px 18px rgba(13,17,23,.08);transform:translateY(-
 }
 @media (max-width:760px){
   .punch-hero{padding:16px;gap:16px;}
-  .punch-ring{width:112px;height:112px;}
-  .ring-main{font-size:18px;}
   .punch-actions{width:100%;}
   .punch-actions form,.punch-actions .punch-btn{width:100%;justify-content:center;}
   .att-stats,.team-att .att-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -375,5 +359,4 @@ button.kpi:hover{box-shadow:0 6px 18px rgba(13,17,23,.08);transform:translateY(-
 }
 @media (prefers-reduced-motion:reduce){
   .presence-live.is-live i,.presence-dot.is-live{animation:none;}
-  .punch-ring .ring-fill{transition:none;}
 }

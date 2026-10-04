@@ -2,8 +2,11 @@
 
 ## Punching in and out
 
-Open **My attendance** and press **Check in** when you start. The ring and the
-counter run live. Press **Check out** when you leave. A second punch within 45
+Open **My attendance** and press **Check in** when you start. Before that the card
+shows the time. After it, the card counts down the time left in your full day,
+second by second, and says when you finish. A full day is the scheduled working
+hours plus the unpaid break, counted from your actual check-in, so a late start
+moves the finish time later. Press **Check out** when you leave. A second punch within 45
 seconds is ignored, so a double click does not undo itself.
 
 The week strip shows how much of each day you worked. The strip of numbers
