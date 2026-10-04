@@ -502,3 +502,16 @@ class VersionFooterUiTest(TestCase):
         self.assertIn("data-filter", body)
         self.assertIn("closest('#pq-changelog-older')", body)
 
+
+
+class BrandFileTests(TestCase):
+    def test_favicon_and_touch_icon_are_served(self):
+        for url, kind in (("/favicon.ico", "image/"), ("/brand/favicon-32.png", "image/png"),
+                          ("/brand/apple-touch-icon.png", "image/png")):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertTrue(r["Content-Type"].startswith(kind), url)
+
+    def test_other_names_do_not_resolve(self):
+        for url in ("/brand/README.md", "/brand/nope.png", "/brand/..%2Fsvg%2Fmark-blue.svg"):
+            self.assertEqual(self.client.get(url).status_code, 404, url)

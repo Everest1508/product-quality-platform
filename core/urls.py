@@ -4,7 +4,11 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
+from apps.core.brand import brand_file, favicon_ico
+
 urlpatterns = [
+    path("favicon.ico", favicon_ico),
+    path("brand/<str:name>", brand_file),
     path("admin/", admin.site.urls),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
