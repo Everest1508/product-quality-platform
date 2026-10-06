@@ -16,6 +16,14 @@
   </div>
 </div>
 
+
+<section class="pl-tiles" aria-label="Workspace summary">
+  <div class="pl-tile"><span class="v">{{ summary.products }}</span><span class="l">Products</span></div>
+  <div class="pl-tile {% if summary.open_errors %}warn{% endif %}"><span class="v">{{ summary.open_errors }}</span><span class="l">Open errors</span></div>
+  <div class="pl-tile"><span class="v">{{ summary.open_tickets }}</span><span class="l">Open tickets</span></div>
+  <div class="pl-tile {% if summary.attention %}bad{% else %}good{% endif %}"><span class="v">{{ summary.attention }}</span><span class="l">{% if summary.attention %}Need attention{% else %}All healthy{% endif %}</span></div>
+</section>
+
 <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;">
   <div style="display:flex;align-items:center;gap:10px;flex:1;">
     <form method="get" class="search-wrap" style="display:flex;max-width:320px;width:100%;">

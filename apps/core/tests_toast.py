@@ -147,3 +147,37 @@ class ToastSeedIsWiredTest(TestCase):
                 )
                 start = at + len(hook)
         self.assertIn("JSON.parse(seed.textContent)", html)
+
+
+class HtmxMessagesMiddlewareTest(TestCase):
+    """Queued messages ride an HX-Trigger header on htmx fragment responses."""
+
+    def _run(self, hx, view):
+        from django.contrib import messages
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+
+        from apps.core.middleware import HtmxMessagesMiddleware
+
+        request = RequestFactory().post("/", **({"HTTP_HX_REQUEST": "true"} if hx else {}))
+        request.session = {}
+        request._messages = FallbackStorage(request)
+
+        def get_response(req):
+            messages.success(req, "Saved.")
+            return HttpResponse("ok")
+
+        return HtmxMessagesMiddleware(get_response)(request)
+
+    def test_htmx_response_carries_the_toast(self):
+        import json
+
+        resp = self._run(True, None)
+        self.assertEqual(
+            json.loads(resp.headers["HX-Trigger"]),
+            {"django-message": {"messages": [{"text": "Saved.", "tags": "success"}]}},
+        )
+
+    def test_plain_response_is_untouched(self):
+        self.assertNotIn("HX-Trigger", self._run(False, None).headers)

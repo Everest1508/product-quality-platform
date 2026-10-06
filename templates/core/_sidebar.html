@@ -5,12 +5,6 @@
   </a>
   {% include "core/_company_switcher.html" %}
 
-  <button type="button" class="side-search" onclick="window.dispatchEvent(new Event('pq-palette'))" aria-label="Search" data-label="Search">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    <span class="side-label">Search</span>
-    <kbd class="side-kbd">Ctrl K</kbd>
-  </button>
-
   {% comment %}
   Active state is decided by comparing `request.resolver_match.url_name` against
   an explicit list, never with `'foo' in request.path`. A substring test lights
@@ -207,9 +201,6 @@
 
   <div class="side-foot">
     {% with u=request.resolver_match.url_name %}
-    {% include "core/_bell.html" %}
-    {% include "core/_presence_sidebar.html" %}
-
     <button type="button" class="side-item side-version" data-changelog-open data-label="What's new in v{{ app_version }}"
             aria-haspopup="dialog" aria-label="What's new in v{{ app_version }}">
       {% icon 'sparkles' %}
@@ -227,27 +218,6 @@
       <span class="side-label">Collapse</span>
     </button>
 
-    <div class="side-user" x-data="{ open: false }" @keydown.escape.window="open = false">
-      <button type="button" class="side-user-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
-        <span class="side-avatar">{{ request.user.get_full_name|default:request.user.username|make_list|first|upper }}</span>
-        <span class="side-user-meta">
-          <span class="side-user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
-          <span class="side-user-role">{{ request.company_role|default:"member" }}</span>
-        </span>
-        {% icon 'chevron-down' 'switch-caret' %}
-      </button>
-      <div class="side-user-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
-        <a href="{% url 'accounts:profile' %}"{% if u == 'profile' %} aria-current="page" style="background:var(--panel);font-weight:500;"{% endif %}>
-          {% icon 'settings' 'side-menu-ic' %} Settings
-        </a>
-        <form method="post" action="{% url 'accounts:logout' %}">
-          {% csrf_token %}
-          <button type="submit">
-            {% icon 'log-out' 'side-menu-ic' %} Sign out
-          </button>
-        </form>
-      </div>
-    </div>
     {% endwith %}
   </div>
 </aside>

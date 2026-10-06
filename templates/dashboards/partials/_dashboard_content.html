@@ -4,17 +4,11 @@
 <div class="pd-grid">
 
   {# ---------- Today: the only module with a real-time action ---------- #}
-  <section class="pd-card pd-today">
-    <header>
-      <span class="pd-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-      <h2>Today</h2>
-      <span class="pd-sub">{{ today|date:"D j M" }}</span>
-    </header>
-
+  <section class="pd-card pd-today bn-8">
     <div class="pd-today-row">
       {% with rec=attendance.record %}
         {% if attendance.on_leave_today %}
-          <div class="pd-state leave">On approved leave</div>
+          <div class="pd-state leave"><span class="lead">On approved leave</span></div>
         {% elif rec.is_open %}
           <div class="pd-state open">
             <span class="lead">Working since {{ rec.check_in|date:"H:i" }}</span>
@@ -22,42 +16,91 @@
           </div>
           <form method="post" action="{% url 'attendance:punch' %}">
             {% csrf_token %}
-            <button class="btn btn-primary" style="padding:7px 14px;">Punch out</button>
+            <button class="btn btn-primary">Punch out</button>
           </form>
         {% elif rec %}
           <div class="pd-state done">
-            <span class="lead">{{ rec.worked_hours|floatformat:"1" }}h</span>
+            <span class="lead">{{ rec.worked_hours|floatformat:"1" }}h today</span>
             <span class="meta">{{ rec.check_in|date:"H:i" }} → {{ rec.check_out|date:"H:i" }}</span>
           </div>
         {% elif today.weekday >= 5 %}
-          <div class="pd-state rest">Weekend</div>
+          <div class="pd-state rest"><span class="lead">Weekend</span><span class="meta">{{ today|date:"D j M" }}</span></div>
         {% else %}
-          <div class="pd-state todo">Not punched in</div>
+          <div class="pd-state todo"><span class="lead">Not punched in</span><span class="meta">{{ today|date:"D j M" }}</span></div>
           <form method="post" action="{% url 'attendance:punch' %}">
             {% csrf_token %}
-            <button class="btn btn-primary" style="padding:7px 14px;">Punch in</button>
+            <button class="btn btn-primary">Punch in</button>
           </form>
         {% endif %}
       {% endwith %}
     </div>
-
     <div class="pd-mini">
-      <div>
-        <span class="v">{{ attendance.present_days }}</span>
-        <span class="l">Days present</span>
-        <span class="m">in {{ attendance.month_label }}</span>
-      </div>
-      <div>
-        <span class="v">{{ attendance.worked_minutes|hours }}</span>
-        <span class="l">Hours worked</span>
-        <span class="m">in {{ attendance.month_label }}</span>
-      </div>
+      <div><span class="v">{{ attendance.present_days }}</span><span class="l">Days present</span><span class="m">{{ attendance.month_label }}</span></div>
+      <div><span class="v">{{ attendance.worked_minutes|hours }}</span><span class="l">Hours worked</span><span class="m">{{ attendance.month_label }}</span></div>
     </div>
-    <a class="pd-more" href="{% url 'attendance:my_attendance' %}">Full attendance →</a>
+    <a class="pd-more" href="{% url 'attendance:my_attendance' %}">Attendance →</a>
+  </section>
+
+  {# ---------- Needs attention: owners/admins only, one line each ---------- #}
+  {% if is_privileged %}
+    <div class="pd-attn">
+      {% if leave_approval_count %}<a href="{% url 'leave:approvals' %}"><span class="n">{{ leave_approval_count }}</span> leave to approve</a>{% endif %}
+      {% if team.open_errors %}<a href="{% url 'errors:error_list' %}"><span class="n">{{ team.open_errors }}</span> open errors</a>{% endif %}
+      {% if team.open_tickets %}<a href="{% url 'tickets:ticket_board' %}"><span class="n">{{ team.open_tickets }}</span> open tickets</a>{% endif %}
+      {% if not leave_approval_count and not team.open_errors and not team.open_tickets %}<span class="text-sm text-muted">Nothing needs your attention.</span>{% endif %}
+    </div>
+  {% endif %}
+
+
+  {# ---------- Graphs ---------- #}
+  <section class="pd-card bn-5">
+    <header>
+      <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
+      <h2>Hours this week</h2>
+      <span class="pd-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span>
+    </header>
+    <div class="ch-bars" role="img" aria-label="Hours worked each day this week">
+      {% for d in chart_week %}
+      <div class="ch-col {% if d.today %}is-today{% endif %} {% if d.future %}is-future{% endif %}" title="{{ d.label }}: {{ d.hours }}">
+        <span class="ch-val">{{ d.hours }}</span>
+        <span class="ch-track"><i class="{% if d.met %}met{% endif %}" style="height:{{ d.pct }}%"></i></span>
+        <span class="ch-lab">{{ d.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="pd-card bn-4">
+    <header>
+      <span class="pd-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4"/></svg></span>
+      <h2>Tickets by status</h2>
+      <span class="pd-sub">{{ chart_status_total }} total</span>
+    </header>
+    {% if chart_status_total %}
+    <div class="ch-donut-wrap">
+      <div class="ch-donut" style="background:{{ chart_donut }}" role="img" aria-label="Tickets by status"><span>{{ chart_status_total }}</span></div>
+      <ul class="ch-legend">
+        {% for st in chart_status %}<li><i style="background:{{ st.color }}"></i>{{ st.label }}<b>{{ st.n }}</b></li>{% endfor %}
+      </ul>
+    </div>
+    {% else %}<div class="pd-empty"><p>No tickets yet.</p></div>{% endif %}
+  </section>
+
+  <section class="pd-card bn-3">
+    <header>
+      <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
+      <h2>Errors</h2>
+      <span class="pd-sub">14 days</span>
+    </header>
+    <div class="ch-spark" role="img" aria-label="Error occurrences per day, last 14 days">
+      {% for e in chart_errors %}<i style="height:{{ e.pct }}%" class="{% if e.n %}on{% endif %}" title="{{ e.label }}: {{ e.n }}"></i>{% endfor %}
+    </div>
+    <p class="ch-big">{{ chart_errors_total }}<small> occurrences</small></p>
+    <a class="pd-more" href="{% url 'errors:error_list' %}">All errors →</a>
   </section>
 
   {# ---------- Payroll ---------- #}
-  <section class="pd-card pd-pay">
+  <section class="pd-card pd-pay bn-4">
     <header>
       <span class="pd-ico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span>
       <h2>Pay</h2>
@@ -70,25 +113,10 @@
           <span class="l">Net pay · {{ slip.run.label }}</span>
           <span class="v">{{ slip.currency }} {{ slip.gross|amount }}</span>
         </div>
-        <dl class="pd-kv">
-          {% if payroll.monthly_salary %}
-            <dt>Monthly salary</dt><dd>{{ slip.currency }} {{ payroll.monthly_salary|amount }}</dd>
-          {% endif %}
-          <dt>Day rate</dt><dd>{{ slip.currency }} {{ slip.daily_rate|amount }} <span class="m">÷ {{ slip.working_days }} working days</span></dd>
-          {% if slip.paid_leave_days %}
-            <dt>Paid leave</dt><dd>{{ slip.paid_leave_days|days }} <span class="m">no deduction</span></dd>
-          {% endif %}
-          <dt>Unpaid leave</dt>
-          <dd>
-            {% if slip.unpaid_leave_days %}
-              {{ slip.unpaid_leave_days|days }}
-              <span class="m bad">−{{ slip.currency }} {{ slip.deduction|amount }}</span>
-            {% else %}
-              0
-            {% endif %}
-          </dd>
-        </dl>
-        <a class="pd-more" href="{% url 'payroll:my_payslip' pk=slip.pk %}">See the full calculation →</a>
+        {% if slip.unpaid_leave_days %}
+          <p class="pd-empty"><span class="m bad" style="color:var(--red)">−{{ slip.currency }} {{ slip.deduction|amount }}</span> for {{ slip.unpaid_leave_days|days }} unpaid leave</p>
+        {% endif %}
+        <a class="pd-more" href="{% url 'payroll:my_payslip' pk=slip.pk %}">Full breakdown →</a>
       {% endwith %}
     {% elif payroll.has_profile %}
       <div class="pd-empty">
@@ -103,7 +131,7 @@
   </section>
 
   {# ---------- Leave ---------- #}
-  <section class="pd-card pd-leave">
+  <section class="pd-card pd-leave bn-4">
     <header>
       <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M14 4v16M4 10h16M6 4h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></span>
       <h2>Leave</h2>
@@ -138,7 +166,7 @@
 
     {% if my_leave_requests %}
       <ul class="pd-list">
-        {% for r in my_leave_requests %}
+        {% for r in my_leave_requests|slice:":2" %}
           <li>
             <span class="lead">{{ r.start_date|date:"j M" }}{% if r.end_date != r.start_date %} → {{ r.end_date|date:"j M" }}{% endif %}</span>
             <span class="meta">{{ r.policy.name }} · {{ r.days|days }}</span>
@@ -151,7 +179,7 @@
   </section>
 
   {# ---------- DSR ---------- #}
-  <section class="pd-card pd-dsr">
+  <section class="pd-card pd-dsr bn-4">
     <header>
       <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <h2>DSR sheet</h2>
@@ -171,25 +199,14 @@
       </div>
     </div>
 
-    {% if dsr.dsr_recent %}
-      <ul class="pd-list">
-        {% for e in dsr.dsr_recent %}
-          <li>
-            <span class="lead">{{ e.task_name|truncatechars:44 }}</span>
-            <span class="meta">{{ e.date|date:"j M" }} · {{ e.hours_spent|floatformat:"1" }}h</span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <div class="pd-empty">
-        <p>Nothing logged this week. Work on a ticket writes your DSR automatically.</p>
-      </div>
+    {% if not dsr.dsr_entries %}
+      <div class="pd-empty"><p>Nothing logged this week. Work on a ticket writes your DSR automatically.</p></div>
     {% endif %}
     <a class="pd-more" href="{% url 'dsr:dsr_sheet' %}">Open DSR sheet →</a>
   </section>
 
   {# ---------- My tickets ---------- #}
-  <section class="pd-card pd-tickets">
+  <section class="pd-card pd-tickets bn-4">
     <header>
       <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M21 8v8a2 2 0 0 1-1 1.7l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.7l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/></svg></span>
       <h2>Assigned to you</h2>
@@ -198,7 +215,7 @@
 
     {% if my_tickets %}
       <ul class="pd-list">
-        {% for t in my_tickets %}
+        {% for t in my_tickets|slice:":3" %}
           <li>
             <span class="lead">{{ t.title|truncatechars:52 }}</span>
             <span class="meta">{{ t.product.name }} · {{ t.get_status_display }}</span>
@@ -211,54 +228,5 @@
     <a class="pd-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
   </section>
 
-  {# ---------- Approvals: only for people who can actually approve ---------- #}
-  {% if is_privileged %}
-    <section class="pd-card pd-queue">
-      <header>
-        <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-3-6.7L21 8Z"/></svg></span>
-        <h2>Leave to approve</h2>
-        {% if leave_approval_count %}<span class="n">{{ leave_approval_count }}</span>{% endif %}
-      </header>
-
-      {% if leave_approvals %}
-        <ul class="pd-list">
-          {% for r in leave_approvals %}
-            <li>
-              <span class="lead">{{ r.user.first_name|default:r.user.username }}</span>
-              <span class="meta">{{ r.policy.name }} · {{ r.days|days }} · from {{ r.start_date|date:"j M" }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <div class="pd-empty"><p>No leave requests waiting. Queue is clear.</p></div>
-      {% endif %}
-      <a class="pd-more" href="{% url 'leave:approvals' %}">Open approvals →</a>
-    </section>
-  {% endif %}
-
-  {# ---------- Company totals: only for owner/admin ---------- #}
-  {% if is_privileged %}
-    <section class="pd-card pd-company">
-      <header>
-        <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span>
-        <h2>Company</h2>
-      </header>
-      <div class="pd-mini three">
-        <div>
-          <span class="v">{{ team.member_count }}</span>
-          <span class="l">Members</span>
-        </div>
-        <div>
-          <span class="v">{{ team.open_tickets }}</span>
-          <span class="l">Open tickets</span>
-        </div>
-        <div>
-          <span class="v">{{ team.open_errors }}</span>
-          <span class="l">Open errors</span>
-        </div>
-      </div>
-      <a class="pd-more" href="{% url 'dashboards:reports' %}">Reports →</a>
-    </section>
-  {% endif %}
 
 </div>

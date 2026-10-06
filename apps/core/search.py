@@ -1,4 +1,4 @@
-"""Global search for the Ctrl+K palette.
+"""Global search for the top bar and Ctrl+K palette.
 
 Every query goes through the same access helpers as the list pages
 (`accessible_tickets`, `accessible_error_groups`, `accessible_products`), so
@@ -20,7 +20,7 @@ from apps.products.access import accessible_error_groups, accessible_products, a
 
 _TICKET_KEY = re.compile(r"^([A-Za-z][A-Za-z0-9]{1,5}?)[-\s]?0*(\d+)$")
 _BARE_KEY = re.compile(r"^[A-Za-z][A-Za-z0-9]{1,5}$")
-LIMITS = {"tickets": 6, "errors": 5, "products": 4, "people": 5, "pages": 6}
+LIMITS = {"tickets": 6, "errors": 5, "products": 4, "people": 5, "pages": 6, "feedback": 4, "surveys": 3, "rules": 3, "dsr": 4, "leave": 3}
 MIN_QUERY = 2
 
 
@@ -76,7 +76,7 @@ def search(request, query):
         return [{"label": "Go to", "items": pages}] if pages else []
 
     number = query.lstrip("#")
-    ticket_filter = Q(title__icontains=query)
+    ticket_filter = Q(title__icontains=query) | Q(description__icontains=query) | Q(comments__body__icontains=query)
     if number.isdigit():
         ticket_filter |= Q(pk=int(number))
     # AUM-14, aum14 and "aum 14" find that product's ticket number 14. A bare key
@@ -90,6 +90,7 @@ def search(request, query):
         accessible_tickets(user, company)
         .filter(ticket_filter)
         .select_related("product")
+        .distinct()
         .order_by("-updated_at")[: LIMITS["tickets"]]
     )
     ticket_items = [
@@ -103,8 +104,14 @@ def search(request, query):
 
     errors = (
         accessible_error_groups(user, company)
-        .filter(Q(title__icontains=query) | Q(error_type__icontains=query))
+        .filter(
+            Q(title__icontains=query)
+            | Q(error_type__icontains=query)
+            | Q(occurrences__page__icontains=query)
+            | Q(occurrences__stacktrace__icontains=query)
+        )
         .select_related("product")
+        .distinct()
         .order_by("-last_seen")[: LIMITS["errors"]]
     )
     error_items = [
@@ -116,10 +123,58 @@ def search(request, query):
         for e in errors
     ]
 
-    products = accessible_products(user, company).filter(name__icontains=query).order_by("name")[: LIMITS["products"]]
+    products = accessible_products(user, company).filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(key__iexact=query)).order_by("name")[: LIMITS["products"]]
     product_items = [
         {"title": p.name, "subtitle": "Product", "url": reverse("products:product_board", args=[p.pk])}
         for p in products
+    ]
+
+    scope = accessible_products(user, company)
+    from apps.automation.models import AutoTicketRule
+    from apps.dsr.models import DSREntry
+    from apps.feedback.models import Survey
+    from apps.ingestion.models import Feedback
+    from apps.leave.models import LeaveRequest
+
+    feedback_items = [
+        {
+            "title": (f.comment or "Feedback").strip()[:110],
+            "subtitle": f"{f.product.name} · Feedback",
+            "url": reverse("feedback:cs_hub"),
+        }
+        for f in Feedback.objects.filter(company=company, product__in=scope, comment__icontains=query)
+        .select_related("product")
+        .order_by("-pk")[: LIMITS["feedback"]]
+    ]
+    survey_items = [
+        {"title": sv.name, "subtitle": "Survey", "url": reverse("feedback:survey_detail", args=[sv.pk])}
+        for sv in Survey.objects.filter(company=company, product__in=scope)
+        .filter(Q(name__icontains=query) | Q(description__icontains=query))[: LIMITS["surveys"]]
+    ]
+    rule_items = [
+        {"title": r.name, "subtitle": "Automation rule", "url": reverse("automation:rule_edit", args=[r.pk])}
+        for r in AutoTicketRule.objects.filter(company=company, product__in=scope, name__icontains=query)[: LIMITS["rules"]]
+    ]
+    # Your own work log and leave: nobody else's, whatever their role.
+    dsr_items = [
+        {
+            "title": e.task_name[:110],
+            "subtitle": f"DSR · {e.date:%b %d}",
+            "url": reverse("dsr:dsr_sheet"),
+        }
+        for e in DSREntry.objects.filter(company=company, user=user)
+        .filter(Q(task_name__icontains=query) | Q(notes__icontains=query))
+        .order_by("-date")[: LIMITS["dsr"]]
+    ]
+    leave_items = [
+        {
+            "title": f"{r.start_date:%b %d} – {r.end_date:%b %d} · {r.get_status_display()}",
+            "subtitle": "My leave",
+            "url": reverse("leave:my_leave"),
+        }
+        for r in LeaveRequest.objects.filter(company=company, user=user, reason__icontains=query).order_by("-start_date")[
+            : LIMITS["leave"]
+        ]
     ]
 
     people_items = []
@@ -145,6 +200,11 @@ def search(request, query):
         ("Errors", error_items),
         ("Products", product_items),
         ("People", people_items),
+        ("Feedback", feedback_items),
+        ("Surveys", survey_items),
+        ("Automation", rule_items),
+        ("My DSR", dsr_items),
+        ("My leave", leave_items),
         ("Go to", pages),
     ):
         if items:

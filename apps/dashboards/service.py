@@ -728,6 +728,94 @@ def _personal_dsr(company, user, today):
     }
 
 
+
+def _dashboard_charts(user, company, today):
+    """The three small graphs on the home page, all scoped like the lists they summarise."""
+    from apps.attendance import service as att
+    from apps.attendance.models import AttendanceRecord
+    from apps.ingestion.models import ErrorOccurrence
+    from apps.products.access import accessible_error_groups, accessible_tickets
+    from apps.tickets.models import Ticket
+
+    # Hours this week, Monday to Sunday.
+    monday = today - timedelta(days=today.weekday())
+    shift = att.shift_for(company)
+    records = {
+        r.date: r
+        for r in AttendanceRecord.objects.filter(
+            company=company, user=user, date__gte=monday, date__lte=monday + timedelta(days=6)
+        )
+    }
+    target = max(1, shift.worked_minutes_per_day)
+    mins = [
+        att.net_minutes_for(records[d], shift) if d in records and records[d].check_in else 0
+        for d in (monday + timedelta(days=i) for i in range(7))
+    ]
+    scale = max(target, max(mins))
+    week = [
+        {
+            "label": (monday + timedelta(days=i)).strftime("%a"),
+            "hours": f"{m // 60}h {m % 60:02d}m" if m else "–",
+            "pct": round(m * 100 / scale),
+            "met": m >= target,
+            "today": (monday + timedelta(days=i)) == today,
+            "future": (monday + timedelta(days=i)) > today,
+        }
+        for i, m in enumerate(mins)
+    ]
+    week_total = sum(mins)
+
+    # Tickets by status across everything this person can open.
+    palette = {
+        "open": "#1C75BC", "in_progress": "#75BAE6", "in_review": "#7c3aed",
+        "resolved": "#177a4c", "closed": "#9aa3b2",
+    }
+    counts = dict(
+        accessible_tickets(user, company).values_list("status").annotate(n=Count("pk")).order_by()
+    )
+    total = sum(counts.values())
+    statuses, stops, at = [], [], 0.0
+    for value, label in Ticket.Status.choices:
+        n = counts.get(value, 0)
+        if not n:
+            continue
+        color = palette.get(value, "#9aa3b2")
+        pct = n * 100 / total
+        stops.append(f"{color} {at:.2f}% {at + pct:.2f}%")
+        at += pct
+        statuses.append({"label": label, "n": n, "color": color})
+    donut = f"conic-gradient({', '.join(stops)})" if stops else "none"
+
+    # Error occurrences per day, last 14 days.
+    since = today - timedelta(days=13)
+    per_day = dict(
+        ErrorOccurrence.objects.filter(
+            company=company,
+            error_group__in=accessible_error_groups(user, company),
+            created_at__date__gte=since,
+        )
+        .values_list("created_at__date")
+        .annotate(n=Count("pk"))
+        .order_by()
+    )
+    series = [per_day.get(since + timedelta(days=i), 0) for i in range(14)]
+    peak = max(series) or 1
+    errors = [
+        {"n": n, "pct": max(4, round(n * 100 / peak)) if n else 2, "label": (since + timedelta(days=i)).strftime("%b %d")}
+        for i, n in enumerate(series)
+    ]
+    return {
+        "chart_week": week,
+        "chart_week_total": f"{week_total // 60}h {week_total % 60:02d}m",
+        "chart_week_target": f"{target // 60}h {target % 60:02d}m",
+        "chart_status": statuses,
+        "chart_status_total": total,
+        "chart_donut": donut,
+        "chart_errors": errors,
+        "chart_errors_total": sum(series),
+    }
+
+
 def get_personal_dashboard_data(user, company):
     """Home page data: the member's own month, with company totals for admins.
 
@@ -778,6 +866,7 @@ def get_personal_dashboard_data(user, company):
         "dsr": _personal_dsr(company, user, today),
         "my_tickets": list(my_tickets),
         "my_ticket_count": my_ticket_count,
+        **_dashboard_charts(user, company, today),
     }
 
     if is_privileged:

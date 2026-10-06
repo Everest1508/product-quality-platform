@@ -10,6 +10,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.3.0] — 2026-10-06 · a top bar, a bento home, and office hours of 10 to 6:30
+
+> In short: a new top bar with search, online, notifications and your account, a home page of charts, a redesigned Products page, and the office day now ends at 6:30 PM.
+
+### New
+
+- **A top bar on every page.** Search sits in the middle, with a **New** menu for a ticket, leave request, correction or product. Next to it are who is online, your notifications and your account menu with Settings and Sign out.
+- **Charts on the home page.** Hours worked each day this week against your daily goal, tickets by status, and errors over the last 14 days sit in a tidier grid next to Pay, Leave, DSR and your tickets.
+- **A receipt when you check in or out.** You get a message right away and a line in your notifications.
+- **Product tiles.** The Products page opens with totals for products, open errors, open tickets and how many need attention. Each product card shows its health, key, counts and a small chart of this week's errors.
+
+### Better
+
+- **Office hours are 10:00 to 6:30.** That is a 7 hour 30 minute working day after the one-hour break. Teams still on the old 7:00 PM end time were moved over; an end time someone set themselves was left alone.
+- **Correction requests show what you asked for.** Each request lists the times you filled in next to the old ones, your reason, when you sent it and any note from the admin. The form previews your times as you type, and the confirmation repeats them.
+- **Search looks everywhere.** It now finds words inside ticket descriptions and comments, error details and pages, product descriptions, feedback, surveys, automation rules, and your own DSR entries and leave reasons. It only shows what you are allowed to open.
+- **The "waiting for you" chips on the home page are tidier.** They are now rounded with a count badge.
+- **The new look is applied across the app.** Softer blue-grey background with white panels, and a dark card for today's punch.
+
+### Fixed
+
+- **Messages after quick actions now appear.** Saving, deleting or punching from a page that updates in place used to queue the message for a later page. Creating an API key and deleting tickets in bulk had no message at all.
+- **The Recent days box on My attendance no longer disappears.** On a window shorter than the page it collapsed to nothing. It now keeps its size and the page scrolls.
+
 ## [1.2.2] — 2026-10-05 · a live countdown on the punch card
 
 > In short: the punch card shows plain time with no circle, and once you check in it counts down to the end of your full day.

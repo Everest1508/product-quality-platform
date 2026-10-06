@@ -280,8 +280,8 @@ def effective_span_for(record, shift=None):
 def net_minutes_for(record, shift):
     """Worked minutes for one day, less the unpaid scheduled break.
 
-    A 10:00-19:00 punch pair spans 9 hours but is 8 hours of work once the 60
-    minute break comes off, and it is the 8 that office hours are measured
+    A 10:00-18:30 punch pair spans 8.5 hours but is 7.5 hours of work once the 60
+    minute break comes off, and it is the 7.5 that office hours are measured
     against. `record.worked_minutes` stays the raw span -- that is what the
     punches say -- and this is the number the reports show.
 

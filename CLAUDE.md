@@ -13,6 +13,9 @@ venv/bin/python manage.py runserver 8010          # dev server
 venv/bin/python manage.py seed_data               # wipe + reseed the "Acme Corp" demo workspace
                                                   #   logins: owner|admin|dev1|dev2|support|viewer / testpass123
 venv/bin/python manage.py evaluate_rules [--dry-run]   # run the auto-ticket rule engine (see Automation below)
+venv/bin/python manage.py audit_decimals [--model payroll.Payslip] [--fix --backup f.json]
+                                                  # find DecimalField cells SQLite can't convert (one bad row 500s every page reading that table)
+./bootstrap.sh                                    # migrate + superuser + demo data in one go
 ```
 
 Tests use Django's runner (not pytest, despite `.pytest_cache` in `.gitignore`):
@@ -23,7 +26,7 @@ venv/bin/python manage.py test apps.tickets                           # one app
 venv/bin/python manage.py test apps.tickets.tests.test_tickets.TicketProductAccessTest.test_cannot_open_inaccessible_ticket   # one test
 ```
 
-Two tests in `apps.accounts.tests.test_tenant_isolation` fail on a clean checkout (`test_signup_creates_user`, `test_request_has_company_after_login`) — stale tests against an auth flow that was refactored (`accounts:signup` route is gone; `LOGIN_REDIRECT_URL = "/dashboard/"` points at a route that no longer exists). Not regressions.
+One test in `apps.accounts.tests.test_tenant_isolation` fails on a clean checkout: `test_signup_creates_user` (the `accounts:signup` route is gone; allauth signup isn't wired up). Not a regression. The full suite takes ~3.5 minutes — background it and poll the log. There is no CI, lint or typecheck; `manage.py check` (expect only `staticfiles.W004`) plus the suite is the whole gate.
 
 Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`. Also starts a `redis` service (`REDIS_URL`, used by Django Channels for the live inbox and presence feeds). `daphne` is first in `INSTALLED_APPS`, which is what makes `manage.py runserver` an ASGI server that serves WebSockets as well as HTTP; without it every `/ws/...` URL is a 404. With no `REDIS_URL` set the channel layer is in-memory, which is fine for one process.
 
@@ -33,9 +36,19 @@ There is no frontend build step. Templates render server-side; htmx and Alpine.j
 
 Root-level `test_api*.py`, `check_db*.py`, `check_serializer.py` are ad-hoc throwaway scripts, not part of the test suite.
 
+## Companion docs — read before changing an area
+
+- **`AGENTS.md`** is the long-form version of this file (per-feature invariants for attendance, leave, payroll, toasts, dropdowns, sidebar, changelog). Read the relevant section before touching those areas.
+- **`context.md`** is the project's running memory (what was done and why, "deliberately not changed", numbered open questions). Consult it before changing an area and append to today's `## YYYY-MM-DD` section after a behaviour change.
+- **`CHANGELOG.md` is a runtime asset** (parsed by `apps/core/changelog.py` for the "What's new" dialog and `/api/v1/changelog/`): add releases at the top, never edit old entries, keep `!CHANGELOG.md` after `*.md` in `.dockerignore`.
+
 ## Architecture
 
 Django 6 + SQLite, server-rendered (class-based `View`s with `get`/`post`, not DRF for the web UI). `apps/` is on `sys.path` (see `core/settings.py`), so apps import as `apps.tickets`, `apps.products`, etc. The Django project package is `core/`.
+
+### Timezone
+
+`TIME_ZONE = "Asia/Kolkata"` (with `USE_TZ = True`) is load-bearing: lateness/penalty and day-boundary logic compare local wall-clock against `WorkShift.start_time`. Use `timezone.localtime()` / `localdate()` / `get_current_timezone()`; never hardcode offsets or `utcnow()`. Tests build punches with `timezone.make_aware(..., timezone.get_current_timezone())`.
 
 ### Multi-tenancy and access control
 
@@ -80,6 +93,15 @@ The same domain logic exists in two places and both must be kept in sync:
 - **Errors** (`apps/errors/trends.py`). `ErrorGroup` has `first_version`, `regressed_at` and `regression_count`; the ingestion serializer sets them. A resolved group that is reported again reopens, is flagged, and the owners and admins are notified once.
 - **API keys.** Creating, rotating and revoking need owner, admin or developer plus access to the product. Keys can have `expires_at`, which `APIKey.validate_key` enforces. The docs page at `/products/<pk>/api/` is built from the real serializers (`apps/ingestion/docs.py`); a test fails if a serializer field has no description. A bad or missing key answers 403, not 401, and existing tests pin that.
 
+### HR modules: attendance, leave, payroll (`apps/attendance`, `apps/leave`, `apps/payroll`)
+
+Company-scoped (not product-scoped), mounted at `/attendance/`, `/leave/`, `/payroll/`. Business rules live in each app's `service.py` — reuse them, never re-derive in views/templates.
+
+- **Attendance:** one `AttendanceRecord` per company+user+date; `models.punch()` is the only write path (a third punch is a no-op). `WorkShift` (one row per company, `service.shift_for` get-or-creates defaults) holds hours and lateness bands; penalties are *derived*, never stored.
+- **Leave:** `service.auto_split` stores `paid_days`/`unpaid_days` on `LeaveRequest`; over-cap requests are accepted with the excess unpaid. Payroll trusts the stored split. Approvers = owners/admins + `Membership.is_leave_approver`; `LeaveApproverRequiredMixin` must decide before `super().dispatch()`.
+- **Payroll:** monthly salary → day rate via `service.effective_rate`; cycle is the 27th–26th (`service.cycle_bounds`). Only unpaid leave and lateness deduct. `Payslip` is an immutable snapshot; `generate_run` deletes and recreates payslips unless the run `is_locked`. Admin views are `CompanyAdminRequiredMixin`; `/payroll/me/` is member-only and 404s (not 403) on someone else's slip.
+- The personal-first home page is `dashboards.service.get_personal_dashboard_data`; tickets there must go through `accessible_tickets`.
+
 ### Templates
 
 Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app shell; the sidebar is `core/_sidebar.html`, fed by the `product_context` and `workspace_context` processors in `apps/core/context_processors.py` (these attach `product` + per-product counts, `nav_products`, and company-wide open counts). Partials are prefixed `_` and live in `<app>/partials/`. CSS is five files under `templates/core/css/` (`_tokens`, `_app`, `_components`, `_pages`, `_responsive`) included into one inline `<style>`; colors come from `_tokens.css` only. See `design-system.md`. A multi-line template note must use `{% comment %}`, because a `{# #}` spanning lines prints on the page (a test enforces this). The PWA manifest, service worker and offline page are views in `apps/core/pwa.py`, and the favicon files in `brand/favicon/` are served by `apps/core/brand.py`, because there is no static pipeline. For an htmx request (`HX-Request: true` header) a view returns a `partials/` fragment instead of the full page.
@@ -95,6 +117,10 @@ Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app 
 ### Changelog
 
 `CHANGELOG.md` is what the sidebar "What's new" dialog shows, via `apps/core/changelog.py` and `/api/v1/changelog/`. Write each release as `## [1.2.0] — date · title`, then a `> In short: ...` sentence, then `### New`, `### Better`, `### Fixed`, `### Security` lists. Start every bullet with a bold lead that is a whole sentence (`**Ticket names like AUM-014.** Detail...`), because the dialog shows that lead as the item's title. Plain words, no class or file names. A test fails if `APP_VERSION` is not the newest release tag, if either of the two newest releases has no summary, or if one of their bold leads stops mid-sentence. Cutting a release means bumping `APP_VERSION` in `core/settings.py` in the same change.
+
+- Every mutating view must call `messages.success/.error` (toasts render from `core/base.html`; htmx fragments don't render the shell, so they must carry the payload or dispatch `django-message`). Serop JSON views are exempt.
+- Choice controls use `{% dropdown %}` (`apps/core/templatetags/dropdown_tags.py`), not native `<select>`. Icons are `{% icon 'name' %}` from the vendored `apps/core/icons.py`. Sidebar active state is keyed on `request.resolver_match.url_name`, so a new route must be added to `core/_sidebar.html`'s conditions.
+- `/dashboard/` is a `RedirectView`; `LOGIN_REDIRECT_URL` is the URL name `dashboards:index`. Don't include the dashboards URLconf twice.
 
 ### Auth
 

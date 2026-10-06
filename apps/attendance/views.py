@@ -12,6 +12,8 @@ from apps.attendance.models import AttendanceCorrection, AttendanceRecord, forma
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
+from apps.notifications import service as notifications
+from apps.notifications.models import Notification
 
 User = get_user_model()
 
@@ -324,6 +326,18 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
         else:
             message = "You have already checked in and out for today."
 
+        if action in ("checked_in", "checked_out"):
+            # The actor is deliberately None: notify() skips the person who caused
+            # an event, but a punch is exactly what they want a receipt for.
+            notifications.notify(
+                user=request.user,
+                company=request.company,
+                kind=Notification.Kind.SYSTEM,
+                title=message,
+                url="/attendance/",
+            )
+        (messages.success if action in ("checked_in", "checked_out") else messages.info)(request, message)
+
         if request.headers.get("HX-Request") == "true":
             return render(
                 request,
@@ -335,7 +349,6 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
                 ),
             )
 
-        messages.success(request, message)
         return redirect("attendance:my_attendance")
 
 
@@ -687,7 +700,12 @@ class CorrectionRequestView(CompanyMemberRequiredMixin, View):
         except corrections.CorrectionError as exc:
             messages.error(request, str(exc))
             return render(request, self.template_name, self._context(request, day, values), status=400)
-        messages.success(request, f"Request sent for {day:%b %d}. You will be told when it is decided.")
+        sent = " · ".join(
+            f"{label} {when:%-I:%M %p}"
+            for label, when in (("In", check_in), ("Out", check_out))
+            if when
+        )
+        messages.success(request, f"Request sent for {day:%b %d}: {sent}. You will be told when it is decided.")
         return redirect("attendance:my_attendance")
 
 

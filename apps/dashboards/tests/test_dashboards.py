@@ -328,12 +328,11 @@ class PersonalDashboardTest(TestCase):
 
     def test_company_cards_are_admin_only(self):
         self.assertNotContains(self.get(), "pd-card pd-company")
-        self.assertNotContains(self.get(), "pd-card pd-queue")
+        self.assertNotContains(self.get(), 'class="pd-attn"')
 
         self.client.login(username="boss", password="pass1234")
         response = self.get()
-        self.assertContains(response, "pd-card pd-company")
-        self.assertContains(response, "pd-card pd-queue")
+        self.assertContains(response, 'class="pd-attn"')
 
     def test_leave_approvals_only_for_privileged_roles(self):
         from apps.leave.models import LeavePolicy, LeaveRequest
@@ -351,10 +350,10 @@ class PersonalDashboardTest(TestCase):
             days=2,
             status="pending",
         )
-        self.assertNotContains(self.get(), "pd-card pd-queue")
+        self.assertNotContains(self.get(), 'class="pd-attn"')
 
         self.client.login(username="boss", password="pass1234")
-        self.assertContains(self.get(), "pd-card pd-queue")
+        self.assertContains(self.get(), 'class="pd-attn"')
 
     def test_attendance_reflects_only_my_own_punches(self):
         from datetime import date, datetime, time, timedelta

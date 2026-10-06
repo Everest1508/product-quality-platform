@@ -127,18 +127,11 @@
 {% if request.user.is_authenticated %}
 <div class="shell">
   {% include "core/_sidebar.html" %}
+  <div class="main-col">
+    {% include "core/_topbar.html" %}
   <div class="main">
-    <div class="topbar">
-      <button type="button" class="topbar-burger" data-sidebar-open aria-label="Open navigation">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-      <span class="topbar-title">{% if product %}{{ product.name }}{% else %}{{ request.company.name }}{% endif %}</span>
-      <a class="topbar-bell" href="{% url 'notifications:list' %}" aria-label="Notifications" x-data>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <i x-show="$store.notifications && $store.notifications.unread > 0" style="display:none;"></i>
-      </a>
-    </div>
     {% block content %}{% endblock %}
+  </div>
   </div>
 </div>
 <script>
@@ -264,7 +257,7 @@
 <div id="toast-container"
      x-data="{ messages: [], push(m) { this.messages.push(m); setTimeout(() => this.messages.shift(), 4000) } }"
      x-init="const seed = document.getElementById('toast-seed'); if (seed) { JSON.parse(seed.textContent).forEach(m => this.push(m)) }"
-     x-on:django-message.window="push($event.detail)">
+     x-on:django-message.window="($event.detail.messages || [$event.detail]).forEach(m => push(m))">
   <template x-for="(msg, i) in messages" :key="i">
     <div class="toast" :class="msg.tags" x-text="msg.text" x-show="true"
          x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
@@ -381,6 +374,9 @@
     }
   };
 
+  function toast(text, tags) {
+    window.dispatchEvent(new CustomEvent('django-message', {detail: {text: text, tags: tags}}));
+  }
   window.bulkDeleteTickets = function(url) {
     var checked = document.querySelectorAll('.ticket-select:checked');
     if (checked.length === 0) return;
@@ -420,8 +416,11 @@
           countEl.textContent = total + ' ticket' + (total !== 1 ? 's' : '');
         }
         window.toggleSelectMode();
+        toast(data.deleted + ' ticket' + (data.deleted > 1 ? 's' : '') + ' deleted.', 'success');
+      } else {
+        toast(data.error || 'No tickets were deleted.', 'error');
       }
-    });
+    }).catch(function() { toast('Could not delete tickets.', 'error'); });
   };
 })();
 

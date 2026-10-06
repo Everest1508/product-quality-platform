@@ -17,7 +17,9 @@
 </div>
 
 <div class="corr-grid">
-  <form method="post" class="card corr-form">
+  <form method="post" class="card corr-form"
+        x-data="{ inT: '{{ values.check_in|escapejs }}', outT: '{{ values.check_out|escapejs }}',
+                  fmt(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number); return ((h % 12) || 12) + ':' + String(m).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM'); } }">
     {% csrf_token %}
     <div class="form-group">
       <label class="dc-label" for="corr-date">Day</label>
@@ -39,12 +41,19 @@
     <div class="corr-times">
       <div class="form-group">
         <label class="dc-label" for="corr-in">Check-in</label>
-        <input id="corr-in" type="time" name="check_in" class="form-input" value="{{ values.check_in }}">
+        <input id="corr-in" type="time" name="check_in" class="form-input" value="{{ values.check_in }}" x-model="inT">
       </div>
       <div class="form-group">
         <label class="dc-label" for="corr-out">Check-out</label>
-        <input id="corr-out" type="time" name="check_out" class="form-input" value="{{ values.check_out }}">
+        <input id="corr-out" type="time" name="check_out" class="form-input" value="{{ values.check_out }}" x-model="outT">
       </div>
+    </div>
+    <div class="corr-preview" x-show="inT || outT" style="display:none;" aria-live="polite">
+      <span class="dc-label">You are asking for</span>
+      <span class="corr-chips">
+        <span class="corr-chip" x-show="inT"><i>In</i><b x-text="fmt(inT)"></b></span>
+        <span class="corr-chip" x-show="outT"><i>Out</i><b x-text="fmt(outT)"></b></span>
+      </span>
     </div>
     <label class="corr-check"><input type="checkbox" name="out_next_day" value="1" {% if values.out_next_day %}checked{% endif %}> The check-out was after midnight</label>
     <p class="text-sm text-muted">Fill in only what is wrong. A time you leave empty stays as recorded.</p>
@@ -64,10 +73,7 @@
   <aside class="card corr-recent">
     <h2>Recent requests</h2>
     {% for c in recent %}
-    <div class="corr-row">
-      <span class="corr-day">{{ c.date|date:"M j" }}</span>
-      <span class="pill {% if c.status == 'approved' %}resolved{% elif c.status == 'pending' %}open{% else %}closed{% endif %}">{{ c.get_status_display }}</span>
-    </div>
+    {% include "attendance/partials/_correction_request.html" %}
     {% empty %}
     <p class="text-sm text-muted">You have not asked for any corrections.</p>
     {% endfor %}

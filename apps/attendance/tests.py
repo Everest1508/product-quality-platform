@@ -831,10 +831,10 @@ class LatePenaltyTest(AttendanceTestBase):
     def test_the_default_shift_is_the_office_hours(self):
         shift = service.shift_for(self.company)
         self.assertEqual(shift.start_time, time(10, 0))
-        self.assertEqual(shift.end_time, time(19, 0))
+        self.assertEqual(shift.end_time, time(18, 30))
         self.assertEqual(shift.break_minutes, 60)
-        # 9 hours less a 60 minute break.
-        self.assertEqual(shift.worked_minutes_per_day, 480)
+        # 8.5 hours less a 60 minute break.
+        self.assertEqual(shift.worked_minutes_per_day, 450)
 
     def test_a_company_with_no_shift_row_still_gets_one(self):
         from apps.attendance.models import WorkShift
@@ -1286,7 +1286,7 @@ class PunchPanelTest(AttendanceTestBase):
     def test_it_shows_the_office_hours(self):
         """Arriving late is priced, so the shift has to be visible at the button."""
         body = self.panel()
-        self.assertIn("Shift 10:00–19:00", body)
+        self.assertIn("Shift 10:00–18:30", body)
 
     def test_it_says_late_the_moment_it_happens(self):
         """Otherwise the first notice of a penalty is a payslip weeks later."""
@@ -1454,7 +1454,7 @@ class PunchPanelTest(AttendanceTestBase):
         ).content.decode()
         # Every state carries the shift and the lateness, so a punch cannot
         # swap one for the other and lose the penalty the employee just incurred.
-        for state in ("Checked out", "45m late", "Shift 10:00–19:00"):
+        for state in ("Checked out", "45m late", "Shift 10:00–18:30"):
             self.assertIn(state, body)
         self.assertNotIn("punch-panel", body)
 
@@ -1464,7 +1464,7 @@ class PunchPanelTest(AttendanceTestBase):
             reverse("attendance:punch"), headers={"HX-Request": "true"}
         ).content.decode()
         self.assertIn("Checked in at", body)
-        self.assertIn("Shift 10:00–19:00", body)
+        self.assertIn("Shift 10:00–18:30", body)
         self.assertIn("Check out", body)
 
     def test_an_admin_reading_a_colleague_is_offered_no_button(self):

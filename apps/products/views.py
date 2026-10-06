@@ -44,9 +44,33 @@ class ProductListView(CompanyMemberRequiredMixin, View):
         paginator = Paginator(qs, 25)
         page = paginator.get_page(request.GET.get("page", 1))
 
-        product_ids = [p.pk for p in page.object_list]
         from apps.dashboards.service import _build_product_cards
-        cards_by_id = {c["product"].pk: c for c in _build_product_cards(request.company, product_ids)}
+        from apps.ingestion.models import ErrorOccurrence
+
+        # Cards for everything the person can open, so the tiles above the list
+        # are the whole workspace and not just the page being shown.
+        all_ids = list(accessible_products(request.user, request.company).values_list("pk", flat=True))
+        cards_by_id = {c["product"].pk: c for c in _build_product_cards(request.company, all_ids)}
+        summary = {
+            "products": len(all_ids),
+            "open_errors": sum(c["open_errors"] for c in cards_by_id.values()),
+            "open_tickets": sum(c["open_tickets"] for c in cards_by_id.values()),
+            "attention": sum(1 for c in cards_by_id.values() if c["health"] != "healthy"),
+        }
+
+        today = timezone.localdate()
+        since = today - timedelta(days=6)
+        daily = {}
+        page_ids = [p.pk for p in page.object_list]
+        for pid, day, n in (
+            ErrorOccurrence.objects.filter(
+                company=request.company, error_group__product_id__in=page_ids, created_at__date__gte=since
+            )
+            .values_list("error_group__product_id", "created_at__date")
+            .annotate(n=Count("pk"))
+            .order_by()
+        ):
+            daily[(pid, day)] = n
 
         for p in page.object_list:
             p.card_data = cards_by_id.get(p.pk, {
@@ -55,6 +79,10 @@ class ProductListView(CompanyMemberRequiredMixin, View):
             })
             p.version_cnt = getattr(p, "version_count", p.versions.count())
             p.api_key_cnt = p.api_keys.count()
+            series = [daily.get((p.pk, since + timedelta(days=i)), 0) for i in range(7)]
+            peak = max(series) or 1
+            p.spark = [max(8, round(n * 100 / peak)) if n else 4 for n in series]
+            p.week_errors = sum(series)
 
         view_mode = request.GET.get("view", "grid")
 
@@ -71,6 +99,7 @@ class ProductListView(CompanyMemberRequiredMixin, View):
             "search": search,
             "current_sort": sort,
             "view_mode": view_mode,
+            "summary": summary,
         })
 
 
@@ -240,6 +269,7 @@ class APIKeyCreateView(CompanyMemberRequiredMixin, View):
             target_object_id=api_key.pk,
             metadata={"product_id": product.pk},
         )
+        messages.success(request, f"API key '{name}' created.")
         return render(request, "products/partials/_api_key_created.html", {
             "raw_key": raw_key,
             "api_key": api_key,

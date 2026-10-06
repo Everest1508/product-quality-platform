@@ -203,8 +203,8 @@ class WorkShift(TenantScopedModel):
 
     One row per company (`get_or_create` in `shift_for`), because these are the
     numbers every late penalty and every "hours worked" figure is derived from.
-    Defaults are the office policy: 10:00-19:00 with a 60 minute break, which
-    is 8 working hours a day.
+    Defaults are the office policy: 10:00-18:30 with a 60 minute break, which
+    is 7.5 working hours a day.
 
     The bands are stored as *minutes after `start_time`* rather than as clock
     times, so the whole thing is one number to reason about:
@@ -223,7 +223,7 @@ class WorkShift(TenantScopedModel):
     """
 
     start_time = models.TimeField(default=time(10, 0))
-    end_time = models.TimeField(default=time(19, 0))
+    end_time = models.TimeField(default=time(18, 30))
     break_minutes = models.PositiveIntegerField(
         default=60,
         help_text="Unpaid scheduled break, deducted from hours worked.",

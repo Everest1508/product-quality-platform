@@ -1,0 +1,99 @@
+{% load icon_tags %}
+{# Global top bar: where you are, search, who is online, notifications, and the account menu. #}
+<header class="topbar">
+  <button type="button" class="topbar-burger" data-sidebar-open aria-label="Open navigation">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <span class="topbar-title">{% if product %}{{ product.name }}{% else %}{{ request.company.name }}{% endif %}</span>
+
+  <button type="button" class="tb-search" onclick="window.dispatchEvent(new Event('pq-palette'))" aria-label="Search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Search tickets, errors, products</span>
+    <kbd>Ctrl K</kbd>
+  </button>
+
+  <div class="tb-actions">
+    <div class="tb-wrap" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+      <button type="button" class="tb-btn tb-new" aria-haspopup="true" :aria-expanded="open.toString()" @click="open = !open">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="tb-text">New</span>
+      </button>
+      <div class="side-user-menu tb-menu" x-show="open" x-transition.opacity.duration.100ms style="display:none;" @click="open = false">
+        <a href="{% url 'tickets:ticket_create' %}">{% icon 'ticket' 'side-menu-ic' %} New ticket</a>
+        <a href="{% url 'leave:apply' %}">{% icon 'calendar-days' 'side-menu-ic' %} Request leave</a>
+        <a href="{% url 'attendance:correction_request' %}">{% icon 'clock' 'side-menu-ic' %} Request a correction</a>
+        {% if request.company_role == 'owner' or request.company_role == 'admin' %}<a href="{% url 'products:product_create' %}">{% icon 'package' 'side-menu-ic' %} New product</a>{% endif %}
+      </div>
+    </div>
+
+    <div class="tb-wrap" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+      <button type="button" class="tb-btn" aria-haspopup="true" :aria-expanded="open.toString()" aria-label="Who is online" @click="open = !open">
+        <span class="tb-stack" aria-hidden="true">
+          <template x-for="u in $store.presence.users.slice(0, 3)" :key="u.user_id">
+            <span class="tb-face" x-text="$store.presence.initial(u)"></span>
+          </template>
+          <span class="presence-dot" x-show="!$store.presence.users.length" :class="($store.presence.mode === 'live' || $store.presence.mode === 'polling') ? 'is-live' : 'is-off'"></span>
+        </span>
+        <span class="tb-count" x-text="$store.presence.online.length">0</span>
+        <span class="tb-text">online</span>
+      </button>
+      <div class="presence-pop" x-show="open" x-transition.opacity.duration.100ms style="display:none;">
+        {% include "core/_presence_panel.html" %}
+      </div>
+    </div>
+
+    <div class="tb-wrap" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+      <button type="button" class="tb-btn tb-icon" aria-haspopup="true" :aria-expanded="open.toString()" aria-label="Notifications" @click="open = !open">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="tb-badge" x-show="$store.notifications.unread > 0" style="display:none;" x-text="$store.notifications.unread > 99 ? '99+' : $store.notifications.unread">0</span>
+      </button>
+      <div class="bell-pop" x-show="open" x-transition.opacity.duration.100ms style="display:none;" role="dialog" aria-label="Notifications">
+        <header class="bell-head">
+          <h2>Notifications</h2>
+          <button type="button" class="link-btn" x-show="$store.notifications.unread > 0" @click="$store.notifications.markAllRead()">Mark all read</button>
+        </header>
+        <ul class="bell-list" x-show="$store.notifications.items.length" style="display:none;">
+          <template x-for="n in $store.notifications.items" :key="n.id">
+            <li>
+              <a :href="n.url" class="bell-row" :class="{ 'is-unread': !n.read }">
+                <span class="bell-dot" aria-hidden="true"></span>
+                <span class="bell-text">
+                  <strong x-text="n.title"></strong>
+                  <span x-show="n.body" x-text="n.body"></span>
+                  <em x-text="(n.actor ? n.actor + ' · ' : '') + $store.notifications.ago(n.created_at)"></em>
+                </span>
+              </a>
+            </li>
+          </template>
+        </ul>
+        <p class="bell-empty" x-show="!$store.notifications.items.length" x-text="$store.notifications.loaded ? 'You are all caught up.' : 'Loading...'"></p>
+        <footer class="bell-foot">
+          <a href="{% url 'notifications:list' %}">See all</a>
+          <button type="button" class="link-btn" x-show="$store.notifications.pushSupported && !$store.notifications.pushOn" @click="$store.notifications.enablePush()">Turn on alerts</button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="tb-wrap side-user" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+      <button type="button" class="tb-user" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true" aria-label="Account menu">
+        <span class="side-avatar">{{ request.user.get_full_name|default:request.user.username|make_list|first|upper }}</span>
+        <span class="side-user-meta">
+          <span class="side-user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+          <span class="side-user-role">{{ request.company_role|default:"member" }}</span>
+        </span>
+        {% icon 'chevron-down' 'switch-caret' %}
+      </button>
+      <div class="side-user-menu" x-show="open" x-transition.opacity.duration.100ms style="display:none">
+        <a href="{% url 'accounts:profile' %}"{% if request.resolver_match.url_name == 'profile' %} aria-current="page" style="background:var(--panel);font-weight:500;"{% endif %}>
+          {% icon 'settings' 'side-menu-ic' %} Settings
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit">
+            {% icon 'log-out' 'side-menu-ic' %} Sign out
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</header>

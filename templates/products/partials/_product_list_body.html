@@ -60,67 +60,50 @@
 </table>
 {% else %}
 {% if products %}
-<div class="grid-3 mb-6">
+<div class="pl-grid">
   {% for product in products %}
-  <div class="product-item-card">
-    <div>
-      <div class="card-head">
-        <a href="{% url 'products:product_detail' pk=product.pk %}" class="card-title">
-          <span class="health-dot {{ product.card_data.health }}" title="Health: {{ product.card_data.health|title }}"></span>
-          {{ product.name }}
-        </a>
-        <span class="card-slug">{{ product.slug }}</span>
+  <article class="pl-card health-{{ product.card_data.health }}">
+    <header>
+      <span class="pl-mark">{{ product.name|slice:":1"|upper }}</span>
+      <div class="pl-name">
+        <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+        <span>{% if product.key %}<b>{{ product.key }}</b> · {% endif %}{{ product.slug }}</span>
       </div>
+      <span class="pl-health {{ product.card_data.health }}">{{ product.card_data.health|title }}</span>
+    </header>
 
-      <p class="card-desc">
-        {% if product.description %}
-          {{ product.description }}
-        {% else %}
-          <span style="font-style:italic;opacity:0.7;">No description provided.</span>
-        {% endif %}
-      </p>
+    <p class="pl-desc">{% if product.description %}{{ product.description|truncatechars:110 }}{% else %}No description yet.{% endif %}</p>
 
-      <div class="stat-mini-grid">
-        <div class="stat-cell">
-          <div class="v{% if not product.card_data.open_errors %} is-zero{% endif %}">{{ product.card_data.open_errors }}</div>
-          <div class="l">Open errors</div>
-        </div>
-        <div class="stat-cell">
-          <div class="v{% if not product.card_data.open_tickets %} is-zero{% endif %}">{{ product.card_data.open_tickets }}</div>
-          <div class="l">Open tickets</div>
-        </div>
-        <div class="stat-cell">
-          <div class="v">{{ product.version_cnt }}</div>
-          <div class="l">Versions</div>
-        </div>
-        <div class="stat-cell">
-          <div class="v">{{ product.api_key_cnt }}</div>
-          <div class="l">API keys</div>
-        </div>
-      </div>
+    <div class="pl-stats">
+      <div><span class="v{% if not product.card_data.open_errors %} is-zero{% endif %}">{{ product.card_data.open_errors }}</span><span class="l">Errors</span></div>
+      <div><span class="v{% if not product.card_data.open_tickets %} is-zero{% endif %}">{{ product.card_data.open_tickets }}</span><span class="l">Tickets</span></div>
+      <div><span class="v">{{ product.version_cnt }}</span><span class="l">Versions</span></div>
+      <div><span class="v">{{ product.api_key_cnt }}</span><span class="l">Keys</span></div>
     </div>
 
-    <div class="card-actions">
-      <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn btn-sm" style="font-size:12px;gap:4px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-        Dashboard
-      </a>
-      <div class="row-actions" style="align-items:center;">
-        <a href="{% url 'products:product_detail' pk=product.pk %}" class="btn btn-sm" style="font-size:12px;gap:4px;">Details &rarr;</a>
-        {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-        <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" title="Edit" aria-label="Edit">
+    <div class="pl-spark" title="Error occurrences, last 7 days: {{ product.week_errors }}">
+      <span class="pl-spark-bars">{% for h in product.spark %}<i style="height:{{ h }}%"></i>{% endfor %}</span>
+      <span class="pl-spark-l">{{ product.week_errors }} errors this week</span>
+    </div>
+
+    <footer>
+      <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn btn-sm">Dashboard</a>
+      <a href="{% url 'products:product_detail' pk=product.pk %}" class="btn btn-sm btn-primary">Open</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+      <span class="pl-tools">
+        <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" title="Edit" aria-label="Edit {{ product.name }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
         </a>
         <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" style="display:inline;" onsubmit="return confirmAction(this, 'Delete {{ product.name }}? This cannot be undone.')">
           {% csrf_token %}
-          <button type="submit" class="icon-btn icon-btn-danger" title="Delete" aria-label="Delete">
+          <button type="submit" class="icon-btn icon-btn-danger" title="Delete" aria-label="Delete {{ product.name }}">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </form>
-        {% endif %}
-      </div>
-    </div>
-  </div>
+      </span>
+      {% endif %}
+    </footer>
+  </article>
   {% endfor %}
 </div>
 {% else %}
