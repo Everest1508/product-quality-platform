@@ -459,11 +459,13 @@ class ProductErrorDetailView(CompanyMemberRequiredMixin, View):
         error_group = get_object_or_404(product.error_groups.select_related("product"), pk=error_pk)
         occurrences = error_group.occurrences.all()[:50]
         from apps.errors import trends
+        from apps.errors.views import linked_tickets
         return render(request, "products/product_error_detail.html", {
             "product": product, "error_group": error_group, "occurrences": occurrences,
             "status_choices": error_group.STATUS_CHOICES,
             "trend": trends.detail_trend(error_group),
             "first_version": error_group.first_version,
+            "linked_tickets": linked_tickets(request, error_group),
         })
 
 
@@ -650,6 +652,8 @@ class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
             "product": product, "ticket": ticket, "comments": comments,
             "comment_form": TicketCommentForm(), "members": members,
             "mention_candidates": mentions.candidates_json(ticket, request.company),
+            "following": ticket.watchers.filter(pk=request.user.pk).exists(),
+            "watcher_count": ticket.watchers.count(),
             "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": __import__("apps.tickets.models", fromlist=["Ticket"]).Ticket.Status.choices,
         })

@@ -277,6 +277,8 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             "comments": comments,
             "comment_form": comment_form,
             "mention_candidates": mentions.candidates_json(ticket, request.company),
+            "following": ticket.watchers.filter(pk=request.user.pk).exists(),
+            "watcher_count": ticket.watchers.count(),
             "members": members,
             "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
             "status_choices": Ticket.Status.choices,
@@ -332,6 +334,15 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
             old_display = ticket.get_status_display()
             ticket.transition_to(new_status, actor=request.user)
             notify_ticket_status_changed(ticket, old_display)
+            service.notify_many(
+                ticket.watchers.all(),
+                company=request.company,
+                kind=Notification.Kind.COMMENT,
+                title=f"{ticket.key} moved to {ticket.get_status_display()}",
+                body=ticket.title,
+                url=f"/tickets/{ticket.pk}/",
+                actor=request.user,
+            )
             log_activity(
                 request.company, "ticket_status_changed",
                 f"Ticket {ticket.key} status changed",
@@ -474,6 +485,9 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
         watchers = [u for u in ticket.assignees.all() if u.pk not in already]
         if ticket.created_by and ticket.created_by.pk not in already:
             watchers.append(ticket.created_by)
+        # Followers too, once each: someone can be an assignee and a follower.
+        seen = already | {u.pk for u in watchers}
+        watchers += [u for u in ticket.watchers.all() if u.pk not in seen]
         service.notify_many(
             watchers,
             company=request.company,
@@ -483,6 +497,27 @@ class TicketCommentView(CompanyMemberRequiredMixin, View):
             url=url,
             actor=request.user,
         )
+
+
+class TicketFollowView(CompanyMemberRequiredMixin, View):
+    """Follow or unfollow a ticket without being assigned to it."""
+
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
+        require_ticket_access(request, ticket)
+        if ticket.watchers.filter(pk=request.user.pk).exists():
+            ticket.watchers.remove(request.user)
+            messages.success(request, f"You unfollowed {ticket.key}.")
+        else:
+            ticket.watchers.add(request.user)
+            messages.success(request, f"You are following {ticket.key}. You will be told about comments and status changes.")
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "tickets/partials/_ticket_follow.html", {
+                "ticket": ticket, "following": ticket.watchers.filter(pk=request.user.pk).exists(),
+                "watcher_count": ticket.watchers.count(),
+            })
+        url_name, kwargs = _ticket_redirect(ticket)
+        return redirect(url_name, **kwargs)
 
 
 class TicketDeadlineView(CompanyMemberRequiredMixin, View):

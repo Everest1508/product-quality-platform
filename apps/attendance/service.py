@@ -429,3 +429,57 @@ def punch_problem(day, check_in, check_out):
                 " or the morning after." if label == "Check-out" else "."
             )
     return None
+
+
+def get_team_week(company, monday, shift=None):
+    """One row per member with seven day cells for the week starting `monday`.
+
+    Everything a cell shows (times, lateness, band) is derived from the punch with
+    the same `lateness_for` and `band_for_late_minutes` the payslip uses.
+    """
+    shift = shift or shift_for(company)
+    today = timezone.localdate()
+    sunday = monday + timedelta(days=6)
+    members = _company_members(company)
+    records = {
+        (r.user_id, r.date): r
+        for r in AttendanceRecord.objects.filter(company=company, date__gte=monday, date__lte=sunday)
+    }
+    on_leave = approved_leave_map(company, monday, sunday)
+    rows = []
+    for member in members:
+        days, minutes_total, late_days, leave_days = [], 0, 0, 0
+        for offset in range(7):
+            day = monday + timedelta(days=offset)
+            record = records.get((member.pk, day))
+            cell = {"date": day, "is_today": day == today, "record": record, "late_minutes": 0, "band": None}
+            minutes = net_minutes_for(record, shift) if record and record.check_in else 0
+            if day in on_leave.get(member.pk, ()):
+                cell["state"] = "leave"
+                leave_days += 1
+            elif record and record.check_in:
+                late = lateness_for(record, shift)
+                band = shift.band_for_late_minutes(late)
+                cell["late_minutes"] = late
+                cell["band"] = None if band == "on_time" else band
+                cell["state"] = "open" if (record.is_stale or record.is_open) else "worked"
+                if cell["band"]:
+                    late_days += 1
+                minutes_total += minutes
+            elif day > today:
+                cell["state"] = "future"
+            elif day.weekday() >= 5:
+                cell["state"] = "weekend"
+            else:
+                cell["state"] = "none"
+            cell["minutes"] = minutes
+            days.append(cell)
+        rows.append({
+            "user": member,
+            "role": _role_for(member, company),
+            "days": days,
+            "total_minutes": minutes_total,
+            "late_days": late_days,
+            "leave_days": leave_days,
+        })
+    return rows

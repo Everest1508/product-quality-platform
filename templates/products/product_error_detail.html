@@ -30,6 +30,7 @@
     <div class="text-sm mb-4">First seen <span title="{{ error_group.first_seen|date:'M j, Y, H:i' }}">{{ error_group.first_seen|timesince }} ago</span></div>
     <div class="text-sm mb-4">Last seen <span title="{{ error_group.last_seen|date:'M j, Y, H:i' }}">{{ error_group.last_seen|timesince }} ago</span></div>
   </div>
+  {% include "errors/partials/_linked_tickets.html" %}
   <div class="card">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Actions</h3>
     <form method="post" action="{% url 'products:product_error_convert_to_ticket' pk=product.pk error_pk=error_group.pk %}">

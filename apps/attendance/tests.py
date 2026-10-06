@@ -1308,8 +1308,11 @@ class PunchPanelTest(AttendanceTestBase):
     def test_it_does_not_invent_lateness_before_you_arrive(self):
         """No punch yet means no arrival time, so there is nothing to be late."""
         body = self.panel_markup()
-        self.assertNotIn("late", body)
-        self.assertNotIn("on time", body)
+        # The live "checking in now would be N min late" line is a preview that
+        # the browser computes; what must not appear is a *recorded* lateness.
+        self.assertNotIn('class="punch-late"', body)
+        self.assertNotIn("m late</", body)
+        self.assertIn("punch-latenote", body)
 
     def test_the_lateness_it_shows_is_the_one_the_payslip_charges(self):
         """Same `late_penalty_for` call, so the panel cannot quote a different

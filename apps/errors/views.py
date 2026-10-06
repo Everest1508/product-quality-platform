@@ -55,6 +55,12 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
         if search:
             qs = qs.filter(title__icontains=search)
 
+        # Counted before the tab narrows the list, so the badge always shows how many exist.
+        regressed_count = qs.filter(regression_count__gt=0).count()
+        regressed = request.GET.get("regressed") == "1"
+        if regressed:
+            qs = qs.filter(regression_count__gt=0)
+
         sort = request.GET.get("sort", "-last_seen")
         order = ERROR_SORT_MAP.get(sort, "-last_seen")
         qs = qs.order_by(order)
@@ -82,7 +88,21 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
             "current_severity": severity,
             "search": search,
             "current_sort": sort,
+            "regressed": regressed,
+            "regressed_count": regressed_count,
         })
+
+
+def linked_tickets(request, error_group):
+    """Tickets raised from this error, limited to ones the person may open."""
+    from apps.products.access import accessible_tickets
+
+    return list(
+        accessible_tickets(request.user, request.company)
+        .filter(linked_error_group=error_group)
+        .select_related("product")
+        .order_by("-created_at")
+    )
 
 
 class ErrorDetailView(CompanyMemberRequiredMixin, View):
@@ -106,6 +126,7 @@ class ErrorDetailView(CompanyMemberRequiredMixin, View):
             "status_choices": ErrorGroup.STATUS_CHOICES,
             "trend": trends.detail_trend(error_group),
             "first_version": error_group.first_version,
+            "linked_tickets": linked_tickets(request, error_group),
         })
 
 

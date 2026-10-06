@@ -24,7 +24,7 @@
       <a href="{% url 'products:product_board' pk=product.pk %}?{{ request.GET.urlencode }}" class="active">Kanban</a>
       <a href="{% url 'products:product_tickets' pk=product.pk %}?{{ request.GET.urlencode }}">List</a>
     </div>
-    <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
+    <a href="{% url 'products:product_ticket_create' pk=product.pk %}" data-shortcut="new" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>
 </div>
 

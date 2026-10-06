@@ -59,11 +59,46 @@ def _pages(request):
     return [r for r in rows if is_admin or not r[3]]
 
 
+_FILTER = re.compile(r"\b(in|assignee|status):(\S+)", re.I)
+# What `in:` accepts, mapped to the group it narrows to.
+_IN_ALIASES = {
+    "ticket": "tickets", "tickets": "tickets", "error": "errors", "errors": "errors",
+    "product": "products", "products": "products", "people": "people", "person": "people",
+    "user": "people", "users": "people", "feedback": "feedback", "survey": "surveys",
+    "surveys": "surveys", "rule": "rules", "rules": "rules", "automation": "rules",
+    "dsr": "dsr", "leave": "leave", "page": "pages", "pages": "pages", "go": "pages",
+}
+
+
+def parse_query(raw):
+    """Split `in:tickets assignee:me status:open some words` into filters and text."""
+    raw = (raw or "")[:140]
+    filters = {m.group(1).lower(): m.group(2).lower() for m in _FILTER.finditer(raw)}
+    return filters, " ".join(_FILTER.sub(" ", raw).split())
+
+
+def snippet(text, query, width=90):
+    """A short stretch of `text` around the first match, or "" when it holds none."""
+    text = " ".join((text or "").split())
+    at = text.lower().find(query.lower()) if query else -1
+    if at < 0:
+        return ""
+    start = max(0, at - width // 3)
+    end = min(len(text), start + width)
+    return ("…" if start else "") + text[start:end] + ("…" if end < len(text) else "")
+
+
 def search(request, query):
     """Groups of results for `query`. Short queries return the page list only."""
     user, company = request.user, request.company
-    query = (query or "").strip()[:100]
+    filters, query = parse_query(query)
+    only = _IN_ALIASES.get(filters.get("in", ""))
+    if "assignee" in filters and not only:
+        only = "tickets"
     groups = []
+
+    def wanted(name):
+        return only is None or only == name
 
     needle = query.lower()
     pages = [
@@ -72,60 +107,80 @@ def search(request, query):
         if not needle or needle in label.lower() or needle in keywords
     ][: LIMITS["pages"]]
 
-    if len(query) < MIN_QUERY and not query.lstrip("#").isdigit():
+    if not filters and len(query) < MIN_QUERY and not query.lstrip("#").isdigit():
         return [{"label": "Go to", "items": pages}] if pages else []
 
     number = query.lstrip("#")
-    ticket_filter = Q(title__icontains=query) | Q(description__icontains=query) | Q(comments__body__icontains=query)
-    if number.isdigit():
-        ticket_filter |= Q(pk=int(number))
-    # AUM-14, aum14 and "aum 14" find that product's ticket number 14. A bare key
-    # such as AUM lists the product's newest tickets.
-    keyed = _TICKET_KEY.match(query)
-    if keyed:
-        ticket_filter |= Q(product__key__iexact=keyed.group(1), number=int(keyed.group(2)))
-    elif _BARE_KEY.match(query):
-        ticket_filter |= Q(product__key__iexact=query)
-    tickets = (
-        accessible_tickets(user, company)
-        .filter(ticket_filter)
-        .select_related("product")
-        .distinct()
-        .order_by("-updated_at")[: LIMITS["tickets"]]
-    )
-    ticket_items = [
-        {
+    ticket_filter = Q()
+    if query:
+        ticket_filter = (
+            Q(title__icontains=query) | Q(description__icontains=query) | Q(comments__body__icontains=query)
+        )
+        if number.isdigit():
+            ticket_filter |= Q(pk=int(number))
+        # AUM-14, aum14 and "aum 14" find that product's ticket number 14. A bare key
+        # such as AUM lists the product's newest tickets.
+        keyed = _TICKET_KEY.match(query)
+        if keyed:
+            ticket_filter |= Q(product__key__iexact=keyed.group(1), number=int(keyed.group(2)))
+        elif _BARE_KEY.match(query):
+            ticket_filter |= Q(product__key__iexact=query)
+    ticket_qs = accessible_tickets(user, company).filter(ticket_filter)
+    if filters.get("assignee") in ("me", "@me"):
+        ticket_qs = ticket_qs.filter(assignees=user)
+    elif filters.get("assignee"):
+        ticket_qs = ticket_qs.filter(assignees__username__iexact=filters["assignee"])
+    if filters.get("status"):
+        ticket_qs = ticket_qs.filter(status__iexact=filters["status"].replace("-", "_"))
+    tickets = ticket_qs.select_related("product").distinct().order_by("-updated_at")[: LIMITS["tickets"]]
+    ticket_items = []
+    for t in tickets:
+        why = ""
+        if query and query.lower() not in t.title.lower():
+            why = snippet(t.description, query)
+            if not why:
+                comment = t.comments.filter(body__icontains=query).values_list("body", flat=True).first()
+                why = snippet(comment, query)
+        ticket_items.append({
             "title": f"{t.key} {t.title}",
             "subtitle": " · ".join(x for x in (t.product.name if t.product else "", t.get_status_display()) if x),
+            "snippet": why,
             "url": reverse("tickets:ticket_detail", args=[t.pk]),
-        }
-        for t in tickets
-    ]
+        })
 
-    errors = (
-        accessible_error_groups(user, company)
-        .filter(
+    error_qs = accessible_error_groups(user, company)
+    if query:
+        error_qs = error_qs.filter(
             Q(title__icontains=query)
             | Q(error_type__icontains=query)
             | Q(occurrences__page__icontains=query)
             | Q(occurrences__stacktrace__icontains=query)
         )
-        .select_related("product")
-        .distinct()
-        .order_by("-last_seen")[: LIMITS["errors"]]
-    )
-    error_items = [
-        {
-            "title": e.title[:120],
-            "subtitle": f"{e.product.name} · {e.get_status_display()} · {e.occurrence_count} times",
-            "url": reverse("errors:error_detail", args=[e.pk]),
-        }
-        for e in errors
-    ]
+    if filters.get("status"):
+        error_qs = error_qs.filter(status__iexact=filters["status"])
+    error_items = []
+    if "assignee" not in filters:
+        for e in error_qs.select_related("product").distinct().order_by("-last_seen")[: LIMITS["errors"]]:
+            why = ""
+            if query and query.lower() not in e.title.lower():
+                hit = e.occurrences.filter(Q(page__icontains=query) | Q(stacktrace__icontains=query)).first()
+                if hit:
+                    why = snippet(hit.page, query) or snippet(hit.stacktrace, query)
+            error_items.append({
+                "title": e.title[:120],
+                "subtitle": f"{e.product.name} · {e.get_status_display()} · {e.occurrence_count} times",
+                "snippet": why,
+                "url": reverse("errors:error_detail", args=[e.pk]),
+            })
 
     products = accessible_products(user, company).filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(key__iexact=query)).order_by("name")[: LIMITS["products"]]
     product_items = [
-        {"title": p.name, "subtitle": "Product", "url": reverse("products:product_board", args=[p.pk])}
+        {
+            "title": p.name,
+            "subtitle": "Product",
+            "snippet": snippet(p.description, query) if query.lower() not in p.name.lower() else "",
+            "url": reverse("products:product_board", args=[p.pk]),
+        }
         for p in products
     ]
 
@@ -195,18 +250,22 @@ def search(request, query):
             for u in people
         ]
 
-    for label, items in (
-        ("Tickets", ticket_items),
-        ("Errors", error_items),
-        ("Products", product_items),
-        ("People", people_items),
-        ("Feedback", feedback_items),
-        ("Surveys", survey_items),
-        ("Automation", rule_items),
-        ("My DSR", dsr_items),
-        ("My leave", leave_items),
-        ("Go to", pages),
+    for name, label, items in (
+        ("tickets", "Tickets", ticket_items),
+        ("errors", "Errors", error_items),
+        ("products", "Products", product_items),
+        ("people", "People", people_items),
+        ("feedback", "Feedback", feedback_items),
+        ("surveys", "Surveys", survey_items),
+        ("rules", "Automation", rule_items),
+        ("dsr", "My DSR", dsr_items),
+        ("leave", "My leave", leave_items),
+        ("pages", "Go to", pages),
     ):
+        # With only filters typed (no words), listing every product or survey
+        # would be noise; tickets and errors are the groups a filter makes sense for.
+        if not wanted(name) or (not query and name not in ("tickets", "errors")):
+            continue
         if items:
             groups.append({"label": label, "items": items})
     return groups

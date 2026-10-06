@@ -96,6 +96,8 @@
       </div>
     </div>
 
+    {% include "errors/partials/_linked_tickets.html" %}
+
     <div class="card">
       <div class="text-sm font-medium mb-4">Actions</div>
       <form method="post" action="{% url 'errors:error_convert_to_ticket' pk=error_group.pk %}">

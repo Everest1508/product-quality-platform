@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.4.0] — 2026-10-06 · team week, late preview, shortcuts and smarter search
+
+> In short: admins get a week view of the whole team, the check-in card shows what being late would cost, tickets can be followed, and search explains its matches.
+
+### New
+
+- **A week view for the team.** On Team attendance, switch from Today to Week. Every person gets seven day cells with check-in and check-out times, how late they were, and approved leave, plus a total for the week. Move between weeks with the arrows.
+- **See the cost of being late before you check in.** The check-in card says whether you are still on time, and if not, how many minutes late you would be and what the penalty is. It updates as the minutes pass.
+- **A nudge to log your DSR.** Once your day is over and nothing is logged, Home shows a reminder and your notifications get one line. It stays quiet on weekends, on leave, and on days you did not check in.
+- **Follow a ticket.** Press Follow on any ticket to get its comments and status changes without being assigned. Press it again to stop.
+- **A Regressed tab on errors.** It lists errors that were resolved and then came back, with a count.
+- **Linked tickets on every error.** An error now shows the tickets raised from it, only the ones you can open.
+- **Keyboard shortcuts.** Press `c` for a new ticket, `j` and `k` to move through a list or board, Enter to open the highlighted ticket, `e` to edit the ticket you are viewing, and `?` to see them all.
+
+### Better
+
+- **Search tells you why something matched.** Results show a short piece of the description, comment or error detail with your words highlighted.
+- **Narrow a search with words.** Add `in:tickets`, `in:errors`, `assignee:me` or `status:open` to what you type. The search box also remembers your last five searches.
+
 ## [1.3.0] — 2026-10-06 · a top bar, a bento home, and office hours of 10 to 6:30
 
 > In short: a new top bar with search, online, notifications and your account, a home page of charts, a redesigned Products page, and the office day now ends at 6:30 PM.
