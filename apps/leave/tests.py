@@ -1338,6 +1338,9 @@ class PolicyScreenTest(LeaveTestBase):
         label is only acceptable if that trigger says what it is.
         """
         body = self.screen()
+        # Markup held in a <script> (the changelog dialog builds one in JS) is
+        # text, not a dropdown on the page.
+        body = re.sub(r"<script\b.*?</script>", "", body, flags=re.S | re.I)
         triggers = re.findall(r"<summary\b[^>]*>", body)
         self.assertTrue(triggers, "no dropdown triggers on the page")
         for tag in triggers:
