@@ -15,6 +15,10 @@
     <p class="text-sm text-muted" style="margin-top:4px;">Who is on the clock right now, and today's punches for every member.</p>
   </div>
   <div class="head-actions">
+    <div class="view-toggle" role="tablist" aria-label="Team view">
+      <a href="{% url 'attendance:team_attendance' %}" role="tab" class="active" aria-selected="true">Today</a>
+      <a href="?view=week" role="tab">Week</a>
+    </div>
     <a href="{% url 'attendance:timesheet' %}" class="btn" style="gap:6px;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       Monthly timesheet

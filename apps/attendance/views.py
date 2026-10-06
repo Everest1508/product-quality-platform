@@ -141,6 +141,18 @@ def _punch_context(request, record, message="", person=None):
         "late_minutes": service.lateness_for(record, shift) if record else 0,
         "late_band": penalty["band"] if penalty else None,
         "shift_label": f"{shift.start_time:%H:%M}–{shift.end_time:%H:%M}",
+        # What checking in *now* would cost, ticked in the browser from these numbers.
+        # They are the same bands `late_penalty_for` applies, never a second copy of the rule.
+        "late_rules": {
+            "startMs": int(shift_start.timestamp() * 1000),
+            "grace": shift.grace_minutes,
+            "minorEnd": shift.minor_band_end_minutes,
+            "majorEnd": shift.major_band_end_minutes,
+            "minorAmt": f"{shift.minor_penalty:,.0f}",
+            "majorAmt": f"{shift.major_penalty:,.0f}",
+            "symbol": {"INR": "₹", "USD": "$", "EUR": "€", "GBP": "£"}.get(shift.penalty_currency, shift.penalty_currency + " "),
+            "onTimeBy": f"{(shift_start + timedelta(minutes=shift.grace_minutes)):%I:%M %p}".lstrip("0"),
+        },
         "starts_in_minutes": starts_in if starts_in > 0 else None,
         # Every month, not the one on screen: an unclosed day from last month
         # still needs correcting and still stands between the employee and a
@@ -435,6 +447,8 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
     """Admin: who is on the clock right now, and the whole team's today."""
 
     def get(self, request):
+        if request.GET.get("view") == "week":
+            return self._week(request)
         on_clock = service.get_who_is_in(request.company)
         team = service.get_team_today(request.company)
         shift = service.shift_for(request.company)
@@ -491,6 +505,33 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
             return render(request, "attendance/partials/_team_body.html", context)
 
         return render(request, "attendance/team_attendance.html", context)
+
+
+    def _week(self, request):
+        today = timezone.localdate()
+        try:
+            anchor = date.fromisoformat(request.GET.get("week", ""))
+        except ValueError:
+            anchor = today
+        monday = anchor - timedelta(days=anchor.weekday())
+        shift = service.shift_for(request.company)
+        rows = service.get_team_week(request.company, monday, shift)
+        for row in rows:
+            row["is_me"] = row["user"].pk == request.user.pk
+            row["total_formatted"] = format_minutes(row["total_minutes"]) if row["total_minutes"] else "–"
+        rows.sort(key=lambda r: (not r["is_me"], r["user"].username.lower()))
+        return render(request, "attendance/team_week.html", {
+            "rows": rows,
+            "days": [monday + timedelta(days=i) for i in range(7)],
+            "monday": monday,
+            "sunday": monday + timedelta(days=6),
+            "prev_week": (monday - timedelta(days=7)).isoformat(),
+            "next_week": (monday + timedelta(days=7)).isoformat(),
+            "is_this_week": monday == today - timedelta(days=today.weekday()),
+            "today": today,
+            "shift": shift,
+            "next": request.get_full_path(),
+        })
 
 
 class TimesheetView(CompanyAdminRequiredMixin, View):

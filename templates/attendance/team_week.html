@@ -1,0 +1,85 @@
+{% extends "core/base.html" %}
+
+{% block title %}Team week — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'attendance:my_attendance' %}">Attendance</a>
+  <span class="sep">/</span>
+  <span class="current">Team week</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Team Attendance</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Every member's in, out, lateness and leave for the week.</p>
+  </div>
+  <div class="head-actions">
+    <div class="view-toggle" role="tablist" aria-label="Team view">
+      <a href="{% url 'attendance:team_attendance' %}" role="tab">Today</a>
+      <a href="?view=week" role="tab" class="active" aria-selected="true">Week</a>
+    </div>
+  </div>
+</div>
+
+<section class="card tw-card" aria-label="Team week">
+  <header class="tw-head">
+    <h2>{{ monday|date:"M j" }} – {{ sunday|date:"M j, Y" }}</h2>
+    <div class="tw-nav">
+      <a class="btn btn-sm" href="?view=week&week={{ prev_week }}" aria-label="Previous week">←</a>
+      <a class="btn btn-sm {% if is_this_week %}btn-primary{% endif %}" href="?view=week">This week</a>
+      <a class="btn btn-sm" href="?view=week&week={{ next_week }}" aria-label="Next week">→</a>
+    </div>
+  </header>
+
+  <div class="tw-scroll">
+  <table class="tw-table">
+    <thead>
+      <tr>
+        <th class="tw-who">Employee</th>
+        {% for d in days %}<th class="{% if d == today %}is-today{% endif %}{% if d.weekday >= 5 %} is-weekend{% endif %}">{{ d|date:"D" }} <span>{{ d|date:"j" }}</span></th>{% endfor %}
+        <th class="tw-total">Week</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="{% if row.is_me %}is-me{% endif %}">
+        <td class="tw-who">
+          <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}">
+            <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
+            <span><span class="title">{{ row.user.get_full_name|default:row.user.username }}{% if row.is_me %} <em class="you">You</em>{% endif %}</span><span class="sub">{{ row.role }}</span></span>
+          </a>
+        </td>
+        {% for c in row.days %}
+        <td class="tw-cell is-{{ c.state }}{% if c.is_today %} is-today{% endif %}">
+          {% if c.state == 'worked' or c.state == 'open' %}
+            <span class="tw-time">{{ c.record.check_in|date:"g:i" }}<small>{{ c.record.check_in|date:"A" }}</small></span>
+            <span class="tw-time tw-out">{% if c.record.check_out %}{{ c.record.check_out|date:"g:i" }}<small>{{ c.record.check_out|date:"A" }}</small>{% else %}<em>{% if c.state == 'open' %}no out{% else %}…{% endif %}</em>{% endif %}</span>
+            {% if c.band == 'half_day' %}<span class="tw-tag bad">half day</span>
+            {% elif c.band %}<span class="tw-tag {% if c.band == 'major' %}bad{% else %}warn{% endif %}">{{ c.late_minutes }}m late</span>{% endif %}
+          {% elif c.state == 'leave' %}<span class="tw-tag leave">Leave</span>
+          {% elif c.state == 'none' %}<span class="tw-dash{% if c.is_today %} is-pending{% endif %}">{% if c.is_today %}not in{% else %}absent{% endif %}</span>
+          {% elif c.state == 'weekend' %}<span class="tw-dash">·</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+        <td class="tw-total">
+          <b>{{ row.total_formatted }}</b>
+          {% if row.late_days %}<span class="tw-tag warn">{{ row.late_days }} late</span>{% endif %}
+          {% if row.leave_days %}<span class="tw-tag leave">{{ row.leave_days }} leave</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9"><div class="empty"><h3>No team members</h3></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <footer class="tw-legend">
+    <span><i class="tw-key warn"></i>Late (within the shift's bands)</span>
+    <span><i class="tw-key bad"></i>Later than 30 min or a half day</span>
+    <span><i class="tw-key leave"></i>Approved leave</span>
+    <span class="text-muted">Shift {{ shift.start_time|date:"H:i" }}–{{ shift.end_time|date:"H:i" }}</span>
+  </footer>
+</section>
+{% endblock %}

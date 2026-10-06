@@ -20,20 +20,30 @@ highlighted without moving focus off the input.
         <kbd>Esc</kbd>
       </div>
       <div id="palette-list" class="palette-results" role="listbox" aria-label="Results">
+        <div x-show="!query.trim() && recent.length" style="display:none;">
+          <div class="palette-group">Recent searches <button type="button" class="palette-clear" @click="clearRecent()">Clear</button></div>
+          <template x-for="r in recent" :key="r">
+            <button type="button" class="palette-item palette-recent" @click="query = r; fetchNow()">
+              <span class="palette-title" x-text="r"></span>
+            </button>
+          </template>
+        </div>
         <template x-for="group in groups" :key="group.label">
           <div role="group" :aria-label="group.label">
             <div class="palette-group" x-text="group.label"></div>
             <template x-for="item in group.items" :key="item.url + item.title">
               <a :href="item.url" class="palette-item" role="option"
                  :id="'palette-opt-' + item.index" :aria-selected="(item.index === active).toString()"
-                 :class="{ 'is-active': item.index === active }" @mousemove="active = item.index" @click="close()">
-                <span class="palette-title" x-text="item.title"></span>
+                 :class="{ 'is-active': item.index === active }" @mousemove="active = item.index" @click="remember(); close()">
+                <span class="palette-title" x-html="hl(item.title)"></span>
                 <span class="palette-sub" x-text="item.subtitle"></span>
+                <span class="palette-snip" x-show="item.snippet" x-html="hl(item.snippet || '')"></span>
               </a>
             </template>
           </div>
         </template>
-        <p class="palette-empty" x-show="!flat.length && !loading" x-text="query.trim().length >= 2 ? 'No matches for “' + query.trim() + '”' : 'Start typing to search'"></p>
+        <p class="palette-empty" x-show="!flat.length && !loading" x-text="query.trim().length >= 2 ? 'No matches for “' + query.trim() + '”' : (recent.length ? '' : 'Start typing to search')"></p>
+        <p class="palette-tip" x-show="!query.trim()">Narrow it down: <code>in:tickets</code> <code>assignee:me</code> <code>status:open</code></p>
       </div>
       <div class="palette-foot"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> to move</span><span><kbd>Enter</kbd> to open</span></div>
     </div>
@@ -42,19 +52,35 @@ highlighted without moving focus off the input.
 <script>
 function palette() {
   return {
-    open: false, query: '', groups: [], loading: false, active: 0, timer: null, ctl: null,
+    open: false, query: '', groups: [], recent: [], loading: false, active: 0, timer: null, ctl: null,
     get flat() { return this.groups.flatMap(g => g.items); },
-    init() {},
+    init() { this.recent = this.loadRecent(); },
+    loadRecent() { try { return JSON.parse(localStorage.getItem('pq-recent-search') || '[]').slice(0, 5); } catch (e) { return []; } },
+    remember() {
+      const q = this.query.trim();
+      if (q.length < 2) return;
+      this.recent = [q].concat(this.recent.filter(r => r !== q)).slice(0, 5);
+      try { localStorage.setItem('pq-recent-search', JSON.stringify(this.recent)); } catch (e) {}
+    },
+    clearRecent() { this.recent = []; try { localStorage.removeItem('pq-recent-search'); } catch (e) {} },
+    // Escape first, then mark: the text came from the server but is user-written (ticket bodies, comments).
+    hl(text) {
+      const esc = String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const q = this.query.replace(/\b(in|assignee|status):\S+/gi, ' ').trim();
+      if (q.length < 2) return esc;
+      const safe = q.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return esc.replace(new RegExp('(' + safe + ')', 'gi'), '<mark>$1</mark>');
+    },
     onGlobalKey(e) {
       const k = e.key.toLowerCase();
       const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable;
       if ((e.ctrlKey || e.metaKey) && k === 'k') { e.preventDefault(); this.open ? this.close() : this.show(); }
       else if (k === '/' && !typing && !this.open && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); this.show(); }
     },
-    show() { this.open = true; this.query = ''; this.fetchNow(); this.$nextTick(() => this.$refs.input.focus()); },
+    show() { this.open = true; this.query = ''; this.recent = this.loadRecent(); this.fetchNow(); this.$nextTick(() => this.$refs.input.focus()); },
     close() { this.open = false; if (this.ctl) this.ctl.abort(); },
     move(d) { const n = this.flat.length; if (n) this.active = (this.active + d + n) % n; },
-    go() { const it = this.flat[this.active]; if (it) { this.close(); window.location.href = it.url; } },
+    go() { const it = this.flat[this.active]; if (it) { this.remember(); this.close(); window.location.href = it.url; } },
     debounced() { clearTimeout(this.timer); this.timer = setTimeout(() => this.fetchNow(), 150); },
     fetchNow() {
       if (this.ctl) this.ctl.abort();

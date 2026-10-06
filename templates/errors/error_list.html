@@ -21,11 +21,12 @@
 </div>
 
 <div class="tabs">
-  <a href="{% url 'errors:error_list' %}" class="tab {% if not current_status %}active{% endif %}">All</a>
+  <a href="{% url 'errors:error_list' %}" class="tab {% if not current_status and not regressed %}active{% endif %}">All</a>
   <a href="?status=open" class="tab {% if current_status == 'open' %}active{% endif %}">Open</a>
   <a href="?status=investigating" class="tab {% if current_status == 'investigating' %}active{% endif %}">Investigating</a>
   <a href="?status=resolved" class="tab {% if current_status == 'resolved' %}active{% endif %}">Resolved</a>
   <a href="?status=ignored" class="tab {% if current_status == 'ignored' %}active{% endif %}">Ignored</a>
+  <a href="?regressed=1" class="tab {% if regressed %}active{% endif %}" title="Resolved earlier, then seen again">Regressed{% if regressed_count %} <span class="count-badge">{{ regressed_count }}</span>{% endif %}</a>
 </div>
 
 <div class="toolbar">
@@ -33,6 +34,7 @@
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input type="text" name="q" value="{{ search }}"  aria-label="Search errors" placeholder="Search errors...">
     {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+    {% if regressed %}<input type="hidden" name="regressed" value="1">{% endif %}
     {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
   </form>
   {% dropdown "product" products|obj_pairs:"pk:name" current_product placeholder="All products" empty_value="" label="Filter by product" navigate=True %}

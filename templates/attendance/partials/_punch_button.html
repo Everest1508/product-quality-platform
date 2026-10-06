@@ -1,4 +1,4 @@
-{% load icon_tags %}
+{% load icon_tags json_tags %}
 {% comment %}
 Punch control: the one thing an employee opens this page to do.
 
@@ -50,6 +50,16 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
        get extra() {
          const m = this.dayEnd ? Math.max(0, Math.floor((this.now - this.dayEnd) / 60000)) : 0;
          return '+' + Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+       },
+       rules: {{ late_rules|json_dumps }},
+       get lateMin() { return Math.max(0, Math.floor((this.now - this.rules.startMs) / 60000)); },
+       get lateNote() {
+         const r = this.rules, m = this.lateMin;
+         if (m <= r.grace) return { cls: 'ok', text: 'On time — no penalty if you check in by ' + r.onTimeBy + '.' };
+         const when = m + ' min late';
+         if (m <= r.minorEnd) return { cls: 'warn', text: 'Checking in now is ' + when + ': ' + r.symbol + r.minorAmt + ' penalty.' };
+         if (m <= r.majorEnd) return { cls: 'bad', text: 'Checking in now is ' + when + ': ' + r.symbol + r.majorAmt + ' penalty.' };
+         return { cls: 'bad', text: 'Checking in now is ' + when + ': this counts as a half day.' };
        },
        get dayPct() { return this.dayEnd && this.since ? Math.min(100, Math.round((this.now - this.since) / (this.dayEnd - this.since) * 100)) : 0; }
      }"
@@ -127,6 +137,9 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
           <span>A {{ target_formatted }} working day</span>
           <span>Ends {{ shift_end_label }}</span>
         </div>
+        {% if not punch_readonly %}
+        <p class="punch-latenote" :class="lateNote.cls" x-text="lateNote.text" aria-live="off"></p>
+        {% endif %}
       </div>
       <div class="punch-actions">
         {% include "attendance/partials/_punch_form.html" with label="Check in" icon="arrow-right" variant="in" %}

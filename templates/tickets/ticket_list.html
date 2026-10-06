@@ -23,7 +23,7 @@
       <a href="{% url 'tickets:ticket_board' %}?{{ request.GET.urlencode }}">Kanban</a>
       <a href="{% url 'tickets:ticket_list' %}?{{ request.GET.urlencode }}" class="active">List</a>
     </div>
-    <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
+    <a href="{% url 'tickets:ticket_create' %}" data-shortcut="new" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">+ New Ticket</a>
   </div>
 </div>
 

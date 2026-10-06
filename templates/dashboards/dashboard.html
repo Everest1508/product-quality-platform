@@ -47,6 +47,14 @@ function heroClock(fallback) {
     </div>
   {% endif %}
 
+  {% if dsr_nudge %}
+    <div class="pd-banner">
+      <strong>Your DSR is empty for today.</strong>
+      Take a minute to log what you worked on before you go.
+      <a href="{% url 'dsr:dsr_sheet' %}" style="font-weight:600;margin-left:6px;">Open DSR sheet →</a>
+    </div>
+  {% endif %}
+
   <div id="dashboard-content"
        hx-get="{% url 'dashboards:index' %}"
        hx-trigger="dash:refresh from:body"

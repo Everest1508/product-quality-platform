@@ -816,6 +816,40 @@ def _dashboard_charts(user, company, today):
     }
 
 
+
+DSR_NUDGE_TITLE = "Log your DSR for today"
+
+
+def _dsr_nudge(company, user, today, attendance):
+    """True when the working day is over and nothing was logged on the DSR.
+
+    Weekends, leave and days with no punch never nudge: nobody owes a DSR for a
+    day they did not work. The first time it is true each day it also leaves one
+    line in the bell, so the reminder survives closing the page.
+    """
+    from apps.attendance.service import shift_for
+    from apps.dsr.models import DSREntry
+    from apps.notifications import service as notifications
+    from apps.notifications.models import Notification
+
+    record = attendance["record"]
+    if today.weekday() >= 5 or attendance["on_leave_today"] or not (record and record.check_in):
+        return False
+    shift = shift_for(company)
+    if timezone.localtime().time() < shift.end_time and not record.check_out:
+        return False
+    if DSREntry.objects.filter(company=company, user=user, date=today).exists():
+        return False
+    if not Notification.objects.filter(
+        company=company, user=user, title=DSR_NUDGE_TITLE, created_at__date=today
+    ).exists():
+        notifications.notify(
+            user=user, company=company, kind=Notification.Kind.SYSTEM,
+            title=DSR_NUDGE_TITLE, body="Nothing is logged for today yet.", url="/dsr/",
+        )
+    return True
+
+
 def get_personal_dashboard_data(user, company):
     """Home page data: the member's own month, with company totals for admins.
 
@@ -867,6 +901,7 @@ def get_personal_dashboard_data(user, company):
         "my_tickets": list(my_tickets),
         "my_ticket_count": my_ticket_count,
         **_dashboard_charts(user, company, today),
+        "dsr_nudge": _dsr_nudge(company, user, today, attendance),
     }
 
     if is_privileged:

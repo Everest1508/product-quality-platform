@@ -78,6 +78,13 @@ class Ticket(TenantScopedModel):
         related_name="tickets_assigned",
         blank=True,
     )
+    # People following the ticket without being assigned to it. They get the same
+    # comment and status notices the assignees do.
+    watchers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="watched_tickets",
+        blank=True,
+    )
     deadline = models.DateTimeField(
         null=True,
         blank=True,

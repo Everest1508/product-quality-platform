@@ -1,0 +1,9 @@
+{# Follow button. Posts to the one global endpoint, which is access-checked there. #}
+<form method="post" action="{% url 'tickets:ticket_follow' ticket.pk %}" id="ticket-follow"
+      hx-post="{% url 'tickets:ticket_follow' ticket.pk %}" hx-target="#ticket-follow" hx-swap="outerHTML">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-sm{% if following %} is-following{% endif %}" aria-pressed="{% if following %}true{% else %}false{% endif %}"
+          title="{% if following %}Stop getting comment and status notices{% else %}Get comment and status notices without being assigned{% endif %}">
+    {% if following %}Following{% else %}Follow{% endif %}{% if watcher_count %} · {{ watcher_count }}{% endif %}
+  </button>
+</form>

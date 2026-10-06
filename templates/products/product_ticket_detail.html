@@ -47,6 +47,10 @@
   </div>
   <div class="card">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Details</h3>
+    <div class="text-sm mb-4" style="display:flex;align-items:center;gap:8px;">
+      <span class="text-muted">Notifications:</span>
+      {% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}
+    </div>
     <div class="text-sm mb-4">
       <span class="text-muted">Assignee:</span>
       <span id="detail-assignee">
