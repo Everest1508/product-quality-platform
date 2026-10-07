@@ -401,7 +401,11 @@ details.changelog-rel:hover{border-color:var(--border-strong);}
 .dsr-tag.mcp{background:var(--purple-bg);color:var(--purple);}
 
 /* DSR work log: a table laid out with CSS grid so each row can be its own form. */
-.dsr-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+/* No overflow on a wide screen: a scroll box also clips vertically, which cut off the dropdown menus
+ * of the last rows. Only on a narrow screen does the table scroll sideways, and then it keeps room
+ * under the last row for a menu to open. */
+.dsr-grid-wrap{overflow:visible;}
+@media (max-width:1100px){.dsr-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;min-height:340px;}}
 .dsr-grid{min-width:880px;font-size:13px;border-top:1px solid var(--border);}
 .dsr-row{display:grid;grid-template-columns:minmax(260px,1fr) 150px 170px 96px 130px 42px;align-items:stretch;border-bottom:1px solid var(--border);margin:0;}
 .dsr-row .dsr-c{padding:6px 8px;border-right:1px solid var(--line);min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px;}
@@ -429,3 +433,15 @@ a.dsr-title:hover{color:var(--accent);}
 .dsr-total .dsr-c:first-child{flex-direction:row;align-items:center;gap:6px;}
 .dsr-composer .dc-go{padding-top:21px;}
 .dsr-total .dsr-c:first-child{justify-content:flex-start;}
+
+/* What can be edited: a visible box. What cannot: muted text. */
+.dsr-row .sheet-input{border:1px solid var(--border);background:var(--surface);}
+.dsr-row .sheet-input:hover{border-color:var(--border-strong);}
+.dsr-row .sheet-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg);}
+.dsr-row .dsr-note.sheet-input{border-style:dashed;background:transparent;}
+.dsr-row .dsr-note.sheet-input:focus{border-style:solid;background:var(--surface);}
+.dsr-ro,.dsr-note-text{color:var(--muted);}
+.dsr-hours-ro{color:var(--text);}
+a.dsr-link::after{content:" \2197";font-size:11px;color:var(--muted);}
+.dsr-hint{display:flex;align-items:center;gap:6px;margin:0;padding:8px 16px;font-size:12px;color:var(--muted);background:var(--accent-soft);border-bottom:1px solid var(--accent-line);}
+.dsr-total{border-radius:0 0 10px 10px;}

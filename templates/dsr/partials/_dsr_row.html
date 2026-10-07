@@ -10,7 +10,7 @@ page, so choosing a category on one row cleared it on every other row.
   <div role="cell" class="dsr-c dsr-c-task">
     <div class="dsr-line">
       {% if entry.ticket %}
-      <a href="{% url 'tickets:ticket_detail' pk=entry.ticket.pk %}" class="dsr-title" title="Open ticket">{{ entry.task_name }}</a>
+      <a href="{% url 'tickets:ticket_detail' pk=entry.ticket.pk %}" class="dsr-title dsr-link" title="Open the ticket">{{ entry.task_name }}</a>
       {% elif can_submit %}
       <input type="text" name="task_name" value="{{ entry.task_name }}" class="sheet-input dsr-title-input" aria-label="Task">
       {% else %}
@@ -28,7 +28,7 @@ page, so choosing a category on one row cleared it on every other row.
   <div role="cell" class="dsr-c" data-label="Project">
     {% if can_submit and not entry.ticket_id %}
     {% dropdown "product" products|obj_pairs:"pk:name" entry.product_id|default_if_none:"" placeholder="No product" empty_value="" label="Product" trigger_class="sheet-select" %}
-    {% else %}<span class="dsr-ro">{{ entry.product.name|default:"-" }}</span>{% endif %}
+    {% else %}<span class="dsr-ro"{% if entry.ticket_id %} title="Comes from the ticket"{% endif %}>{{ entry.product.name|default:"-" }}</span>{% endif %}
   </div>
   <div role="cell" class="dsr-c" data-label="Category">
     {% if can_submit %}
