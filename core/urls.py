@@ -18,6 +18,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
+    path("api/", include("apps.dsr.api_urls")),
     path("api/serop/", include("apps.serop.urls")),
     path("products/", include("apps.products.urls")),
     path("errors/", include("apps.errors.urls")),
