@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.6.0] — 2026-10-07 · create tickets from your AI tool
+
+> In short: type /ticket or /dsr-ticket in your AI tool to create tickets without opening the app, and the DSR table is easier to use.
+
+### New
+
+- **Create tickets from your AI tool.** Type /ticket in Claude Code, Codex or a similar tool, or just ask in chat. The ticket is created in the project you pick and assigned to you.
+- **Create a ticket and your DSR together.** Type /dsr-ticket to make the ticket and log it in today's DSR in one go.
+- **If no project fits, you are asked.** You can pick an existing project or create a new one. Only owners and admins can create projects, so everyone else is told to ask one of them.
+
+### Better
+
+- **Duplicate tickets are caught before they are made.** If an open ticket with the same title already exists in that project, you are shown it instead of getting a second copy.
+
+### Fixed
+
+- **The DSR table's dropdown menus are no longer cut off.** Menus near the edge of the table now open fully.
+- **Editable cells in the DSR table now look editable.** You can tell at a glance which cells you can click and change.
+
 ## [1.5.0] — 2026-10-07 · build your DSR from your AI tool, and a table you can read
 
 > In short: type /dsr in your AI tool to build today's DSR from your real work, log time in minutes, and read the DSR sheet as a table again.

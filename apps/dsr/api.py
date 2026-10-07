@@ -19,7 +19,15 @@ from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
 from apps.dsr.service import submission_window, suggestions
 from apps.dsr.views import _is_privileged
+from django.db.models import Q
+from django.utils.text import slugify
+
+from apps.dashboards.service import log_activity
 from apps.products.access import accessible_products, accessible_tickets
+from apps.products.forms import ProductCreateForm
+from apps.products.models import Product
+from apps.products.webhook import notify_ticket_created
+from apps.tickets.models import Ticket
 
 CLIENT_ID = "dsr-mcp"
 
@@ -107,6 +115,7 @@ class MeView(DSRAPIView):
             "email": u.email,
             "company": {"id": self.company.pk, "name": self.company.name},
             "role": self.role,
+            "can_create_projects": self.role in (Membership.Role.OWNER, Membership.Role.ADMIN),
             "today": timezone.localdate().isoformat(),
         })
 
@@ -115,6 +124,9 @@ class ProjectsView(DSRAPIView):
     def get(self, request):
         products = accessible_products(request.user, self.company).order_by("name")
         return Response([{"id": p.pk, "key": p.key, "name": p.name} for p in products])
+
+    def post(self, request):
+        return _create_project(self, request)
 
 
 class TodayView(DSRAPIView):
@@ -236,3 +248,137 @@ class DSRDetailView(DSRAPIView):
         return Response(_entry(entry))
 
     patch = put
+
+
+def _ticket(t, user):
+    return {
+        "id": t.pk,
+        "key": t.key,
+        "title": t.title,
+        "product": t.product_id,
+        "product_name": t.product.name if t.product_id else "",
+        "status": t.status,
+        "ticket_type": t.ticket_type,
+        "priority": t.priority,
+        "assigned_to_me": any(a.pk == user.pk for a in t.assignees.all()),
+        "url": f"/tickets/{t.pk}/",
+    }
+
+
+def _open(qs):
+    return qs.exclude(status__in=[Ticket.Status.RESOLVED, Ticket.Status.CLOSED])
+
+
+class TicketsView(DSRAPIView):
+    def get(self, request):
+        qs = accessible_tickets(request.user, self.company).select_related("product").prefetch_related("assignees")
+        if request.query_params.get("status", "open") != "all":
+            qs = _open(qs)
+        product = request.query_params.get("product")
+        if product:
+            qs = qs.filter(product_id=product) if product.isdigit() else qs.none()
+        q = request.query_params.get("q", "").strip()
+        if q:
+            cond = Q(title__icontains=q)
+            # "AUM-014" is not stored: match the product key and number parts instead.
+            key, _, num = q.rpartition("-")
+            if key and num.isdigit():
+                cond |= Q(product__key__iexact=key, number=int(num))
+            else:
+                cond |= Q(product__key__icontains=q)
+            qs = qs.filter(cond)
+        return Response([_ticket(t, request.user) for t in qs.order_by("-created_at", "-pk")[:20]])
+
+    def post(self, request):
+        body = request.data if isinstance(request.data, dict) else {}
+        errors = {}
+        title = str(body.get("title") or "").strip()
+        if not title:
+            errors["title"] = "Title is required."
+        elif len(title) > 255:
+            errors["title"] = "Title can be at most 255 characters."
+        product = None
+        pid = str(body.get("product") or "")
+        if pid.isdigit():
+            product = accessible_products(request.user, self.company).filter(pk=pid).first()
+        if product is None:
+            errors["product"] = "Unknown project, or you do not have access to it. Pick one from your projects."
+        choices = {
+            "ticket_type": (Ticket.TicketType, Ticket.TicketType.BUG),
+            "priority": (Ticket.Priority, Ticket.Priority.MEDIUM),
+            "status": (Ticket.Status, Ticket.Status.OPEN),
+        }
+        vals = {}
+        for name, (enum, default) in choices.items():
+            raw = body.get(name)
+            vals[name] = str(raw) if raw not in (None, "") else default.value
+            if vals[name] not in enum.values:
+                errors[name] = f"Must be one of: {', '.join(enum.values)}."
+        assign = body.get("assign_to_me", True)
+        if isinstance(assign, str):
+            assign = assign.strip().lower() not in ("false", "0", "no", "")
+        if errors:
+            return Response({"error": "Invalid ticket.", "fields": errors}, status=400)
+
+        dup = _open(accessible_tickets(request.user, self.company)).filter(
+            product=product, title__iexact=title
+        ).select_related("product").prefetch_related("assignees").first()
+        if dup:
+            return Response(
+                {"error": f"An open ticket with this title already exists ({dup.key}).", "existing": _ticket(dup, request.user)},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        finished = vals["status"] in (Ticket.Status.RESOLVED, Ticket.Status.CLOSED)
+        ticket = Ticket(
+            company=self.company, created_by=request.user, source="manual", product=product,
+            title=title, description=str(body.get("description") or ""),
+            ticket_type=vals["ticket_type"], priority=vals["priority"],
+            status=Ticket.Status.OPEN if finished else vals["status"],
+        )
+        ticket.save()
+        ticket.set_assignees([request.user] if assign else [], actor=request.user)
+        notify_ticket_created(ticket)
+        log_activity(
+            self.company, "ticket_created", f"Ticket {ticket.key} created",
+            description=ticket.title, actor=request.user,
+            target_content_type="ticket", target_object_id=ticket.pk,
+            metadata={"product_id": ticket.product_id},
+        )
+        if finished:
+            # The model's transition runs the side effects, including the DSR entry.
+            ticket.transition_to(vals["status"], actor=request.user)
+        ticket = Ticket.objects.select_related("product").prefetch_related("assignees").get(pk=ticket.pk)
+        return Response(_ticket(ticket, request.user), status=status.HTTP_201_CREATED)
+
+
+# POST /v1/projects/, called from ProjectsView.post
+def _create_project(self, request):
+    if self.role not in (Membership.Role.OWNER, Membership.Role.ADMIN):
+        return Response(
+            {"error": "Only an owner or admin can create a project. Ask one of them to create it."}, status=403
+        )
+    body = request.data if isinstance(request.data, dict) else {}
+    name = str(body.get("name") or "").strip()
+    key = str(body.get("key") or "").strip().upper()
+    mine = Product.objects.filter(company=self.company)
+    clash = None
+    if name:
+        clash = mine.filter(Q(name__iexact=name) | Q(slug=slugify(name))).first()
+    if key and not clash:
+        clash = mine.filter(key=key).first()
+    if clash:
+        return Response(
+            {"error": f"A project named {clash.name} ({clash.key}) already exists.",
+             "existing": {"id": clash.pk, "key": clash.key, "name": clash.name}},
+            status=status.HTTP_409_CONFLICT,
+        )
+    form = ProductCreateForm({"name": name, "key": key, "default_environment": "production"}, company=self.company)
+    if not form.is_valid():
+        return Response({"error": "Invalid project.", "fields": form.errors.get_json_data()}, status=400)
+    product = form.save()
+    log_activity(
+        self.company, "product_created", f"Product '{product.name}' created",
+        actor=request.user, target_content_type="product", target_object_id=product.pk,
+    )
+    return Response({"id": product.pk, "key": product.key, "name": product.name}, status=status.HTTP_201_CREATED)

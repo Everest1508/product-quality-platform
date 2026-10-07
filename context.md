@@ -588,6 +588,15 @@ No `changes-*.md` exists for these; the two `## [Unreleased]` blocks in
 - Times people read are 12-hour (`apps/core/timefmt.t12`), set earlier today.
 - Released as 1.5.0 (`APP_VERSION` bumped, changelog entry added): /dsr in AI tools, "via MCP" pill, minutes, table, 12-hour times, the DSR token being unusable for Serop.
 
+### 2026-10-07 (evening) — ticket and project endpoints for the MCP, released as 1.6.0
+
+- `apps/dsr/api.py`: `GET /api/v1/dsr/tickets/` (`q`, `product`, `status=open|all`, max 20, newest first, through `accessible_tickets`), `POST /api/v1/dsr/tickets/`, `POST /api/v1/projects/` (owner/admin only, else 403). `users/me/` gained `can_create_projects`.
+- Ticket create mirrors the web view (`Ticket.save` numbers it, `set_assignees(actor=)`, `notify_ticket_created`, `log_activity`). `assign_to_me` defaults true. Title max 255 here (model allows 500).
+- Duplicate guard: an OPEN ticket with the same title (case-insensitive) in the same product answers 409 with `existing`; nothing is created. Resolved or closed tickets do not count.
+- `status` resolved/closed: the ticket is created open, assigned, then `transition_to` runs, so the automatic DSR entry for the assignee is created. Intended, not suppressed.
+- Project create validates through `ProductCreateForm`; duplicate name, slug or key answers 409 with `existing`. No `ProductAccess` row is made (owners and admins see every product).
+- Tests: `apps/dsr/tests_api_tickets.py`.
+
 ## Deliberately not changed
 
 A rejected approach with a reason, so it is not re-proposed.
