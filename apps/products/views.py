@@ -15,6 +15,7 @@ from apps.products.access import accessible_products, require_product_access
 from apps.products.forms import ProductCreateForm, ProductEditForm, VersionCreateForm
 from apps.products.models import APIKey, Product, ProductAccess, ProductVersion
 from apps.products.webhook import notify_ticket_created
+from apps.core.timefmt import t12
 
 
 PRODUCT_SORT_MAP = {
@@ -327,7 +328,7 @@ class APIKeyRotateView(CompanyMemberRequiredMixin, View):
         log_activity(
             request.company, "api_key_rotated",
             f"API key '{old.name}' rotated for {old.product.name}",
-            description="Old key revoked now" if delta is None else f"Old key works until {old.expires_at:%b %d, %H:%M}",
+            description="Old key revoked now" if delta is None else f"Old key works until {old.expires_at:%b %d}, {t12(old.expires_at)}",
             actor=request.user,
             target_content_type="api_key",
             target_object_id=new_key.pk,

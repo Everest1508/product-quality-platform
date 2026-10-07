@@ -11,6 +11,7 @@ from apps.attendance.models import (
     month_bounds,
 )
 from apps.leave.service import approved_leave_map
+from apps.core.timefmt import t12
 
 
 def unclosed_days(company, user):
@@ -365,16 +366,17 @@ def late_penalty_for(record, shift=None):
 def _penalty_reason(record, late_minutes, band, shift):
     # Date *and* time: a payslip line has to stand on its own as the record of
     # why someone was charged, months later.
-    when = timezone.localtime(record.check_in).strftime("%Y-%m-%d %H:%M")
+    checked_in = timezone.localtime(record.check_in)
+    when = f"{checked_in:%Y-%m-%d} {t12(checked_in)}"
     if band == "half_day":
         return (
             f"Checked in at {when}, more than "
-            f"{shift.major_band_end_minutes} min after the {shift.start_time:%H:%M} "
+            f"{shift.major_band_end_minutes} min after the {t12(shift.start_time)} "
             f"shift start — half day."
         )
     return (
         f"Checked in at {when}, {late_minutes} min after the "
-        f"{shift.start_time:%H:%M} shift start."
+        f"{t12(shift.start_time)} shift start."
     )
 
 

@@ -100,7 +100,7 @@ document.addEventListener('alpine:init', function () {
     initial(u) { return (u.name || '?').charAt(0).toUpperCase(); },
     clock(iso) {
       if (!iso) return '';
-      return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
     },
   });
 });

@@ -26,7 +26,7 @@
                style="color:inherit;text-decoration:none;display:block;">
             {% endif %}
             <span class="att-hours">{{ day.net_minutes }}m</span>
-            <div class="att-range">{{ day.record.check_in|date:"H:i" }}{% if day.record.check_out %}–{{ day.record.check_out|date:"H:i" }}{% endif %}</div>
+            <div class="att-range">{{ day.record.check_in|date:"g:i A" }}{% if day.record.check_out %}–{{ day.record.check_out|date:"g:i A" }}{% endif %}</div>
             {% if day.late_label %}<span class="att-flag att-flag-late">{{ day.late_label }}</span>{% endif %}
             {% comment %} The cell is ~30px wide, so the flag stays terse and the title
                carries the meaning. "open" means genuinely on the clock today;

@@ -11,7 +11,7 @@
           <div class="pd-state leave"><span class="lead">On approved leave</span></div>
         {% elif rec.is_open %}
           <div class="pd-state open">
-            <span class="lead">Working since {{ rec.check_in|date:"H:i" }}</span>
+            <span class="lead">Working since {{ rec.check_in|date:"g:i A" }}</span>
             <span class="meta">Punch out when you're done</span>
           </div>
           <form method="post" action="{% url 'attendance:punch' %}">
@@ -21,7 +21,7 @@
         {% elif rec %}
           <div class="pd-state done">
             <span class="lead">{{ rec.worked_hours|floatformat:"1" }}h today</span>
-            <span class="meta">{{ rec.check_in|date:"H:i" }} → {{ rec.check_out|date:"H:i" }}</span>
+            <span class="meta">{{ rec.check_in|date:"g:i A" }} → {{ rec.check_out|date:"g:i A" }}</span>
           </div>
         {% elif today.weekday >= 5 %}
           <div class="pd-state rest"><span class="lead">Weekend</span><span class="meta">{{ today|date:"D j M" }}</span></div>

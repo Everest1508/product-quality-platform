@@ -14,6 +14,7 @@ from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
 from apps.notifications import service as notifications
 from apps.notifications.models import Notification
+from apps.core.timefmt import t12
 
 User = get_user_model()
 
@@ -140,7 +141,7 @@ def _punch_context(request, record, message="", person=None):
         or record.check_out is None,
         "late_minutes": service.lateness_for(record, shift) if record else 0,
         "late_band": penalty["band"] if penalty else None,
-        "shift_label": f"{shift.start_time:%H:%M}–{shift.end_time:%H:%M}",
+        "shift_label": f"{t12(shift.start_time)}–{t12(shift.end_time)}",
         # What checking in *now* would cost, ticked in the browser from these numbers.
         # They are the same bands `late_penalty_for` applies, never a second copy of the rule.
         "late_rules": {

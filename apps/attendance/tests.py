@@ -868,7 +868,7 @@ class LatePenaltyTest(AttendanceTestBase):
         self.assertEqual(penalty["band"], "minor")
         self.assertEqual(Decimal(penalty["amount"]), Decimal("50.00"))
         self.assertEqual(penalty["late_minutes"], 20)
-        self.assertIn("10:20", penalty["reason"])
+        self.assertIn("10:20 AM", penalty["reason"])
         # The date is part of the reason, not only a sibling field.
         self.assertIn(penalty["date"], penalty["reason"])
 
@@ -1286,7 +1286,7 @@ class PunchPanelTest(AttendanceTestBase):
     def test_it_shows_the_office_hours(self):
         """Arriving late is priced, so the shift has to be visible at the button."""
         body = self.panel()
-        self.assertIn("Shift 10:00–18:30", body)
+        self.assertIn("Shift 10:00 AM–6:30 PM", body)
 
     def test_it_says_late_the_moment_it_happens(self):
         """Otherwise the first notice of a penalty is a payslip weeks later."""
@@ -1457,7 +1457,7 @@ class PunchPanelTest(AttendanceTestBase):
         ).content.decode()
         # Every state carries the shift and the lateness, so a punch cannot
         # swap one for the other and lose the penalty the employee just incurred.
-        for state in ("Checked out", "45m late", "Shift 10:00–18:30"):
+        for state in ("Checked out", "45m late", "Shift 10:00 AM–6:30 PM"):
             self.assertIn(state, body)
         self.assertNotIn("punch-panel", body)
 
@@ -1467,7 +1467,7 @@ class PunchPanelTest(AttendanceTestBase):
             reverse("attendance:punch"), headers={"HX-Request": "true"}
         ).content.decode()
         self.assertIn("Checked in at", body)
-        self.assertIn("Shift 10:00–18:30", body)
+        self.assertIn("Shift 10:00 AM–6:30 PM", body)
         self.assertIn("Check out", body)
 
     def test_an_admin_reading_a_colleague_is_offered_no_button(self):

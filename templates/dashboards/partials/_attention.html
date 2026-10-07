@@ -24,7 +24,7 @@
   <div class="dash-row">
     <span class="sev-dot stale"></span>
     <a class="lead" href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}">{{ t.key }} {{ t.title }}{% if t.product %} <span class="prod">· {{ t.product.name }}</span>{% endif %}</a>
-    <span class="meta" title="{{ t.updated_at|date:'M j, Y, H:i' }}">{{ t.updated_at|timesince }}</span>
+    <span class="meta" title="{{ t.updated_at|date:'M j, Y, g:i A' }}">{{ t.updated_at|timesince }}</span>
     <span class="dash-acts">
       {% if not t.assignees.all %}
       <button class="dash-act" hx-post="{% url 'tickets:ticket_assign' pk=t.pk %}" hx-vals='{"assignees": "{{ request.user.pk }}"}' hx-swap="none"
@@ -45,7 +45,7 @@
   <div class="dash-row">
     <span class="sev-dot unassigned"></span>
     <a class="lead" href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}">{{ t.key }} {{ t.title }}{% if t.product %} <span class="prod">· {{ t.product.name }}</span>{% endif %}</a>
-    <span class="meta" title="{{ t.updated_at|date:'M j, Y, H:i' }}">{{ t.updated_at|timesince }}</span>
+    <span class="meta" title="{{ t.updated_at|date:'M j, Y, g:i A' }}">{{ t.updated_at|timesince }}</span>
     <span class="dash-acts">
       <button class="dash-act" hx-post="{% url 'tickets:ticket_assign' pk=t.pk %}" hx-vals='{"assignees": "{{ request.user.pk }}"}' hx-swap="none"
               hx-on::after-request="event.detail.successful && htmx.trigger(document.body,'dash:refresh')">Assign to me</button>

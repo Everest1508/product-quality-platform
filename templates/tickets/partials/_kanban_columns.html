@@ -46,7 +46,7 @@
         <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
         {% endif %}
         {% if ticket.deadline %}
-        <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" title="{{ ticket.deadline|date:'M j, Y, H:i' }}">{% if ticket.is_overdue %}Overdue · {% else %}Due {% endif %}{{ ticket.deadline|date:'M j' }}</span>
+        <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" title="{{ ticket.deadline|date:'M j, Y, g:i A' }}">{% if ticket.is_overdue %}Overdue · {% else %}Due {% endif %}{{ ticket.deadline|date:'M j' }}</span>
         {% endif %}
       </div>
     </div>

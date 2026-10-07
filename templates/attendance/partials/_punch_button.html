@@ -29,7 +29,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
        now: Date.now(),
        tickId: null,
        start() { if (!this.tickId) this.tickId = setInterval(() => { this.now = Date.now(); }, 1000); },
-       get clock() { return new Date(this.now).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }); },
+       get clock() { return new Date(this.now).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }); },
        get secs() { return this.since ? Math.max(0, Math.floor((this.now - this.since) / 1000)) : 0; },
        get elapsed() { const m = Math.floor(this.secs / 60); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; },
        get seconds() { return ':' + String(this.secs % 60).padStart(2, '0'); },

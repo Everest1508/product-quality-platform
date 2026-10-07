@@ -42,11 +42,11 @@
           <div class="label">Affected Users</div>
         </div>
         <div class="stat">
-          <div class="val" style="font-size:14px;" title="{{ error_group.first_seen|date:'M j, Y, H:i' }}">{{ error_group.first_seen|timesince }} ago</div>
+          <div class="val" style="font-size:14px;" title="{{ error_group.first_seen|date:'M j, Y, g:i A' }}">{{ error_group.first_seen|timesince }} ago</div>
           <div class="label">First seen</div>
         </div>
         <div class="stat">
-          <div class="val" style="font-size:14px;" title="{{ error_group.last_seen|date:'M j, Y, H:i' }}">{{ error_group.last_seen|timesince }} ago</div>
+          <div class="val" style="font-size:14px;" title="{{ error_group.last_seen|date:'M j, Y, g:i A' }}">{{ error_group.last_seen|timesince }} ago</div>
           <div class="label">Last seen</div>
         </div>
       </div>

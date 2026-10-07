@@ -79,7 +79,7 @@
     <span><i class="tw-key warn"></i>Late (within the shift's bands)</span>
     <span><i class="tw-key bad"></i>Later than 30 min or a half day</span>
     <span><i class="tw-key leave"></i>Approved leave</span>
-    <span class="text-muted">Shift {{ shift.start_time|date:"H:i" }}–{{ shift.end_time|date:"H:i" }}</span>
+    <span class="text-muted">Shift {{ shift.start_time|date:"g:i A" }}–{{ shift.end_time|date:"g:i A" }}</span>
   </footer>
 </section>
 {% endblock %}

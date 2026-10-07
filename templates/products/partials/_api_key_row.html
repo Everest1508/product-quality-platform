@@ -3,7 +3,7 @@
     <span class="text-sm font-medium">{{ api_key.name }}</span>
     {% with state=api_key.state %}
       {% if state == 'active' %}<span class="pill active">Active</span>
-      {% elif state == 'expiring' %}<span class="pill progress" title="Stops working {{ api_key.expires_at|date:'M j, H:i' }}">Ends {{ api_key.expires_at|timeuntil }} from now</span>
+      {% elif state == 'expiring' %}<span class="pill progress" title="Stops working {{ api_key.expires_at|date:'M j, g:i A' }}">Ends {{ api_key.expires_at|timeuntil }} from now</span>
       {% elif state == 'expired' %}<span class="pill high">Expired</span>
       {% else %}<span class="pill closed">Revoked</span>{% endif %}
     {% endwith %}

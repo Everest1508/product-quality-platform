@@ -21,6 +21,7 @@ from apps.products.webhook import notify_ticket_assigned, notify_ticket_created,
 from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
 from apps.tickets import mentions
 from apps.tickets.models import Ticket, TicketComment
+from apps.core.timefmt import t12
 
 User = get_user_model()
 
@@ -534,9 +535,9 @@ class TicketDeadlineView(CompanyMemberRequiredMixin, View):
                 request.company, "ticket_deadline_changed",
                 f"Ticket {ticket.key} deadline changed",
                 description=(
-                    f"from {old_deadline:%Y-%m-%d %H:%M} to {ticket.deadline:%Y-%m-%d %H:%M}"
+                    f"from {old_deadline:%Y-%m-%d} {t12(old_deadline)} to {ticket.deadline:%Y-%m-%d} {t12(ticket.deadline)}"
                     if old_deadline and ticket.deadline
-                    else f"{ticket.deadline:%Y-%m-%d %H:%M}" if ticket.deadline else "Deadline cleared"
+                    else f"{ticket.deadline:%Y-%m-%d} {t12(ticket.deadline)}" if ticket.deadline else "Deadline cleared"
                 ),
                 actor=request.user,
                 target_content_type="ticket",

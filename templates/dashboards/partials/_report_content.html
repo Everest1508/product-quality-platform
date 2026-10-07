@@ -164,7 +164,7 @@
       {% for entry in recent %}
       {% with url=entry|event_url %}
       <tr {% if url %}onclick="window.location='{{ url }}'" style="cursor:pointer;" class="clickable-row"{% endif %}>
-        <td class="date">{{ entry.created_at|date:"M d, Y H:i" }}</td>
+        <td class="date">{{ entry.created_at|date:"M d, Y g:i A" }}</td>
         <td><span class="pill {{ entry.event_type|event_pill }}">{{ entry.get_event_type_display }}</span></td>
         <td>
           <div class="font-medium text-sm" style="color:var(--text);display:flex;align-items:center;gap:6px;">
