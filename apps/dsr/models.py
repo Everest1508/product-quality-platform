@@ -68,6 +68,10 @@ class DSREntry(models.Model):
     )
     notes = models.TextField(blank=True)
     is_auto_logged = models.BooleanField(default=True)
+    # Audit trail for entries sent by the DSR MCP: where the work came from
+    # (github, git, crm_ticket...) and that source's id (a commit sha, a PR number).
+    source = models.CharField(max_length=32, blank=True)
+    source_id = models.CharField(max_length=128, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

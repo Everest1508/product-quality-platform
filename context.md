@@ -571,6 +571,15 @@ No `changes-*.md` exists for these; the two `## [Unreleased]` blocks in
 
 ---
 
+### 2026-10-07 — DSR API for the dsr-mcp server
+
+- New JSON API at `/api/v1/` (`apps/dsr/api.py`, `api_urls.py`): `users/me/`, `projects/`, `activities/today/`, `dsr/today/`, `POST dsr/`, `PUT|PATCH dsr/<id>/`. Used by the separate repo `RandomKid24/dsr-mcp` (not built yet).
+- Auth reuses `ExternalAccessToken` with `client_id="dsr-mcp"` (get one through the existing loopback `/oauth/authorize` flow). `DSRTokenAuthentication` accepts only that client id, and Serop's `ExternalTokenAuthentication` now rejects it, so an MCP token cannot read Serop teams or shared-server credentials.
+- Writes reuse `DSREntryForm`, `submission_window` and `suggestions`, so the API follows the web sheet's rules (hours cap, today only for non-admins, accessible products only). A DSR is still one `DSREntry` row per task; there is no single "report" object.
+- Duplicates answer 409 with the existing entry (same ticket, same `source`+`source_id`, or same task name that day); the client then uses PUT. Entries have `source` / `source_id` (migration 0005) as the audit trail.
+- Company is the user's first membership unless `?company=<id>`. API users can only edit their own entries (web admins can still override).
+- Not done: no DELETE, no CHANGELOG entry (internal API, would need an `APP_VERSION` bump), hours still come from the client.
+
 ## Deliberately not changed
 
 A rejected approach with a reason, so it is not re-proposed.

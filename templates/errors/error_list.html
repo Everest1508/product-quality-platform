@@ -42,7 +42,8 @@
   {% dropdown "sort" "-last_seen:Most recent|last_seen:Least recent|-count:Most occurrences|count:Least occurrences|-severity:Severity (high first)|title:Title A-Z"|opts current_sort|default:"-last_seen" placeholder="Sort" label="Sort" navigate=True %}
 </div>
 
-<table>
+<div class="errors-wrap">
+<table class="errors-table">
   <thead>
     <tr>
       <th>Error</th>
@@ -58,6 +59,7 @@
     {% include "errors/partials/_error_list_body.html" with page=page %}
   </tbody>
 </table>
+</div>
 
 {% include "core/_pagination.html" with page=page %}
 

@@ -23,4 +23,9 @@ class ExternalTokenAuthentication(BaseAuthentication):
         if not token_obj:
             raise AuthenticationFailed("Invalid or revoked token.")
 
+        # The DSR MCP's token is for the DSR API only; it must not open Serop's
+        # teams and shared-server credentials.
+        if token_obj.client_id == "dsr-mcp":
+            raise AuthenticationFailed("This token is not valid for Serop.")
+
         return (token_obj.user, token_obj)
