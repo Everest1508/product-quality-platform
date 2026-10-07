@@ -78,6 +78,25 @@ def _entry(e):
     }
 
 
+def _attendance(company, user, day):
+    """The day's real worked time from the punch card, or None if they did not punch in.
+
+    `net_minutes` is what attendance itself reports (an open day counts elapsed time, capped at
+    the shift, less the unpaid break), so a DSR built from it agrees with the attendance page.
+    """
+    from apps.attendance.models import AttendanceRecord
+    from apps.attendance.service import net_minutes_for, shift_for
+
+    record = AttendanceRecord.objects.filter(company=company, user=user, date=day).first()
+    if record is None or record.check_in is None:
+        return None
+    return {
+        "check_in": timezone.localtime(record.check_in).isoformat(),
+        "check_out": timezone.localtime(record.check_out).isoformat() if record.check_out else None,
+        "net_minutes": net_minutes_for(record, shift_for(company)),
+    }
+
+
 class MeView(DSRAPIView):
     def get(self, request):
         u = request.user
@@ -109,6 +128,7 @@ class TodayView(DSRAPIView):
         can_edit, reason = submission_window(day, _is_privileged(request.user, self.company))
         return Response({
             "date": day.isoformat(),
+            "attendance": _attendance(self.company, request.user, day),
             "exists": entries.exists(),
             "can_edit": can_edit,
             "locked_reason": reason,
@@ -132,6 +152,9 @@ class ActivitiesView(DSRAPIView):
             "source_id": r["key"],
             "ticket": r["number"],
             "timestamp": r["last"].isoformat() if r["last"] else None,
+            # Real activity times, so a client can measure time instead of guessing it.
+            "events": [t.isoformat() for t in r["events"]],
+            "touched": r["touched"],
             "suggested_hours": str(r["hours"]),
             "category": r["category"],
             "status": r["status"],

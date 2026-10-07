@@ -1,22 +1,12 @@
-<div class="bento dsr-bento">
-  <section class="tile w-5">
-    <div class="tile-head"><h2>Hours logged</h2><span class="text-sm text-muted">goal {{ target_goal }}h</span></div>
-    <div class="dsr-big"><b>{{ total_hours }}</b><span>hours</span></div>
+<div class="dsr-summary">
+  <div class="dsr-summary-main">
+    <div class="dsr-big"><b>{{ total_hours }}</b><span>of {{ target_goal }}h logged</span></div>
     <div class="hbar-track dsr-goal"><span class="hbar-fill {% if progress_percent >= 100 %}green{% endif %}" style="width:{% if progress_percent > 100 %}100{% else %}{{ progress_percent }}{% endif %}%"></span></div>
-    <p class="text-sm text-muted" style="margin:8px 0 0;">{% if progress_percent >= 100 %}Goal met.{% else %}{{ progress_percent }}% of the day's goal.{% endif %}</p>
-  </section>
-  <section class="tile w-4">
-    <div class="tile-head"><h2>Finished</h2></div>
-    <div class="dsr-big"><b>{{ completed_count }}</b><span>task{{ completed_count|pluralize }}</span></div>
-    <p class="text-sm text-muted" style="margin:8px 0 0;">{{ auto_logged_count }} added automatically from tickets.</p>
-  </section>
-  <section class="tile w-3 dsr-who">
-    <span class="avatar">{{ target_user.username.0|upper }}</span>
-    <div>
-      <strong>{{ target_user.get_full_name|default:target_user.username }}</strong>
-      <span class="text-sm text-muted">{% if target_user == request.user %}Your report{% else %}@{{ target_user.username }}{% endif %}</span>
-    </div>
-  </section>
+  </div>
+  <p class="dsr-summary-text">
+    <b>{{ entries.count }}</b> task{{ entries.count|pluralize }} · <b>{{ completed_count }}</b> finished
+    {% if target_user != request.user %}· report of <b>{{ target_user.get_full_name|default:target_user.username }}</b>{% endif %}
+  </p>
 </div>
 
 <div class="card sheet-card mb-6" x-data="{ addOpen: {% if add_open %}true{% else %}false{% endif %} }" style="padding:0;overflow:hidden;border-radius:10px;box-shadow:0 4px 16px rgba(13,17,23,0.03);">
@@ -27,9 +17,7 @@
     </div>
 
     <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span><strong style="color:var(--text);">{{ entries.count }}</strong> entries</span>
-      <span>•</span>
-
+      
       <button type="button" class="btn btn-sm" onclick="copyDsrSummary()" style="font-size:12px;padding:4px 10px;display:inline-flex;align-items:center;gap:5px;" title="Copy DSR summary to clipboard for Slack / Teams">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span id="copy-btn-text">Copy DSR Text</span>
@@ -104,7 +92,7 @@
     {% empty %}
       <div class="dsr-empty">
         <p class="dsr-empty-title">Nothing logged for this day yet</p>
-        <p class="text-sm text-muted">Resolve or close a ticket and it shows up here by itself. Anything else, add by hand.</p>
+        <p class="text-sm text-muted">Resolved tickets appear here by themselves. You can also add work by hand, or type /dsr in your AI tool and it fills this in for you.</p>
         {% if can_submit %}
         <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
               hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"

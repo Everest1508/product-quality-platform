@@ -112,3 +112,41 @@ class DSRApiTest(TestCase):
         self.assertEqual([(r["source"], r["source_id"]) for r in rows], [("crm_ticket", t.key)])
         self.post(task_name="Logged", ticket=t.pk)
         self.assertEqual(self.api.get(reverse("dsr_api:activities")).json(), [])
+
+
+class DSRApiRealTimeTest(DSRApiTest):
+    """What the MCP needs to measure time instead of guessing it."""
+
+    def test_today_reports_attendance_minutes(self):
+        from apps.attendance.models import AttendanceRecord
+
+        self.assertIsNone(self.api.get(reverse("dsr_api:today")).json()["attendance"])
+        start = timezone.make_aware(timezone.datetime.combine(self.today, timezone.datetime.min.time())) + timedelta(hours=9)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=self.today, check_in=start, check_out=start + timedelta(hours=4)
+        )
+        att = self.api.get(reverse("dsr_api:today")).json()["attendance"]
+        self.assertEqual(att["net_minutes"], 240)  # under the shift, so no break comes off
+        self.assertTrue(att["check_in"].startswith(self.today.isoformat()))
+
+    def test_activities_carry_event_times_and_touched(self):
+        from apps.dashboards.models import ActivityLog
+
+        t = Ticket.objects.create(company=self.company, product=self.mine, title="Fix export", created_by=self.dev, status="in_progress")
+        t.assignees.add(self.dev)
+        row = self.api.get(reverse("dsr_api:activities")).json()[0]
+        self.assertEqual((row["touched"], row["events"]), (False, []))  # assigned only, no work today
+        ActivityLog.objects.create(
+            company=self.company, actor=self.dev, event_type="ticket_commented", title="c",
+            target_content_type="ticket", target_object_id=t.pk,
+        )
+        row = self.api.get(reverse("dsr_api:activities")).json()[0]
+        self.assertTrue(row["touched"])
+        self.assertEqual(len(row["events"]), 1)
+
+    def test_mcp_rows_show_a_pill_and_manual_rows_do_not(self):
+        self.post(task_name="From the MCP", source="git", source_id="crm:today")
+        DSREntry.objects.create(company=self.company, user=self.dev, date=self.today, task_name="By hand", hours_spent=1, is_auto_logged=False)
+        self.client.login(username="dev", password="pass1234")
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        self.assertEqual(body.count('class="dsr-tag mcp"'), 1)

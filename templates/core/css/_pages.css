@@ -87,7 +87,7 @@
 .dsr-who .avatar{width:44px;height:44px;font-size:17px;flex:none;}
 .dsr-who strong{display:block;font-size:14.5px;}
 .dsr-log{display:flex;flex-direction:column;}
-.dsr-item{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 18px;border-bottom:1px solid var(--line);position:relative;}
+.dsr-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 18px;border-bottom:1px solid var(--line);position:relative;}
 .dsr-item:last-child{border-bottom:none;}
 .dsr-item::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--border);}
 .dsr-item.st-completed::before{background:var(--green);}
@@ -426,3 +426,19 @@ details.changelog-rel:hover{border-color:var(--border-strong);}
 .error-detail-grid{grid-template-columns:minmax(0,1fr) 280px;gap:32px;}
 .error-detail-grid>*{min-width:0;}
 @media (max-width:1100px){.error-detail-grid{grid-template-columns:minmax(0,1fr);gap:20px;}}
+
+/* DSR sheet, simplified: one summary strip instead of three tiles, no time column, and
+ * product/category tucked behind "More". */
+.dsr-summary{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:16px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.dsr-summary-main{flex:1;min-width:220px;}
+.dsr-summary .dsr-goal{margin-top:8px;}
+.dsr-summary-text{margin:0;font-size:13px;color:var(--muted);}
+.dsr-summary-text b{color:var(--text);}
+.dsr-tag.mcp{background:var(--purple-bg);color:var(--purple);}
+.dsr-more{margin-top:6px;}
+.dsr-more summary{font-size:12px;color:var(--muted);cursor:pointer;width:max-content;list-style:none;}
+.dsr-more summary::-webkit-details-marker{display:none;}
+.dsr-more summary::before{content:"+ ";}
+.dsr-more[open] summary::before{content:"- ";}
+.dsr-more-body{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.dsr-more-body .dsr-pick{width:170px;}

@@ -168,6 +168,7 @@ def suggestions(company, user, day, limit=8):
                     DSREntry.Status.COMPLETED if ticket.status in ("resolved", "closed") else DSREntry.Status.IN_PROGRESS
                 ),
                 "last": events[-1].created_at if events else None,
+                "events": [e.created_at for e in events],
             }
         )
     rows.sort(key=lambda r: (not r["touched"], -(r["last"].timestamp() if r["last"] else 0), r["number"]))

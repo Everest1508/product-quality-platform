@@ -2,23 +2,15 @@
 A form per row on purpose: the category and status controls are radio groups, and
 radios that share a name and have no form are one group for the whole page, so
 choosing a category on one row cleared it on every other row.
+
+Layout: title and where it came from on top, a note under it, hours/status/delete on the
+right. Product and category are rarely changed, so they sit behind "More".
 {% endcomment %}
 <form id="dsr-row-{{ entry.pk }}" class="dsr-item{% if entry.is_auto_logged %} is-auto{% endif %} st-{{ entry.status }}"
       {% if can_submit %}hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}" hx-trigger="change delay:300ms, submit"
       hx-target="#dsr-row-{{ entry.pk }}" hx-swap="outerHTML" hx-sync="this:replace"{% endif %}>
-  <div class="dsr-when">
-    {% if entry.created_time or entry.completed_time %}
-    <span class="dsr-time">{% if entry.created_time %}{{ entry.created_time|date:"H:i" }}{% else %}--:--{% endif %}</span>
-    <span class="dsr-time-sep" aria-hidden="true"></span>
-    <span class="dsr-time">{% if entry.completed_time %}{{ entry.completed_time|date:"H:i" }}{% else %}--:--{% endif %}</span>
-    {% else %}
-    <span class="dsr-time dsr-time-none">no times</span>
-    {% endif %}
-  </div>
-
   <div class="dsr-main">
     <div class="dsr-line">
-      {% if entry.is_auto_logged %}<span class="dsr-tag auto" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
       {% if entry.ticket %}
       <a href="{% url 'tickets:ticket_detail' pk=entry.ticket.pk %}" class="dsr-title" title="Open ticket">{{ entry.task_name }}</a>
       {% elif can_submit %}
@@ -26,27 +18,32 @@ choosing a category on one row cleared it on every other row.
       {% else %}
       <span class="dsr-title">{{ entry.task_name }}</span>
       {% endif %}
+      {% if entry.is_auto_logged %}<span class="dsr-tag auto" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
+      {% if entry.source %}<span class="dsr-tag mcp" title="Submitted through the DSR MCP from {{ entry.source }}{% if entry.source_id %} ({{ entry.source_id }}){% endif %}">via MCP</span>{% endif %}
     </div>
     <div class="dsr-sub">
+      {% if entry.product %}<span class="dsr-tag dsr-product" title="Product">{{ entry.product.name }}</span>{% endif %}
       {% if can_submit %}
-      {% if entry.ticket_id %}
-      {% if entry.product %}<span class="dsr-tag dsr-product" title="Product">{{ entry.product.name }}</span>{% endif %}
-      {% else %}
-      <div class="dsr-pick dsr-pick-product">
-        {% dropdown "product" products|obj_pairs:"pk:name" entry.product_id|default_if_none:"" placeholder="No product" empty_value="" label="Product" trigger_class="sheet-select" %}
-      </div>
-      {% endif %}
-      <div class="dsr-pick">
-        {% dropdown "category" category_choices entry.category placeholder="Category" label="Category" trigger_class="sheet-select category-select "|add:entry.category %}
-      </div>
       <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add a note" class="sheet-input dsr-note" aria-label="Notes">
-      {% else %}
-      {% if entry.product %}<span class="dsr-tag dsr-product" title="Product">{{ entry.product.name }}</span>{% endif %}
-      <span class="dsr-tag">{{ entry.get_category_display }}</span>
-      {% if entry.notes %}<span class="dsr-note-text">{{ entry.notes }}</span>{% endif %}
+      {% elif entry.notes %}
+      <span class="dsr-note-text">{{ entry.notes }}</span>
       {% endif %}
-      {% if entry.created_time and entry.completed_time %}<span class="dsr-took" title="Time between start and finish">{{ entry.time_taken_formatted }} elapsed</span>{% endif %}
     </div>
+    {% if can_submit %}
+    <details class="dsr-more">
+      <summary>More</summary>
+      <div class="dsr-more-body">
+        {% if not entry.ticket_id %}
+        <div class="dsr-pick dsr-pick-product">
+          {% dropdown "product" products|obj_pairs:"pk:name" entry.product_id|default_if_none:"" placeholder="No product" empty_value="" label="Product" trigger_class="sheet-select" %}
+        </div>
+        {% endif %}
+        <div class="dsr-pick">
+          {% dropdown "category" category_choices entry.category placeholder="Category" label="Category" trigger_class="sheet-select category-select "|add:entry.category %}
+        </div>
+      </div>
+    </details>
+    {% endif %}
   </div>
 
   <div class="dsr-side">
