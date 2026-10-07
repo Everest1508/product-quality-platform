@@ -10,6 +10,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.5.0] — 2026-10-07 · build your DSR from your AI tool, and a table you can read
+
+> In short: type /dsr in your AI tool to build today's DSR from your real work, log time in minutes, and read the DSR sheet as a table again.
+
+### New
+
+- **Build your DSR from your AI tool.** Type /dsr in Claude Code, Codex, OpenCode, Kiro or a similar tool. It reads your commits and tickets for the day, drafts the entries, and sends them only after you approve.
+- **A purple "via MCP" tag on entries added that way.** You can tell at a glance which rows came from your AI tool and which you typed yourself.
+- **Type time in minutes and hours.** Write 45m, 1h 30m, 1:30 or 1.5 in any time box. A plain number still means hours.
+
+### Better
+
+- **The DSR sheet is a table again.** Task, project, category, time and status sit in columns with a total at the bottom, and every cell can be edited in place.
+- **Times show as 1h 30m and 45m.** The summary, the total, the copied DSR text and the team overview all use the same style instead of decimals.
+- **Times show in 12-hour format everywhere.** Check-ins, check-outs and other clock times read like 9:30 AM across the app.
+- **Quick time buttons are 15m, 30m, 1h, 2h and 4h.** One click fills the time when you log work.
+
+### Security
+
+- **The DSR connection cannot reach anything else.** The sign-in token the AI tool uses only works for your DSR, so it cannot read Server Operator teams or shared-server passwords, and Server Operator tokens cannot be used for the DSR.
+
 ## [1.4.0] — 2026-10-06 · team week, late preview, shortcuts and smarter search
 
 > In short: admins get a week view of the whole team, the check-in card shows what being late would cost, tickets can be followed, and search explains its matches.

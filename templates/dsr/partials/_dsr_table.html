@@ -1,6 +1,6 @@
-<div class="dsr-summary">
+{% load time_tags %}<div class="dsr-summary">
   <div class="dsr-summary-main">
-    <div class="dsr-big"><b>{{ total_hours }}</b><span>of {{ target_goal }}h logged</span></div>
+    <div class="dsr-big"><b>{{ total_hours|hm }}</b><span>of {{ target_goal|hm }} logged</span></div>
     <div class="hbar-track dsr-goal"><span class="hbar-fill {% if progress_percent >= 100 %}green{% endif %}" style="width:{% if progress_percent > 100 %}100{% else %}{{ progress_percent }}{% endif %}%"></span></div>
   </div>
   <p class="dsr-summary-text">
@@ -58,9 +58,8 @@
         <span class="dsr-sugg-title">{{ s.key }} {{ s.title }}</span>
         <span class="dsr-sugg-did">{% if s.product %}{{ s.product }} · {% endif %}{{ s.did }}</span>
       </span>
-      <label class="dsr-sugg-hours"><span class="sr-only">Hours for {{ s.key }}</span>
-        <input type="number" name="hours" class="form-input" step="0.25" min="0.25" max="24" value="{{ s.hours }}" inputmode="decimal">
-        <span>h</span>
+      <label class="dsr-sugg-hours"><span class="sr-only">Time for {{ s.key }}</span>
+        <input type="text" name="hours" class="form-input" value="{{ s.hours|hm }}" inputmode="text" autocomplete="off" placeholder="1h 30m">
       </label>
       <button type="submit" class="btn btn-sm btn-primary">Add</button>
     </form>
@@ -78,35 +77,47 @@
           class="dsr-composer">
       {% csrf_token %}
       {% include "dsr/partials/_add_fields.html" with form=add_form %}
-      <div class="dc-actions">
-        <span class="dc-hint">{{ total_hours }}h logged · target {{ target_goal }}h</span>
-        <button type="submit" class="btn btn-primary dc-submit">Log it</button>
-      </div>
     </form>
   </div>
   {% endif %}
 
-  <div class="dsr-log" id="dsr-table-body">
-    {% for entry in entries %}
-      {% include "dsr/partials/_dsr_row.html" with entry=entry category_choices=category_choices status_choices=status_choices can_submit=can_submit %}
-    {% empty %}
-      <div class="dsr-empty">
-        <p class="dsr-empty-title">Nothing logged for this day yet</p>
-        <p class="text-sm text-muted">Resolved tickets appear here by themselves. You can also add work by hand, or type /dsr in your AI tool and it fills this in for you.</p>
-        {% if can_submit %}
-        <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
-              hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
-              hx-target="#dsr-content" hx-swap="innerHTML" class="dsr-composer">
-          {% csrf_token %}
-          {% include "dsr/partials/_add_fields.html" with form=add_form_empty %}
-          <div class="dc-actions">
-            <span class="dc-hint">{{ total_hours }}h logged · target {{ target_goal }}h</span>
-            <button type="submit" class="btn btn-primary dc-submit">Log it</button>
-          </div>
-        </form>
-        {% endif %}
+  <div class="dsr-grid-wrap">
+    <div class="dsr-grid" role="table" aria-label="Work log">
+      <div class="dsr-row dsr-head" role="row">
+        <div role="columnheader" class="dsr-c">Task</div>
+        <div role="columnheader" class="dsr-c">Project</div>
+        <div role="columnheader" class="dsr-c">Category</div>
+        <div role="columnheader" class="dsr-c">Time</div>
+        <div role="columnheader" class="dsr-c">Status</div>
+        <div role="columnheader" class="dsr-c dsr-c-act"><span class="sr-only">Actions</span></div>
       </div>
-    {% endfor %}
+      <div id="dsr-table-body" role="rowgroup">
+      {% for entry in entries %}
+        {% include "dsr/partials/_dsr_row.html" with entry=entry category_choices=category_choices status_choices=status_choices can_submit=can_submit %}
+      {% empty %}
+        <div class="dsr-empty" role="row">
+          <p class="dsr-empty-title">Nothing logged for this day yet</p>
+          <p class="text-sm text-muted">Resolved tickets appear here by themselves. You can also add work by hand, or type /dsr in your AI tool and it fills this in for you.</p>
+          {% if can_submit %}
+          <form method="post" action="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+                hx-post="{% url 'dsr:dsr_add' %}?date={{ selected_date|date:'Y-m-d' }}&user_id={{ target_user.pk }}"
+                hx-target="#dsr-content" hx-swap="innerHTML" class="dsr-composer">
+            {% csrf_token %}
+            {% include "dsr/partials/_add_fields.html" with form=add_form_empty %}
+          </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+      </div>
+      <div class="dsr-row dsr-total" role="row">
+        <div role="cell" class="dsr-c">Total <span class="text-muted">· {{ entries.count }} task{{ entries.count|pluralize }}</span></div>
+        <div role="cell" class="dsr-c"></div>
+        <div role="cell" class="dsr-c"></div>
+        <div role="cell" class="dsr-c dsr-c-time"><b>{{ total_hours|hm }}</b></div>
+        <div role="cell" class="dsr-c"></div>
+        <div role="cell" class="dsr-c dsr-c-act"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -142,8 +153,8 @@
             </div>
           </td>
           <td>
-            <span style="font-weight:600;color:{% if item.total_hours >= 8 %}var(--green){% elif item.total_hours > 0 %}var(--blue){% else %}var(--muted){% endif %};">
-              {{ item.total_hours }} hrs
+            <span style="font-weight:600;color:{% if item.progress_percent >= 100 %}var(--green){% elif item.total_hours > 0 %}var(--blue){% else %}var(--muted){% endif %};">
+              {{ item.total_hours|hm }}
             </span>
           </td>
           <td>

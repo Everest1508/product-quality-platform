@@ -3,6 +3,7 @@ from decimal import Decimal
 from django import forms
 
 from apps.products.models import Product
+from apps.dsr.duration import MESSAGE, format_hm, parse_hours
 from apps.dsr.models import DSREntry
 
 MAX_HOURS = Decimal("24")
@@ -13,6 +14,27 @@ class ProductChoiceField(forms.ModelChoiceField):
         # Product.__str__ is "Company / Product", which repeats the company in a
         # list that only ever holds one company's products.
         return obj.name
+
+
+class HoursField(forms.CharField):
+    """Time typed as `1.5`, `45m` or `1h 30m`; cleans to hours as a Decimal."""
+
+    def prepare_value(self, value):
+        # Show a stored number the way people read it, so the box round-trips.
+        return format_hm(value) if isinstance(value, (Decimal, int, float)) else value
+
+    def to_python(self, value):
+        value = super().to_python(value)
+        try:
+            return parse_hours(value)
+        except ValueError:
+            raise forms.ValidationError(MESSAGE)
+
+    def has_changed(self, initial, data):
+        try:
+            return parse_hours(data) != parse_hours(initial if initial is not None else "")
+        except ValueError:
+            return True
 
 
 class DSREntryForm(forms.ModelForm):
@@ -31,6 +53,13 @@ class DSREntryForm(forms.ModelForm):
         max_length=255,
         widget=forms.TextInput(
             attrs={"class": "form-input", "placeholder": "What did you work on?"}
+        ),
+    )
+
+    hours_spent = HoursField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={"class": "form-input", "placeholder": "1h 30m", "inputmode": "text", "autocomplete": "off"}
         ),
     )
 
@@ -64,9 +93,6 @@ class DSREntryForm(forms.ModelForm):
         fields = ["task_name", "product", "category", "hours_spent", "status", "notes"]
         widgets = {
             "category": forms.Select(attrs={"class": "form-input"}),
-            "hours_spent": forms.NumberInput(
-                attrs={"class": "form-input", "step": "0.25", "min": "0", "max": str(MAX_HOURS)}
-            ),
             "status": forms.Select(attrs={"class": "form-input"}),
             "notes": forms.TextInput(
                 attrs={"class": "form-input", "placeholder": "Optional note"}

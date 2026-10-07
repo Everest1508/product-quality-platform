@@ -580,6 +580,14 @@ No `changes-*.md` exists for these; the two `## [Unreleased]` blocks in
 - Company is the user's first membership unless `?company=<id>`. API users can only edit their own entries (web admins can still override).
 - Not done: no DELETE, no CHANGELOG entry (internal API, would need an `APP_VERSION` bump), hours still come from the client.
 
+### 2026-10-07 (later) — DSR table back, time in minutes, released as 1.5.0
+
+- The work log is a table again (header Task, Project, Category, Time, Status, actions; total row at the bottom). It is CSS grid, not `<table>`, so each row stays one `<form id="dsr-row-N">` (a form cannot wrap a `<tr>`; radios per row stay correct, htmx still swaps the row). `.dsr-grid-wrap` scrolls sideways under ~880px. Dropdown menus are absolutely positioned, so on a phone the scroll wrapper can clip the last row's menu; it scrolls inside the wrapper.
+- Time is typed as `45m`, `1h 30m`, `1h30`, `1:30`, `1,5`; a bare number is still hours. `apps/dsr/duration.py` (`parse_hours`, `format_hm`, own tests) is the single parser: `DSREntryForm.hours_spent` is now a `HoursField` (text widget, shows `1h 30m`, compares parsed values so the "cap only when changed" rule still works), the update view and the suggestion add view go through it. DB field and API field names are unchanged. Template filter `hm` is in `time_tags`.
+- Quick-pick chips are 15m 30m 1h 2h 4h. The composer is one compact row (task, project, category, time, status, Log it) with the note and chips below. "+ More" is gone.
+- Times people read are 12-hour (`apps/core/timefmt.t12`), set earlier today.
+- Released as 1.5.0 (`APP_VERSION` bumped, changelog entry added): /dsr in AI tools, "via MCP" pill, minutes, table, 12-hour times, the DSR token being unusable for Serop.
+
 ## Deliberately not changed
 
 A rejected approach with a reason, so it is not re-proposed.

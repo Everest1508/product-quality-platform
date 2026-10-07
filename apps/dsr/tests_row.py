@@ -42,3 +42,22 @@ class DSRLogRowTest(TestCase):
         body = res.content.decode()
         self.assertIn('name="hours_spent"', body)
         self.assertIn("hx-post", body)
+
+    def test_time_can_be_typed_in_minutes_and_shows_as_hm(self):
+        url = reverse("dsr:dsr_update", kwargs={"pk": self.a.pk})
+        res = self.client.post(url, {"hours_spent": "45m"}, HTTP_HX_REQUEST="true")
+        self.a.refresh_from_db()
+        self.assertEqual(str(self.a.hours_spent), "0.75")
+        self.assertIn('value="45m"', res.content.decode())
+        self.client.post(url, {"hours_spent": "1h 30m"}, HTTP_HX_REQUEST="true")
+        self.a.refresh_from_db()
+        self.assertEqual(str(self.a.hours_spent), "1.50")
+        self.client.post(url, {"hours_spent": "soon"}, HTTP_HX_REQUEST="true")
+        self.a.refresh_from_db()
+        self.assertEqual(str(self.a.hours_spent), "1.50")
+
+    def test_sheet_total_row_and_add_form_accept_minutes(self):
+        self.client.post(reverse("dsr:dsr_add"), {"task_name": "Quick call", "category": "meeting", "status": "completed", "hours_spent": "20 min"})
+        self.assertEqual(str(DSREntry.objects.get(task_name="Quick call").hours_spent), "0.33")
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        self.assertIn("<b>3h 20m</b>", body)

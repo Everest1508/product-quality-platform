@@ -10,6 +10,7 @@ from django.views import View
 
 from apps.accounts.models import Membership
 from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.dsr.duration import MESSAGE, format_hm, parse_hours
 from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
 from apps.dsr.service import submission_window, suggestions
@@ -49,8 +50,7 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
     ).select_related("product", "ticket")
 
     raw_total = entries.aggregate(total=Sum("hours_spent"))["total"] or Decimal("0.00")
-    total_hours_float = float(raw_total)
-    total_hours = f"{total_hours_float:.1f}"
+    total_hours = raw_total
 
     completed_count = entries.filter(status="completed").count()
     auto_logged_count = entries.filter(is_auto_logged=True).count()
@@ -65,11 +65,10 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
         for member in members:
             m_entries = DSREntry.objects.filter(company=company, user=member, date=selected_date)
             m_raw = m_entries.aggregate(total=Sum("hours_spent"))["total"] or Decimal("0.00")
-            m_hours = f"{float(m_raw):.1f}"
             m_progress = min(100, int((m_raw / target_goal) * 100))
             team_overview.append({
                 "member": member,
-                "total_hours": m_hours,
+                "total_hours": m_raw,
                 "progress_percent": m_progress,
                 "completed_count": m_entries.filter(status="completed").count(),
                 "total_entries": m_entries.count(),
@@ -77,7 +76,7 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
 
     dsr_lines = [
         f"📅 DSR: {target_user.get_full_name() or target_user.username} — {selected_date.strftime('%b %d, %Y')}",
-        f"⏱ Total Hours: {total_hours} hrs | Tasks Completed: {completed_count}",
+        f"⏱ Total Time: {format_hm(total_hours)} | Tasks Completed: {completed_count}",
         "--------------------------------------------------",
     ]
     if entries.exists():
@@ -86,7 +85,7 @@ def _get_dsr_context(company, target_user, selected_date, is_privileged):
             cat = f" ({item.get_category_display()})"
             # Ticket entries already name the product in their text.
             where = f"[{item.product.name}] " if item.product and f"[{item.product.name}]" not in item.task_name else ""
-            dsr_lines.append(f"{idx}. {badge}{where}{item.task_name}{cat} - {item.hours_spent}h [{item.get_status_display()}]")
+            dsr_lines.append(f"{idx}. {badge}{where}{item.task_name}{cat} - {format_hm(item.hours_spent)} [{item.get_status_display()}]")
             if item.notes:
                 dsr_lines.append(f"   Note: {item.notes}")
     else:
@@ -190,12 +189,6 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
             messages.error(request, "Unknown category.")
             category = entry.category
 
-        try:
-            hours = Decimal(request.POST.get("hours_spent", entry.hours_spent))
-        except (ArithmeticError, ValueError, TypeError):
-            messages.error(request, "Hours must be a number.")
-            hours = entry.hours_spent
-
         from apps.products.access import accessible_products
 
         products = accessible_products(entry.user, request.company)
@@ -205,7 +198,7 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
                 # Only a manual row posts a product; a ticket's row keeps its own.
                 "product": request.POST.get("product", entry.product_id or ""),
                 "category": category,
-                "hours_spent": hours,
+                "hours_spent": request.POST.get("hours_spent", entry.hours_spent),
                 "status": status,
                 "notes": request.POST.get("notes", entry.notes),
             },
@@ -337,14 +330,12 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
 
         try:
             ticket_id = int(request.POST.get("ticket_id", ""))
-            hours = Decimal(request.POST.get("hours", ""))
-        except (ValueError, ArithmeticError):
-            messages.error(request, "Enter the hours as a number.")
+            hours = parse_hours(request.POST.get("hours", ""))
+        except ValueError:
+            messages.error(request, MESSAGE + ".")
             return respond()
-        # NaN and Infinity parse as Decimals and blow up on comparison, so they are
-        # refused before the range check.
-        if not hours.is_finite() or hours <= 0 or hours > 24:
-            messages.error(request, "Hours must be more than 0 and at most 24.")
+        if hours is None or hours <= 0 or hours > 24:
+            messages.error(request, "Time must be more than 0 and at most 24 hours.")
             return respond()
 
         match = next(
@@ -368,5 +359,5 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             status=match["status"],
             is_auto_logged=False,
         )
-        messages.success(request, f"Added {ticket.key} with {hours.normalize():f}h.")
+        messages.success(request, f"Added {ticket.key} with {format_hm(hours)}.")
         return respond()

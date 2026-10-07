@@ -1,15 +1,13 @@
-{% load dropdown_tags %}{% comment %}
-A form per row on purpose: the category and status controls are radio groups, and
-radios that share a name and have no form are one group for the whole page, so
-choosing a category on one row cleared it on every other row.
-
-Layout: title and where it came from on top, a note under it, hours/status/delete on the
-right. Product and category are rarely changed, so they sit behind "More".
+{% load dropdown_tags time_tags %}{% comment %}
+One table row. It is a form (a <form> cannot wrap a <tr>), laid out by CSS grid to
+line up with the header row in _dsr_table.html, so each row keeps its own radio
+groups: radios that share a name and have no form are one group for the whole
+page, so choosing a category on one row cleared it on every other row.
 {% endcomment %}
-<form id="dsr-row-{{ entry.pk }}" class="dsr-item{% if entry.is_auto_logged %} is-auto{% endif %} st-{{ entry.status }}"
+<form id="dsr-row-{{ entry.pk }}" role="row" class="dsr-row st-{{ entry.status }}"
       {% if can_submit %}hx-post="{% url 'dsr:dsr_update' pk=entry.pk %}" hx-trigger="change delay:300ms, submit"
       hx-target="#dsr-row-{{ entry.pk }}" hx-swap="outerHTML" hx-sync="this:replace"{% endif %}>
-  <div class="dsr-main">
+  <div role="cell" class="dsr-c dsr-c-task">
     <div class="dsr-line">
       {% if entry.ticket %}
       <a href="{% url 'tickets:ticket_detail' pk=entry.ticket.pk %}" class="dsr-title" title="Open ticket">{{ entry.task_name }}</a>
@@ -21,47 +19,41 @@ right. Product and category are rarely changed, so they sit behind "More".
       {% if entry.is_auto_logged %}<span class="dsr-tag auto" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
       {% if entry.source %}<span class="dsr-tag mcp" title="Submitted through the DSR MCP from {{ entry.source }}{% if entry.source_id %} ({{ entry.source_id }}){% endif %}">via MCP</span>{% endif %}
     </div>
-    <div class="dsr-sub">
-      {% if entry.product %}<span class="dsr-tag dsr-product" title="Product">{{ entry.product.name }}</span>{% endif %}
-      {% if can_submit %}
-      <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add a note" class="sheet-input dsr-note" aria-label="Notes">
-      {% elif entry.notes %}
-      <span class="dsr-note-text">{{ entry.notes }}</span>
-      {% endif %}
-    </div>
     {% if can_submit %}
-    <details class="dsr-more">
-      <summary>More</summary>
-      <div class="dsr-more-body">
-        {% if not entry.ticket_id %}
-        <div class="dsr-pick dsr-pick-product">
-          {% dropdown "product" products|obj_pairs:"pk:name" entry.product_id|default_if_none:"" placeholder="No product" empty_value="" label="Product" trigger_class="sheet-select" %}
-        </div>
-        {% endif %}
-        <div class="dsr-pick">
-          {% dropdown "category" category_choices entry.category placeholder="Category" label="Category" trigger_class="sheet-select category-select "|add:entry.category %}
-        </div>
-      </div>
-    </details>
+    <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add a note" class="sheet-input dsr-note" aria-label="Notes">
+    {% elif entry.notes %}
+    <span class="dsr-note-text">{{ entry.notes }}</span>
     {% endif %}
   </div>
-
-  <div class="dsr-side">
+  <div role="cell" class="dsr-c" data-label="Project">
+    {% if can_submit and not entry.ticket_id %}
+    {% dropdown "product" products|obj_pairs:"pk:name" entry.product_id|default_if_none:"" placeholder="No product" empty_value="" label="Product" trigger_class="sheet-select" %}
+    {% else %}<span class="dsr-ro">{{ entry.product.name|default:"-" }}</span>{% endif %}
+  </div>
+  <div role="cell" class="dsr-c" data-label="Category">
     {% if can_submit %}
-    <label class="dsr-hours"><span class="sr-only">Hours spent</span>
-      <input type="number" step="0.25" min="0" name="hours_spent" value="{{ entry.hours_spent }}" class="sheet-input num-input" inputmode="decimal"><span>h</span>
-    </label>
-    <div class="dsr-pick">
-      {% dropdown "status" status_choices entry.status placeholder="Status" label="Status" trigger_class="sheet-select status-select "|add:entry.status %}
-    </div>
+    {% dropdown "category" category_choices entry.category placeholder="Category" label="Category" trigger_class="sheet-select category-select "|add:entry.category %}
+    {% else %}<span class="dsr-ro">{{ entry.get_category_display }}</span>{% endif %}
+  </div>
+  <div role="cell" class="dsr-c dsr-c-time" data-label="Time">
+    {% if can_submit %}
+    <input type="text" name="hours_spent" value="{{ entry.hours_spent|hm }}" class="sheet-input num-input" inputmode="text" autocomplete="off" aria-label="Time spent, like 45m or 1h 30m">
+    {% else %}<span class="dsr-hours-ro">{{ entry.hours_spent|hm }}</span>{% endif %}
+  </div>
+  <div role="cell" class="dsr-c" data-label="Status">
+    {% if can_submit %}
+    {% dropdown "status" status_choices entry.status placeholder="Status" label="Status" trigger_class="sheet-select status-select "|add:entry.status %}
+    {% else %}
+    <span class="pill {% if entry.status == 'completed' %}green{% elif entry.status == 'in_progress' %}blue{% else %}red{% endif %}">{{ entry.get_status_display }}</span>
+    {% endif %}
+  </div>
+  <div role="cell" class="dsr-c dsr-c-act">
+    {% if can_submit %}
     <button type="button" class="icon-btn icon-btn-danger" title="Delete entry" aria-label="Delete entry"
             hx-post="{% url 'dsr:dsr_delete' pk=entry.pk %}" hx-confirm="Delete this entry?"
             hx-target="#dsr-content" hx-swap="innerHTML">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
     </button>
-    {% else %}
-    <span class="dsr-hours-ro">{{ entry.hours_spent }}<small>h</small></span>
-    <span class="pill {% if entry.status == 'completed' %}green{% elif entry.status == 'in_progress' %}blue{% else %}red{% endif %}">{{ entry.get_status_display }}</span>
     {% endif %}
   </div>
 </form>

@@ -329,20 +329,21 @@ button.kpi:hover{box-shadow:0 6px 18px rgba(13,17,23,.08);transform:translateY(-
 
 /* ---------- DSR composer ---------- */
 .dc-wrap{padding:16px 18px;background:var(--panel);border-bottom:1px solid var(--border);}
-.dsr-composer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px;text-align:left;}
-.dsr-composer .dc-task,.dsr-composer .dc-notes,.dsr-composer .dc-actions{grid-column:1/-1;}
+.dsr-composer{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr) 110px minmax(0,1fr) auto;gap:8px 10px;align-items:start;text-align:left;}
+.dsr-composer .dc-notes{grid-column:1/4;}
+.dsr-composer .dc-quick{grid-column:4/-1;}
+.dsr-composer .dc-chips{grid-column:1/-1;margin-top:0;}
+.dsr-composer .dc-error{grid-column:1/-1;}
 .dc-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;}
-.dsr-composer .form-input{width:100%;min-height:38px;}
-.dsr-composer .dc-task .form-input{font-size:15px;min-height:44px;}
+.dsr-composer .form-input{width:100%;min-height:36px;padding:6px 9px;}
 .dc-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;}
 .dc-chips-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-right:2px;}
 .dc-chip{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dc-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
 .dc-chip-sm{padding:2px 9px;font-weight:600;}
-.dc-quick{display:flex;gap:5px;margin-top:7px;}
-.dc-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.dc-quick{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
 .dc-hint{font-size:12.5px;color:var(--muted);}
-.dc-submit{min-width:110px;min-height:40px;font-weight:600;}
+.dc-submit{min-height:36px;font-weight:600;white-space:nowrap;}
 .dc-error{color:var(--red);font-size:12px;margin:4px 0 0;}
 
 @media (max-width:1100px){
@@ -354,7 +355,8 @@ button.kpi:hover{box-shadow:0 6px 18px rgba(13,17,23,.08);transform:translateY(-
   .punch-actions{width:100%;}
   .punch-actions form,.punch-actions .punch-btn{width:100%;justify-content:center;}
   .att-stats,.team-att .att-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .dsr-composer{grid-template-columns:minmax(0,1fr);}
+  .dsr-composer{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .dsr-composer .dc-task,.dsr-composer .dc-notes,.dsr-composer .dc-quick,.dsr-composer .dc-go{grid-column:1/-1;}
   .me-card .btn{width:100%;text-align:center;}
 }
 @media (prefers-reduced-motion:reduce){

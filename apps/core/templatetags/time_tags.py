@@ -17,3 +17,11 @@ def short_ago(value):
     if first.startswith("0 "):
         return "just now"
     return f"{first} ago"
+
+
+@register.filter
+def hm(hours):
+    """1.5 -> "1h 30m", 0.75 -> "45m", 2 -> "2h"."""
+    from apps.dsr.duration import format_hm
+
+    return format_hm(hours)

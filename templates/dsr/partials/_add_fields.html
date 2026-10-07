@@ -1,4 +1,4 @@
-{% if form.non_field_errors %}
+{% load time_tags %}{% if form.non_field_errors %}
   {% for error in form.non_field_errors %}
     <p class="text-sm dc-error" style="grid-column:1/-1;">{{ error }}</p>
   {% endfor %}
@@ -21,20 +21,9 @@
   <label class="dc-label" for="{{ form.task_name.id_for_label }}">What did you work on?</label>
   {{ form.task_name }}
   {% for error in form.task_name.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
-  {% if ticket_suggestions %}
-  <div class="dc-chips" aria-label="Fill from one of your tickets">
-    <span class="dc-chips-label">Your tickets</span>
-    {% for t in ticket_suggestions %}
-    <button type="button" class="dc-chip" onclick="dsrFill(this)"
-            data-target="{{ form.task_name.id_for_label }}" data-value="{{ t.label }}"
-            data-category-target="{{ form.category.id_for_label }}" data-category="ticket"
-            title="{{ t.label }}">{{ t.key }} {{ t.title|truncatechars:34 }}</button>
-    {% endfor %}
-  </div>
-  {% endif %}
 </div>
 <div class="dc-field">
-  <label class="dc-label" for="{{ form.product.id_for_label }}">Product</label>
+  <label class="dc-label" for="{{ form.product.id_for_label }}">Project</label>
   {{ form.product }}
   {% for error in form.product.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
 </div>
@@ -42,26 +31,36 @@
   <label class="dc-label" for="{{ form.category.id_for_label }}">Category</label>
   {{ form.category }}
 </div>
+<div class="dc-field dc-hours">
+  <label class="dc-label" for="{{ form.hours_spent.id_for_label }}">Time</label>
+  {{ form.hours_spent }}
+  {% for error in form.hours_spent.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
+</div>
 <div class="dc-field">
   <label class="dc-label" for="{{ form.status.id_for_label }}">Status</label>
   {{ form.status }}
 </div>
-<div class="dc-field dc-hours">
-  <label class="dc-label" for="{{ form.hours_spent.id_for_label }}">Hours</label>
-  {{ form.hours_spent }}
-  <div class="dc-quick" aria-label="Quick hours">
-    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
-            data-target="{{ form.hours_spent.id_for_label }}" data-value="0.5">0.5h</button>
-    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
-            data-target="{{ form.hours_spent.id_for_label }}" data-value="1">1h</button>
-    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
-            data-target="{{ form.hours_spent.id_for_label }}" data-value="2">2h</button>
-    <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)"
-            data-target="{{ form.hours_spent.id_for_label }}" data-value="4">4h</button>
-  </div>
-  {% for error in form.hours_spent.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
-</div>
+<div class="dc-field dc-go"><button type="submit" class="btn btn-primary dc-submit">Log it</button></div>
 <div class="dc-notes">
-  <label class="dc-label" for="{{ form.notes.id_for_label }}">Note <span class="text-muted">(optional)</span></label>
+  <label class="dc-label sr-only" for="{{ form.notes.id_for_label }}">Note (optional)</label>
   {{ form.notes }}
 </div>
+<div class="dc-quick" aria-label="Quick time">
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="15m">15m</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="30m">30m</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="1h">1h</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="2h">2h</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="4h">4h</button>
+  <span class="dc-hint">{{ total_hours|hm }} logged · target {{ target_goal|hm }}</span>
+</div>
+{% if ticket_suggestions %}
+<div class="dc-chips" aria-label="Fill from one of your tickets">
+  <span class="dc-chips-label">Your tickets</span>
+  {% for t in ticket_suggestions %}
+  <button type="button" class="dc-chip" onclick="dsrFill(this)"
+          data-target="{{ form.task_name.id_for_label }}" data-value="{{ t.label }}"
+          data-category-target="{{ form.category.id_for_label }}" data-category="ticket"
+          title="{{ t.label }}">{{ t.key }} {{ t.title|truncatechars:34 }}</button>
+  {% endfor %}
+</div>
+{% endif %}

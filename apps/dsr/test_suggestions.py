@@ -160,6 +160,10 @@ class AddViewTest(Base):
         data.update(extra)
         return self.client.post(self.url(), data)
 
+    def test_minutes_are_accepted(self):
+        self.add(hours="45m")
+        self.assertEqual(DSREntry.objects.get().hours_spent, Decimal("0.75"))
+
     def test_it_logs_the_ticket_with_the_confirmed_hours(self):
         self.add()
         e = DSREntry.objects.get()
