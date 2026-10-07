@@ -12,8 +12,8 @@ img,svg,video{max-width:100%;}
  * includes the area behind the URL bar, which pushed the bottom of every page
  * off screen. dvh tracks the visible height. */
 @supports (height:100dvh){
-  .sidebar{height:100dvh;}
-  .main-col{height:100dvh;}
+  .shell,.sidebar,.main-col,.main{height:100dvh;}
+  .kanban-board{height:calc(100dvh - 188px);}
 }
 
 /* Wide screens: keep line lengths and card rows readable instead of stretching

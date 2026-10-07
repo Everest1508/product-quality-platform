@@ -411,3 +411,18 @@ details.changelog-rel:hover{border-color:var(--border-strong);}
 .pl-card footer{display:flex;align-items:center;gap:8px;margin-top:auto;}
 .pl-tools{margin-left:auto;display:flex;gap:2px;align-items:center;}
 @media (max-width:760px){.pl-tiles{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* Errors list: the title column used to shrink to a few letters on a small laptop, so titles broke mid-word.
+ * It now keeps a readable width and the table scrolls sideways instead. */
+.errors-table{min-width:780px;}
+.errors-table td:first-child{min-width:260px;}
+.errors-table .clamp-2{overflow-wrap:break-word;word-break:normal;font-size:14px;line-height:1.4;}
+.errors-table .sub{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--muted-2);}
+.errors-table tbody td{vertical-align:top;padding:13px 10px;}
+@media (max-width:1100px){.errors-table .spark{display:none;}}
+.errors-wrap{overflow-x:auto;max-width:100%;}
+
+/* Error detail: main column + 280px side column. minmax(0,1fr) lets wide stack traces scroll instead of pushing the side column off screen. */
+.error-detail-grid{grid-template-columns:minmax(0,1fr) 280px;gap:32px;}
+.error-detail-grid>*{min-width:0;}
+@media (max-width:1100px){.error-detail-grid{grid-template-columns:minmax(0,1fr);gap:20px;}}
