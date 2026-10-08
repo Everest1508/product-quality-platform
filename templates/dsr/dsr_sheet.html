@@ -15,6 +15,14 @@ function dsrFill(btn) {
     if (c) { c.value = d.category; c.dispatchEvent(new Event('change', { bubbles: true })); }
   }
 }
+// Quick-time chips: set hour and minute dropdowns from data-h / data-m.
+function dsrTime(btn) {
+  var d = btn.dataset;
+  var hEl = document.getElementById(d.hrs);
+  var mEl = document.getElementById(d.min);
+  if (hEl) { hEl.value = d.h; hEl.dispatchEvent(new Event('change', { bubbles: true })); }
+  if (mEl) { mEl.value = d.m; mEl.dispatchEvent(new Event('change', { bubbles: true })); }
+}
 </script>
 <style>
   .sheet-input{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:5px;font-size:13px;color:var(--text);background:transparent;outline:none;transition:all .15s ease;}
@@ -33,6 +41,7 @@ function dsrFill(btn) {
   .sheet-select.category-select.code_review{color:#047857;background:#ecfdf5;border-color:#a7f3d0;}
   .sheet-select.category-select.meeting{color:#b45309;background:#fffbeb;border-color:#fde68a;}
   .sheet-select.category-select.documentation{color:#0e7490;background:#ecfeff;border-color:#a5f3fc;}
+  .sheet-select.category-select.administration{color:#6b7280;background:#f9fafb;border-color:#d1d5db;}
   
   /* Status Colors */
   .sheet-select.status-select.completed{color:var(--green);font-weight:600;background:#f0fdf4;border-color:#bbf7d0;}

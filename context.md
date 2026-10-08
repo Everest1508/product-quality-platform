@@ -28,7 +28,7 @@ entry here is unfinished.
 | Attendance | `apps/attendance/{models,service,views}.py` | `models.punch()` is the only write path; hours never move a payslip |
 | Office hours / lateness | `apps/attendance/models.py::WorkShift`, `service.late_*` | Penalties are **derived, never stored**; there is no `LatePenalty` model |
 | Leave | `apps/leave/{models,service,views,forms}.py` | The paid/unpaid split is **stored** on the request; payroll trusts it |
-| DSR | `apps/dsr/{service,views,forms,models}.py` | A day is submitted **on the day** — `service.submission_window` is the only rule; `auto_log_ticket_dsr` writes **unvalidated** |
+| DSR | `apps/dsr/{service,views,forms,models}.py`, `templates/dsr/` | Add form uses hour/minute `<select>` dropdowns; inline row edit and API still accept free text (`"45m"`, `"1h 30m"`); `duration.py` is the shared parser |
 | Sign-in | `apps/accounts/{views,forms}.py`, `templates/accounts/login.html`, `apps/core/redirects.py` | `base.html` owns `.auth-shell`; `?next=` must go through `safe_next`; `{# #}` is **line-scoped** |
 | Icons | `apps/core/icons.py`, `apps/core/templatetags/icon_tags.py` | `render_icon()` emits **no** `width`/`height` — every `{% icon %}` consumer needs a CSS size rule or it renders 300x150 |
 | Payroll | `apps/payroll/service.py` | Pay = payable days × daily rate. No overtime, no hours input |
@@ -67,6 +67,50 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-08 (DSR) — "Administration" category and hour/minute dropdowns
+
+**What changed.** Two changes to the DSR entry form:
+
+1. **New category "Administration"** added to `DSREntry.Category` choices.
+   Migration `dsr/0006_add_administration_category.py` alters the `category`
+   field. Styled with grey tones in `dsr_sheet.html`
+   (`.category-select.administration`).
+
+2. **Hour/minute dropdowns replace the free-text time input** in the add-entry
+   form. The old `HoursField` (a `CharField` that parsed `"45m"`, `"1h 30m"`,
+   `"1.5"` etc.) is gone from the add form. In its place: two `<select>`s —
+   `hours` (0–24 hr, step 1) and `minutes` (0–55 min, step 5). The form's
+   `clean()` combines them into `hours_spent` (Decimal). Quick-time chips
+   (`15m`, `30m`, `1h`, `2h`, `4h`) now call `dsrTime()` to set both dropdowns.
+
+**Why.** The user requested an explicit Administration task type and a
+dropdown-based time selector instead of the text field.
+
+**How it works now.**
+
+- `DSREntryForm` declares `hours` and `minutes` as `ChoiceField`s (not in
+  Meta.fields — they are UI-only). Meta.fields still includes `hours_spent`
+  but it's rendered as a `HiddenInput` and overridden in `__init__` with a
+  `CharField` so text values like `"45m"` (from inline row edits and the API)
+  can reach `clean()` without hitting a Decimal validator.
+- `clean()` has two paths: **path 1** (add form) reads `hours`/`minutes` from
+  the dropdowns; **path 2** (inline row edit / API) reads raw `hours_spent`
+  text from `self.data` and parses it via `apps/dsr/duration.parse_hours()`.
+  The 24h cap is only enforced when the value actually **changed** from the
+  instance, so a wide entry that wasn't touched survives an unrelated edit.
+- Inline row editing (`_dsr_row.html`) and the API (`apps/dsr/api.py`)
+  continue to use `hours_spent` as a text field — they are **not** changed to
+  dropdowns.
+- CSS: `.dc-time-row` (flex, gap 6px) and `.dc-time-select` (full width,
+  min-width 0) are added to `templates/core/css/_components.css`.
+
+**What was wrong before.** No "Administration" category existed. Time entry
+required typing free text like `"1h 30m"` — functional but less discoverable
+than explicit dropdowns.
+
+**How verified.** Full suite: 1177 tests, 0 new failures (one pre-existing
+`test_signup_creates_user` per AGENTS.md). DSR suite: 119 tests, all pass.
 
 ### 2026-10-03 (sign-in) — the login page rebuilt, and `{# #}` is line-scoped
 

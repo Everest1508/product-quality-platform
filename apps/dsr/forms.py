@@ -8,33 +8,15 @@ from apps.dsr.models import DSREntry
 
 MAX_HOURS = Decimal("24")
 
+HOUR_CHOICES = [(str(i), f"{i} hr") for i in range(0, 25)]
+MINUTE_CHOICES = [(str(i), f"{i} min") for i in range(0, 60, 5)]
+
 
 class ProductChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         # Product.__str__ is "Company / Product", which repeats the company in a
         # list that only ever holds one company's products.
         return obj.name
-
-
-class HoursField(forms.CharField):
-    """Time typed as `1.5`, `45m` or `1h 30m`; cleans to hours as a Decimal."""
-
-    def prepare_value(self, value):
-        # Show a stored number the way people read it, so the box round-trips.
-        return format_hm(value) if isinstance(value, (Decimal, int, float)) else value
-
-    def to_python(self, value):
-        value = super().to_python(value)
-        try:
-            return parse_hours(value)
-        except ValueError:
-            raise forms.ValidationError(MESSAGE)
-
-    def has_changed(self, initial, data):
-        try:
-            return parse_hours(data) != parse_hours(initial if initial is not None else "")
-        except ValueError:
-            return True
 
 
 class DSREntryForm(forms.ModelForm):
@@ -56,11 +38,18 @@ class DSREntryForm(forms.ModelForm):
         ),
     )
 
-    hours_spent = HoursField(
+    hours = forms.ChoiceField(
+        choices=HOUR_CHOICES,
         required=False,
-        widget=forms.TextInput(
-            attrs={"class": "form-input", "placeholder": "1h 30m", "inputmode": "text", "autocomplete": "off"}
-        ),
+        initial="0",
+        widget=forms.Select(attrs={"class": "form-input dc-time-select"}),
+    )
+
+    minutes = forms.ChoiceField(
+        choices=MINUTE_CHOICES,
+        required=False,
+        initial="0",
+        widget=forms.Select(attrs={"class": "form-input dc-time-select"}),
     )
 
     product = ProductChoiceField(
@@ -85,6 +74,13 @@ class DSREntryForm(forms.ModelForm):
         # cannot see. Without a list the field offers nothing.
         if products is not None:
             self.fields["product"].queryset = products
+
+        # Override the DecimalField with a CharField so text values like "45m"
+        # reach clean() without being rejected by the Decimal validator.
+        self.fields["hours_spent"] = forms.CharField(
+            required=False, widget=forms.HiddenInput()
+        )
+
         for name, field in self.fields.items():
             field.widget.attrs["id"] = f"{id_prefix}-{name}"
 
@@ -92,6 +88,7 @@ class DSREntryForm(forms.ModelForm):
         model = DSREntry
         fields = ["task_name", "product", "category", "hours_spent", "status", "notes"]
         widgets = {
+            "hours_spent": forms.HiddenInput(),
             "category": forms.Select(attrs={"class": "form-input"}),
             "status": forms.Select(attrs={"class": "form-input"}),
             "notes": forms.TextInput(
@@ -105,12 +102,38 @@ class DSREntryForm(forms.ModelForm):
             raise forms.ValidationError("Describe the task.")
         return name
 
-    def clean_hours_spent(self):
-        hours = self.cleaned_data.get("hours_spent")
-        if hours is None:
-            return Decimal("0.00")
-        if hours <= 0:
-            raise forms.ValidationError("Log more than zero hours.")
-        if "hours_spent" in self.changed_data and hours > MAX_HOURS:
-            raise forms.ValidationError(f"A single entry cannot exceed {MAX_HOURS} hours.")
-        return hours
+    def clean(self):
+        cleaned = super().clean()
+        # Path 1: dropdowns (add-entry form)
+        h = int(cleaned.get("hours") or 0)
+        m = int(cleaned.get("minutes") or 0)
+        if h or m:
+            total = Decimal(h) + Decimal(m) / 60
+            changed = True
+        else:
+            # Path 2: raw hours_spent text (inline row edit, API)
+            raw = self.data.get("hours_spent", "")
+            if raw:
+                try:
+                    total = parse_hours(str(raw))
+                except ValueError:
+                    self.add_error("hours", MESSAGE)
+                    return cleaned
+                # Only treat as changed if the value differs from the instance.
+                # This prevents re-capping a wide entry the user did not touch.
+                if self.instance and self.instance.pk:
+                    changed = total != self.instance.hours_spent
+                else:
+                    changed = True
+            else:
+                total = None
+                changed = False
+        if total is not None:
+            if total <= 0:
+                self.add_error("hours", "Log more than zero hours.")
+            elif changed and total > MAX_HOURS:
+                self.add_error("hours", f"Cannot exceed {MAX_HOURS} hours.")
+            cleaned["hours_spent"] = total.quantize(Decimal("0.01"))
+        else:
+            cleaned["hours_spent"] = Decimal("0.00")
+        return cleaned

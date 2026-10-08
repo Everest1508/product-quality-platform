@@ -318,7 +318,7 @@ class DSRSheetRenderTest(TestCase):
         response = self.client.get(reverse("dsr:dsr_sheet"))
         self.assertEqual(response.status_code, 200)
         body = response.content.decode()
-        for field in ("task_name", "category", "hours_spent", "status", "notes"):
+        for field in ("task_name", "category", "hours", "minutes", "status", "notes"):
             self.assertIn(field, body)
         self.assertIn("placeholder=\"What did you work on?\"", body)
 

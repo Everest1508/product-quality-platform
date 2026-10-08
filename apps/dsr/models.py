@@ -11,6 +11,7 @@ class DSREntry(models.Model):
         CODE_REVIEW = "code_review", "Code Review"
         MEETING = "meeting", "Meeting / Sync"
         DOCUMENTATION = "documentation", "Documentation"
+        ADMINISTRATION = "administration", "Administration"
         OTHER = "other", "Other"
 
     class Status(models.TextChoices):

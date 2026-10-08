@@ -32,9 +32,13 @@
   {{ form.category }}
 </div>
 <div class="dc-field dc-hours">
-  <label class="dc-label" for="{{ form.hours_spent.id_for_label }}">Time</label>
-  {{ form.hours_spent }}
-  {% for error in form.hours_spent.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
+  <label class="dc-label">Time</label>
+  <div class="dc-time-row">
+    {{ form.hours }}
+    {{ form.minutes }}
+  </div>
+  {% for error in form.hours.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
+  {% for error in form.minutes.errors %}<p class="dc-error">{{ error }}</p>{% endfor %}
 </div>
 <div class="dc-field">
   <label class="dc-label" for="{{ form.status.id_for_label }}">Status</label>
@@ -46,11 +50,11 @@
   {{ form.notes }}
 </div>
 <div class="dc-quick" aria-label="Quick time">
-  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="15m">15m</button>
-  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="30m">30m</button>
-  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="1h">1h</button>
-  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="2h">2h</button>
-  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrFill(this)" data-target="{{ form.hours_spent.id_for_label }}" data-value="4h">4h</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrTime(this)" data-hrs="{{ form.hours.id_for_label }}" data-min="{{ form.minutes.id_for_label }}" data-h="0" data-m="15">15m</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrTime(this)" data-hrs="{{ form.hours.id_for_label }}" data-min="{{ form.minutes.id_for_label }}" data-h="0" data-m="30">30m</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrTime(this)" data-hrs="{{ form.hours.id_for_label }}" data-min="{{ form.minutes.id_for_label }}" data-h="1" data-m="0">1h</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrTime(this)" data-hrs="{{ form.hours.id_for_label }}" data-min="{{ form.minutes.id_for_label }}" data-h="2" data-m="0">2h</button>
+  <button type="button" class="dc-chip dc-chip-sm" onclick="dsrTime(this)" data-hrs="{{ form.hours.id_for_label }}" data-min="{{ form.minutes.id_for_label }}" data-h="4" data-m="0">4h</button>
   <span class="dc-hint">{{ total_hours|hm }} logged · target {{ target_goal|hm }}</span>
 </div>
 {% if ticket_suggestions %}
