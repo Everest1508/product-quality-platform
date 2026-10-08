@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.6.1] — 2026-10-08 · messages show up again
+
+> In short: the confirmation messages that pop up after you check in or out work again, and your open DSR tasks now show on the home page.
+
+### Better
+
+- **Your open DSR tasks are on the home page.** The DSR card now lists work that is in progress or blocked, so you can see what is still open without opening the sheet.
+
+### Fixed
+
+- **Confirmation messages show again after you check in or out.** Messages like "Checked in at 10:02 AM." were being lost and never appeared on screen. They now pop up, and the same fix brings back messages after other saves.
+
 ## [1.6.0] — 2026-10-07 · create tickets from your AI tool
 
 > In short: type /ticket or /dsr-ticket in your AI tool to create tickets without opening the app, and the DSR table is easier to use.

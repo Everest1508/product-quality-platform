@@ -257,7 +257,7 @@
 {% if messages %}
 {% comment %} The seed has to exist before the container's x-init runs, so it goes above
    it. Escaped for a <script> block by toast_payload, not by hand. {% endcomment %}
-<script id="toast-seed" type="application/json">{% toast_payload messages "toast-seed" %}</script>
+{% toast_payload messages "toast-seed" %}
 {% endif %}
 
 <script>
@@ -316,7 +316,7 @@
 
 <div id="toast-container"
      x-data="{ messages: [], push(m) { this.messages.push(m); setTimeout(() => this.messages.shift(), 4000) } }"
-     x-init="const seed = document.getElementById('toast-seed'); if (seed) { JSON.parse(seed.textContent).forEach(m => this.push(m)) }"
+     x-init="const seed = document.getElementById('toast-seed'); if (seed) { JSON.parse(seed.textContent).forEach(m => push(m)) }"
      x-on:django-message.window="($event.detail.messages || [$event.detail]).forEach(m => push(m))">
   <template x-for="(msg, i) in messages" :key="i">
     <div class="toast" :class="msg.tags" x-text="msg.text" x-show="true"

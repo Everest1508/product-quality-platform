@@ -720,7 +720,16 @@ def _personal_dsr(company, user, today):
         .order_by("-date", "-pk")
         .select_related("ticket")[:5]
     )
+    # Work still open on the sheet (not completed), so it is visible without opening it.
+    open_tasks = DSREntry.objects.filter(
+        company=company,
+        user=user,
+        status__in=[DSREntry.Status.IN_PROGRESS, DSREntry.Status.BLOCKED],
+        date__gte=today - timedelta(days=14),
+    ).order_by("-date", "-pk")
     return {
+        "dsr_open": list(open_tasks[:4]),
+        "dsr_open_count": open_tasks.count(),
         "dsr_week_start": week_start,
         "dsr_entries": week.count(),
         "dsr_hours": week.aggregate(total=Sum("hours_spent"))["total"] or Decimal("0"),

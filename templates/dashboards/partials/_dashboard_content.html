@@ -199,7 +199,17 @@
       </div>
     </div>
 
-    {% if not dsr.dsr_entries %}
+    {% if dsr.dsr_open %}
+      <ul class="pd-list">
+        {% for e in dsr.dsr_open %}
+          <li>
+            <span class="lead">{{ e.task_name|truncatechars:48 }}</span>
+            <span class="meta">{{ e.get_status_display }} · {{ e.date|date:"j M" }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if dsr.dsr_open_count > 4 %}<p class="pd-sub">+{{ dsr.dsr_open_count|add:"-4" }} more open</p>{% endif %}
+    {% elif not dsr.dsr_entries %}
       <div class="pd-empty"><p>Nothing logged this week. Work on a ticket writes your DSR automatically.</p></div>
     {% endif %}
     <a class="pd-more" href="{% url 'dsr:dsr_sheet' %}">Open DSR sheet →</a>
