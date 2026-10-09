@@ -1,9 +1,10 @@
-{% comment %}Swapped into #todo-list. Every control targets #todo-list, so nothing here may rely on an inherited hx-target.{% endcomment %}
-<form class="td-add" hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+{% load dropdown_tags %}{% comment %}Swapped into #todo-list. Every control targets #todo-list, so nothing here may rely on an inherited hx-target.{% endcomment %}
+<form class="td-add" hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML">
   {% csrf_token %}
-  <input type="text" name="text" maxlength="300" placeholder="Add a task…" required autocomplete="off" class="form-input td-text" aria-label="New task">
-  <input type="date" name="due" class="form-input td-due" aria-label="Due date (optional)" title="Due date (optional)">
-  <button class="btn btn-primary" type="submit">Add</button>
+  <input type="text" name="text" maxlength="300" placeholder="Add a task…" required autocomplete="off" class="td-input td-text" aria-label="New task">
+  {% dropdown "priority" priority_choices "2" placeholder="Priority" label="Priority" %}
+  <input type="date" name="due" class="td-input td-due" aria-label="Due date (optional)" title="Due date (optional)">
+  <button class="td-btn" type="submit">Add</button>
 </form>
 {% if todo_total %}
 <div class="td-progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ todo_total }}" aria-valuenow="{{ todo_done }}">
@@ -13,13 +14,15 @@
 {% endif %}
 <ul class="td-list">
 {% for t in todos %}
-  <li class="td-item{% if t.done %} is-done{% endif %}">
+  <li class="td-item{% if t.done %} is-done{% elif t.due and t.due < today %} is-late{% endif %}">
     <button type="button" class="td-check" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' role="checkbox" aria-checked="{% if t.done %}true{% else %}false{% endif %}" aria-label="{{ t.text }}"></button>
     <span class="td-label">{{ t.text }}</span>
-    {% if t.due %}<span class="td-chip{% if not t.done and t.due < today %} is-late{% elif not t.done and t.due == today %} is-today{% endif %}">{% if t.due == today %}Today{% elif not t.done and t.due < today %}Overdue · {{ t.due|date:"M j" }}{% else %}{{ t.due|date:"M j" }}{% endif %}</span>{% endif %}
+    <span class="td-badge p{{ t.priority }}">{{ t.get_priority_display }}</span>
+    {% if t.due %}<span class="td-chip{% if not t.done and t.due < today %} is-late{% elif not t.done and t.due == today %} is-today{% endif %}">{% if not t.done and t.due < today %}Overdue · {{ t.due|date:"M j" }}{% elif t.due == today %}Today{% else %}{{ t.due|date:"M j" }}{% endif %}</span>{% endif %}
     <button type="button" class="td-del" hx-post="{% url 'dashboards:todo_delete' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' aria-label="Delete task">&times;</button>
   </li>
 {% empty %}
   <li class="td-empty">Nothing here yet. Add the first thing you want to get done today.</li>
 {% endfor %}
 </ul>
+{% if todo_done %}<p class="td-note">Finished tasks are added to today's DSR. Add the time you spent there.</p>{% endif %}

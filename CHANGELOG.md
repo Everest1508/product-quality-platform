@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.10.0] — 2026-10-09 · priorities, overdue alerts and to-dos in your DSR
+
+> In short: your to-dos now have a priority, show in red when they are overdue, remind you once a day, and land in today's DSR when you finish them.
+
+### New
+
+- **Pick a priority for each to-do.** Choose Low, Medium or High when you add a task. The most important open tasks sit at the top of the list.
+- **Overdue to-dos stand out in red.** A task past its due date gets a red card and an Overdue label, and moves to the top.
+- **A daily reminder about overdue to-dos.** You get one notification a day, in the bell and as a push, while any task is overdue.
+- **Finished to-dos are added to today's DSR.** Tick a task and it appears on today's sheet. Add the time you spent there. Untick it the same day and the row goes away.
+
+### Better
+
+- **The to-do card has a cleaner look.** Sharper borders, a blue focus ring and tidy badges.
+
 ## [1.9.0] — 2026-10-09 · a fuller home page, and the DSR works on a phone
 
 > In short: the home page now opens with the numbers that matter today and shows your recent activity, and adding a DSR entry and opening dropdowns now work on a phone or in the installed app.

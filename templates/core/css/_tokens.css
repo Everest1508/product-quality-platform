@@ -26,6 +26,10 @@
   --green:#177a4c; --green-bg:#e8f5ee; --purple:#7c3aed; --purple-bg:#f3f0ff;
   --gray:var(--stone); --gray-bg:#F1F3F9;
 
+  /* befui (https://befui.vercel.app) look, used by the home to-do card: a slate border, a blue ring, 8px corners. */
+  --bf-primary:#2563eb; --bf-ring:#3b82f6; --bf-border:#e2e8f0; --bf-muted:#f8fafc; --bf-muted-fg:#64748b;
+  --bf-destructive:#e11d48; --bf-destructive-bg:#fff1f2; --bf-radius:.5rem;
+
   /* Charts */
   --chart-error-a:#f87171; --chart-error-b:#dc2626;
   --chart-burn-a:#75BAE6; --chart-burn-b:var(--blue-500);

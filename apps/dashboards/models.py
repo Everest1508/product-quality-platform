@@ -78,10 +78,19 @@ class ActivityLog(TenantScopedModel):
 class Todo(models.Model):
     """A private to-do item on the home page. Only its owner ever sees it."""
 
+    class Priority(models.IntegerChoices):
+        LOW = 1, "Low"
+        MEDIUM = 2, "Medium"
+        HIGH = 3, "High"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="todos")
+    # Needed for the bell and the DSR, which are per company. Null only for rows made before it existed.
+    company = models.ForeignKey("accounts.Company", on_delete=models.CASCADE, null=True, blank=True, related_name="+")
     text = models.CharField(max_length=300)
+    priority = models.PositiveSmallIntegerField(choices=Priority.choices, default=Priority.MEDIUM)
     done = models.BooleanField(default=False)
     due = models.DateField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -89,3 +98,7 @@ class Todo(models.Model):
 
     def __str__(self):
         return self.text
+
+    @property
+    def dsr_source_id(self):
+        return f"todo-{self.pk}"

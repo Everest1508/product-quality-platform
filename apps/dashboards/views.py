@@ -2,13 +2,13 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from django.db.models import F, Q
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
 
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
-from apps.dashboards import quotes
+from apps.dashboards import quotes, todos as todo_service
 from apps.dashboards.models import ActivityLog, Todo
 from apps.dashboards.service import (
     get_personal_dashboard_data,
@@ -33,6 +33,7 @@ def _parse_date(value, default):
 class DashboardView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         data = get_personal_dashboard_data(request.user, request.company)
+        todo_service.notify_overdue(request.user, request.company)
         hour = timezone.localtime().hour
         data["now"] = timezone.localtime()
         data["greeting"] = (
@@ -153,15 +154,13 @@ class ReportsView(CompanyMemberRequiredMixin, View):
 
 class TodoMixin(CompanyMemberRequiredMixin):
     def render_list(self, request):
-        todos = list(
-            Todo.objects.filter(user=request.user)
-            .order_by("done", F("due").asc(nulls_last=True), "-created_at")
-        )
+        todos = todo_service.sorted_todos(request.user)
         return render(request, "dashboards/partials/_todos.html", {
             "todos": todos,
             "todo_total": len(todos),
             "todo_done": sum(t.done for t in todos),
             "today": timezone.localdate(),
+            "priority_choices": [(str(v), label) for v, label in Todo.Priority.choices],
         })
 
 
@@ -172,9 +171,11 @@ class TodoListView(TodoMixin, View):
     def post(self, request):
         text = request.POST.get("text", "").strip()[:300]
         if text:
+            priority = request.POST.get("priority")
             Todo.objects.create(
-                user=request.user, text=text,
+                user=request.user, company=request.company, text=text,
                 due=_parse_date(request.POST.get("due"), None),
+                priority=int(priority) if priority in ("1", "2", "3") else Todo.Priority.MEDIUM,
             )
         return self.render_list(request)
 
@@ -183,7 +184,9 @@ class TodoToggleView(TodoMixin, View):
     def post(self, request, pk):
         todo = get_object_or_404(Todo, pk=pk, user=request.user)
         todo.done = not todo.done
-        todo.save(update_fields=["done"])
+        todo.completed_at = timezone.now() if todo.done else None
+        todo.save(update_fields=["done", "completed_at"])
+        todo_service.sync_dsr(todo, request.company)
         return self.render_list(request)
 
 
