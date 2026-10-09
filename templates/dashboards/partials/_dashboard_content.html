@@ -41,6 +41,16 @@
     <a class="pd-more" href="{% url 'attendance:my_attendance' %}">Attendance →</a>
   </section>
 
+  {# ---------- My to-do: private list, loaded by htmx ---------- #}
+  <section class="pd-card bn-4" id="todo-card">
+    <header>
+      <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg></span>
+      <h2>My to-do</h2>
+      <span class="pd-sub">only you can see this</span>
+    </header>
+    <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+  </section>
+
   {# ---------- Needs attention: owners/admins only, one line each ---------- #}
   {% if is_privileged %}
     <div class="pd-attn">
