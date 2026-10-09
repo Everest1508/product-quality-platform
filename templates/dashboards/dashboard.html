@@ -55,6 +55,12 @@ function heroClock(fallback) {
     </div>
   {% endif %}
 
+  <section class="pd-card" id="todo-card" style="margin-bottom:16px;" aria-label="To-do list">
+    <header><h2>My to-do</h2><span class="pd-sub">only you can see this</span></header>
+    <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-swap="innerHTML">
+    </div>
+  </section>
+
   <div id="dashboard-content"
        hx-get="{% url 'dashboards:index' %}"
        hx-trigger="dash:refresh from:body"

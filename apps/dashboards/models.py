@@ -73,3 +73,18 @@ class ActivityLog(TenantScopedModel):
 
     def __str__(self):
         return f"[{self.event_type}] {self.title}"
+
+
+class Todo(models.Model):
+    """A private to-do item on the home page. Only its owner ever sees it."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="todos")
+    text = models.CharField(max_length=300)
+    done = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["done", "-created_at"]
+
+    def __str__(self):
+        return self.text

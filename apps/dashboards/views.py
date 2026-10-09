@@ -9,7 +9,7 @@ from django.views import View
 
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards import quotes
-from apps.dashboards.models import ActivityLog
+from apps.dashboards.models import ActivityLog, Todo
 from apps.dashboards.service import (
     get_personal_dashboard_data,
     get_product_dashboard_data,
@@ -149,3 +149,35 @@ class ReportsView(CompanyMemberRequiredMixin, View):
             return render(request, "dashboards/partials/_report_content.html", data)
 
         return render(request, "dashboards/reports.html", data)
+
+
+class TodoMixin(CompanyMemberRequiredMixin):
+    def render_list(self, request):
+        return render(request, "dashboards/partials/_todos.html", {
+            "todos": Todo.objects.filter(user=request.user),
+        })
+
+
+class TodoListView(TodoMixin, View):
+    def get(self, request):
+        return self.render_list(request)
+
+    def post(self, request):
+        text = request.POST.get("text", "").strip()[:300]
+        if text:
+            Todo.objects.create(user=request.user, text=text)
+        return self.render_list(request)
+
+
+class TodoToggleView(TodoMixin, View):
+    def post(self, request, pk):
+        todo = get_object_or_404(Todo, pk=pk, user=request.user)
+        todo.done = not todo.done
+        todo.save(update_fields=["done"])
+        return self.render_list(request)
+
+
+class TodoDeleteView(TodoMixin, View):
+    def post(self, request, pk):
+        get_object_or_404(Todo, pk=pk, user=request.user).delete()
+        return self.render_list(request)
