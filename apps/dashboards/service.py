@@ -896,6 +896,11 @@ def get_personal_dashboard_data(user, company):
     open_mine = ticket_scope.exclude(status__in=["resolved", "closed"])
     my_tickets = open_mine.select_related("product").order_by("-updated_at")[:5]
     my_ticket_count = open_mine.count()
+    # Overdue first, then the next seven days: what the person should look at today.
+    due_soon = list(
+        open_mine.filter(deadline__isnull=False, deadline__lte=timezone.now() + timedelta(days=7))
+        .select_related("product").order_by("deadline")[:4]
+    )
 
     data = {
         "is_privileged": is_privileged,
@@ -909,6 +914,7 @@ def get_personal_dashboard_data(user, company):
         "dsr": _personal_dsr(company, user, today),
         "my_tickets": list(my_tickets),
         "my_ticket_count": my_ticket_count,
+        "due_soon": due_soon,
         **_dashboard_charts(user, company, today),
         "dsr_nudge": _dsr_nudge(company, user, today, attendance),
     }

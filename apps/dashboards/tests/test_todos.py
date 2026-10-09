@@ -29,3 +29,13 @@ class TodoTest(TestCase):
         self.assertNotContains(self.client.get(reverse("dashboards:todos")), "secret")
         self.client.post(reverse("dashboards:todo_delete", args=[t.pk]))
         self.assertFalse(Todo.objects.filter(pk=t.pk).exists())
+
+    def test_due_date_and_clear_done(self):
+        self.client.post(reverse("dashboards:todos"), {"text": "a", "due": "2026-10-12"})
+        self.client.post(reverse("dashboards:todos"), {"text": "b", "due": "garbage"})
+        a = Todo.objects.get(text="a")
+        self.assertEqual(str(a.due), "2026-10-12")
+        self.assertIsNone(Todo.objects.get(text="b").due)
+        self.client.post(reverse("dashboards:todo_toggle", args=[a.pk]))
+        self.client.post(reverse("dashboards:todo_clear_done"))
+        self.assertEqual(list(Todo.objects.filter(user=self.me).values_list("text", flat=True)), ["b"])

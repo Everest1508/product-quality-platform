@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.8.0] — 2026-10-09 · a bigger to-do list and a due-soon card
+
+> In short: your home page to-do list is bigger and smarter, and a new card shows the tickets that are due soon.
+
+### New
+
+- **A "Due soon" card on the home page.** It lists your open tickets that are overdue or due in the next 7 days, soonest first.
+- **Due dates on your to-do list.** Pick a date when you add a task, and it shows as Today or Overdue when it matters.
+
+### Better
+
+- **The to-do list is bigger and easier to use.** It now takes half the row, shows how many tasks are done with a progress bar, and has a Clear done button.
+
 ## [1.7.2] — 2026-10-09 · a tidier ticket page and messages that say what changed
 
 > In short: the ticket details panel is cleaner, and the pop-up messages now tell you exactly what changed.

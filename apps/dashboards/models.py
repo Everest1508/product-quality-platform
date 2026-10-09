@@ -81,6 +81,7 @@ class Todo(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="todos")
     text = models.CharField(max_length=300)
     done = models.BooleanField(default=False)
+    due = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

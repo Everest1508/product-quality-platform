@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
@@ -153,8 +153,15 @@ class ReportsView(CompanyMemberRequiredMixin, View):
 
 class TodoMixin(CompanyMemberRequiredMixin):
     def render_list(self, request):
+        todos = list(
+            Todo.objects.filter(user=request.user)
+            .order_by("done", F("due").asc(nulls_last=True), "-created_at")
+        )
         return render(request, "dashboards/partials/_todos.html", {
-            "todos": Todo.objects.filter(user=request.user),
+            "todos": todos,
+            "todo_total": len(todos),
+            "todo_done": sum(t.done for t in todos),
+            "today": timezone.localdate(),
         })
 
 
@@ -165,7 +172,10 @@ class TodoListView(TodoMixin, View):
     def post(self, request):
         text = request.POST.get("text", "").strip()[:300]
         if text:
-            Todo.objects.create(user=request.user, text=text)
+            Todo.objects.create(
+                user=request.user, text=text,
+                due=_parse_date(request.POST.get("due"), None),
+            )
         return self.render_list(request)
 
 
@@ -180,4 +190,10 @@ class TodoToggleView(TodoMixin, View):
 class TodoDeleteView(TodoMixin, View):
     def post(self, request, pk):
         get_object_or_404(Todo, pk=pk, user=request.user).delete()
+        return self.render_list(request)
+
+
+class TodoClearDoneView(TodoMixin, View):
+    def post(self, request):
+        Todo.objects.filter(user=request.user, done=True).delete()
         return self.render_list(request)

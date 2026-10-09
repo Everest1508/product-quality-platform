@@ -15,5 +15,6 @@ urlpatterns = [
     path("todos/", views.TodoListView.as_view(), name="todos"),
     path("todos/<int:pk>/toggle/", views.TodoToggleView.as_view(), name="todo_toggle"),
     path("todos/<int:pk>/delete/", views.TodoDeleteView.as_view(), name="todo_delete"),
+    path("todos/clear-done/", views.TodoClearDoneView.as_view(), name="todo_clear_done"),
     path("quote/", views.QuoteView.as_view(), name="quote"),
 ]

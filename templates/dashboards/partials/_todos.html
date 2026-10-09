@@ -1,14 +1,25 @@
-<form hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-on::after-request="this.reset()" style="display:flex;gap:8px;margin-bottom:8px;">
+{% comment %}Swapped into #todo-list. Every control targets #todo-list, so nothing here may rely on an inherited hx-target.{% endcomment %}
+<form class="td-add" hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
   {% csrf_token %}
-  <input type="text" name="text" maxlength="300" placeholder="Add something you want to do…" required autocomplete="off" style="flex:1;min-width:0;">
+  <input type="text" name="text" maxlength="300" placeholder="Add a task…" required autocomplete="off" class="form-input td-text" aria-label="New task">
+  <input type="date" name="due" class="form-input td-due" aria-label="Due date (optional)" title="Due date (optional)">
   <button class="btn btn-primary" type="submit">Add</button>
 </form>
-{% for t in todos %}
-<div class="dash-row">
-  <button class="dash-act" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' aria-label="{% if t.done %}Mark not done{% else %}Mark done{% endif %}">{% if t.done %}☑{% else %}☐{% endif %}</button>
-  <span class="lead" style="white-space:normal;{% if t.done %}text-decoration:line-through;color:var(--muted);{% endif %}">{{ t.text }}</span>
-  <button class="dash-act" hx-post="{% url 'dashboards:todo_delete' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' aria-label="Delete">✕</button>
+{% if todo_total %}
+<div class="td-progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ todo_total }}" aria-valuenow="{{ todo_done }}">
+  <span style="width:{% widthratio todo_done todo_total 100 %}%"></span>
 </div>
+<p class="td-count">{{ todo_done }} of {{ todo_total }} done{% if todo_done %} · <button type="button" class="td-link" hx-post="{% url 'dashboards:todo_clear_done' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>Clear done</button>{% endif %}</p>
+{% endif %}
+<ul class="td-list">
+{% for t in todos %}
+  <li class="td-item{% if t.done %} is-done{% endif %}">
+    <button type="button" class="td-check" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' role="checkbox" aria-checked="{% if t.done %}true{% else %}false{% endif %}" aria-label="{{ t.text }}"></button>
+    <span class="td-label">{{ t.text }}</span>
+    {% if t.due %}<span class="td-chip{% if not t.done and t.due < today %} is-late{% elif not t.done and t.due == today %} is-today{% endif %}">{% if t.due == today %}Today{% elif not t.done and t.due < today %}Overdue · {{ t.due|date:"M j" }}{% else %}{{ t.due|date:"M j" }}{% endif %}</span>{% endif %}
+    <button type="button" class="td-del" hx-post="{% url 'dashboards:todo_delete' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' aria-label="Delete task">&times;</button>
+  </li>
 {% empty %}
-<p class="empty-line">Nothing on your list yet.</p>
+  <li class="td-empty">Nothing here yet. Add the first thing you want to get done today.</li>
 {% endfor %}
+</ul>

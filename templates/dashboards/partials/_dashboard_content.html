@@ -4,7 +4,7 @@
 <div class="pd-grid">
 
   {# ---------- Today: the only module with a real-time action ---------- #}
-  <section class="pd-card pd-today bn-8">
+  <section class="pd-card pd-today bn-6">
     <div class="pd-today-row">
       {% with rec=attendance.record %}
         {% if attendance.on_leave_today %}
@@ -42,7 +42,7 @@
   </section>
 
   {# ---------- My to-do: private list, loaded by htmx ---------- #}
-  <section class="pd-card bn-4" id="todo-card">
+  <section class="pd-card bn-6" id="todo-card">
     <header>
       <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg></span>
       <h2>My to-do</h2>
@@ -226,6 +226,26 @@
   </section>
 
   {# ---------- My tickets ---------- #}
+  {# ---------- Due soon: overdue and next-7-days tickets assigned to the person ---------- #}
+  <section class="pd-card bn-4">
+    <header>
+      <span class="pd-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+      <h2>Due soon</h2>
+    </header>
+    {% if due_soon %}
+      <ul class="pd-due-list">
+        {% for t in due_soon %}
+          <li>
+            <a href="{% url 'tickets:ticket_detail' pk=t.pk %}">{{ t.key }} {{ t.title }}</a>
+            <span class="td-chip{% if t.is_overdue %} is-late{% endif %}">{% if t.is_overdue %}Overdue{% else %}{{ t.deadline|date:"M j" }}{% endif %}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="pd-empty"><p>Nothing is due in the next 7 days.</p></div>
+    {% endif %}
+  </section>
+
   <section class="pd-card pd-tickets bn-4">
     <header>
       <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M21 8v8a2 2 0 0 1-1 1.7l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.7l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/></svg></span>
