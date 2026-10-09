@@ -1625,3 +1625,15 @@ class PunchPanelLiveCounterTest(AttendanceTestBase):
         self.client.login(username="dev", password="pass1234")
         body = self.client.get(reverse("attendance:my_attendance")).content.decode()
         self.assertEqual(body.count('class="week-day'), 7)
+
+
+class WeekendWorkNotLateTest(TestCase):
+    def test_weekend_punch_is_never_late(self):
+        from datetime import date, time
+        from types import SimpleNamespace
+        from apps.attendance.service import lateness_for
+        tz = timezone.get_current_timezone()
+        for day, expected in ((date(2026, 10, 10), 0), (date(2026, 10, 11), 0), (date(2026, 10, 12), 240)):
+            rec = SimpleNamespace(date=day, check_in=timezone.make_aware(datetime.combine(day, time(14, 0)), tz))
+            shift = SimpleNamespace(start_time=time(10, 0))
+            self.assertEqual(lateness_for(rec, shift), expected)

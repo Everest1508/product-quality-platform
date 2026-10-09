@@ -322,8 +322,11 @@ def lateness_for(record, shift=None):
     Only `check_in` matters. A missing punch is not lateness -- someone who
     never clocked in has no arrival time to be late with, and guessing one
     would silently cost them money.
+
+    Saturday and Sunday are off days with no start time, so working one is
+    never late.
     """
-    if record.check_in is None:
+    if record.check_in is None or record.date.weekday() >= 5:
         return 0
     shift = shift or shift_for(record.company)
     scheduled = timezone.localtime(record.check_in).time()
