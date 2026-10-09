@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.7.0] — 2026-10-09 · a to-do list on your home page
+
+> In short: the home page now has a private to-do card where you can write down what you want to get done and tick it off.
+
+### New
+
+- **A to-do card on the home page.** Type a task, press Add, tick it when it is done or remove it. Only you can see your list.
+
 ## [1.6.1] — 2026-10-08 · messages show up again
 
 > In short: the confirmation messages that pop up after you check in or out work again, and your open DSR tasks now show on the home page.
