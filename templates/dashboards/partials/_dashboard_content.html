@@ -48,7 +48,7 @@
       <h2>My to-do</h2>
       <span class="pd-sub">only you can see this</span>
     </header>
-    <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+    <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"></div>
   </section>
 
   {# ---------- Needs attention: owners/admins only, one line each ---------- #}
