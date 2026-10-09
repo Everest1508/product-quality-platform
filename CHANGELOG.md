@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.9.0] — 2026-10-09 · a fuller home page, and the DSR works on a phone
+
+> In short: the home page now opens with the numbers that matter today and shows your recent activity, and adding a DSR entry and opening dropdowns now work on a phone or in the installed app.
+
+### New
+
+- **Four numbers at the top of the home page.** Open tickets, overdue tickets, to-dos left and hours this week, each one a link to where you act on it.
+- **Your recent activity on the home page.** A short list of the last things you did, so you can pick up where you left off.
+
+### Better
+
+- **Dropdowns open as a sheet at the bottom of the screen on a phone.** They are bigger and easier to tap, and nothing can cut them off.
+- **The add-entry form opens by itself on an empty DSR day.** After you check out, it is right there waiting.
+
+### Fixed
+
+- **You can add a DSR entry on a phone again.** The add form on an empty day was wider than the screen and half hidden.
+- **The DSR page no longer stretches wider than a phone screen.** A hidden label was pushing the whole page sideways, which also made dropdowns and the layout behave oddly in the installed app.
+
 ## [1.8.0] — 2026-10-09 · a bigger to-do list and a due-soon card
 
 > In short: your home page to-do list is bigger and smarter, and a new card shows the tickets that are due soon.

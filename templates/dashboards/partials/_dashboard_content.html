@@ -3,6 +3,15 @@
 {# Personal first: what the signed-in person's own month looks like. #}
 <div class="pd-grid">
 
+  {# ---------- At a glance: four numbers that say what needs the person today ---------- #}
+  <div class="pd-kpis">
+    <a class="pd-kpi" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v">{{ my_ticket_count }}</span><span class="l">Open tickets</span><span class="m">assigned to you</span></a>
+    <a class="pd-kpi{% if overdue_count %} is-alert{% endif %}" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v">{{ overdue_count }}</span><span class="l">Overdue</span><span class="m">{% if overdue_count %}past their deadline{% else %}all on time{% endif %}</span></a>
+    <a class="pd-kpi" href="#todo-card"><span class="v">{{ todo_open }}</span><span class="l">To-dos left</span><span class="m">on your list</span></a>
+    <a class="pd-kpi" href="{% url 'attendance:my_attendance' %}"><span class="v">{{ chart_week_total }}</span><span class="l">Hours this week</span><span class="m">goal {{ chart_week_target }}/day</span></a>
+  </div>
+
+
   {# ---------- Today: the only module with a real-time action ---------- #}
   <section class="pd-card pd-today bn-6">
     <div class="pd-today-row">
@@ -268,5 +277,25 @@
     <a class="pd-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
   </section>
 
+
+  {# ---------- Recent activity: the person's own last actions ---------- #}
+  <section class="pd-card bn-4">
+    <header>
+      <span class="pd-ico"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+      <h2>Your recent activity</h2>
+    </header>
+    {% if my_activity %}
+      <ul class="pd-list">
+        {% for a in my_activity %}
+          <li>
+            <span class="lead">{{ a.title|truncatechars:48 }}</span>
+            <span class="meta">{{ a.created_at|timesince }} ago</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="pd-empty"><p>Nothing yet. Your actions will show up here.</p></div>
+    {% endif %}
+  </section>
 
 </div>

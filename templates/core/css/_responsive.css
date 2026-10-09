@@ -115,3 +115,11 @@ img,svg,video{max-width:100%;}
   .main-col{height:auto;overflow:visible;}
   .main{height:auto;overflow:visible;padding:0;}
 }
+
+/* Phones and the installed app: an open dropdown is a bottom sheet. An absolutely placed menu is clipped
+ * by any scrolling ancestor (the DSR table, cards), so on a small screen it looked like it never opened. */
+@media (max-width:640px){
+  .dd-wrap[open]::before{content:"";position:fixed;inset:0;z-index:69;background:rgba(13,17,23,.35);}
+  .dd-wrap[open] .dd-menu{position:fixed;z-index:70;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));top:auto;max-height:60vh;min-width:0;padding:8px;border-radius:14px;box-shadow:0 12px 40px rgba(13,17,23,.3);}
+  .dd-wrap[open] .dd-opt{min-height:44px;font-size:15px;padding:10px 12px;}
+}

@@ -325,7 +325,8 @@ class DSRSheetRenderTest(TestCase):
     def test_add_form_is_editable_htmx_scope(self):
         self.client.login(username="member", password="password")
         body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
-        self.assertIn('x-data="{ addOpen: false }"', body)
+        # An empty day opens the add form straight away, so it is there after check-out.
+        self.assertIn('x-data="{ addOpen: true }"', body)
         self.assertIn('x-show="addOpen"', body)
 
     def test_add_form_ids_are_unique_across_both_copies(self):
@@ -340,9 +341,9 @@ class DSRSheetRenderTest(TestCase):
         ids = re.findall(r'\sid="([^"]+)"', body)
         repeated = {i for i in ids if ids.count(i) > 1}
         self.assertEqual(repeated, set(), f"duplicate ids on the DSR sheet: {sorted(repeated)}")
-        # both prefixes are present, i.e. the two forms really are distinct
+        # one add form only: a second copy inside the scrolling table was clipped on a phone
         self.assertIn("dsr-bar-task_name", body)
-        self.assertIn("dsr-row-task_name", body)
+        self.assertNotIn("dsr-row-task_name", body)
 
     def test_every_add_form_label_points_at_a_real_control(self):
         self.client.login(username="member", password="password")

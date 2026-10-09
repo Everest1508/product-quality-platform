@@ -405,7 +405,9 @@ details.changelog-rel:hover{border-color:var(--border-strong);}
 /* No overflow on a wide screen: a scroll box also clips vertically, which cut off the dropdown menus
  * of the last rows. Only on a narrow screen does the table scroll sideways, and then it keeps room
  * under the last row for a menu to open. */
-.dsr-grid-wrap{overflow:visible;}
+/* position:relative contains the absolutely placed .sr-only labels; without it one of them sat outside the
+ * scroll box and widened the whole page on a phone. */
+.dsr-grid-wrap{overflow:visible;position:relative;}
 @media (max-width:1100px){.dsr-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;min-height:340px;}}
 .dsr-grid{min-width:880px;font-size:13px;border-top:1px solid var(--border);}
 .dsr-row{display:grid;grid-template-columns:minmax(260px,1fr) 150px 170px 96px 130px 42px;align-items:stretch;border-bottom:1px solid var(--border);margin:0;}
@@ -429,6 +431,8 @@ details.changelog-rel:hover{border-color:var(--border-strong);}
 .dsr-total{background:var(--panel);border-bottom:none;border-top:2px solid var(--border);font-weight:600;}
 .dsr-total .dsr-c-time b{padding:0 8px;font-variant-numeric:tabular-nums;}
 #dsr-table-body .dsr-empty{display:block;grid-column:1/-1;}
+/* The grid is 880px wide and scrolls sideways on a phone; keep the empty message in view. */
+@media (max-width:1100px){#dsr-table-body .dsr-empty{position:sticky;left:0;width:min(100vw - 64px,100%);padding:18px 16px;}}
 .dsr-composer .dc-go{display:flex;}
 a.dsr-title:hover{color:var(--accent);}
 .dsr-total .dsr-c:first-child{flex-direction:row;align-items:center;gap:6px;}
@@ -479,3 +483,14 @@ a.dsr-link::after{content:" \2197";font-size:11px;color:var(--muted);}
 .pd-due-list li:last-child{border-bottom:0;}
 .pd-due-list a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;}
 .pd-due-list a:hover{color:var(--blue);}
+
+/* ---- Home: at-a-glance numbers ---- */
+.pd-kpis{grid-column:1 / -1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+.pd-kpi{display:flex;flex-direction:column;gap:2px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:inherit;text-decoration:none;transition:border-color .12s,transform .12s;}
+.pd-kpi:hover{border-color:var(--accent);transform:translateY(-1px);}
+.pd-kpi .v{font-size:26px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;}
+.pd-kpi .l{font-size:13px;font-weight:600;}
+.pd-kpi .m{font-size:12px;color:var(--muted);}
+.pd-kpi.is-alert{border-color:var(--red);}
+.pd-kpi.is-alert .v{color:var(--red);}
+@media (max-width:900px){.pd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}

@@ -100,7 +100,8 @@
       openMenus().forEach(function (d) { if (d !== t) d.removeAttribute('open'); });
     }, true);
     document.addEventListener('click', function (e) {
-      openMenus().forEach(function (d) { if (!d.contains(e.target)) d.removeAttribute('open'); });
+      // e.target === d is a tap on the phone backdrop (the details' ::before), which should close it too.
+      openMenus().forEach(function (d) { if (!d.contains(e.target) || e.target === d) d.removeAttribute('open'); });
     });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;

@@ -902,7 +902,17 @@ def get_personal_dashboard_data(user, company):
         .select_related("product").order_by("deadline")[:4]
     )
 
+    from apps.dashboards.models import ActivityLog, Todo
+
+    overdue_count = open_mine.filter(deadline__lt=timezone.now()).count()
+    todo_open = Todo.objects.filter(user=user, done=False).count()
+    # The person's own recent actions only, so nothing from a product they cannot open appears here.
+    my_activity = list(ActivityLog.objects.filter(company=company, actor=user)[:5])
+
     data = {
+        "overdue_count": overdue_count,
+        "todo_open": todo_open,
+        "my_activity": my_activity,
         "is_privileged": is_privileged,
         "role": membership.role if membership else None,
         "today": today,
