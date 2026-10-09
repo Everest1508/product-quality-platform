@@ -18,7 +18,7 @@ from apps.products.models import Product
 from apps.notifications import service
 from apps.notifications.models import Notification
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
-from apps.tickets.forms import TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
+from apps.tickets.forms import error_summary, TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
 from apps.tickets import mentions
 from apps.tickets.models import Ticket, TicketComment
 from apps.core.timefmt import t12
@@ -184,21 +184,25 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
         return render(request, "tickets/ticket_form.html", {"form": form})
 
     def post(self, request):
-        product = None
-        product_id = request.POST.get("product")
-        if product_id:
-            from apps.products.models import Product
-            product = Product.objects.filter(pk=product_id, company=request.company).first()
-            if product and not user_has_product_access(request.user, request.company, product):
-                product = None
-        form = TicketCreateForm(request.POST, company=request.company, product=product, user=request.user)
+        # The page offers every member as an assignee whatever the product, so the form must too;
+        # people without access to the chosen product are dropped below, with a warning.
+        form = TicketCreateForm(request.POST, company=request.company, user=request.user)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.company = request.company
             ticket.created_by = request.user
             ticket.source = "manual"
             ticket.save()
-            ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
+            assignees = list(form.cleaned_data["assignees"])
+            if ticket.product_id:
+                from apps.products.access import product_users
+                allowed = set(product_users(ticket.product, request.company).values_list("pk", flat=True))
+                skipped = [u for u in assignees if u.pk not in allowed]
+                assignees = [u for u in assignees if u.pk in allowed]
+                if skipped:
+                    names = ", ".join(u.get_full_name() or u.username for u in skipped)
+                    messages.warning(request, f"Not assigned (no access to {ticket.product.name}): {names}.")
+            ticket.set_assignees(assignees, actor=request.user)
             notify_ticket_created(ticket)
             log_activity(
                 request.company, "ticket_created",
@@ -211,6 +215,7 @@ class TicketCreateView(CompanyMemberRequiredMixin, View):
             )
             messages.success(request, f"Ticket {ticket.key} created.")
             return redirect("tickets:ticket_detail", pk=ticket.pk)
+        messages.error(request, error_summary(form))
         return render(request, "tickets/ticket_form.html", {"form": form})
 
 
@@ -246,6 +251,7 @@ class TicketEditView(CompanyMemberRequiredMixin, View):
             messages.success(request, f"Ticket {ticket.key} updated.")
             url_name, kwargs = _ticket_redirect(ticket)
             return redirect(url_name, **kwargs)
+        messages.error(request, error_summary(form))
         assignee_selected_ids = request.POST.getlist("assignees")
         return render(request, "tickets/ticket_form.html", {
             "form": form,

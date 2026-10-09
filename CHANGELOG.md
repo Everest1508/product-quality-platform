@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.7.1] — 2026-10-09 · clearer ticket errors and tighter project privacy
+
+> In short: creating a ticket with assignees no longer fails for people who cannot open the project, forms now tell you what went wrong, and the Customer Success page only shows your own projects.
+
+### Better
+
+- **Ticket forms tell you what went wrong.** When a ticket cannot be saved, a message now lists every field that needs fixing instead of the page quietly reloading.
+
+### Fixed
+
+- **Creating a ticket no longer fails when you assign someone without project access.** The ticket is created, that person is left off, and you get a message saying who was skipped.
+
+### Security
+
+- **The Customer Success page only shows projects you have been added to.** It used to list every project, survey and response in the company to every member.
+
 ## [1.7.0] — 2026-10-09 · a to-do list on your home page
 
 > In short: the home page now has a private to-do card where you can write down what you want to get done and tick it off.

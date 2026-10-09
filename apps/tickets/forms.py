@@ -97,3 +97,12 @@ class TicketCommentForm(forms.Form):
             "placeholder": "Add a comment...",
         }),
     )
+
+
+def error_summary(form):
+    """One readable line naming every field that failed, for the error toast."""
+    parts = []
+    for name, errs in form.errors.items():
+        label = "Form" if name == "__all__" else form.fields[name].label or name.replace("_", " ").capitalize()
+        parts.append(f"{label}: {errs[0]}")
+    return "Could not save. " + " ".join(parts)

@@ -596,6 +596,8 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
             )
             messages.success(request, f"Ticket {ticket.key} created.")
             return redirect("products:product_ticket_detail", pk=product.pk, ticket_pk=ticket.pk)
+        from apps.tickets.forms import error_summary
+        messages.error(request, error_summary(form))
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
 

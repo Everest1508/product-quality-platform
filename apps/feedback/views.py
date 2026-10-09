@@ -10,6 +10,7 @@ from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.feedback.forms import SurveyCreateForm, SurveyResponseForm
 from apps.feedback.models import SentimentRecord, Survey, SurveyResponse
+from apps.products.access import accessible_products
 from apps.products.models import Product
 
 
@@ -210,18 +211,19 @@ class PublicSurveyView(View):
 class CustomerSuccessHubView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         company = request.company
-        products = Product.objects.filter(company=company)
+        products = accessible_products(request.user, company)
 
         sentiment_records = SentimentRecord.objects.filter(
-            company=company
+            company=company, product__in=products
         ).select_related("product").order_by("-recorded_at")
 
-        surveys = Survey.objects.filter(company=company).select_related("product")
+        surveys = Survey.objects.filter(company=company, product__in=products).select_related("product")
         active_surveys = surveys.filter(status="active")
         closed_surveys = surveys.filter(status="closed")
 
-        total_responses = SurveyResponse.objects.filter(company=company).count()
-        avg_all = SurveyResponse.objects.filter(company=company).aggregate(avg=Avg("score"))["avg"]
+        visible_responses = SurveyResponse.objects.filter(company=company, survey__product__in=products)
+        total_responses = visible_responses.count()
+        avg_all = visible_responses.aggregate(avg=Avg("score"))["avg"]
 
         product_stats = []
         for product in products:

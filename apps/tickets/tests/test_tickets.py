@@ -315,6 +315,20 @@ class TicketProductAccessTest(TestCase):
         )
         self.client.login(username="dev", password="pass1234")
 
+    def test_create_skips_assignee_without_product_access(self):
+        self.client.login(username="owner", password="pass1234")
+        s = self.client.session
+        s["active_company_id"] = self.company.pk
+        s.save()
+        response = self.client.post(reverse("tickets:ticket_create"), {
+            "title": "T", "ticket_type": "bug", "priority": "medium",
+            "product": self.secret.pk, "assignees": [self.dev.pk, self.owner.pk],
+        })
+        ticket = Ticket.objects.get(title="T")
+        self.assertEqual(response.status_code, 302)
+        # dev has no access to the Secret product, so is skipped rather than failing the form
+        self.assertEqual(set(ticket.assignees.values_list("pk", flat=True)), {self.owner.pk})
+
     def test_board_hides_inaccessible_product_tickets(self):
         response = self.client.get(reverse("tickets:ticket_board"))
         shown = {t.pk for col in response.context["columns"] for t in col["tickets"]}
@@ -510,3 +524,13 @@ class TicketFilterDropdownTest(TestCase):
         html = self.client.get(reverse("tickets:ticket_list") + "?type=feature").content.decode()
         self.assertIn("A feature", html)
         self.assertNotIn("A bug", html)
+
+
+class TicketFormErrorToastTest(TicketProductAccessTest):
+    def test_invalid_create_shows_a_toast_naming_the_field(self):
+        s = self.client.session
+        s["active_company_id"] = self.company.pk
+        s.save()
+        response = self.client.post(reverse("tickets:ticket_create"), {"title": "", "ticket_type": "bug", "priority": "nope"})
+        msgs = [str(m) for m in response.context["messages"]]
+        self.assertTrue(any("Title" in m and "Priority" in m for m in msgs), msgs)
