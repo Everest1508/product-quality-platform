@@ -1,16 +1,9 @@
-{% load dropdown_tags %}{% if ticket.status == 'open' %}<span class="pill open">Open</span>
-{% elif ticket.status == 'assigned' %}<span class="pill assigned">Assigned</span>
-{% elif ticket.status == 'in_progress' %}<span class="pill progress">In progress</span>
-{% elif ticket.status == 'testing' %}<span class="pill testing">Testing</span>
-{% elif ticket.status == 'resolved' %}<span class="pill resolved">Resolved</span>
-{% elif ticket.status == 'closed' %}<span class="pill closed">Closed</span>
-{% endif %}
-<form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}"
+{% load dropdown_tags %}<form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}"
       hx-post="{% url 'tickets:ticket_status' pk=ticket.pk %}"
       hx-target="#detail-status"
       hx-swap="innerHTML"
       hx-trigger="change"
-      style="margin-top:6px;">
+      >
   {% csrf_token %}
   {% dropdown "status" ticket.valid_next_statuses ticket.status placeholder="Status" label="Change status" %}
 </form>

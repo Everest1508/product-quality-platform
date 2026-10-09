@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.7.2] — 2026-10-09 · a tidier ticket page and messages that say what changed
+
+> In short: the ticket details panel is cleaner, and the pop-up messages now tell you exactly what changed.
+
+### Better
+
+- **The ticket details panel is easier to read.** Status, assignees and deadline now sit under their labels at full width, and the repeated status badge, name list and "No deadline" text are gone.
+- **Ticket messages say what changed.** They now name the ticket and show the change, like "CHA-006: status Open → In progress" or "CHA-006 assigned to Ritesh Mahale".
+
 ## [1.7.1] — 2026-10-09 · clearer ticket errors and tighter project privacy
 
 > In short: creating a ticket with assignees no longer fails for people who cannot open the project, forms now tell you what went wrong, and the Customer Success page only shows your own projects.

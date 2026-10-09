@@ -310,7 +310,7 @@ class TicketPriorityView(CompanyMemberRequiredMixin, View):
                 target_object_id=ticket.pk,
                 metadata={"product_id": ticket.product_id, "from": old_priority, "to": ticket.get_priority_display()},
             )
-            messages.success(request, f"Priority updated to {ticket.get_priority_display()}.")
+            messages.success(request, f"{ticket.key}: priority {old_priority} → {ticket.get_priority_display()}.")
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_ticket_priority.html", {
@@ -361,7 +361,7 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
             )
             if is_ajax:
                 return JsonResponse({"ok": True, "status": ticket.status})
-            messages.success(request, f"Status changed to '{ticket.get_status_display()}'.")
+            messages.success(request, f"{ticket.key}: status {old_display} → {ticket.get_status_display()}.")
 
         if request.headers.get("HX-Request") == "true":
             members = User.objects.filter(
@@ -383,6 +383,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
         assignee_ids = request.POST.getlist("assignees")
 
         old_assignees = set(ticket.assignees.values_list("pk", flat=True))
+        old_status = ticket.status
 
         if assignee_ids:
             assignees = User.objects.filter(
@@ -401,7 +402,7 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
 
         new_assignees = set(ticket.assignees.values_list("pk", flat=True))
         names = ", ".join(
-            ticket.assignees.order_by("username").values_list("username", flat=True)
+            a.get_full_name() or a.username for a in ticket.assignees.order_by("username")
         ) or "nobody"
         notify_ticket_assigned(ticket)
         log_activity(
@@ -418,7 +419,11 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
                 "to": ",".join(map(str, sorted(new_assignees))),
             },
         )
-        messages.success(request, f"Ticket assigned to {names}.")
+        moved = f" Status is now {ticket.get_status_display()}." if ticket.status != old_status else ""
+        messages.success(
+            request,
+            f"{ticket.key} is now unassigned.{moved}" if names == "nobody" else f"{ticket.key} assigned to {names}.{moved}",
+        )
 
         if request.headers.get("HX-Request") == "true":
             members = User.objects.filter(
@@ -554,7 +559,11 @@ class TicketDeadlineView(CompanyMemberRequiredMixin, View):
                     "to": ticket.deadline.isoformat() if ticket.deadline else None,
                 },
             )
-            messages.success(request, "Deadline updated.")
+            messages.success(
+                request,
+                f"{ticket.key}: deadline set to {ticket.deadline:%b %d, %Y} {t12(ticket.deadline)}."
+                if ticket.deadline else f"{ticket.key}: deadline cleared.",
+            )
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_ticket_deadline.html", {

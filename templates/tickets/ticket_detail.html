@@ -3,6 +3,7 @@
 {% block title %}{{ ticket.key }} — PQ Platform{% endblock %}
 
 {% block content %}
+<style>.detail-stack{display:grid;gap:6px;}.detail-stack .dd,.detail-stack .assignee-dd{width:100%;}</style>
 <nav class="breadcrumbs">
   <a href="{% url 'tickets:ticket_board' %}">Tickets</a>
   <span class="sep">/</span>
@@ -85,7 +86,7 @@
     <div class="card">
       <div class="text-sm font-medium mb-4">Details</div>
       <div class="space-y">
-        <div class="flex-between">
+        <div class="detail-stack">
           <span class="text-sm text-muted">Status</span>
           <div id="detail-status">
             {% include "tickets/partials/_ticket_status.html" with ticket=ticket %}
@@ -97,7 +98,7 @@
             {% include "tickets/partials/_ticket_priority.html" with ticket=ticket priority_choices=priority_choices %}
           </div>
         </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="detail-stack">
           <span class="text-sm text-muted">Assignee</span>
           <div id="detail-assignee">
             {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
@@ -107,7 +108,7 @@
           <span class="text-sm text-muted">Notifications</span>
           {% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}
         </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
+        <div style="border-top:1px solid var(--line);padding-top:10px;" class="detail-stack">
           <span class="text-sm text-muted">Deadline</span>
           <div id="detail-deadline">
             {% include "tickets/partials/_ticket_deadline.html" with ticket=ticket %}

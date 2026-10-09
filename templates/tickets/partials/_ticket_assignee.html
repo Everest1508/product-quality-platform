@@ -1,20 +1,8 @@
-{% if ticket.assignees.all %}
-<div class="assignee-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-  {% for a in ticket.assignees.all %}
-  <span class="assignee">
-    <span class="avatar">{{ a.username.0|upper }}</span>
-    {{ a.get_full_name|default:a.username }}
-  </span>
-  {% endfor %}
-</div>
-{% else %}
-<span class="assignee unassigned">Nobody</span>
-{% endif %}
 <form method="post" action="{% url 'tickets:ticket_assign' pk=ticket.pk %}"
       hx-post="{% url 'tickets:ticket_assign' pk=ticket.pk %}"
       hx-target="#detail-assignee"
       hx-swap="innerHTML"
-      style="margin-top:8px;">
+      >
   {% csrf_token %}
   {% with assignees_qs=members selected_ids=assignee_selected_ids auto_submit=True %}
   {% include "tickets/partials/_assignee_multiselect.html" %}
