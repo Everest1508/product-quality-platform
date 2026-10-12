@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { configure, getNotifications, markAllRead } from './api';
+import { configure, getNotifications, hooks, markAllRead } from './api';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -25,4 +25,20 @@ it('sends the CSRF token when marking all read', async () => {
 it('throws on an error status', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(() => Promise.resolve(new Response('', { status: 403 })));
   await expect(getNotifications('all')).rejects.toThrow('403');
+});
+
+it('reports a lost session (401/403) so the page can go back through login', async () => {
+  const lost = vi.fn();
+  hooks.onAuthLost = lost;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => Promise.resolve(new Response('', { status: 403 })));
+  await expect(getNotifications('all')).rejects.toThrow('403');
+  expect(lost).toHaveBeenCalledTimes(1);
+});
+
+it('does not treat a server error as a lost session', async () => {
+  const lost = vi.fn();
+  hooks.onAuthLost = lost;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => Promise.resolve(new Response('', { status: 500 })));
+  await expect(getNotifications('all')).rejects.toThrow('500');
+  expect(lost).not.toHaveBeenCalled();
 });

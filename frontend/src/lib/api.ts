@@ -12,6 +12,10 @@ export type Notice = {
 export type NotificationsResponse = { unread: number; items: Notice[] };
 export type Filter = 'all' | 'unread';
 
+// Called when the session is gone (401/403). The page reloads so Django's own
+// login redirect takes over, as it would on the classic page.
+export const hooks = { onAuthLost: () => window.location.reload() };
+
 type Config = { api: string; csrf: string };
 let config: Config = { api: '/ui-api/v1/', csrf: '' };
 export const configure = (c: Config) => {
@@ -24,7 +28,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { Accept: 'application/json', 'X-CSRFToken': config.csrf, ...init?.headers },
   });
-  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) hooks.onAuthLost();
+    throw new Error(`Request failed (${res.status})`);
+  }
   return res.json() as Promise<T>;
 }
 

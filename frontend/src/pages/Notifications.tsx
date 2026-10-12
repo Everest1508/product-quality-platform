@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getNotifications, markAllRead, type Filter, type Notice } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -56,7 +56,11 @@ function Row({ n }: { n: Notice }) {
 export function Notifications() {
   const [filter, setFilter] = useState<Filter>('all');
   const client = useQueryClient();
-  const list = useQuery({ queryKey: ['notifications', filter], queryFn: () => getNotifications(filter) });
+  const list = useQuery({
+    queryKey: ['notifications', filter],
+    queryFn: () => getNotifications(filter),
+    placeholderData: keepPreviousData,
+  });
   const readAll = useMutation({
     mutationFn: markAllRead,
     onSuccess: () => {
@@ -102,7 +106,7 @@ export function Notifications() {
             ))}
           </div>
         )}
-        {list.isError && (
+        {list.isError && !list.data && (
           <div className="p-6 text-center">
             <p className="text-sm">Couldn’t load notifications.</p>
             <Button className="mt-3" size="sm" variant="outline" onClick={() => list.refetch()}>

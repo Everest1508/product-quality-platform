@@ -98,3 +98,32 @@ it('resets the legacy bell after marking all read', async () => {
   expect(bell.items[0].read).toBe(true);
   delete (window as unknown as { Alpine?: unknown }).Alpine;
 });
+
+it('keeps the count and Mark all read while another filter is loading', async () => {
+  vi.spyOn(api, 'getNotifications').mockImplementation((f) =>
+    f === 'all' ? Promise.resolve({ unread: 2, items: [notice()] }) : new Promise(() => {}),
+  );
+  renderPage();
+  await screen.findByText('Ann commented');
+  await userEvent.click(screen.getByRole('button', { name: 'Unread' }));
+  expect(screen.getByText(/2 unread/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /mark all read/i })).toBeInTheDocument();
+});
+
+it('keeps the rows and shows no error box when a later refresh fails', async () => {
+  const get = vi
+    .spyOn(api, 'getNotifications')
+    .mockResolvedValueOnce({ unread: 1, items: [notice()] })
+    .mockRejectedValue(new Error('Request failed (500)'));
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={client}>
+      <Notifications />
+    </QueryClientProvider>,
+  );
+  await screen.findByText('Ann commented');
+  await client.refetchQueries();
+  await waitFor(() => expect(get.mock.calls.length).toBeGreaterThan(1));
+  expect(screen.getByText('Ann commented')).toBeInTheDocument();
+  expect(screen.queryByText(/couldn.t load notifications/i)).not.toBeInTheDocument();
+});
