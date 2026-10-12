@@ -1050,7 +1050,12 @@ class MissingCheckoutTest(AttendanceTestBase):
 
     def test_an_unclosed_day_does_not_create_a_late_penalty(self):
         """The cap changes reporting only. Payroll reads `check_in` alone."""
+        # Weekends have no start time (`lateness_for` returns 0 for Sat/Sun),
+        # so the record must land on a weekday: "yesterday" is Sunday on a
+        # Monday, and the test failed every Monday morning.
         day = timezone.localdate() - timedelta(days=1)
+        if day.weekday() >= 5:
+            day -= timedelta(days=day.weekday() - 4)  # back to the Friday
         late = timezone.make_aware(
             datetime.combine(day, time(10, 50)), timezone.get_current_timezone()
         )
@@ -1340,6 +1345,79 @@ class PunchPanelTest(AttendanceTestBase):
         body = self.htmx_panel()
         self.assertIn('role="status"', body)
         self.assertIn("Checked in at", body)
+
+    def test_the_punch_notification_shows_indian_time_not_utc(self):
+        """The notification title is built server-side from `check_in`, which
+        is stored UTC, and raw `strftime` printed the UTC wall-clock (a 10:02
+        IST punch read 04:32 AM). The message and the notification must both
+        say the IST time, like `_penalty_reason` already did."""
+        from apps.notifications.models import Notification
+
+        self.client.login(username="dev", password="pass1234")
+        first = self.htmx_panel()
+        record = AttendanceRecord.objects.get(
+            company=self.company, user=self.dev, date=timezone.localdate()
+        )
+        ist = timezone.localtime(record.check_in).strftime("%I:%M %p")
+        utc = record.check_in.strftime("%I:%M %p")
+        self.assertIn(f"Checked in at {ist}.", first)
+        self.assertNotIn(f"Checked in at {utc}.", first)
+        notified = Notification.objects.get(user=self.dev, kind="system")
+        self.assertIn(f"Checked in at {ist}.", notified.title)
+        self.assertNotIn(f"Checked in at {utc}.", notified.title)
+
+    def test_the_punch_notification_body_names_lateness_or_the_day(self):
+        """The bell row carries a `body`, so a punch notification should use it:
+        on check-in the fee (`late_penalty_for`, same call the payslip quotes);
+        on check-out the day's tally and a nudge for earlier open days."""
+        from apps.attendance.views import _punch_notification_body
+        from apps.notifications.models import Notification
+
+        # Lateness is deterministic on the helper: a live punch lands at "now",
+        # which is never 45 minutes after the shift start. One row per
+        # person+date, so each band gets its own user.
+        late = AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=timezone.localdate(),
+            check_in=self.at(10, 45),
+        )
+        body = _punch_notification_body(late, "checked_in", self.company)
+        self.assertIn("45 min late", body)
+        self.assertIn("₹100", body)  # same number the payslip quotes ("100.00")
+        self.assertIn("late fee", body)
+        self.assertIn(
+            "counts as a half day",
+            _punch_notification_body(
+                AttendanceRecord.objects.create(
+                    company=self.company, user=self.owner, date=timezone.localdate(),
+                    check_in=self.at(11, 20),
+                ),
+                "checked_in", self.company,
+            ),
+        )
+        self.assertEqual(
+            "On time for the 10:00 AM shift.",
+            _punch_notification_body(
+                AttendanceRecord.objects.create(
+                    company=self.company, user=self.viewer, date=timezone.localdate(),
+                    check_in=self.at(10, 2),
+                ),
+                "checked_in", self.company,
+            ),
+        )
+
+        # And the real check-out POST writes that body onto the notification.
+        extra = make_user("extra", self.company, "developer")
+        AttendanceRecord.objects.create(
+            company=self.company, user=extra, date=timezone.localdate(),
+            check_in=timezone.now() - timedelta(hours=2),  # safely past the 45s gap
+        )
+        self.client.login(username="extra", password="pass1234")
+        # htmx_panel() would re-login as `dev`; post directly so the punch
+        # (and its notification) belongs to `extra`.
+        self.client.post(reverse("attendance:punch"), headers={"HX-Request": "true"})
+        n = Notification.objects.filter(user=extra, kind="system").order_by("-id").first()
+        self.assertIn("worked today", n.body)
+        self.assertIn("short of a full", n.body)
 
     def test_a_double_click_cannot_send_a_second_punch(self):
         """The panel re-renders in place, so two rapid clicks both posted.
