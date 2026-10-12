@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getNotifications, markAllRead, type Filter, type Notice } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -7,16 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-
-// The bell in the topbar is a legacy Alpine store. The classic page reloaded and
-// refreshed it; this page does not, so reset it here.
-type Bell = { unread: number; items: { read: boolean }[] };
-const clearBell = () => {
-  const bell = (window as unknown as { Alpine?: { store: (n: string) => Bell | undefined } }).Alpine?.store('notifications');
-  if (!bell) return;
-  bell.items = bell.items.map((n) => ({ ...n, read: true }));
-  bell.unread = 0;
-};
 
 const ago = (iso: string) => {
   const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
@@ -52,7 +43,12 @@ function Row({ n }: { n: Notice }) {
 }
 
 export function Notifications() {
-  const [filter, setFilter] = useState<Filter>('all');
+  const [params, setParams] = useSearchParams();
+  const filter: Filter = params.get('filter') === 'unread' ? 'unread' : 'all';
+  const setFilter = (f: Filter) => setParams(f === 'unread' ? { filter: 'unread' } : {}, { replace: true });
+  useEffect(() => {
+    document.title = 'Notifications — PQ Platform';
+  }, []);
   const client = useQueryClient();
   const list = useQuery({
     queryKey: ['notifications', filter],
@@ -63,7 +59,6 @@ export function Notifications() {
     mutationFn: markAllRead,
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['notifications'] });
-      clearBell();
       toast('All notifications marked as read.', 'success');
     },
     onError: () => toast('Could not mark notifications as read.', 'error'),

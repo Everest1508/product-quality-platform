@@ -124,6 +124,14 @@ class ShellPageTest(TestCase):
         with override_settings(FRONTEND_DIST=Path("/nonexistent")):
             self.assertContains(self.client.get("/notifications/"), "frontend has not been built")
 
+    def test_old_template_names_are_gone(self):
+        from django.template import TemplateDoesNotExist
+        from django.template.loader import get_template
+
+        for name in ("notifications/list.html", "notifications/list_react.html"):
+            with self.assertRaises(TemplateDoesNotExist):
+                get_template(name)
+
     def test_anonymous_goes_to_login(self):
         response = Client().get("/notifications/")
         self.assertEqual(response.status_code, 302)

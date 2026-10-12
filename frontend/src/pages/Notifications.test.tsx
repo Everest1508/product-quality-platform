@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import * as api from '@/lib/api';
 import * as toastLib from '@/lib/toast';
 import { Notifications } from './Notifications';
@@ -21,11 +22,19 @@ const notice = (over: Partial<api.Notice> = {}): api.Notice => ({
   ...over,
 });
 
-function renderPage() {
+function LocationProbe() {
+  const { search } = useLocation();
+  return <div data-testid="location">{search}</div>;
+}
+
+function renderPage(url = '/notifications/') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <Notifications />
+      <MemoryRouter initialEntries={[url]}>
+        <Notifications />
+        <LocationProbe />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -83,18 +92,6 @@ it('shows loading placeholders before data arrives', () => {
   expect(screen.getByTestId('notifications-loading')).toBeInTheDocument();
 });
 
-it('resets the legacy bell after marking all read', async () => {
-  vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 1, items: [notice()] });
-  vi.spyOn(api, 'markAllRead').mockResolvedValue({ unread: 0 });
-  const bell = { unread: 5, items: [{ id: 1, read: false }] };
-  (window as unknown as { Alpine: unknown }).Alpine = { store: (name: string) => (name === 'notifications' ? bell : undefined) };
-  renderPage();
-  await userEvent.click(await screen.findByRole('button', { name: /mark all read/i }));
-  await waitFor(() => expect(bell.unread).toBe(0));
-  expect(bell.items[0].read).toBe(true);
-  delete (window as unknown as { Alpine?: unknown }).Alpine;
-});
-
 it('keeps the count and Mark all read while another filter is loading', async () => {
   vi.spyOn(api, 'getNotifications').mockImplementation((f) =>
     f === 'all' ? Promise.resolve({ unread: 2, items: [notice()] }) : new Promise(() => {}),
@@ -114,7 +111,9 @@ it('keeps the rows and shows no error box when a later refresh fails', async () 
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <Notifications />
+      <MemoryRouter>
+        <Notifications />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   await screen.findByText('Ann commented');
@@ -122,4 +121,27 @@ it('keeps the rows and shows no error box when a later refresh fails', async () 
   await waitFor(() => expect(get.mock.calls.length).toBeGreaterThan(1));
   expect(screen.getByText('Ann commented')).toBeInTheDocument();
   expect(screen.queryByText(/couldn.t load notifications/i)).not.toBeInTheDocument();
+});
+
+it('opens on Unread when the URL says so', async () => {
+  const get = vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 0, items: [] });
+  renderPage('/notifications/?filter=unread');
+  await screen.findByText('Nothing unread');
+  expect(get).toHaveBeenCalledWith('unread');
+});
+
+it('switching filter updates the URL, and All clears it', async () => {
+  vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 0, items: [] });
+  renderPage('/notifications/');
+  await userEvent.click(await screen.findByRole('button', { name: 'Unread' }));
+  expect(screen.getByTestId('location')).toHaveTextContent('filter=unread');
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(screen.getByTestId('location')).toBeEmptyDOMElement();
+});
+
+it('sets the page title', async () => {
+  vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 0, items: [] });
+  renderPage();
+  await screen.findByText('No notifications yet');
+  expect(document.title).toBe('Notifications — PQ Platform');
 });
