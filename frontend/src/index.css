@@ -1,0 +1,79 @@
+/* befui theme, scoped so it cannot disturb the legacy shell the page sits in.
+   - Tailwind's reset (preflight) is not loaded; a scoped mini-reset is below.
+   - Colour variables live on .befui, not :root, because the legacy CSS already
+     defines --border, --accent and friends on :root. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source('.');
+
+.befui {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #1c75bc;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #eff6ff;
+  --accent-foreground: #165b93;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1c75bc;
+  --destructive: #e11d48;
+  --success: #059669;
+  --warning: #d97706;
+  --info: #2563eb;
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --animate-in: fade-in 0.15s ease-out;
+  --animate-pop: pop 0.15s ease-out;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-toast: toast 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pop { from { opacity: 0; transform: scale(0.97) translateY(2px) } to { opacity: 1; transform: none } }
+@keyframes shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+@keyframes toast { from { opacity: 0; transform: translateY(8px) scale(0.98) } to { opacity: 1; transform: none } }
+
+.befui, .befui *, .befui *::before, .befui *::after { box-sizing: border-box; border: 0 solid var(--border); }
+.befui { font-family: ui-sans-serif, system-ui, sans-serif; color: var(--foreground); }
+.befui h1, .befui h3, .befui p { margin: 0; }
+.befui a { color: inherit; text-decoration: none; }
+.befui button:not(:disabled), .befui [role='button']:not([aria-disabled='true']) { cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  .befui *, .befui *::before, .befui *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
