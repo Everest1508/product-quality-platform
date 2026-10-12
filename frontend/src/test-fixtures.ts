@@ -24,6 +24,7 @@ export const sampleBootstrap = (over: Partial<Bootstrap> = {}): Bootstrap => ({
   is_admin: false,
   version: '1.12.0',
   csrf: 'tok',
+  vapid_key: '',
   messages: [],
   urls,
   ...over,

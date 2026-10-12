@@ -10,6 +10,7 @@ export type Bootstrap = {
   is_admin: boolean;
   version: string;
   csrf: string;
+  vapid_key: string;
   messages: FlashMessage[];
   urls: Record<string, string>;
 };

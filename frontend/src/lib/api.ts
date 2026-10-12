@@ -24,7 +24,8 @@ export const configure = (c: Config) => {
 export const getCsrf = () => config.csrf;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(config.api + path, {
+  // A leading slash means a site-absolute URL (legacy endpoints); otherwise it is under /ui-api/v1/.
+  const res = await fetch(path.startsWith('/') ? path : config.api + path, {
     credentials: 'same-origin',
     ...init,
     headers: { Accept: 'application/json', 'X-CSRFToken': config.csrf, ...init?.headers },

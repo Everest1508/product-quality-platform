@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
+import { socket } from '@/lib/presence';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
@@ -18,6 +19,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [changelog, setChangelog] = useState(false);
   const { pathname } = useLocation();
   useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    socket.start();
+    const stop = () => socket.stop();
+    window.addEventListener('pagehide', stop);
+    return () => window.removeEventListener('pagehide', stop);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);

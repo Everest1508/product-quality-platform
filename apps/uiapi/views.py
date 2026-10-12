@@ -92,6 +92,7 @@ class BootstrapView(CompanyAPIView):
             "counts": nav_counts(user, company, role),
             "is_admin": role in ("owner", "admin"),
             "version": getattr(settings, "APP_VERSION", "0.0.0"),
+            "vapid_key": getattr(settings, "WEBPUSH_VAPID_PUBLIC_KEY", ""),
             "csrf": get_token(request._request),
             "messages": flash,
             "urls": urls,

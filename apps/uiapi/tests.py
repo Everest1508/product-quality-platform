@@ -199,6 +199,11 @@ class BootstrapTest(TestCase):
         self.assertEqual(first[0]["text"], "Switched to Acme.")
         self.assertEqual(again, [])
 
+    @override_settings(WEBPUSH_VAPID_PUBLIC_KEY="abc")
+    def test_vapid_key_is_included_for_web_push(self):
+        self.login("dev")
+        self.assertEqual(self.client.get(self.url).json()["vapid_key"], "abc")
+
     def test_anonymous_and_no_company_are_403(self):
         self.assertEqual(Client().get(self.url).status_code, 403)
         User.objects.create_user("loner", "l@t.local", "pass1234")
