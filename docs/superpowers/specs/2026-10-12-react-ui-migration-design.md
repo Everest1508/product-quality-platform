@@ -10,6 +10,26 @@ Replace the server-rendered UI (148 templates, ~10.6k lines, htmx + Alpine) with
 
 **Success:** every current page works in React with identical permissions and behaviour; each page ships independently; the existing test suite still passes after every step.
 
+## Scope update (2026-10-12): the whole frontend, retiring legacy and htmx as we go
+
+The target is the **entire** UI in React, not a pilot set. Legacy code is removed page by page, not at the end:
+
+- **A page's migration is done only when its legacy code is deleted.** In the same step that flips a page to React: delete its template(s) and `partials/`, delete the view code that only served HTML (keep the models, `service.py` and any logic the JSON endpoint reuses), delete its `hx-*` attributes and `HX-Request` branches, and drop its entry from `REACT_PAGES` (the switch exists only while both versions exist; after deletion the React page is the only one). The per-page switch is a short-lived rollback aid, not a permanent flag.
+- **Parity first, then delete.** The page runs React with the switch on, passes its parity checklist, gets a short soak, then the legacy code goes in a separate commit that is easy to revert.
+- **htmx and Alpine leave when their last user leaves.** Track remaining `hx-` / `x-data` usage (today: 36 templates with `hx-`, 26 with `x-data`, 20 Python files with `HX-Request` handling). When the count hits zero, remove the CDN scripts from `base.html`, `django_htmx`, `HtmxMessagesMiddleware`, `HTMXRequiredMixin` and the toast `django-message` bridge.
+- **The shell moves early.** The React app shell (sidebar, topbar, bell, search, presence, toasts) replaces `core/base.html` for migrated routes as soon as the first section moves, so later pages do not have to live inside the legacy shell and the `.befui` scoping/`important` workarounds can be removed. Unmigrated pages keep the legacy shell until their turn; links between the two are full page loads.
+- **Navigation model:** React Router owns migrated routes (one catch-all Django view serves the React entry for them); Django still serves unmigrated URLs. Final state: Django serves only `/ui-api/`, `/api/`, admin, WebSockets and the React entry.
+- **Each area is its own plan** (spec to plan to execution), because the whole is too large for one: it is roughly 148 templates and 15 views files.
+
+### Revised order (each is a separate plan)
+
+1. **Shell + auth + ticket pages** (React shell, `/ui-api/v1/bootstrap/`, tickets global and product-scoped, ticket detail, kanban). First deletions: the legacy tickets templates and htmx.
+2. **Errors, products, search, notifications cleanup** (delete the legacy notifications template now that it has soaked).
+3. **Dashboards, feedback, automation, DSR.**
+4. **Accounts and company flows** (login, company setup/switch, profile, Serop OAuth screens).
+5. **HR: attendance, leave, payroll** (last; most rules).
+6. **Final cleanup:** remove htmx, Alpine, `django_htmx`, legacy CSS/templates, the `REACT_PAGES` machinery.
+
 ## Approach: incremental, page by page
 
 Django stays the backend (Python, same DB, same session auth). A React app in `frontend/` talks to it over JSON endpoints. Pages are migrated one at a time; the Django template for a page stays in place until its React version is verified.
