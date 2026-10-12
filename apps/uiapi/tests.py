@@ -125,3 +125,72 @@ class NotificationsPageSwitchTest(TestCase):
     @override_settings(REACT_PAGES={"notifications"}, FRONTEND_DIST=Path("/nonexistent"))
     def test_switch_on_with_no_build_says_so(self):
         self.assertContains(self.client.get("/notifications/"), "frontend has not been built")
+
+
+from apps.products.models import Product, ProductAccess  # noqa: E402
+from apps.tickets.models import Ticket  # noqa: E402
+
+
+class BootstrapTest(TestCase):
+    def setUp(self):
+        self.acme = Company.objects.create(name="Acme", slug="acme")
+        self.other = Company.objects.create(name="Other", slug="other")
+        self.owner = make("owner", self.acme, "owner")
+        self.dev = make("dev", self.acme, "developer")
+        self.p_open = Product.objects.create(company=self.acme, name="Open", slug="open")
+        self.p_hidden = Product.objects.create(company=self.acme, name="Hidden", slug="hidden")
+        self.p_other = Product.objects.create(company=self.other, name="Foreign", slug="foreign")
+        ProductAccess.objects.create(company=self.acme, user=self.dev, product=self.p_open)
+        for p in (self.p_open, self.p_hidden, self.p_other):
+            Ticket.objects.create(company=p.company, product=p, title="t")
+        self.url = reverse("uiapi:bootstrap")
+
+    def login(self, name):
+        self.client.login(username=name, password="pass1234")
+        session = self.client.session
+        session[settings.ACTIVE_COMPANY_SESSION_KEY] = self.acme.pk
+        session.save()
+
+    def test_shape_and_identity(self):
+        self.login("dev")
+        data = self.client.get(self.url).json()
+        self.assertEqual(data["user"]["name"], "dev")
+        self.assertEqual(data["user"]["initial"], "D")
+        self.assertEqual(data["user"]["role_label"], "Developer")
+        self.assertEqual(data["company"]["name"], "Acme")
+        self.assertFalse(data["is_admin"])
+        self.assertTrue(data["version"])
+        self.assertTrue(data["csrf"])
+        self.assertEqual(data["urls"]["tickets"], reverse("tickets:ticket_board"))
+        self.assertEqual(data["urls"]["search"], "/search/")
+        self.assertEqual(
+            data["workspaces"],
+            [{"company_id": self.acme.pk, "name": "Acme", "role_label": "Developer", "current": True}],
+        )
+
+    def test_counts_only_cover_products_the_user_can_open(self):
+        self.login("dev")
+        self.assertEqual(self.client.get(self.url).json()["counts"]["open_tickets"], 1)
+
+    def test_owner_sees_every_product_in_the_company_but_not_other_companies(self):
+        self.login("owner")
+        data = self.client.get(self.url).json()
+        self.assertEqual(data["counts"]["open_tickets"], 2)
+        self.assertTrue(data["is_admin"])
+
+    def test_flash_messages_are_delivered_once(self):
+        self.login("dev")
+        # queue a message the way a legacy view would
+        self.client.post(reverse("accounts:company_switch"), {"company_id": self.acme.pk})
+        first = self.client.get(self.url).json()["messages"]
+        again = self.client.get(self.url).json()["messages"]
+        self.assertEqual([m["tags"] for m in first], ["success"])
+        self.assertEqual(first[0]["text"], "Switched to Acme.")
+        self.assertEqual(again, [])
+
+    def test_anonymous_and_no_company_are_403(self):
+        self.assertEqual(Client().get(self.url).status_code, 403)
+        User.objects.create_user("loner", "l@t.local", "pass1234")
+        c = Client()
+        c.login(username="loner", password="pass1234")
+        self.assertEqual(c.get(self.url).status_code, 403)

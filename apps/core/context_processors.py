@@ -61,6 +61,29 @@ def product_context(request):
     return ctx
 
 
+def nav_counts(user, company, role):
+    """Sidebar badge numbers for one person in one workspace. Same rules as the
+    legacy sidebar: only products the person can open, 'open' means not
+    resolved/closed (tickets) or resolved/ignored (errors)."""
+    from apps.attendance.models import AttendanceCorrection
+    from apps.ingestion.models import ErrorGroup
+    from apps.products.access import accessible_products
+    from apps.tickets.models import Ticket
+
+    products = accessible_products(user, company)
+    return {
+        "open_tickets": Ticket.objects.filter(company=company, product__in=products)
+        .exclude(status__in=["resolved", "closed"])
+        .count(),
+        "open_errors": ErrorGroup.objects.filter(company=company, product__in=products)
+        .exclude(status__in=["resolved", "ignored"])
+        .count(),
+        "pending_corrections": AttendanceCorrection.objects.filter(company=company, status="pending").count()
+        if role in ("owner", "admin")
+        else 0,
+    }
+
+
 def workspace_context(request):
     if not request.user.is_authenticated:
         return {}
@@ -70,28 +93,11 @@ def workspace_context(request):
     company = getattr(request, "company", None)
     if company is not None:
         try:
-            from apps.ingestion.models import ErrorGroup
-            from apps.products.access import accessible_products
-            from apps.tickets.models import Ticket
-
-            products = accessible_products(request.user, company)
-            ctx["nav_open_tickets"] = (
-                Ticket.objects.filter(company=company)
-                .filter(product__in=products)
-                .exclude(status__in=["resolved", "closed"])
-                .count()
-            )
-            ctx["nav_open_errors"] = (
-                ErrorGroup.objects.filter(company=company, product__in=products)
-                .exclude(status__in=["resolved", "ignored"])
-                .count()
-            )
+            counts = nav_counts(request.user, company, request.company_role)
+            ctx["nav_open_tickets"] = counts["open_tickets"]
+            ctx["nav_open_errors"] = counts["open_errors"]
             if request.company_role in ("owner", "admin"):
-                from apps.attendance.models import AttendanceCorrection
-
-                ctx["nav_pending_corrections"] = AttendanceCorrection.objects.filter(
-                    company=company, status="pending"
-                ).count()
+                ctx["nav_pending_corrections"] = counts["pending_corrections"]
         except Exception:
             pass
 
