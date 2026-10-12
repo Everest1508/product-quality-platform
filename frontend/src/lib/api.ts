@@ -21,6 +21,7 @@ let config: Config = { api: '/ui-api/v1/', csrf: '' };
 export const configure = (c: Config) => {
   config = c;
 };
+export const getCsrf = () => config.csrf;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(config.api + path, {
@@ -39,3 +40,13 @@ export const getNotifications = (filter: Filter) =>
   request<NotificationsResponse>(`notifications/${filter === 'unread' ? '?filter=unread' : ''}`);
 
 export const markAllRead = () => request<{ unread: number }>('notifications/read-all/', { method: 'POST' });
+
+export const api = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'POST',
+      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+};
