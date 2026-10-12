@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import messages as dj_messages
 from django.middleware.csrf import get_token
 from django.urls import reverse
+from rest_framework.exceptions import NotFound
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Membership
+from apps.accounts.workspace import activate_company
 from apps.core.context_processors import nav_counts
 from apps.notifications import service
 
@@ -57,7 +59,7 @@ _URL_NAMES = {
     "profile": "accounts:profile", "logout": "accounts:logout", "notifications": "notifications:list",
     "ticket_create": "tickets:ticket_create", "leave_apply": "leave:apply",
     "correction_request": "attendance:correction_request", "product_create": "products:product_create",
-    "bootstrap": "uiapi:bootstrap",
+    "bootstrap": "uiapi:bootstrap", "company_switch": "uiapi:company_switch",
 }
 
 
@@ -94,3 +96,16 @@ class BootstrapView(CompanyAPIView):
             "messages": flash,
             "urls": urls,
         })
+
+
+class CompanySwitchAPIView(APIView):
+    """Not a `CompanyAPIView`: switching must work even if the current company is gone."""
+
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        membership = activate_company(request._request, request.data.get("company_id"))
+        if membership is None:
+            raise NotFound("Workspace not found.")
+        return Response({"company": {"id": membership.company_id, "name": membership.company.name}})

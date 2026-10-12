@@ -194,3 +194,45 @@ class BootstrapTest(TestCase):
         c = Client()
         c.login(username="loner", password="pass1234")
         self.assertEqual(c.get(self.url).status_code, 403)
+
+
+class CompanySwitchApiTest(TestCase):
+    def setUp(self):
+        self.a = Company.objects.create(name="A", slug="a")
+        self.b = Company.objects.create(name="B", slug="b")
+        self.c = Company.objects.create(name="C", slug="c")
+        self.user = make("sam", self.a)
+        Membership.objects.create(user=self.user, company=self.b, role="viewer")
+        self.client.login(username="sam", password="pass1234")
+        self.url = reverse("uiapi:company_switch")
+
+    def test_switches_to_a_company_i_belong_to(self):
+        r = self.client.post(self.url, {"company_id": self.b.pk}, content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["company"]["name"], "B")
+        self.assertEqual(self.client.session[settings.ACTIVE_COMPANY_SESSION_KEY], self.b.pk)
+
+    def test_rejects_a_company_i_do_not_belong_to_and_keeps_the_session(self):
+        self.client.post(self.url, {"company_id": self.a.pk}, content_type="application/json")
+        r = self.client.post(self.url, {"company_id": self.c.pk}, content_type="application/json")
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(self.client.session[settings.ACTIVE_COMPANY_SESSION_KEY], self.a.pk)
+
+    def test_garbage_id_is_404_not_500(self):
+        r = self.client.post(self.url, {"company_id": "abc"}, content_type="application/json")
+        self.assertEqual(r.status_code, 404)
+
+    def test_csrf_is_enforced(self):
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="sam", password="pass1234")
+        self.assertEqual(
+            strict.post(self.url, {"company_id": self.b.pk}, content_type="application/json").status_code, 403
+        )
+
+    def test_legacy_view_still_switches(self):
+        self.client.post(reverse("accounts:company_switch"), {"company_id": self.b.pk})
+        self.assertEqual(self.client.session[settings.ACTIVE_COMPANY_SESSION_KEY], self.b.pk)
+
+    def test_bootstrap_advertises_the_switch_url(self):
+        self.client.post(self.url, {"company_id": self.a.pk}, content_type="application/json")
+        self.assertEqual(self.client.get(reverse("uiapi:bootstrap")).json()["urls"]["company_switch"], self.url)

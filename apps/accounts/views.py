@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
 from apps.accounts import throttle
 from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
+from apps.accounts.workspace import activate_company
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
@@ -108,16 +109,7 @@ class DashboardView(CompanyMemberRequiredMixin, View):
 
 class CompanySwitchView(LoginRequiredMixin, View):
     def post(self, request):
-        company_id = request.POST.get("company_id")
-        membership = Membership.objects.filter(
-            user=request.user,
-            company_id=company_id,
-        ).first()
-        if not membership:
-            messages.error(request, "Workspace not found.")
-        else:
-            request.session[settings.ACTIVE_COMPANY_SESSION_KEY] = membership.company_id
-            messages.success(request, f"Switched to {membership.company.name}.")
+        activate_company(request, request.POST.get("company_id"))
         return redirect("accounts:dashboard")
 
 
