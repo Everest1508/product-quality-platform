@@ -1,0 +1,74 @@
+import {
+  Banknote, CalendarDays, ChartColumn, CircleCheck, ClipboardList, Clock, FileText, Headset, History, House,
+  Package, Percent, SlidersHorizontal, Sparkles, Ticket, TriangleAlert, User, Users, Wallet, type LucideIcon,
+} from 'lucide-react';
+import type { Bootstrap } from '@/lib/bootstrap';
+
+export type NavItem = { key: string; label: string; href: string; icon: LucideIcon; badge?: number; react: boolean };
+export type NavSection = { label?: string; items: NavItem[] };
+
+// Paths the React router owns. Everything else is a normal link to a legacy page.
+export const REACT_PATHS = new Set<string>(['/notifications/']);
+
+const item = (b: Bootstrap, key: string, label: string, icon: LucideIcon, badge?: number): NavItem => ({
+  key,
+  label,
+  icon,
+  href: b.urls[key],
+  badge: badge || undefined,
+  react: REACT_PATHS.has(b.urls[key]),
+});
+
+export function navSections(b: Bootstrap): NavSection[] {
+  const sections: NavSection[] = [
+    {
+      items: [
+        item(b, 'home', 'Home', House),
+        item(b, 'products', 'Products', Package),
+        item(b, 'tickets', 'All tickets', Ticket, b.counts.open_tickets),
+        item(b, 'errors', 'All errors', TriangleAlert, b.counts.open_errors),
+        item(b, 'reports', 'Reports', ChartColumn),
+        item(b, 'automation', 'All automation', Sparkles),
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        item(b, 'cs_hub', 'CS Hub', Headset),
+        item(b, 'feedback', 'All feedback', FileText),
+        item(b, 'attendance', 'My attendance', Clock),
+        item(b, 'leave', 'My leave', CalendarDays),
+        item(b, 'leave_calendar', 'Leave calendar', CalendarDays),
+        item(b, 'dsr', 'DSR Sheet', ClipboardList),
+        item(b, 'payslips', 'My payslips', Banknote),
+      ],
+    },
+  ];
+  if (b.is_admin) {
+    sections.push({
+      label: 'Admin',
+      items: [
+        item(b, 'team_attendance', 'Team attendance', Users),
+        item(b, 'timesheet', 'Timesheet', CalendarDays),
+        item(b, 'corrections', 'Corrections', Clock, b.counts.pending_corrections),
+        item(b, 'leave_approvals', 'Leave approvals', CircleCheck),
+        item(b, 'payroll', 'Payroll', Wallet),
+        item(b, 'payroll_setup', 'Payroll setup', Percent),
+        item(b, 'leave_policies', 'Leave Policy', SlidersHorizontal),
+        item(b, 'team', 'Team', User),
+        item(b, 'audit_log', 'Audit log', History),
+      ],
+    });
+  }
+  return sections;
+}
+
+// One item is active: the one whose URL is the longest prefix of the path. A
+// substring test would light several up at once (the bug the legacy sidebar had).
+export function activeKey(pathname: string, sections: NavSection[]): string | null {
+  let best: NavItem | null = null;
+  for (const it of sections.flatMap((s) => s.items)) {
+    if (pathname.startsWith(it.href) && (!best || it.href.length > best.href.length)) best = it;
+  }
+  return best?.key ?? null;
+}
