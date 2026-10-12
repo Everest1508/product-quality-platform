@@ -10,6 +10,7 @@ from django.views import View
 
 from apps.accounts.models import Membership
 from apps.core.mixins import CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
 from apps.dsr.duration import MESSAGE, format_hm, parse_hours
 from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
@@ -210,6 +211,17 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
             entry.refresh_from_db()
         else:
             form.save()
+            log_activity(
+                request.company, "dsr_entry_updated",
+                f"{entry.task_name} updated on the DSR",
+                description=f"{entry.date} · {entry.hours_spent}h · {entry.get_status_display()}",
+                actor=request.user,
+                metadata={
+                    "user_id": entry.user_id,
+                    "date": entry.date.isoformat(),
+                    "product_id": entry.product_id,
+                },
+            )
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "can_submit": True, "products": products.order_by("name"), "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
@@ -236,8 +248,16 @@ class DSREntryDeleteView(CompanyMemberRequiredMixin, View):
         entry_date = entry.date
         target_user = entry.user
         task_name = entry.task_name
+        hours = entry.hours_spent
         entry.delete()
         messages.success(request, f"Deleted \"{task_name}\".")
+        log_activity(
+            request.company, "dsr_entry_deleted",
+            f"\"{task_name}\" removed from the DSR",
+            description=f"{entry_date} · {hours}h",
+            actor=request.user,
+            metadata={"user_id": target_user.pk, "date": entry_date.isoformat()},
+        )
 
         if request.headers.get("HX-Request") == "true":
             context = _get_dsr_context(request.company, target_user, entry_date, is_privileged)
@@ -282,6 +302,17 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
             entry.is_auto_logged = False
             entry.save()
             messages.success(request, f"Added \"{entry.task_name}\".")
+            log_activity(
+                request.company, "dsr_entry_added",
+                f"{entry.task_name} logged",
+                description=f"{entry.date} · {entry.category} · {entry.hours_spent}h",
+                actor=request.user,
+                metadata={
+                    "user_id": entry.user_id,
+                    "date": entry.date.isoformat(),
+                    "product_id": entry.product_id,
+                },
+            )
         else:
             messages.error(request, "Could not add that entry.")
 
@@ -347,7 +378,7 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             return respond()
 
         ticket = match["ticket"]
-        DSREntry.objects.create(
+        entry = DSREntry.objects.create(
             company=request.company,
             user=target_user,
             date=target_date,
@@ -360,4 +391,15 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             is_auto_logged=False,
         )
         messages.success(request, f"Added {ticket.key} with {format_hm(hours)}.")
+        log_activity(
+            request.company, "dsr_entry_added",
+            f"{entry.task_name} logged",
+            description=f"{entry.date} · {entry.category} · {entry.hours_spent}h",
+            actor=request.user,
+            metadata={
+                "user_id": entry.user_id,
+                "date": entry.date.isoformat(),
+                "product_id": entry.product_id,
+            },
+        )
         return respond()

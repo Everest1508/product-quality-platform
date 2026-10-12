@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.11.0] — 2026-10-12 · a toast for every action, and an audit trail behind it
+
+> In short: every action now confirms itself with a pop-up message, more of your changes are written to the activity log, and the punch notifications show Indian time with the late fee or how your day went.
+
+### New
+
+- **More actions are recorded in the activity log.** Creating a workspace, editing your profile, adding, editing or removing a DSR entry (including one picked from a suggestion), adding or changing a milestone, following or unfollowing a ticket, and cancelling an attendance-correction request are all written down with who did it, visible on the activity log page.
+- **Every to-do action confirms itself.** Adding a task, marking it done, reopening it, deleting it and clearing the finished ones each pop up a message now, so you never wonder whether the click took.
+- **Rotating an API key tells you what happened.** The confirmation names what happened to the old key — revoked immediately or still working until a date — instead of swapping keys in silence.
+
+### Better
+
+- **Punch notifications now say what they mean.** Checking in tells you whether you were late and the late fee, or that you were on time. Checking out tells you how much of your day you worked and reminds you of any earlier days you left unclosed.
+
+### Fixed
+
+- **Check-in and check-out times show Indian time again.** A 10:02 punch used to read "Checked in at 04:32 AM" in the pop-up and the notification, because the stored time was read back as UTC. It now shows the real Indian time wherever the punch is announced.
+
 ## [1.10.0] — 2026-10-09 · priorities, overdue alerts and to-dos in your DSR
 
 > In short: your to-dos now have a priority, show in red when they are overdue, remind you once a day, and land in today's DSR when you finish them.

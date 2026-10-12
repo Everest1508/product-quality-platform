@@ -325,6 +325,12 @@ class APIKeyRotateView(CompanyMemberRequiredMixin, View):
             end = now + delta
             old.expires_at = min(old.expires_at, end) if old.expires_at else end
         old.save(update_fields=["is_active", "revoked_at", "expires_at"])
+        messages.success(
+            request,
+            "Key rotated — the old key is revoked now."
+            if delta is None
+            else f"Key rotated — the old key works until {old.expires_at:%b %d}.",
+        )
         log_activity(
             request.company, "api_key_rotated",
             f"API key '{old.name}' rotated for {old.product.name}",
@@ -915,6 +921,13 @@ class ProductMilestoneAddView(CompanyMemberRequiredMixin, View):
                 status=ProductMilestone.Status.UPCOMING,
             )
             messages.success(request, f"Milestone '{title}' added to flowchart.")
+            log_activity(
+                request.company, "milestone_added",
+                f"Milestone '{title}' added to {product.name}",
+                description=f"Target date {target_date:%b %d, %Y}",
+                actor=request.user,
+                metadata={"product_id": product.pk, "title": title, "target_date": target_date.isoformat()},
+            )
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_milestone_tree.html", {
@@ -929,6 +942,7 @@ class ProductMilestoneToggleView(CompanyMemberRequiredMixin, View):
         from apps.products.models import ProductMilestone
         milestone = get_object_or_404(ProductMilestone, pk=pk, company=request.company)
         require_product_access(request, milestone.product)
+        from_status = milestone.status
 
         if milestone.status == ProductMilestone.Status.UPCOMING:
             milestone.status = ProductMilestone.Status.IN_PROGRESS
@@ -946,6 +960,17 @@ class ProductMilestoneToggleView(CompanyMemberRequiredMixin, View):
         messages.success(
             request,
             f"\"{milestone.title}\" is now {milestone.get_status_display().lower()}.",
+        )
+        log_activity(
+            request.company, "milestone_toggled",
+            f"Milestone '{milestone.title}' is now {milestone.get_status_display().lower()}",
+            description=f"{ProductMilestone.Status(from_status).label} → {milestone.get_status_display()}",
+            actor=request.user,
+            metadata={
+                "product_id": milestone.product_id,
+                "from": from_status,
+                "to": milestone.status,
+            },
         )
 
         if request.headers.get("HX-Request") == "true":
@@ -965,6 +990,12 @@ class ProductMilestoneDeleteView(CompanyMemberRequiredMixin, View):
         title = milestone.title
         milestone.delete()
         messages.success(request, f"Milestone \"{title}\" deleted.")
+        log_activity(
+            request.company, "milestone_deleted",
+            f"Milestone \"{title}\" removed from {product.name}",
+            actor=request.user,
+            metadata={"product_id": product.pk, "title": title},
+        )
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_milestone_tree.html", {

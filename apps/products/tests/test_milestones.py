@@ -33,6 +33,29 @@ class ProductMilestoneTest(TestCase):
         m1.save()
         self.assertEqual(m1.computed_status, "completed")
 
+    def test_milestone_actions_are_audited(self):
+        from apps.dashboards.models import ActivityLog
+
+        self.client.login(username="admin", password="password")
+        self.client.post(reverse("products:milestone_add", kwargs={"pk": self.product.pk}), {
+            "title": "Phase 2: Beta Launch",
+            "target_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
+            "order": "2",
+        })
+        milestone = ProductMilestone.objects.get(product=self.product)
+        added = ActivityLog.objects.get(event_type="milestone_added", company=self.company)
+        self.assertEqual(added.actor, self.user)
+        self.assertEqual(added.metadata["product_id"], self.product.pk)
+
+        toggle_url = reverse("products:milestone_toggle", kwargs={"pk": milestone.pk})
+        self.client.post(toggle_url)
+        toggled = ActivityLog.objects.get(event_type="milestone_toggled", company=self.company)
+        self.assertEqual((toggled.metadata["from"], toggled.metadata["to"]), ("upcoming", "in_progress"))
+
+        self.client.post(reverse("products:milestone_delete", kwargs={"pk": milestone.pk}))
+        deleted = ActivityLog.objects.get(event_type="milestone_deleted", company=self.company)
+        self.assertEqual(deleted.metadata["title"], "Phase 2: Beta Launch")
+
     def test_milestone_add_and_toggle_views(self):
         self.client.login(username="admin", password="password")
         

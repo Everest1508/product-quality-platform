@@ -277,6 +277,18 @@ class ViewsTest(Base):
         self.client.login(username="admin", password="pass1234")
         self.assertEqual(self.client.post(reverse("attendance:correction_cancel", args=[c.pk])).status_code, 404)
 
+    def test_cancelling_my_request_writes_an_audit_row(self):
+        self.post_request()
+        c = AttendanceCorrection.objects.get()
+        self.client.login(username="dev", password="pass1234")
+        self.client.post(reverse("attendance:correction_cancel", args=[c.pk]))
+        c.refresh_from_db()
+        self.assertEqual(c.status, "cancelled")
+        row = ActivityLog.objects.get(event_type="attendance_correction_cancelled")
+        self.assertEqual(row.company, self.company)
+        self.assertEqual(row.actor, self.dev)
+        self.assertIn("forgot", row.description)
+
     def test_the_sidebar_counts_what_is_waiting_for_admins_only(self):
         self.post_request()
         self.client.login(username="owner", password="pass1234")

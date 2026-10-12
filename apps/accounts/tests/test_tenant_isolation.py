@@ -116,6 +116,10 @@ class SignupAndCompanyFlowTest(TestCase):
         self.assertTrue(Company.objects.filter(slug="test-corp").exists())
         membership = Membership.objects.get(user=user)
         self.assertEqual(membership.role, Membership.Role.OWNER)
+        from apps.dashboards.models import ActivityLog
+
+        row = ActivityLog.objects.get(company=membership.company, event_type="company_created")
+        self.assertEqual(row.actor, user)
 
 
 class TeamEditDiscordIdTest(TestCase):
@@ -296,3 +300,39 @@ class CompanySwitchTest(TestCase):
         content = response.content.decode()
         self.assertIn("switch-btn", content)
         self.assertIn(reverse("accounts:company_switch"), content)
+
+
+class ProfileAuditTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user("alice", "alice@test.com", "pass1234")
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=self.user, company=self.company, role="developer")
+        self.client.login(username="alice", password="pass1234")
+
+    def test_profile_edit_is_audited(self):
+        from apps.dashboards.models import ActivityLog
+
+        self.client.post(reverse("accounts:profile"), {
+            "first_name": "Alice",
+            "last_name": "Wonder",
+            "email": "alice@test.com",
+            "discord_id": "",
+        })
+        row = ActivityLog.objects.get(company=self.company, event_type="profile_updated")
+        self.assertEqual(row.actor, self.user)
+        self.assertIn("first_name", row.description)
+        self.assertIn("last_name", row.description)
+
+    def test_an_unchanged_profile_edit_is_not_audited(self):
+        from apps.dashboards.models import ActivityLog
+
+        self.user.first_name = "Alice"
+        self.user.save()
+        self.client.post(reverse("accounts:profile"), {
+            "first_name": "Alice",
+            "last_name": "",
+            "email": "alice@test.com",
+            "discord_id": "",
+        })
+        self.assertFalse(ActivityLog.objects.filter(event_type="profile_updated").exists())

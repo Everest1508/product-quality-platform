@@ -191,6 +191,13 @@ class RotateTest(Base):
         self.rotate()
         self.assertTrue(ActivityLog.objects.filter(event_type="api_key_rotated", actor=self.owner).exists())
 
+    def test_the_rotation_toast_names_the_grace(self):
+        page = self.rotate("now")
+        self.assertIn("revoked now", page.headers["HX-Trigger"])
+        fresh, _ = APIKey.create_key(self.product, "server2")
+        page = self.rotate("1d", key=fresh)
+        self.assertIn("works until", page.headers["HX-Trigger"])
+
     def test_a_viewer_cannot_rotate(self):
         self.login("viewer")
         self.assertEqual(self.rotate().status_code, 403)

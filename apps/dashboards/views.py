@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -177,6 +178,9 @@ class TodoListView(TodoMixin, View):
                 due=_parse_date(request.POST.get("due"), None),
                 priority=int(priority) if priority in ("1", "2", "3") else Todo.Priority.MEDIUM,
             )
+            messages.success(request, f'Added "{text}".')
+        else:
+            messages.error(request, "To-do text can't be empty.")
         return self.render_list(request)
 
 
@@ -187,16 +191,28 @@ class TodoToggleView(TodoMixin, View):
         todo.completed_at = timezone.now() if todo.done else None
         todo.save(update_fields=["done", "completed_at"])
         todo_service.sync_dsr(todo, request.company)
+        messages.success(
+            request,
+            f'Marked "{todo.text}" done.' if todo.done else f'Reopened "{todo.text}".',
+        )
         return self.render_list(request)
 
 
 class TodoDeleteView(TodoMixin, View):
     def post(self, request, pk):
-        get_object_or_404(Todo, pk=pk, user=request.user).delete()
+        todo = get_object_or_404(Todo, pk=pk, user=request.user)
+        text = todo.text
+        todo.delete()
+        messages.success(request, f'Deleted "{text}".')
         return self.render_list(request)
 
 
 class TodoClearDoneView(TodoMixin, View):
     def post(self, request):
-        Todo.objects.filter(user=request.user, done=True).delete()
+        removed, _ = Todo.objects.filter(user=request.user, done=True).delete()
+        if removed:
+            messages.success(
+                request,
+                f"Cleared {removed} completed to-do{'s' if removed != 1 else ''}.",
+            )
         return self.render_list(request)

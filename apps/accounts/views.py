@@ -137,6 +137,12 @@ class CompanySetupView(LoginRequiredMixin, View):
                 role=Membership.Role.OWNER,
             )
             request.session[settings.ACTIVE_COMPANY_SESSION_KEY] = membership.company_id
+            log_activity(
+                company, "company_created",
+                f"Company '{company.name}' created",
+                description=f"{request.user.get_full_name() or request.user.username} set up the workspace",
+                actor=request.user,
+            )
             messages.success(request, f"Company '{company.name}' created.")
             return redirect("accounts:dashboard")
         return render(request, "accounts/company_setup.html", {"form": form})
@@ -328,6 +334,13 @@ class ProfileView(CompanyMemberRequiredMixin, View):
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
+            if form.changed_data:
+                log_activity(
+                    request.company, "profile_updated",
+                    "Profile updated",
+                    description=", ".join(form.changed_data),
+                    actor=request.user,
+                )
             messages.success(request, "Profile updated.")
             return redirect("accounts:profile")
         return render(request, "accounts/profile.html", {"form": form})

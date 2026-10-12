@@ -63,6 +63,24 @@ class TodoTest(TestCase):
         self.assertEqual(rows.count(), 1)  # toggling never duplicates
         self.assertEqual((rows[0].task_name, rows[0].date), ("write report", timezone.localdate()))
 
+    def test_every_todo_action_toasts_over_htmx(self):
+        """The list swaps a fragment (no shell), so each action's feedback must
+        ride the HX-Trigger `django-message` header the middleware attaches."""
+        def htmx_post(url, data=None):
+            return self.client.post(url, data or {}, headers={"HX-Request": "true"})
+
+        resp = htmx_post(reverse("dashboards:todos"), {"text": "ship it"})
+        self.assertIn("Added", resp.headers["HX-Trigger"])
+        self.assertIn("can't be empty", htmx_post(reverse("dashboards:todos"), {"text": "  "}).headers["HX-Trigger"])
+        t = Todo.objects.get(text="ship it")
+        self.assertIn("Marked", htmx_post(reverse("dashboards:todo_toggle", args=[t.pk])).headers["HX-Trigger"])
+        self.assertIn("Reopened", htmx_post(reverse("dashboards:todo_toggle", args=[t.pk])).headers["HX-Trigger"])
+        htmx_post(reverse("dashboards:todo_toggle", args=[t.pk]))  # done again, so clear has something to remove
+        self.assertIn("Cleared 1 completed to-do", htmx_post(reverse("dashboards:todo_clear_done")).headers["HX-Trigger"])
+        htmx_post(reverse("dashboards:todos"), {"text": "second"})
+        t2 = Todo.objects.get(text="second")
+        self.assertIn("Deleted", htmx_post(reverse("dashboards:todo_delete", args=[t2.pk])).headers["HX-Trigger"])
+
     def test_overdue_reminder_goes_out_once_a_day(self):
         from datetime import timedelta
 

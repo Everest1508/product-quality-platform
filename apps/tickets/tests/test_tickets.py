@@ -279,6 +279,21 @@ class TicketDeleteTest(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(Ticket.objects.count(), 1)
 
+    def test_following_and_unfollowing_are_audited(self):
+        from apps.dashboards.models import ActivityLog
+
+        ticket = Ticket.objects.create(
+            company=self.company, title="Follow me", created_by=self.owner,
+        )
+        self.client.login(username="member", password="pass1234")
+        self.client.post(reverse("tickets:ticket_follow", args=[ticket.pk]))
+        followed = ActivityLog.objects.get(event_type="ticket_followed", company=self.company)
+        self.assertEqual(followed.target_object_id, ticket.pk)
+        self.client.post(reverse("tickets:ticket_follow", args=[ticket.pk]))
+        self.assertTrue(
+            ActivityLog.objects.filter(event_type="ticket_unfollowed", company=self.company).exists()
+        )
+
     def test_delete_other_tenant_ticket(self):
         other = Company.objects.create(name="Other", slug="other")
         other_ticket = Ticket.objects.create(company=other, title="Not yours")

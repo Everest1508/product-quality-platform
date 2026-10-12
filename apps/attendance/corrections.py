@@ -211,6 +211,16 @@ def cancel(correction_id, user):
         correction.status = AttendanceCorrection.Status.CANCELLED
         correction.decided_at = timezone.now()
         correction.save(update_fields=["status", "decided_at"])
+    log_activity(
+        correction.company,
+        "attendance_correction_cancelled",
+        f"{correction.user.get_full_name() or correction.user.username} cancelled their correction for {correction.date:%b %d, %Y}",
+        description=correction.reason[:200],
+        actor=user,
+        target_content_type="attendance_correction",
+        target_object_id=correction.pk,
+        metadata={"date": correction.date.isoformat()},
+    )
     return correction
 
 

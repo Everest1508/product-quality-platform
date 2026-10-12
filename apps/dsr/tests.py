@@ -227,6 +227,16 @@ class ManualEntryTest(TestCase):
         self.add(user="viewer")
         self.assertEqual(DSREntry.objects.get().user, self.viewer)
 
+    def test_adding_an_entry_writes_an_audit_row(self):
+        from apps.dashboards.models import ActivityLog
+
+        self.add()
+        entry = DSREntry.objects.get()
+        row = ActivityLog.objects.get(event_type="dsr_entry_added", company=self.company)
+        self.assertEqual(row.actor, self.member)
+        self.assertIn(entry.task_name, row.title)
+        self.assertEqual(row.metadata["user_id"], self.member.pk)
+
     def test_cannot_log_for_someone_else(self):
         self.client.login(username="member", password="password")
         self.client.post(
@@ -280,6 +290,18 @@ class InlineUpdateValidationTest(TestCase):
         self.assertEqual(self.entry.task_name, "Renamed")
         self.assertEqual(self.entry.hours_spent, Decimal("4.00"))
         self.assertEqual(self.entry.status, "in_progress")
+
+    def test_updating_and_deleting_are_audited(self):
+        from apps.dashboards.models import ActivityLog
+
+        self.update(task_name="Renamed", hours_spent="4.00", status="in_progress")
+        row = ActivityLog.objects.get(event_type="dsr_entry_updated", company=self.company)
+        self.assertEqual(row.actor, self.member)
+        self.assertIn("4.00", row.description)
+        self.client.post(reverse("dsr:dsr_delete", kwargs={"pk": self.entry.pk}))
+        deleted = ActivityLog.objects.get(event_type="dsr_entry_deleted", company=self.company)
+        self.assertEqual(deleted.actor, self.member)
+        self.assertIn("Renamed", deleted.title)
 
     def test_invalid_status_is_ignored(self):
         self.update(status="almost_done")

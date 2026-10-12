@@ -520,9 +520,27 @@ class TicketFollowView(CompanyMemberRequiredMixin, View):
         if ticket.watchers.filter(pk=request.user.pk).exists():
             ticket.watchers.remove(request.user)
             messages.success(request, f"You unfollowed {ticket.key}.")
+            log_activity(
+                request.company, "ticket_unfollowed",
+                f"{request.user.username} unfollowed {ticket.key}",
+                description=ticket.title[:200],
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id},
+            )
         else:
             ticket.watchers.add(request.user)
             messages.success(request, f"You are following {ticket.key}. You will be told about comments and status changes.")
+            log_activity(
+                request.company, "ticket_followed",
+                f"{request.user.username} is following {ticket.key}",
+                description=ticket.title[:200],
+                actor=request.user,
+                target_content_type="ticket",
+                target_object_id=ticket.pk,
+                metadata={"product_id": ticket.product_id},
+            )
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_ticket_follow.html", {
                 "ticket": ticket, "following": ticket.watchers.filter(pk=request.user.pk).exists(),

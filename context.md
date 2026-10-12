@@ -68,6 +68,157 @@ entry here is unfinished.
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
 
+### 2026-10-12 (audit) — toasts for the silent mutations, audit rows for the unlogged ones
+
+**What changed.** An AST scan of every mutation handler in `apps/*/views.py`
+(`/tmp/audit_mutations.py`, throwaway) was classified with a subagent. Two
+families of gaps were fixed:
+
+1. **Toasts added where a mutation was silent.** Htmx fragment replies already
+   deliver instantly via `HtmxMessagesMiddleware`, and the fetch-based
+   bulk-delete UI already toasts client-side — so the only fix needed was
+   calling `messages.*` in the silent views:
+   - `apps/dashboards/views.py` — all four todo handlers now post messages
+     (`TodoListView.post` "Added …" / "To-do text can't be empty.",
+     `TodoToggleView.post` "Marked … done." / "Reopened …",
+     `TodoDeleteView.post`, `TodoClearDoneView.post` "Cleared N completed
+     to-do(s)." only when N > 0). The module previously had **no** `messages`
+     import.
+   - `apps/products/views.py::APIKeyRotateView.post` — "Key rotated — the old
+     key is revoked now." / "… works until {date}." A rotation with no feedback
+     was the worst kind of silent success: the old key stops working and
+     nothing says why.
+   - Bulk-ticket delete (`TicketBulkDeleteView`,
+     `ProductTicketBulkDeleteView`) returns JSON that `base.html`'s
+     `bulkDeleteTickets` `fetch` turns into a `toast()` itself — **not** a gap.
+
+2. **Audit rows added where a user-driven state change was unlogged**
+   (`log_activity`, all new free-form snake_case event types following the
+   `ticket_deadline_changed` precedent — no model change, so they appear in
+   the audit-log list but are not counted by `get_summary_report`):
+   - `apps/accounts/views.py` — `CompanySetupView.post` → `company_created`
+     (the first row of the new company); `ProfileView.post` →
+     `profile_updated`, only when `form.changed_data` (an unchanged save is
+     not an event).
+   - `apps/dsr/views.py` — `DSREntryAddView` & `DSRSuggestionAddView` →
+     `dsr_entry_added`; `DSREntryUpdateView` → `dsr_entry_updated`;
+     `DSREntryDeleteView` → `dsr_entry_deleted`, all with
+     `{user_id, date, product_id}` metadata and the sheet facts (date ·
+     category · hours · status) in the description. The DSR is company state
+     — a work-hours claim on the team sheet — so it belongs in the feed even
+     though the sheet is per-person.
+   - `apps/products/views.py` — `ProductMilestoneAddView` →
+     `milestone_added`; `ProductMilestoneToggleView` → `milestone_toggled`
+     (metadata `from`/`to` captured **before** the status change);
+     `ProductMilestoneDeleteView` → `milestone_deleted`.
+   - `apps/tickets/views.py::TicketFollowView.post` → `ticket_followed` /
+     `ticket_unfollowed`, target = the ticket.
+   - `apps/attendance/corrections.py::cancel` → `attendance_correction_cancelled`,
+     logged inside the service like `request_correction`/`decide` (the rules
+     live there), with the same `target_content_type="attendance_correction"`
+     shape.
+
+**Deliberately not changed** (classification results): Login (inline form
+errors; success redirects to a page), logout / company-switch (session-only,
+toasts already present), OAuth / ingestion / Serop / MarkAllRead / push-subscribe
+(JSON or fetch APIs — no page shell to host a toast, per AGENTS.md),
+`LeaveSplitPreviewView` (a preview, not a mutation), `PublicSurveyView`
+(already logs `survey_response` and renders a thank-you page). To-dos get
+toasts but **no** audit row: they are a personal scratch list
+(`user=request.user`), and "added to-do: ship it" in the company feed would
+be noise.
+
+**How verified.** `apps.attendance.test_corrections` +
+`apps.dashboards.tests.test_todos` + `apps.dsr.tests` +
+`apps.tickets.tests.test_tickets` + `apps.products.tests.test_milestones` +
+`apps.accounts.tests.test_tenant_isolation` → 177 tests; the only failure is
+the known Q6 `test_signup_creates_user` (`NoReverseMatch: 'signup'`,
+deliberately left red). `apps.products.tests.test_api_keys` → 36 OK. New
+regression tests pinning the toasts and rows: todo HX-Trigger test in
+`test_todos.py`; `test_cancelling_my_request_writes_an_audit_row`;
+DSR add/update/delete audit tests; `test_following_and_unfollowing_are_audited`;
+`test_milestone_actions_are_audited`; company-setup + ProfileAuditTest;
+`test_the_rotation_toast_names_the_grace` (learned: rotating with "now" grace
+revokes the key, so the test's second rotate uses a *fresh* key — the old one
+400s).
+
+**Still undecided.** Whether to-dos should ever appear in the company audit
+feed (currently: no). Whether a rejected DSR update deserves a row (currently:
+no — nothing changed, mirroring the leave "rejection discards the split"
+rule).
+
+**Released as 1.11.0.** At the user's request, the working-tree changes from
+today (punch time/notification fixes + this audit sweep) were cut as
+**1.11.0**: a `## [1.11.0] — 2026-10-12 · a toast for every action, and an
+audit trail behind it` entry was added at the top of `CHANGELOG.md` (5
+top-level bullets across New/Better/Fixed — New: audit rows + to-do toasts +
+key-rotation toast; Better: punch notifications with late fee / day tally;
+Fixed: UTC→IST punch times), and `core/settings.py::APP_VERSION` default
+bumped `"1.10.0"` → `"1.11.0"`. No existing release entries were edited. The
+parser pins hold: `apps.core` → 159 tests OK (including bullet-count vs HEAD
+and the 700-char longest-item cap), and `get_version_info()` reports
+version `1.11.0` / latest_release `1.11.0` / `2026-10-12` with 5 items.
+
+### 2026-10-12 (attendance) — punch toast/notification showed UTC time; a Monday-only test failure
+
+**What changed.**
+
+1. **The punch message, toast and notification now show Indian time.** Both
+   server-side formatting sites in `apps/attendance/views.py::AttendancePunchView.post`
+   called `record.check_in.strftime("%I:%M %p")` on the raw value, which is
+   stored **UTC** — a 10:02 IST punch produced a notification reading
+   "Checked in at 04:32 AM." (and the same wrong time in the activity-log
+   description). Both now go through `timezone.localtime(record.check_in)`,
+   the same pattern `service._penalty_reason` already used. Verified:
+   `apps.attendance.tests.PunchPanelTest` → 27 tests OK, including the new
+   `test_the_punch_notification_shows_indian_time_not_utc` (asserts the htmx
+   panel message *and* the `Notification` title contain the IST time and not
+   the UTC strftime).
+   - Related but deliberately **not** changed: the presence panel's
+     `clock()` (`templates/core/_presence.html`) renders `clocked_in_at` via
+     `new Date(iso).toLocaleTimeString()` — *device-local*, not IST. If the
+     viewer's machine is on a non-IST zone, "In since …" still shows local
+     time. Same for the punch panel's live `clock` getter (epoch ms). Decide
+     whether every on-screen clock should force IST before touching these.
+   - The templates were never affected: `{{ ...|date:"g:i A" }}` localizes
+     via Django's template filter.
+
+2. **`test_an_unclosed_day_does_not_create_a_late_penalty` was Monday-only**
+   red: it built its record from "yesterday", and `lateness_for`
+   (service.py:329) returns 0 for weekends, so on a Monday (yesterday =
+   Sunday) the assertion `0 != 1` failed. Fix: roll the record back to the
+   previous weekday when "yesterday" is Sat/Sun. The test still pins what it
+   protected — an unclosed day *does* incur its `check_in`-based penalty
+   because payroll reads `check_in` alone. Verified: single test and the full
+   `apps.attendance` suite (197 tests) both OK.
+
+3. **Punch notifications now carry a `body`** (the bell row and push alert had
+   the field but it was always empty for punches). New
+   `views._punch_notification_body(record, action, company)`:
+   - check-in: the `late_penalty_for` result — `"45 min late — ₹100.00 late
+     fee."`, `"… counts as a half day on this cycle's payslip."`, or `"On
+     time for the 10:00 AM shift."` — the same call the payslip quotes, never
+     a second copy of the rule;
+   - check-out: `"{worked} worked today · {delta} short of/over a full {target}
+     day"` plus `" · N earlier days still unclosed"` from
+     `service.unclosed_days`, mirroring the panel's facts.
+   `CURRENCY_SYMBOLS` is now a module constant shared by `_punch_context`'s
+   `late_rules` and the helper, so the panel and the notification cannot
+   disagree about the currency symbol. Verified:
+   `test_the_punch_notification_body_names_lateness_or_the_day` (helper-level,
+   deterministic: a live punch lands at "now" so lateness can't be tested
+   end-to-end; each band needs its own user because `AttendanceRecord` is
+   unique per company+user+date; the end-to-end check-out posts directly
+   because the `htmx_panel` helper re-logs-in as `dev`). Full
+   `apps.attendance` → 198 tests OK.
+
+**How verified.** `apps.attendance` → 198 tests OK. `test_signup_creates_user`
+remains red (Q6, unrelated).
+
+**Open.** Q10 (wall-clock dashboard test) still open. Whether the device-local
+JS clocks (`toLocaleTimeString`) should be forced to IST is now noted above —
+needs a product decision.
+
 ### 2026-10-08 (DSR) — "Administration" category and hour/minute dropdowns
 
 **What changed.** Two changes to the DSR entry form:
