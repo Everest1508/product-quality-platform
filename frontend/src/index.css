@@ -1,14 +1,10 @@
-/* befui theme, scoped so it cannot disturb the legacy shell the page sits in.
-   - Utilities are `important`: Tailwind puts them in a CSS layer, and the legacy
-     stylesheet is unlayered, so without it plain `button`/`a` rules there win.
-   - Tailwind's reset (preflight) is not loaded; a scoped mini-reset is below.
-   - Colour variables live on .befui, not :root, because the legacy CSS already
-     defines --border, --accent and friends on :root. */
-@layer theme, base, components, utilities;
-@import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities) important source('.');
+/* befui theme, standard setup. This stylesheet is only loaded by the React shell
+   page (templates/uiapi/shell.html), which has no legacy CSS, so Tailwind's
+   reset and :root variables are safe here. Dialogs and menus render in portals
+   outside #root, so the variables must live on :root, not on a wrapper. */
+@import 'tailwindcss' source('.');
 
-.befui {
+:root {
   --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -71,13 +67,11 @@
 @keyframes toast { from { opacity: 0; transform: translateY(8px) scale(0.98) } to { opacity: 1; transform: none } }
 
 @layer base {
-  .befui, .befui *, .befui *::before, .befui *::after { box-sizing: border-box; border: 0 solid var(--border); }
-  .befui { font-family: ui-sans-serif, system-ui, sans-serif; color: var(--foreground); }
-  .befui h1, .befui h3, .befui p { margin: 0; }
-  .befui a { color: inherit; text-decoration: none; }
-  .befui button:not(:disabled), .befui [role='button']:not([aria-disabled='true']) { cursor: pointer; }
+  html { -webkit-font-smoothing: antialiased; }
+  body { background: var(--muted); color: var(--foreground); font-family: ui-sans-serif, system-ui, sans-serif; }
+  button:not(:disabled), [role='button']:not([aria-disabled='true']) { cursor: pointer; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .befui *, .befui *::before, .befui *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
