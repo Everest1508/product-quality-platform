@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "apps.serop",
     "apps.presence",
     "apps.notifications",
+    "apps.uiapi",
 ]
 
 MIDDLEWARE = [

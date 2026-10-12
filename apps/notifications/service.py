@@ -37,6 +37,11 @@ def unread_count(user, company):
     return Notification.objects.filter(user=user, company=company, read_at__isnull=True).count()
 
 
+def mine(user, company):
+    """One person's notifications in one workspace, newest first."""
+    return Notification.objects.filter(user=user, company=company).select_related("actor")
+
+
 def notify(*, user, company, kind, title, body="", url="", actor=None):
     """Tell one person something. Returns the row, or None if skipped."""
     if user is None or company is None:

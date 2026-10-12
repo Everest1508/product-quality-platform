@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),
+    path("ui-api/v1/", include("apps.uiapi.urls")),
     path("api/serop/", include("apps.serop.urls")),
     path("products/", include("apps.products.urls")),
     path("errors/", include("apps.errors.urls")),

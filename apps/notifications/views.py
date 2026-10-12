@@ -10,7 +10,7 @@ from apps.notifications.models import Notification, PushSubscription
 
 
 def _mine(request):
-    return Notification.objects.filter(user=request.user, company=request.company).select_related("actor")
+    return service.mine(request.user, request.company)
 
 
 class FeedView(CompanyMemberRequiredMixin, View):
