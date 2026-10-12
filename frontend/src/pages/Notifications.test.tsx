@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as api from '@/lib/api';
+import * as toastLib from '@/lib/toast';
 import { Notifications } from './Notifications';
 
 afterEach(() => vi.restoreAllMocks());
@@ -60,18 +61,13 @@ it('marks all read, refreshes, and raises the legacy toast', async () => {
     .mockResolvedValueOnce({ unread: 1, items: [notice()] })
     .mockResolvedValue({ unread: 0, items: [notice({ read: true })] });
   const mark = vi.spyOn(api, 'markAllRead').mockResolvedValue({ unread: 0 });
-  const toast = vi.fn();
-  window.addEventListener('django-message', toast);
+  const toast = vi.spyOn(toastLib, 'toast').mockImplementation(() => {});
   renderPage();
   await userEvent.click(await screen.findByRole('button', { name: /mark all read/i }));
   await waitFor(() => expect(mark).toHaveBeenCalled());
   await waitFor(() => expect(screen.getByText(/0 unread/)).toBeInTheDocument());
-  expect((toast.mock.calls[0][0] as CustomEvent).detail).toEqual({
-    text: 'All notifications marked as read.',
-    tags: 'success',
-  });
+  expect(toast).toHaveBeenCalledWith('All notifications marked as read.', 'success');
   expect(get.mock.calls.length).toBeGreaterThan(1);
-  window.removeEventListener('django-message', toast);
 });
 
 it('shows a retryable error when loading fails', async () => {

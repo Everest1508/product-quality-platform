@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-
-const toast = (text: string, tags: 'success' | 'error') =>
-  window.dispatchEvent(new CustomEvent('django-message', { detail: { text, tags } }));
 
 // The bell in the topbar is a legacy Alpine store. The classic page reloaded and
 // refreshed it; this page does not, so reset it here.

@@ -1,6 +1,7 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useBootstrapData } from '@/lib/bootstrap';
+import { toast } from '@/lib/toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export function CompanySwitcher({ collapsed }: { collapsed: boolean }) {
@@ -9,8 +10,8 @@ export function CompanySwitcher({ collapsed }: { collapsed: boolean }) {
     try {
       await api.post('company/switch/', { company_id: id });
       window.location.assign(b.urls.home);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast('Could not switch workspace.', 'error');
     }
   };
   return (

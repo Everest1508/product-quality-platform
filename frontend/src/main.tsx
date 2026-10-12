@@ -1,15 +1,21 @@
 import './index.css';
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { configure } from '@/lib/api';
 import { useBootstrap } from '@/lib/bootstrap';
+import { showFlash } from '@/lib/toast';
 import { AppShell } from '@/shell/AppShell';
+import { Toaster } from '@/shell/Toaster';
 import { shellRoutes } from '@/routes';
 
 function Gate() {
   const boot = useBootstrap();
+  const flash = boot.data?.messages;
+  useEffect(() => {
+    if (flash) showFlash(flash);
+  }, [flash]);
   if (boot.isPending) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (boot.isError) {
     return (
@@ -22,6 +28,7 @@ function Gate() {
     );
   }
   return (
+    <>
     <AppShell>
       <Routes>
         {shellRoutes.map((r) => (
@@ -30,6 +37,8 @@ function Gate() {
         <Route path="*" element={<p className="text-sm text-muted-foreground">Page not found.</p>} />
       </Routes>
     </AppShell>
+    <Toaster />
+    </>
   );
 }
 
