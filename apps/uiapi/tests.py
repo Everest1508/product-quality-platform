@@ -100,31 +100,42 @@ from pathlib import Path  # noqa: E402
 from django.test import override_settings  # noqa: E402
 
 
-class NotificationsPageSwitchTest(TestCase):
+class ShellPageTest(TestCase):
     def setUp(self):
         co = Company.objects.create(name="Acme", slug="acme")
         make("bob", co)
+        self.dist = Path(tempfile.mkdtemp())
+        (self.dist / "app.js").write_text("")
+
+    def test_notifications_renders_the_standalone_shell(self):
         self.client.login(username="bob", password="pass1234")
-
-    def test_default_is_the_legacy_page(self):
-        response = self.client.get("/notifications/")
-        self.assertTemplateUsed(response, "notifications/list.html")
-        self.assertNotContains(response, 'id="react-root"')
-
-    def test_switch_on_renders_the_react_shell(self):
-        dist = Path(tempfile.mkdtemp())
-        (dist / "app.js").write_text("")
-        with override_settings(REACT_PAGES={"notifications"}, FRONTEND_DIST=dist):
+        with override_settings(FRONTEND_DIST=self.dist):
             response = self.client.get("/notifications/")
-        self.assertTemplateUsed(response, "notifications/list_react.html")
-        self.assertContains(response, 'id="react-root"')
-        self.assertContains(response, 'data-page="notifications"')
+        self.assertTemplateUsed(response, "uiapi/shell.html")
+        self.assertTemplateNotUsed(response, "core/base.html")
+        self.assertContains(response, 'id="root"')
         self.assertContains(response, 'data-csrf="')
         self.assertContains(response, "/ui/app.js")
+        self.assertNotContains(response, "htmx")
+        self.assertNotContains(response, "alpinejs")
 
-    @override_settings(REACT_PAGES={"notifications"}, FRONTEND_DIST=Path("/nonexistent"))
-    def test_switch_on_with_no_build_says_so(self):
-        self.assertContains(self.client.get("/notifications/"), "frontend has not been built")
+    def test_a_missing_build_says_so(self):
+        self.client.login(username="bob", password="pass1234")
+        with override_settings(FRONTEND_DIST=Path("/nonexistent")):
+            self.assertContains(self.client.get("/notifications/"), "frontend has not been built")
+
+    def test_anonymous_goes_to_login(self):
+        response = Client().get("/notifications/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response["Location"])
+
+    def test_no_company_goes_to_company_setup(self):
+        User.objects.create_user("loner", "l@t.local", "pass1234")
+        c = Client()
+        c.login(username="loner", password="pass1234")
+        response = c.get("/notifications/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/company/setup/", response["Location"])
 
 
 from apps.products.models import Product, ProductAccess  # noqa: E402

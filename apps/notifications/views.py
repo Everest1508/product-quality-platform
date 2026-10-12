@@ -1,13 +1,13 @@
 import json
 
-from django.conf import settings
 from django.http import HttpResponseBadRequest, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.notifications import service
 from apps.notifications.models import Notification, PushSubscription
+from apps.uiapi.shell import render_shell
 
 
 def _mine(request):
@@ -24,17 +24,7 @@ class FeedView(CompanyMemberRequiredMixin, View):
 
 class ListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        rows = _mine(request)
-        only_unread = request.GET.get("filter") == "unread"
-        if only_unread:
-            rows = rows.filter(read_at__isnull=True)
-        template = "notifications/list_react.html" if "notifications" in settings.REACT_PAGES else "notifications/list.html"
-        return render(request, template, {
-            "notifications": rows[:100],
-            "only_unread": only_unread,
-            "unread": service.unread_count(request.user, request.company),
-            "frontend_built": (settings.FRONTEND_DIST / "app.js").is_file(),
-        })
+        return render_shell(request)
 
 
 class OpenView(CompanyMemberRequiredMixin, View):

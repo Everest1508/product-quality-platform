@@ -112,10 +112,11 @@ class ViewsTest(Base):
         self.assertTrue(self.mine.is_read)
         self.assertFalse(self.theirs.is_read)
 
-    def test_the_list_page_renders_and_filters(self):
-        self.assertContains(self.client.get(reverse("notifications:list")), "Mine")
-        self.client.get(reverse("notifications:open", args=[self.mine.pk]))
-        self.assertNotContains(self.client.get(reverse("notifications:list") + "?filter=unread"), "Mine")
+    def test_the_list_page_is_the_react_shell(self):
+        # The rows and the unread filter are served by /ui-api/v1/notifications/
+        # (see apps.uiapi.tests); this URL only boots the app.
+        response = self.client.get(reverse("notifications:list"))
+        self.assertTemplateUsed(response, "uiapi/shell.html")
 
     def test_signed_out_visitors_are_sent_away(self):
         self.client.logout()
