@@ -10,6 +10,16 @@ import { cn } from '@/lib/utils';
 const toast = (text: string, tags: 'success' | 'error') =>
   window.dispatchEvent(new CustomEvent('django-message', { detail: { text, tags } }));
 
+// The bell in the topbar is a legacy Alpine store. The classic page reloaded and
+// refreshed it; this page does not, so reset it here.
+type Bell = { unread: number; items: { read: boolean }[] };
+const clearBell = () => {
+  const bell = (window as unknown as { Alpine?: { store: (n: string) => Bell | undefined } }).Alpine?.store('notifications');
+  if (!bell) return;
+  bell.items = bell.items.map((n) => ({ ...n, read: true }));
+  bell.unread = 0;
+};
+
 const ago = (iso: string) => {
   const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -51,6 +61,7 @@ export function Notifications() {
     mutationFn: markAllRead,
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['notifications'] });
+      clearBell();
       toast('All notifications marked as read.', 'success');
     },
     onError: () => toast('Could not mark notifications as read.', 'error'),

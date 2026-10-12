@@ -140,7 +140,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.11.0")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.12.0")
 
 # Pages served by the React frontend instead of the legacy template, e.g.
 # REACT_PAGES=notifications,tickets. Empty means everything is legacy.

@@ -278,6 +278,10 @@ A silent success is a bug. The action worked and the screen says nothing, which 
 - **Auditing is not optional.** Clicking through the app misses handlers; parse the POST bodies instead (an `ast` walk over `apps/*/views.py` for `messages.` is ~20 lines). `apps/products/tests/test_toasts.py` is the regression net and shows the shape of the assertion: check the POST *queued* the message **and** that the page rendered after it contains `id="toast-seed"` — a view can pass the first and fail the second, which is precisely what the old bug was.
 - Writing one of those tests: send the form's **real** field names and the model's **literal lowercase choice values** (`priority="high"`, DSR `category="other"`), and pass `company=` to tenant-scoped models. A wrong field name re-renders the form with 200 and queues nothing, which is indistinguishable from a broken toast.
 
+### React UI (in migration)
+
+The UI is being moved page by page to React in `frontend/` (Vite, TypeScript, Tailwind 4, befui components, TanStack Query). Django stays the backend: a React page calls session-cookie JSON endpoints in `apps/uiapi/` (`/ui-api/v1/`, DRF `SessionAuthentication`, CSRF enforced) that **reuse `service.py` and the `accessible_*` / `require_*` helpers, never re-derive access rules**. `settings.REACT_PAGES` (env `REACT_PAGES=notifications,...`) picks React or the legacy template per page; legacy is the default until a page has parity. Build with `cd frontend && npm run build` (Django serves `frontend/dist` at `/ui/`), test with `npm test`. Inside the legacy shell the React CSS is scoped to `.befui` (no preflight, `important` utilities); toasts use the legacy `django-message` event. A new React page needs a parity check against its legacy template before its switch is flipped. Details: `context.md` 2026-10-12 (React UI).
+
 ### Changelog and version
 
 - `CHANGELOG.md` is a **runtime asset, not documentation**. `apps/core/changelog.py` parses it (memoised against mtime) for the sidebar "What's new" dialog and `/api/v1/changelog/`; `APP_VERSION` (env override `DJANGO_APP_VERSION`) feeds the footer and `/api/v1/version/`.

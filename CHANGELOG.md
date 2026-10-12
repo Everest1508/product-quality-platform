@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.12.0] — 2026-10-12 · a fresher notifications page
+
+> In short: the notifications page has a cleaner, more modern look and updates in place, and it is the first page of a gradual move to a new interface.
+
+### New
+
+- **A fresher look for the notifications page.** Each notification shows its kind, a short summary and how long ago it arrived, with unread ones marked clearly, on a layout that works well on a phone.
+
+### Better
+
+- **Marking everything as read no longer reloads the page.** The list, the unread count and the bell at the top all update straight away, and a message confirms it.
+- **Loading and errors are clearer.** You see placeholders while notifications load, and a Try again button if something goes wrong.
+
 ## [1.11.0] — 2026-10-12 · a toast for every action, and an audit trail behind it
 
 > In short: every action now confirms itself with a pop-up message, more of your changes are written to the activity log, and the punch notifications show Indian time with the late fee or how your day went.

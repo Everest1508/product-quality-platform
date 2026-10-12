@@ -23,6 +23,7 @@ entry here is unfinished.
 | Area | Where it lives | The one thing to know |
 |---|---|---|
 | App shell / nav | `templates/core/base.html`, `templates/core/_sidebar.html` | One `<style>` block, htmx + Alpine from CDN, **no build step** |
+| React UI (migrating) | `frontend/`, `apps/uiapi/`, `apps/core/ui_assets.py`, `settings.REACT_PAGES` | Per-page switch; scoped befui theme inside the legacy shell, see the 2026-10-12 (React UI) entry |
 | Toasts | `templates/core/base.html`, `apps/core/templatetags/toast_tags.py` | Seed must sit **above** `#toast-container`; every mutation must call `messages.*` |
 | Multi-tenancy | `apps/products/access.py`, `apps/core/middleware.py`, `apps/core/mixins.py` | Company isolation **and** per-product access — both required, see `AGENTS.md` |
 | Attendance | `apps/attendance/{models,service,views}.py` | `models.punch()` is the only write path; hours never move a payslip |
@@ -67,6 +68,15 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-12 (React UI) — notifications page moved to React + befui, behind a switch
+
+- **What exists now.** `frontend/` (Vite, React 19, TypeScript, Tailwind 4, befui components copied into `frontend/src/components/ui/`), `apps/uiapi/` (session-cookie JSON API at `/ui-api/v1/`, for now only notifications), `apps/core/ui_assets.py` (serves `frontend/dist/app.js|app.css` at `/ui/<name>`), and `settings.REACT_PAGES` (env `REACT_PAGES=notifications,...`). `/notifications/` renders `notifications/list_react.html` when `"notifications"` is in it; the legacy `list.html` stays and is the default. Spec: `docs/superpowers/specs/2026-10-12-react-ui-migration-design.md`; plan: `docs/superpowers/plans/2026-10-12-react-ui-foundation-notifications-pilot.md`.
+- **Why the CSS looks the way it does.** The React page sits inside the legacy shell, whose unlayered CSS defines `--border`, `--accent` etc. on `:root` and styles bare `button`/`a`. So befui's variables live on `.befui` (not `:root`), Tailwind's preflight is not loaded (a scoped mini-reset is in `@layer base`), and utilities are `important` (Tailwind layers them; unlayered legacy rules would otherwise win). Without `important` the card had no border and buttons were flat.
+- **befui source.** `npx befui add` is not on npm and `npx github:RandomKid24/befui` was blocked by the sandbox; the four components in use (button, card, badge, skeleton) were copied from the site's source blocks. Button uses lucide's `LoaderCircle`, and its decorative variants were dropped.
+- **Bell parity.** The classic page reloaded after "Mark all read", which refreshed the topbar bell (an Alpine store). React does not reload, so it resets `Alpine.store('notifications')` itself.
+- **Deliberately not changed.** The legacy notifications template and views stay until the React page has run in production for a while. No dark mode, no hashed asset names, no HMR (`npm run dev` is a watch build). The `/ui-api/v1/bootstrap/` endpoint waits for the first React-owned shell.
+- **Build.** `cd frontend && npm run build` (tests: `npm test`). The Dockerfile has a Node stage; production runs no Node.
 
 ### 2026-10-12 (audit) — toasts for the silent mutations, audit rows for the unlogged ones
 

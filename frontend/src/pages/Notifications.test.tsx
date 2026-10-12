@@ -86,3 +86,15 @@ it('shows loading placeholders before data arrives', () => {
   renderPage();
   expect(screen.getByTestId('notifications-loading')).toBeInTheDocument();
 });
+
+it('resets the legacy bell after marking all read', async () => {
+  vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 1, items: [notice()] });
+  vi.spyOn(api, 'markAllRead').mockResolvedValue({ unread: 0 });
+  const bell = { unread: 5, items: [{ id: 1, read: false }] };
+  (window as unknown as { Alpine: unknown }).Alpine = { store: (name: string) => (name === 'notifications' ? bell : undefined) };
+  renderPage();
+  await userEvent.click(await screen.findByRole('button', { name: /mark all read/i }));
+  await waitFor(() => expect(bell.unread).toBe(0));
+  expect(bell.items[0].read).toBe(true);
+  delete (window as unknown as { Alpine?: unknown }).Alpine;
+});

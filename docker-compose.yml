@@ -16,6 +16,7 @@ services:
       - DJANGO_DEBUG=True
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,crm.beforth.in
       - REDIS_URL=redis://redis:6379/0
+      - REACT_PAGES=notifications
     depends_on:
       - redis
     command: sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
