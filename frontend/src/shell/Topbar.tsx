@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { Bell } from './Bell';
+import { PresenceMenu } from './PresenceMenu';
 
 type Props = { onOpenNav(): void; changelogOpen: boolean; onChangelogOpenChange(open: boolean): void };
 
@@ -13,6 +14,7 @@ export function Topbar({ onOpenNav }: Props) {
       </button>
       <span className="truncate text-sm font-semibold">{b.company.name}</span>
       <div className="ml-auto flex items-center gap-2">
+        <PresenceMenu />
         <Bell />
       </div>
     </header>
