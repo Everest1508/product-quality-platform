@@ -92,3 +92,36 @@ class NotificationsApiTest(TestCase):
         self.assertEqual(strict.post(reverse("uiapi:notifications_read_all")).status_code, 403)
         self.mine.refresh_from_db()
         self.assertFalse(self.mine.is_read)
+
+
+import tempfile  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from django.test import override_settings  # noqa: E402
+
+
+class NotificationsPageSwitchTest(TestCase):
+    def setUp(self):
+        co = Company.objects.create(name="Acme", slug="acme")
+        make("bob", co)
+        self.client.login(username="bob", password="pass1234")
+
+    def test_default_is_the_legacy_page(self):
+        response = self.client.get("/notifications/")
+        self.assertTemplateUsed(response, "notifications/list.html")
+        self.assertNotContains(response, 'id="react-root"')
+
+    def test_switch_on_renders_the_react_shell(self):
+        dist = Path(tempfile.mkdtemp())
+        (dist / "app.js").write_text("")
+        with override_settings(REACT_PAGES={"notifications"}, FRONTEND_DIST=dist):
+            response = self.client.get("/notifications/")
+        self.assertTemplateUsed(response, "notifications/list_react.html")
+        self.assertContains(response, 'id="react-root"')
+        self.assertContains(response, 'data-page="notifications"')
+        self.assertContains(response, 'data-csrf="')
+        self.assertContains(response, "/ui/app.js")
+
+    @override_settings(REACT_PAGES={"notifications"}, FRONTEND_DIST=Path("/nonexistent"))
+    def test_switch_on_with_no_build_says_so(self):
+        self.assertContains(self.client.get("/notifications/"), "frontend has not been built")

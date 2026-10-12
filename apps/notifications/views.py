@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -27,10 +28,12 @@ class ListView(CompanyMemberRequiredMixin, View):
         only_unread = request.GET.get("filter") == "unread"
         if only_unread:
             rows = rows.filter(read_at__isnull=True)
-        return render(request, "notifications/list.html", {
+        template = "notifications/list_react.html" if "notifications" in settings.REACT_PAGES else "notifications/list.html"
+        return render(request, template, {
             "notifications": rows[:100],
             "only_unread": only_unread,
             "unread": service.unread_count(request.user, request.company),
+            "frontend_built": (settings.FRONTEND_DIST / "app.js").is_file(),
         })
 
 
