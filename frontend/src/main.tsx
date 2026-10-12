@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { configure } from '@/lib/api';
 import { useBootstrap } from '@/lib/bootstrap';
+import { registerServiceWorker } from '@/lib/pwa';
 import { showFlash } from '@/lib/toast';
 import { AppShell } from '@/shell/AppShell';
 import { Toaster } from '@/shell/Toaster';
@@ -43,6 +44,7 @@ function Gate() {
 }
 
 const el = document.getElementById('root');
+registerServiceWorker();
 if (el) {
   configure({ api: '/ui-api/v1/', csrf: el.dataset.csrf ?? '' });
   const client = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } } });

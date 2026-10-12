@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
+import { useInstallPrompt } from '@/lib/pwa';
 import { cn } from '@/lib/utils';
 import { CompanySwitcher } from './CompanySwitcher';
 import { activeKey, navSections, type NavItem } from './nav';
@@ -31,6 +32,7 @@ function Row({ it, active, collapsed }: { it: NavItem; active: boolean; collapse
 
 export function Sidebar({ collapsed, onToggle, open, onClose, onOpenChangelog }: Props) {
   const b = useBootstrapData();
+  const pwa = useInstallPrompt();
   const { pathname } = useLocation();
   const sections = navSections(b);
   const active = activeKey(pathname, sections);
@@ -76,6 +78,12 @@ export function Sidebar({ collapsed, onToggle, open, onClose, onOpenChangelog }:
               </>
             )}
           </button>
+          {pwa.available && (
+            <button type="button" onClick={pwa.install} className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground outline-none hover:bg-secondary hover:text-foreground">
+              <Download className="size-4 shrink-0" />
+              {!collapsed && <span>Install app</span>}
+            </button>
+          )}
           <button
             type="button"
             onClick={onToggle}
