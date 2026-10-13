@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { socket } from '@/lib/presence';
 import { AppShell } from './AppShell';
 import * as bootstrap from '@/lib/bootstrap';
 import { sampleBootstrap } from '@/test-fixtures';
@@ -57,4 +58,14 @@ it('lists the workspaces in the switcher and the version in the footer', () => {
   renderShell();
   expect(screen.getByRole('button', { name: /what.s new/i })).toHaveTextContent('v1.12.0');
   expect(screen.getByRole('button', { name: /acme corp/i })).toBeInTheDocument();
+});
+
+it('reconnects the socket when the page comes back from the back/forward cache', () => {
+  const start = vi.spyOn(socket, 'start').mockImplementation(() => {});
+  renderShell();
+  start.mockClear();
+  window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: false }));
+  expect(start).not.toHaveBeenCalled();
+  window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+  expect(start).toHaveBeenCalledTimes(1);
 });

@@ -45,3 +45,17 @@ it('? opens help, c goes to New ticket, but not while typing or with a modifier'
   press('c', {}, input);
   expect(go).not.toHaveBeenCalled();
 });
+
+it('single-key shortcuts ignore keys pressed inside menus and dialogs', () => {
+  const go = vi.spyOn(nav, 'go').mockImplementation(() => {});
+  const h = setup();
+  const menu = document.body.appendChild(document.createElement('div'));
+  menu.setAttribute('role', 'menu');
+  const item = menu.appendChild(document.createElement('button'));
+  press('c', {}, item);
+  press('/', {}, item);
+  press('?', {}, item);
+  expect(go).not.toHaveBeenCalled();
+  expect(h.onPalette).not.toHaveBeenCalled();
+  expect(h.onHelp).not.toHaveBeenCalled();
+});

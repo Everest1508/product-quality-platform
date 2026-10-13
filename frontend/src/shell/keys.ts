@@ -3,9 +3,13 @@ import { go } from '@/lib/go';
 
 type Handlers = { onPalette(mode: 'open' | 'toggle'): void; onHelp(): void; newTicketUrl: string };
 
+// Typing in a field, or interacting inside an open menu/dialog/listbox: single keys belong to that widget.
 const typing = (t: EventTarget | null) => {
   const el = t as HTMLElement | null;
-  return !!el && (/^(input|textarea|select)$/i.test(el.tagName) || el.isContentEditable);
+  return (
+    !!el &&
+    (/^(input|textarea|select)$/i.test(el.tagName) || el.isContentEditable || !!el.closest?.('[role=dialog],[role=menu],[role=listbox]'))
+  );
 };
 
 // Ctrl/Cmd+K works anywhere. The single-key shortcuts ( / ? c ) are ignored

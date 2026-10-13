@@ -8,8 +8,8 @@ import { toast } from './toast';
 type Feed = { unread: number; items: Notice[] };
 const FEED = ['bell'];
 
-// The bell shares the ['notifications'] query keys with the Notifications page,
-// so marking read or a live arrival refreshes the page's list as well.
+// The bell lives under ['bell']; the Notifications page invalidates both keys when it marks
+// everything read, and a live arrival here invalidates the page's ['notifications'] list.
 export function useBell() {
   const qc = useQueryClient();
   const feed = useQuery({ queryKey: FEED, queryFn: () => api.get<Feed>('/notifications/feed/'), staleTime: 60_000 });

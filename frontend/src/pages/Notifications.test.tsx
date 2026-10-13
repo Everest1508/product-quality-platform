@@ -27,8 +27,10 @@ function LocationProbe() {
   return <div data-testid="location">{search}</div>;
 }
 
+let lastClient: QueryClient;
 function renderPage(url = '/notifications/') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  lastClient = client;
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[url]}>
@@ -144,4 +146,13 @@ it('sets the page title', async () => {
   renderPage();
   await screen.findByText('No notifications yet');
   expect(document.title).toBe('Notifications — PQ Platform');
+});
+
+it('marking all read also invalidates the bell feed', async () => {
+  vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 1, items: [notice()] });
+  vi.spyOn(api, 'markAllRead').mockResolvedValue({ unread: 0 });
+  renderPage();
+  lastClient.setQueryData(['bell'], { unread: 1, items: [] });
+  await userEvent.click(await screen.findByRole('button', { name: /mark all read/i }));
+  await waitFor(() => expect(lastClient.getQueryState(['bell'])?.isInvalidated).toBe(true));
 });

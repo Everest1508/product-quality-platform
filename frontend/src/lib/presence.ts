@@ -88,6 +88,7 @@ function connect() {
   const sock = new WebSocket(`${proto}${location.host}/ws/presence/`);
   ws = sock;
   sock.onopen = () => {
+    if (ws !== sock) return;
     retry = 0;
     everOpened = true;
     lastSent = '';
@@ -107,6 +108,8 @@ function connect() {
     publish(msg);
   };
   sock.onclose = (e) => {
+    // A socket that was replaced (stop then start) must not touch the new one's state.
+    if (ws !== sock) return;
     ws = null;
     clearInterval(pingTimer);
     if (!started) return;

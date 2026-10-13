@@ -35,8 +35,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     socket.start();
     const stop = () => socket.stop();
+    // Closing on pagehide lets the page enter the back/forward cache; reconnect when it returns.
+    const back = (e: PageTransitionEvent) => e.persisted && socket.start();
     window.addEventListener('pagehide', stop);
-    return () => window.removeEventListener('pagehide', stop);
+    window.addEventListener('pageshow', back);
+    return () => {
+      window.removeEventListener('pagehide', stop);
+      window.removeEventListener('pageshow', back);
+    };
   }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);

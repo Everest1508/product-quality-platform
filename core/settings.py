@@ -142,9 +142,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
 APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.13.0")
 
-# Pages served by the React frontend instead of the legacy template, e.g.
-# REACT_PAGES=notifications,tickets. Empty means everything is legacy.
-REACT_PAGES = {p.strip() for p in os.environ.get("REACT_PAGES", "").split(",") if p.strip()}
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 

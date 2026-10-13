@@ -133,3 +133,15 @@ it('stops polling once the socket opens again', async () => {
   await vi.advanceTimersByTimeAsync(60000);
   expect(fetchMock.mock.calls.length).toBe(calls);
 });
+
+it('a stale socket closing after a stop and start does not spawn a second connection', () => {
+  socket.start();
+  const old = FakeWS.instances[0];
+  old.open();
+  socket.stop();
+  socket.start();
+  expect(FakeWS.instances).toHaveLength(2);
+  old.onclose?.({ code: 1006 });
+  vi.advanceTimersByTime(60000);
+  expect(FakeWS.instances).toHaveLength(2);
+});
