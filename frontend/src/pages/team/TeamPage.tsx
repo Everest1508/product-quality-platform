@@ -19,8 +19,10 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
 import { Avatar } from '@/components/ui/avatar';
+import { Ledger, LedgerRow } from '@/components/ui/ledger';
 
 const SORTS: [string, string][] = [['-role', 'Role (high first)'], ['role', 'Role (low first)'], ['name', 'Name A-Z'], ['-joined', 'Newest first'], ['joined', 'Oldest first']];
+const ROLE_TONE: Record<string, 'info' | 'warn' | 'good' | 'off'> = { owner: 'info', admin: 'warn', developer: 'good', support: 'good', viewer: 'off' };
 const TONE: Record<string, 'info' | 'warning' | 'success' | 'default'> = { owner: 'info', admin: 'warning', developer: 'success', support: 'default', viewer: 'default' };
 const KEYS = ['q', 'role', 'sort', 'page'];
 
@@ -91,35 +93,29 @@ export function TeamPage() {
       ) : d.items.length === 0 ? (
         <EmptyState title="No members found" description={<>Try a different search term or role.</>} />
       ) : (
-        <Card className="overflow-x-auto p-0">
-          <Table>
-            <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {d.items.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar name={m.user.name} />
-                      <div className="min-w-0">
-                        <div className="font-medium">{m.user.name}{m.is_you && <span className="ml-1 text-xs text-muted-foreground">(you)</span>}</div>
-                        <div className="text-xs text-muted-foreground">{m.user.email}{m.user.discord_id && ` · @${m.user.discord_id}`}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell><Badge variant={TONE[m.role] ?? 'default'}>{m.role_label}</Badge>{m.is_leave_approver && <Badge variant="outline" className="ml-1">Leave approver</Badge>}</TableCell>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">{shortDate(m.joined)}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1.5">
-                      {m.can_edit && <Button size="sm" variant="outline" onClick={() => setEditing(m)}><EditIcon />Edit</Button>}
-                      {m.can_remove && <Button size="sm" variant="destructive" onClick={() => setRemoving(m)}><TrashIcon />Remove</Button>}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {d.page.num_pages > 1 && <div className="flex justify-end border-t p-3"><Pagination page={d.page.number} pageCount={d.page.num_pages} onPageChange={(p) => set('page', p === 1 ? null : String(p))} /></div>}
-        </Card>
+        <>
+          <Ledger>
+            {d.items.map((m) => (
+              <LedgerRow
+                key={m.id}
+                tone={ROLE_TONE[m.role] ?? 'off'}
+                title={<>
+                  <Avatar name={m.user.name} />
+                  <span className="truncate text-base font-semibold">{m.user.name}{m.is_you && <span className="ml-1 text-xs font-normal text-muted-foreground">(you)</span>}</span>
+                  <Badge variant={TONE[m.role] ?? 'default'}>{m.role_label}</Badge>
+                  {m.is_leave_approver && <Badge variant="outline">Leave approver</Badge>}
+                </>}
+                sub={`${m.user.email}${m.user.discord_id ? ` · @${m.user.discord_id}` : ''}`}
+                metrics={[{ label: 'Joined', value: <span className="text-sm">{shortDate(m.joined)}</span> }]}
+                actions={<>
+                  {m.can_edit && <Button size="sm" variant="outline" onClick={() => setEditing(m)}><EditIcon />Edit</Button>}
+                  {m.can_remove && <Button size="sm" variant="outline" className="text-destructive" onClick={() => setRemoving(m)}><TrashIcon />Remove</Button>}
+                </>}
+              />
+            ))}
+          </Ledger>
+          {d.page.num_pages > 1 && <div className="flex justify-end"><Pagination page={d.page.number} pageCount={d.page.num_pages} onPageChange={(p) => set('page', p === 1 ? null : String(p))} /></div>}
+        </>
       )}
 
       {d && adding && <MemberDialog open onOpenChange={setAdding} roles={d.assignable_roles} />}

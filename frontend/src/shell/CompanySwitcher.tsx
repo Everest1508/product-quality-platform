@@ -27,7 +27,7 @@ export function CompanySwitcher() {
         </span>
         {!collapsed && (
           <>
-            <span className="min-w-0 flex-1 truncate">{b.company.name}</span>
+            <span className="min-w-0 flex-1 animate-in truncate">{b.company.name}</span>
             <ChevronDownIcon className="size-3.5 text-muted-foreground" />
           </>
         )}

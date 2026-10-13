@@ -971,3 +971,5 @@ decided what and strike the item** rather than deleting it.
 - 1.30.1: the products grid view is a ledger of `ProductRow` strips (health colour edge, key monogram, divided metrics, 7-day bars) instead of `ProductCard`s; the table view is unchanged.
 
 - 1.31.0: `components/ui/ledger.tsx` (`Ledger`, `LedgerRow`: tone edge, monogram, metrics row, actions) is used by products, surveys and automation rules. Reports use hairline-divided panels (`gap-px bg-border` grid) instead of cards. Not converted: errors and tickets lists (dense tables), CS Hub, team.
+
+- 1.32.0: team and CS Hub use `Ledger`/`LedgerRow` and divided sheets. The sheet's slide animations (`animate-slide-left/right`, `slide-out-*`, `fade-out`) were referenced but never defined in `index.css`, so the mobile sidebar did not animate; they exist now. Desktop collapse: width eases over 0.3s and labels fade in (`animate-in`).

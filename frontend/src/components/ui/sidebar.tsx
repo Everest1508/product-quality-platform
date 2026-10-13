@@ -70,7 +70,7 @@ export function Sidebar({ children, className }: { children: React.ReactNode; cl
       <aside
         data-collapsed={collapsed}
         className={cn(
-          'hidden shrink-0 flex-col border-r bg-card transition-[width] duration-200 ease-out lg:flex',
+          'hidden shrink-0 flex-col overflow-x-hidden border-r bg-card transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex',
           collapsed ? 'w-[3.75rem]' : 'w-60',
           className,
         )}
@@ -112,7 +112,7 @@ export function SidebarGroup({ label, children }: { label?: string; children: Re
         (collapsed ? (
           <span className="mx-auto mb-1 h-px w-5 bg-border" />
         ) : (
-          <p className="mb-1 px-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">{label}</p>
+          <p className="mb-1 animate-in px-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">{label}</p>
         ))}
       {children}
     </div>
@@ -170,12 +170,12 @@ export function SidebarItem({ icon, label, href, to, active, badge, onClick, ite
       {collapsed ? (
         <>
           <span className="sr-only">{label}</span>
-          {badge && <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary" />}
+          {badge && <span className="absolute right-1.5 top-1.5 size-1.5 animate-pop rounded-full bg-primary" />}
         </>
       ) : (
         <>
-          <span className="flex-1 truncate text-left">{label}</span>
-          {badge && <span className="rounded-full bg-primary/10 px-1.5 text-[11px] font-semibold text-primary">{badge}</span>}
+          <span className="flex-1 animate-in truncate text-left">{label}</span>
+          {badge && <span className="animate-in rounded-full bg-primary/10 px-1.5 text-[11px] font-semibold text-primary">{badge}</span>}
           {items && <ChevronDownIcon className={cn('!size-3.5 transition-transform', open && 'rotate-180')} />}
         </>
       )}

@@ -16,7 +16,7 @@ export function ProductSwitcher({ nav }: { nav: ProductNav }) {
         </span>
         {!collapsed && (
           <>
-            <span className="min-w-0 flex-1 truncate">{nav.name}</span>
+            <span className="min-w-0 flex-1 animate-in truncate">{nav.name}</span>
             <ChevronDownIcon className="size-3.5 text-muted-foreground" />
           </>
         )}

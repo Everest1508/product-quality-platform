@@ -18,7 +18,7 @@ function Brand({ href }: { href: string }) {
       <svg viewBox="5 5 23 23" className="size-6 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <circle cx="16" cy="16" r="9" /><circle cx="16" cy="16" r="3.6" /><path d="M19.5 19.5L26 26" />
       </svg>
-      {!collapsed && <span>PQ Platform</span>}
+      {!collapsed && <span className="animate-in">PQ Platform</span>}
     </a>
   );
 }

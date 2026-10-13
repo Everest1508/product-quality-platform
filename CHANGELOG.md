@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.32.0] — 2026-10-13 · team and CS Hub strips, and a smoother sidebar
+
+> In short: the team list and the CS Hub follow the same strip style as the rest, and the sidebar slides open and closed.
+
+### Better
+
+- **The team is a list of strips.** Each member has a coloured edge for their role, their avatar, role and leave-approver badges, and Edit and Remove beside them.
+- **The CS Hub reads as one sheet.** The four headline numbers are one divided strip, products are strips coloured by their rating, and the surveys and sentiment panels share one sheet.
+- **The sidebar animates.** It glides between wide and narrow with its labels fading in, and on a phone it slides in from the edge and slides back out.
+
 ## [1.31.0] — 2026-10-13 · ledgers and sheets
 
 > In short: surveys, automation rules and reports follow the products page, so lists read as full-width strips and reports as one divided sheet.
