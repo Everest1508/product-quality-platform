@@ -220,50 +220,8 @@ class TicketAssignView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
         require_ticket_access(request, ticket)
-        assignee_ids = request.POST.getlist("assignees")
-
-        old_assignees = set(ticket.assignees.values_list("pk", flat=True))
-        old_status = ticket.status
-
-        if assignee_ids:
-            assignees = User.objects.filter(
-                pk__in=assignee_ids,
-                memberships__company=request.company,
-            )
-            ticket.set_assignees(assignees, actor=request.user)
-            if ticket.status == "open":
-                ticket.status = "assigned"
-                ticket.save(update_fields=["status", "updated_at"])
-        else:
-            ticket.set_assignees([])
-            if ticket.status == "assigned":
-                ticket.status = "open"
-                ticket.save(update_fields=["status", "updated_at"])
-
-        new_assignees = set(ticket.assignees.values_list("pk", flat=True))
-        names = ", ".join(
-            a.get_full_name() or a.username for a in ticket.assignees.order_by("username")
-        ) or "nobody"
-        notify_ticket_assigned(ticket)
-        log_activity(
-            request.company, "ticket_assigned",
-            f"Ticket {ticket.key} assigned",
-            description=f"Assigned to {names}",
-            actor=request.user,
-            target_content_type="ticket",
-            target_object_id=ticket.pk,
-            metadata={
-                "product_id": ticket.product_id,
-                "assigned_to": ",".join(map(str, sorted(new_assignees))),
-                "from": ",".join(map(str, sorted(old_assignees))),
-                "to": ",".join(map(str, sorted(new_assignees))),
-            },
-        )
-        moved = f" Status is now {ticket.get_status_display()}." if ticket.status != old_status else ""
-        messages.success(
-            request,
-            f"{ticket.key} is now unassigned.{moved}" if names == "nobody" else f"{ticket.key} assigned to {names}.{moved}",
-        )
+        message = ticket_service.assign(ticket, request.POST.getlist("assignees"), request.user, request.company)
+        messages.success(request, message)
 
         if request.headers.get("HX-Request") == "true":
             members = User.objects.filter(
