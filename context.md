@@ -875,3 +875,8 @@ decided what and strike the item** rather than deleting it.
 ### 2026-10-13 review fixes (ticket detail/forms)
 - Edit and assign now only accept people who can open the ticket (`mentions.candidates`); a status change made in the edit form goes through `change_status` (activity log, DSR, watchers, webhook); a pending assignee change is sent when leaving the page.
 - Deferred minors: impossible deadline string 500s in `TicketDeadlineAPIView` (wrap `parse_datetime` ValueError); PATCH acts like PUT; assignee picker flicker while a save is in flight; form save leaves `['ticket', id]`/`['tickets']`/`['bootstrap']` stale; mention list ignores IME composition; product in the detail URL not checked on in-app navigation; unused imports in `apps/tickets/views.py` and unused `TicketDeadlineForm`/`TicketCommentForm`; deleted comment author shows as "System"; presence activity not reported on route change.
+
+### 2026-10-13 React errors
+- The six error pages (`/errors/`, `/errors/create/`, `/errors/<pk>/` and the three under `/products/<pk>/errors/`) are served by the React shell. Endpoints in `apps/uiapi/errors.py`; the rules (status, convert to ticket, delete) moved to `apps/errors/service.py`. Resolve and ignore keep their own activity events; other moves log `error_status_changed` with from/to.
+- Legacy routes removed: `error_status`, `error_delete`, `error_convert_to_ticket`, `product_error_convert_to_ticket`. Kept: `error_resolve` / `error_ignore` (home dashboard hx-posts to them) and the `_error_status_badge.html` partial they return.
+- The product-scoped list gained the Regressed tab and severity filter the old product page lacked (one endpoint serves both). Remaining htmx: 26 templates.

@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.16.0] — 2026-10-13 · errors, redone
+
+> In short: the error list, the error page and the report form have a new look, with one-click resolve and ignore, a trend chart and a ticket button on every error.
+
+### New
+
+- **A new error list.** Search, filter by product, severity and status, sort, and jump to the Regressed tab for errors that came back after being resolved.
+- **A new error page.** The last 30 days as a chart, occurrences split by release, linked tickets, and Resolve, Ignore and Create Ticket buttons that save straight away.
+- **A new form for reporting an error by hand.** Mistakes are shown next to the field they belong to.
+
+### Better
+
+- **The sidebar counts update as you work.** Resolving or deleting an error changes the open count at once, without reloading.
+- **Opening an error from the wrong product is a clean not-found.** Moving around the app now behaves like a fresh page load.
+
 ## [1.15.0] — 2026-10-13 · a new ticket page
 
 > In short: the ticket page and the new-ticket and edit forms have a new look, with comments, mentions and every control on one screen that saves as you go.
