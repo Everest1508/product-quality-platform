@@ -173,7 +173,7 @@ Change `DJANGO_SECRET_KEY` and the other values in `docker-compose.yml` before u
 6. Add the scheduled commands from the table above.
 7. Back up `db.sqlite3`. For heavier use, switch to PostgreSQL in `core/settings.py`.
 
-The `.server-operator/` folder has deploy and maintenance scripts for the Server Operator tool, if you use it.
+The `.server-operator/` folder has deploy and maintenance command files for the Server Operator tool (deploys, health check, backups, dry runs of the scheduled commands) and a crontab example; see its README.
 
 ## If something goes wrong
 
