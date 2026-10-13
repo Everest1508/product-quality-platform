@@ -68,6 +68,7 @@ class TicketActionServiceTest(TicketServiceTest):
         self.assertIn("not a valid priority", service.set_priority(self.ticket, "huge", self.owner, self.company))
 
     def test_assign_moves_open_to_assigned_and_back(self):
+        ProductAccess.objects.create(company=self.company, user=self.dev, product=self.product)
         msg = service.assign(self.ticket, [self.dev.pk], self.owner, self.company)
         self.ticket.refresh_from_db()
         self.assertEqual((self.ticket.status, list(self.ticket.assignees.all())), ("assigned", [self.dev]))
@@ -78,6 +79,7 @@ class TicketActionServiceTest(TicketServiceTest):
         self.assertEqual(self.ticket.status, "open")
 
     def test_assign_ignores_people_outside_the_company(self):
+        ProductAccess.objects.create(company=self.company, user=self.dev, product=self.product)
         stranger = User.objects.create_user("zed", "z@t.local", "pass1234")
         service.assign(self.ticket, [stranger.pk, self.dev.pk], self.owner, self.company)
         self.assertEqual(list(self.ticket.assignees.all()), [self.dev])
@@ -132,6 +134,7 @@ class TicketActionServiceTest(TicketServiceTest):
         self.assertIn("title", form.errors)
 
     def test_update_ticket(self):
+        ProductAccess.objects.create(company=self.company, user=self.dev, product=self.product)
         ticket, form = service.update_ticket(
             {"title": "Renamed", "ticket_type": "bug", "priority": "low", "status": "testing", "assignees": [self.dev.pk]},
             self.ticket, self.owner, self.company,

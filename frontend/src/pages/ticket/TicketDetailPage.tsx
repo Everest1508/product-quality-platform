@@ -59,12 +59,24 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
   const [saving, setSaving] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => setIds(serverIds), [serverKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => clearTimeout(timer.current), []);
+  // The change waiting for its timer; leaving the page sends it instead of dropping it.
+  const pending = useRef<number[] | null>(null);
+  const assignNow = useRef(act.assign);
+  assignNow.current = act.assign;
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      if (pending.current) void assignNow.current(pending.current);
+    },
+    [],
+  );
   const changeAssignees = (next: number[]) => {
     setIds(next);
     setSaving(true);
+    pending.current = next;
     clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
+      pending.current = null;
       await act.assign(next);
       setSaving(false);
     }, ASSIGN_DEBOUNCE_MS);

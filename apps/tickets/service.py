@@ -4,8 +4,6 @@ Shared by the HTML views and the JSON API so a status move or a delete does the
 same things whichever door it comes through.
 """
 
-from django.contrib.auth import get_user_model
-
 from apps.core.timefmt import t12
 from apps.dashboards.service import log_activity
 from apps.notifications import service as notifications
@@ -93,11 +91,10 @@ def assign(ticket, user_ids, actor, company):
 
     Moves open to assigned when the first person is added, and back to open when
     the last is removed. Returns the message the classic page showed."""
-    User = get_user_model()
     old_assignees = set(ticket.assignees.values_list("pk", flat=True))
     old_status = ticket.status
     if user_ids:
-        people = User.objects.filter(pk__in=user_ids, memberships__company=company).distinct()
+        people = mentions.candidates(ticket, company).filter(pk__in=user_ids)
         ticket.set_assignees(people, actor=actor)
         if ticket.status == "open":
             ticket.status = "assigned"
@@ -253,10 +250,15 @@ def create_ticket(data, user, company, product=None):
 
 def update_ticket(data, ticket, actor, company):
     """Returns (ticket, form); ticket is None when the form is invalid."""
-    form = TicketEditForm(data, instance=ticket)
+    old_status = ticket.status
+    form = TicketEditForm(data, instance=ticket, company=company)
     if not form.is_valid():
         return None, form
+    new_status = ticket.status
+    ticket.status = old_status  # a status change goes through change_status, below
     ticket = form.save()
+    if new_status != old_status:
+        change_status(ticket, new_status, actor, company)
     ticket.set_assignees(form.cleaned_data["assignees"], actor=actor)
     log_activity(
         company, "ticket_updated",

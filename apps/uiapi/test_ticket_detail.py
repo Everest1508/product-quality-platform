@@ -105,6 +105,32 @@ class TicketEditApiTest(Base):
         t.refresh_from_db()
         self.assertEqual(t.title, "Keep me")
 
+    def test_edit_rejects_assignees_who_cannot_open_the_ticket(self):
+        t = self.make(self.p_hidden)
+        outsider = member("zed", self.other)
+        nobody = member("nobody", self.acme)  # company member, no access to p_hidden
+        self.login("owner")
+        for who in (outsider, nobody):
+            r = self.patch(t, self.good(assignees=[who.pk]))
+            self.assertEqual(r.status_code, 400, who.username)
+            self.assertIn("assignees", r.json()["errors"])
+        self.assertEqual(t.assignees.count(), 0)
+
+    def test_edit_status_change_goes_through_the_status_rules(self):
+        t = self.make(self.p_open, status="in_progress")
+        self.login("owner")
+        self.assertEqual(self.patch(t, self.good(status="resolved")).status_code, 200)
+        t.refresh_from_db()
+        self.assertEqual(t.status, "resolved")
+        log = ActivityLog.objects.get(event_type="ticket_status_changed")
+        self.assertEqual((log.metadata["from"], log.metadata["to"]), ("in_progress", "resolved"))
+
+    def test_edit_without_a_status_change_logs_no_status_event(self):
+        t = self.make(self.p_open, status="testing")
+        self.login("owner")
+        self.assertEqual(self.patch(t, self.good(status="testing")).status_code, 200)
+        self.assertFalse(ActivityLog.objects.filter(event_type="ticket_status_changed").exists())
+
     def test_edit_needs_access_and_csrf(self):
         hidden = self.make(self.p_hidden)
         self.login("dev")
@@ -136,6 +162,13 @@ class TicketActionsApiTest(Base):
         self.assertEqual(data["ticket"]["status"], "assigned")
         self.assertIn("assigned to", data["message"])
         self.assertEqual(self.post(t, "assign", {"assignees": []}).json()["ticket"]["status"], "open")
+
+    def test_assign_ignores_members_without_product_access(self):
+        t = self.make(self.p_hidden)
+        nobody = member("nobody", self.acme)
+        self.login("owner")
+        data = self.post(t, "assign", {"assignees": [nobody.pk, self.owner.pk]}).json()
+        self.assertEqual([a["id"] for a in data["ticket"]["assignees"]], [self.owner.pk])
 
     def test_assign_survives_garbage_ids(self):
         t = self.make(self.p_open)

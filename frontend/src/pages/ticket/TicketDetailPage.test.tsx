@@ -90,6 +90,18 @@ it('assignee changes are saved once after a pause, with the final list', async (
   expect(post).toHaveBeenCalledWith('tickets/5/assign/', { assignees: [5, 6] });
 });
 
+it('a pending assignee change is saved at once when you leave the page', async () => {
+  const { post } = setup('/tickets/5/', detail({ id: 5, assignees: [] }));
+  await screen.findByRole('heading', { name: /AUM-001/ });
+  await userEvent.click(screen.getByRole('button', { name: 'Assignees' }));
+  await userEvent.click(screen.getByRole('checkbox', { name: 'Ann Lee' }));
+  expect(post).not.toHaveBeenCalled();
+  await userEvent.keyboard('{Escape}');
+  await userEvent.click(screen.getByRole('link', { name: 'Tickets' }));
+  await screen.findByText('elsewhere');
+  expect(post).toHaveBeenCalledWith('tickets/5/assign/', { assignees: [5] });
+});
+
 it('Follow toggles with the watcher count', async () => {
   const { post } = setup();
   post.mockResolvedValue({ ...detail({ id: 5 }), following: true, watcher_count: 1, message: 'You are following AUM-001.' } as never);

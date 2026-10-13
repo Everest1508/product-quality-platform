@@ -56,6 +56,14 @@ class TicketCreateForm(forms.ModelForm):
 
 
 class TicketEditForm(forms.ModelForm):
+    def __init__(self, *args, company=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only people who can open the ticket may be assigned to it.
+        if company is not None:
+            from apps.tickets import mentions
+
+            self.fields["assignees"].queryset = mentions.candidates(self.instance, company)
+
     class Meta:
         model = Ticket
         fields = ["title", "description", "ticket_type", "priority", "status",
