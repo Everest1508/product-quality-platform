@@ -22,3 +22,17 @@ it('a lost session on any call goes through the auth hook', async () => {
   await expect(api.get('bootstrap/')).rejects.toThrow('401');
   expect(lost).toHaveBeenCalledTimes(1);
 });
+
+it('an error response carries the server detail as its message', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ detail: "'x' is not a valid status." }), { status: 400 }));
+  await expect(api.post('tickets/1/status/', { status: 'x' })).rejects.toThrow("'x' is not a valid status.");
+});
+
+it('api.delete sends DELETE with the CSRF token', async () => {
+  configure({ api: '/ui-api/v1/', csrf: 'tok' });
+  const f = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"deleted":"AUM-1"}', { status: 200 }));
+  await api.delete('tickets/4/');
+  const init = f.mock.calls[0][1]!;
+  expect(init.method).toBe('DELETE');
+  expect((init.headers as Record<string, string>)['X-CSRFToken']).toBe('tok');
+});

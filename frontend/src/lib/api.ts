@@ -32,7 +32,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     if (res.status === 401 || res.status === 403) hooks.onAuthLost();
-    throw new Error(`Request failed (${res.status})`);
+    // The server explains refusals in {"detail": "..."}; show that when it is there.
+    let detail = '';
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {
+      /* no JSON body */
+    }
+    throw new Error(detail || `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;
 }
@@ -44,6 +52,7 @@ export const markAllRead = () => request<{ unread: number }>('notifications/read
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
+  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, {
       method: 'POST',

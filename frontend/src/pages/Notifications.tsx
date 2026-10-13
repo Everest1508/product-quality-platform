@@ -6,20 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ago } from '@/lib/time';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-
-const ago = (iso: string) => {
-  const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  const units: [Intl.RelativeTimeFormatUnit, number][] = [
-    ['day', 86400],
-    ['hour', 3600],
-    ['minute', 60],
-  ];
-  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-  for (const [unit, size] of units) if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
-  return 'just now';
-};
 
 function Row({ n }: { n: Notice }) {
   return (
