@@ -136,3 +136,8 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 
 /* A card that lands in a column settles in; used by the board. */
 @keyframes card-drop { 0% { opacity: 0; transform: scale(0.94) translateY(-6px) } 60% { transform: scale(1.02) } 100% { opacity: 1; transform: none } }
+
+/* What's new: the window rises in and settles out; cards slide up one after another. */
+@keyframes cl-in { from { opacity: 0; transform: translateY(18px) scale(0.96) } to { opacity: 1; transform: none } }
+@keyframes cl-out { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(10px) scale(0.98) } }
+@keyframes cl-card { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }

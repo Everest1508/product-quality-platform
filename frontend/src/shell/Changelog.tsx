@@ -54,12 +54,12 @@ function Body({ r, sections }: { r: Release; sections: Section[] }) {
   );
 }
 
-function ReleaseCard({ r, sections, open, onToggle, latest }: { r: Release; sections: Section[]; open: boolean; onToggle(): void; latest: boolean }) {
+function ReleaseCard({ r, sections, open, onToggle, latest, index }: { r: Release; sections: Section[]; open: boolean; onToggle(): void; latest: boolean; index: number }) {
   const count = sections.reduce((n, s) => n + s.items.length, 0);
   return (
-    <li className="relative pl-6">
-      <span className={cn('absolute left-0 top-3 size-2.5 rounded-full ring-4 ring-background', latest ? 'bg-primary' : 'bg-border')} aria-hidden />
-      <div className={cn('rounded-xl border bg-card transition-shadow', open && 'shadow-sm')}>
+    <li className="relative pl-6 motion-safe:animate-[cl-card_0.4s_cubic-bezier(0.22,1,0.36,1)_both]" style={{ animationDelay: `${Math.min(index, 8) * 55}ms` }}>
+      <span className={cn('absolute left-0 top-3 size-2.5 rounded-full ring-4 ring-background transition-colors duration-300', latest ? 'bg-primary' : open ? 'bg-primary/60' : 'bg-border')} aria-hidden />
+      <div className={cn('rounded-xl border bg-card transition-[box-shadow,border-color] duration-300 motion-reduce:transition-none', open && 'border-primary/30 shadow-sm')}>
         <button type="button" aria-expanded={open} onClick={onToggle} className="flex w-full items-center gap-3 rounded-xl p-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-2">
@@ -71,9 +71,16 @@ function ReleaseCard({ r, sections, open, onToggle, latest }: { r: Release; sect
             {r.title && <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">{r.title}</span>}
           </span>
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{count} change{count === 1 ? '' : 's'}</span>
-          <ChevronDownIcon className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
+          <ChevronDownIcon className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-300 ease-out motion-reduce:transition-none', open && 'rotate-180')} />
         </button>
-        {open && <div className="border-t p-3.5"><Body r={r} sections={sections} /></div>}
+        {/* Height animates between 0fr and 1fr, so the card opens and closes smoothly whatever its content. */}
+        <div className={cn('grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')} inert={!open}>
+          <div className="overflow-hidden">
+            <div className={cn('border-t p-3.5 transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none', open ? 'translate-y-0 opacity-100 delay-75' : '-translate-y-1 opacity-0')}>
+              <Body r={r} sections={sections} />
+            </div>
+          </div>
+        </div>
       </div>
     </li>
   );
@@ -112,7 +119,7 @@ export function Changelog({ open, onOpenChange }: { open: boolean; onOpenChange(
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="max-h-[88vh] max-w-2xl gap-0 overflow-y-auto p-0">
+      <DialogContent aria-describedby={undefined} className="max-h-[88vh] max-w-2xl gap-0 overflow-y-auto p-0 motion-safe:data-[state=closed]:animate-[cl-out_0.2s_ease-in_forwards] motion-safe:data-[state=open]:animate-[cl-in_0.45s_cubic-bezier(0.22,1,0.36,1)]">
         <div className="border-b bg-gradient-to-r from-primary/15 via-accent to-transparent p-6 pr-12">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
@@ -142,9 +149,9 @@ export function Changelog({ open, onOpenChange }: { open: boolean; onOpenChange(
 
               {filtering && visible.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Nothing matches. Try another word or type.</p>}
               <ol className="relative grid gap-3 before:absolute before:bottom-2 before:left-[4.5px] before:top-4 before:w-px before:bg-border">
-                {!filtering && first && <ReleaseCard latest r={first.r} sections={first.sections} open={!expanded.has(first.r.tag)} onToggle={() => toggle(first.r.tag)} />}
-                {(filtering || older) && list.slice(0, filtering ? list.length : shown).map((x) => (
-                  <ReleaseCard key={x.r.tag + x.r.date} latest={false} r={x.r} sections={x.sections} open={filtering || expanded.has(x.r.tag)} onToggle={() => toggle(x.r.tag)} />
+                {!filtering && first && <ReleaseCard latest index={0} r={first.r} sections={first.sections} open={!expanded.has(first.r.tag)} onToggle={() => toggle(first.r.tag)} />}
+                {(filtering || older) && list.slice(0, filtering ? list.length : shown).map((x, i) => (
+                  <ReleaseCard key={x.r.tag + x.r.date} index={i + 1} latest={false} r={x.r} sections={x.sections} open={filtering || expanded.has(x.r.tag)} onToggle={() => toggle(x.r.tag)} />
                 ))}
               </ol>
               {!filtering && rest.length > 0 && !older && (

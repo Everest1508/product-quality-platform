@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.38.1] "Bluethroat" — 2026-10-13 · a smoother What's new
+
+> In short: the What's new window and its cards now open, close and slide in smoothly.
+
+### Better
+- **The What's new window rises in and fades out.** It no longer pops in or vanishes.
+- **A release card opens and closes smoothly.** Its height glides and its content fades in, whatever its length.
+- **Release cards slide in one after another.** Older releases, search results and filters arrive in a short cascade.
+- **People who prefer reduced motion see none of this.** The window and cards simply appear and disappear.
+
 ## [1.38.0] "Cormorant" — 2026-10-13 · a calmer What's new
 
 > In short: the What's new window is easier to scan, search and filter.
