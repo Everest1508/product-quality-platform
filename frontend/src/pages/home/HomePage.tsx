@@ -97,11 +97,42 @@ const LINES: Record<Period, string[]> = {
   night: ['Rest counts as work too.', 'Whatever is left will keep until morning.', 'Log it, then log off.'],
 };
 
+// Types each line out, holds it, erases it, then moves on to the next. Screen readers get the first line at once.
+function Typewriter({ lines, start }: { lines: string[]; start: number }) {
+  const [i, setI] = useState(start % lines.length);
+  const [n, setN] = useState(0);
+  const [erasing, setErasing] = useState(false);
+  const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  useEffect(() => {
+    if (still) return;
+    const line = lines[i];
+    const t = setTimeout(
+      () => {
+        if (!erasing && n < line.length) setN(n + 1);
+        else if (!erasing) setErasing(true);
+        else if (n > 0) setN(n - 1);
+        else {
+          setErasing(false);
+          setI((i + 1) % lines.length);
+        }
+      },
+      !erasing && n === line.length ? 3000 : erasing ? 18 : 45,
+    );
+    return () => clearTimeout(t);
+  }, [i, n, erasing, lines, still]);
+  if (still) return <>{lines[i]}</>;
+  return (
+    <>
+      <span className="sr-only">{lines[i]}</span>
+      <span aria-hidden>{lines[i].slice(0, n)}<span className="ml-0.5 inline-block w-px animate-pulse bg-current align-middle" style={{ height: '1em' }} /></span>
+    </>
+  );
+}
+
 // A sky that follows the clock: gradient, sun or moon, and one line for the moment.
 function Greeting({ h, now }: { h: Home; now: Date }) {
   const period = periodOf(now);
-  const line = LINES[period][now.getDay() % LINES[period].length];
-  const Icon = { morning: SunIcon, afternoon: CoffeeIcon, evening: FlameIcon, night: MoonIcon }[period];
+    const Icon = { morning: SunIcon, afternoon: CoffeeIcon, evening: FlameIcon, night: MoonIcon }[period];
   return (
     <section aria-label="Welcome" className={cn('relative overflow-hidden rounded-2xl border bg-gradient-to-r p-5 sm:p-6', SKY[period])}>
       <span className="pointer-events-none absolute -right-4 -top-4 text-foreground/10 [&_svg]:size-32 motion-safe:animate-[float_6s_ease-in-out_infinite]" aria-hidden><Icon /></span>
@@ -109,10 +140,10 @@ function Greeting({ h, now }: { h: Home; now: Date }) {
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} · {h.company}</p>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-            <span className="grid size-9 place-items-center rounded-full bg-background/70 text-primary shadow-sm [&_svg]:size-5"><Icon /></span>
+            <span className="group/ic grid size-9 cursor-default place-items-center rounded-full bg-background/70 text-primary shadow-sm transition-transform duration-300 hover:scale-110 hover:[&_svg]:motion-safe:animate-[wiggle_0.7s_ease-in-out] [&_svg]:size-5"><Icon /></span>
             {GREET[period]}{h.first_name ? `, ${h.first_name}` : ''}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{line}</p>
+          <p className="mt-1 min-h-5 text-sm text-muted-foreground"><Typewriter lines={LINES[period]} start={now.getDay()} /></p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline"><a href="/leave/apply/"><SendIcon />Request leave</a></Button>

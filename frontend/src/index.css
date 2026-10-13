@@ -112,6 +112,7 @@
   button:not(:disabled), [role='button']:not([aria-disabled='true']) { cursor: pointer; }
 }
 
+@keyframes wiggle { 0%, 100% { transform: rotate(0) scale(1) } 20% { transform: rotate(-18deg) scale(1.15) } 45% { transform: rotate(14deg) scale(1.15) } 70% { transform: rotate(-8deg) } }
 @keyframes float { 0%, 100% { transform: translateY(0) rotate(0) } 50% { transform: translateY(6px) rotate(4deg) } }
 @keyframes page-in { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
 .page-in { animation: page-in 0.22s ease-out; }

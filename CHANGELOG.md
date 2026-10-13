@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.34.1] — 2026-10-13 · a friendlier greeting
+
+> In short: the Home greeting types out its lines, and its icon wiggles when you hover it.
+
+### Better
+- **The greeting line on Home now types itself out.** It cycles through a few lines for the time of day, and stays still if you prefer reduced motion.
+- **The greeting icon reacts when you hover it.** It grows and wiggles a little.
+
 ## [1.34.0] — 2026-10-13 · ask before punching out or deleting
 
 > In short: punching out now shows how long you worked, and every delete asks first.
