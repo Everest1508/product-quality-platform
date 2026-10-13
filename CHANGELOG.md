@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.13.0] — 2026-10-13 · a new navigation
+
+> In short: the notifications page now opens inside a new, faster navigation bar and sidebar, with search, alerts and who-is-online built in.
+
+### New
+
+- **A new sidebar and top bar.** The notifications page now has the new navigation, and the rest of the app will follow page by page. Pages that have not moved yet still look and work as before.
+- **Search from anywhere.** Press Ctrl K (or /) to search tickets, errors, products and pages, with your recent searches kept close.
+
+### Better
+
+- **The bell and the notifications page stay in step.** Marking everything as read, or a new notification arriving, updates both at once without a reload.
+- **Messages you get after an action show up on the new pages too.** For example, "Switched to Acme." appears once after you change workspace.
+- **Old links keep working.** A link to your unread notifications opens on the Unread filter.
+
 ## [1.12.0] — 2026-10-12 · a fresher notifications page
 
 > In short: the notifications page has a cleaner, more modern look and updates in place, and it is the first page of a gradual move to a new interface.

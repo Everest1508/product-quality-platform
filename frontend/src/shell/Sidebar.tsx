@@ -40,7 +40,7 @@ export function Sidebar({ collapsed, onToggle, open, onClose, onOpenChangelog }:
     <>
       <aside
         className={cn(
-          'flex shrink-0 flex-col gap-3 overflow-y-auto border-r bg-card p-3 transition-[width] max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:w-64 max-md:transition-transform',
+          'flex shrink-0 flex-col gap-3 overflow-y-auto border-r bg-card p-3 transition-[width] md:sticky md:top-0 md:h-screen max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:w-64 max-md:transition-transform',
           collapsed ? 'w-16' : 'w-60',
           open ? 'max-md:translate-x-0' : 'max-md:-translate-x-full',
         )}

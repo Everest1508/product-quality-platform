@@ -23,6 +23,7 @@ entry here is unfinished.
 | Area | Where it lives | The one thing to know |
 |---|---|---|
 | App shell / nav | `templates/core/base.html`, `templates/core/_sidebar.html` | One `<style>` block, htmx + Alpine from CDN, **no build step** |
+| React shell | `frontend/src/shell/`, `apps/uiapi/{views,shell}.py`, `templates/uiapi/shell.html` | Owns sidebar/topbar/bell/presence/search/toasts; see the 2026-10-12 (React shell) entry |
 | React UI (migrating) | `frontend/`, `apps/uiapi/`, `apps/core/ui_assets.py`, `settings.REACT_PAGES` | Per-page switch; scoped befui theme inside the legacy shell, see the 2026-10-12 (React UI) entry |
 | Toasts | `templates/core/base.html`, `apps/core/templatetags/toast_tags.py` | Seed must sit **above** `#toast-container`; every mutation must call `messages.*` |
 | Multi-tenancy | `apps/products/access.py`, `apps/core/middleware.py`, `apps/core/mixins.py` | Company isolation **and** per-product access — both required, see `AGENTS.md` |
@@ -68,6 +69,15 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-12 (React shell) — sidebar, topbar, bell, presence, search and toasts in React; notifications page moves in
+
+- **What exists now.** `GET /ui-api/v1/bootstrap/` (user, workspaces, counts, version, `urls` from `reverse()`, vapid key, flash messages consumed once) and `POST /ui-api/v1/company/switch/` (shares `apps/accounts/workspace.activate_company` with the classic view). `templates/uiapi/shell.html` is a standalone entry page (no legacy CSS, htmx or Alpine); `apps/uiapi/shell.render_shell(request)` renders it. React: `frontend/src/shell/` (`AppShell`, `Sidebar`, `Topbar`, `nav.ts`, `Bell`, `PresenceMenu`, `Palette`, `Changelog`, `NewMenu`, `AccountMenu`, `ShortcutsHelp`, `Toaster`, `keys.ts`) and `frontend/src/lib/` (`bootstrap`, `toast`, `presence`, `usePresence`, `notifications`, `search`, `pwa`, `go`).
+- **Decisions.** Nav URLs come from the bootstrap (never hardcoded). Exactly one nav item is active: longest URL-prefix match (`nav.activeKey`). Presence and live notifications share one WebSocket (`lib/presence.ts`); after two failed connects it polls `POST /presence/beat/`. The bell's feed is the react-query key `['bell']`, and live arrivals and mark-read invalidate `['notifications']`, so an open Notifications page refreshes by itself (this fixed the pilot's stale-list minor). Flash messages queued by legacy views are returned by bootstrap once and shown by `lib/toast.showFlash` (de-duplicated). `Toaster` is our own (befui's Toast is provider based). `lib/go.ts` is the single navigation seam so tests can replace it.
+- **CSS.** The React CSS is now befui's standard global setup (Tailwind reset, variables on `:root`, no `important`). The pilot's `.befui` scoping was removed because dialogs and menus render in portals outside `#root` and lost their variables, and no legacy page loads this stylesheet any more. Legacy pages keep their own inline CSS.
+- **Deleted.** `templates/notifications/list.html` and `list_react.html`, and the old pilot `#react-root` entry. Kept (legacy bell and web push use them): `/notifications/feed/`, `/notifications/read-all/`, `/notifications/<id>/open/`, `/notifications/push/*`.
+- **Deliberately deferred.** `j`/`k`/`e` ticket shortcuts and the product sub-navigation (`/ui-api/v1/products/<pk>/nav/`) move with the tickets plan; confirm dialog, datepicker, dropdown and tooltip legacy scripts leave with the pages that use them; befui Tooltip/Avatar not copied (native `title`, plain div).
+- **To add the next React page.** Add a route to `frontend/src/routes.tsx`, its path to `REACT_PATHS` in `nav.ts`, make the Django view return `render_shell(request)`, add JSON endpoints in `apps/uiapi/`, and delete the legacy template/view/htmx in the same change.
 
 ### 2026-10-12 (React UI) — notifications page moved to React + befui, behind a switch
 
