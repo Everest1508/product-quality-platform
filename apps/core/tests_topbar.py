@@ -125,23 +125,6 @@ class FeatureRoundTwoTest(TestCase):
         self.client.post(f"/ui-api/v1/tickets/{ticket.pk}/follow/", {}, content_type="application/json")
         self.assertFalse(ticket.watchers.filter(pk=self.dev.pk).exists())
 
-    def test_regressed_tab_and_linked_tickets(self):
-        from apps.ingestion.models import ErrorGroup
-
-        now = timezone.now()
-        common = dict(company=self.company, product=self.product, first_seen=now, last_seen=now)
-        back = ErrorGroup.objects.create(title="Came back", fingerprint="a" * 64, regression_count=1, **common)
-        ErrorGroup.objects.create(title="Never fixed once", fingerprint="b" * 64, **common)
-        ticket = Ticket.objects.create(
-            company=self.company, product=self.product, title="Fix it", created_by=self.user, linked_error_group=back
-        )
-        page = self.client.get(reverse("errors:error_list"), {"regressed": "1"}).content.decode()
-        self.assertIn("Came back", page)
-        self.assertNotIn("Never fixed once", page)
-        detail = self.client.get(reverse("errors:error_detail", args=[back.pk])).content.decode()
-        self.assertIn("Linked tickets", detail)
-        self.assertIn(ticket.key, detail)
-
     def test_search_filters_and_snippets(self):
         from apps.core.search import parse_query, snippet
 

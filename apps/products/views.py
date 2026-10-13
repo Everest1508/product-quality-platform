@@ -422,81 +422,23 @@ class VersionDeleteView(CompanyMemberRequiredMixin, View):
 
 # ── Product-scoped views ──────────────────────────────────────────
 
-class ProductErrorListView(CompanyMemberRequiredMixin, View):
+class ProductErrorShellView(CompanyMemberRequiredMixin, View):
+    """A product's error list and report form, served by the React shell."""
+
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-        qs = product.error_groups.all()
-
-        status = request.GET.get("status")
-        if status:
-            qs = qs.filter(status=status)
-        severity = request.GET.get("severity")
-        if severity:
-            qs = qs.filter(severity=severity)
-        search = request.GET.get("q", "").strip()
-        if search:
-            qs = qs.filter(title__icontains=search)
-
-        sort = request.GET.get("sort", "-last_seen")
-        sort_map = {"last_seen": "last_seen", "-last_seen": "-last_seen", "severity": "severity", "-severity": "-severity", "count": "occurrence_count", "-count": "-occurrence_count", "title": "title", "-title": "-title"}
-        qs = qs.order_by(sort_map.get(sort, "-last_seen"))
-
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
-        from apps.errors import trends
-        page.object_list = trends.attach_trends(page.object_list)
-        open_count = qs.exclude(status__in=("resolved", "ignored")).count()
-
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "products/partials/_product_error_list_body.html", {"page": page, "open_count": open_count})
-
-        return render(request, "products/product_error_list.html", {
-            "page": page, "product": product, "open_count": open_count,
-            "current_status": status, "current_severity": severity,
-            "search": search, "current_sort": sort,
-        })
+        return render_shell(request)
 
 
 class ProductErrorDetailView(CompanyMemberRequiredMixin, View):
+    """One error of a product, served by the React shell. 404 unless the error belongs to this product."""
+
     def get(self, request, pk, error_pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-        error_group = get_object_or_404(product.error_groups.select_related("product"), pk=error_pk)
-        occurrences = error_group.occurrences.all()[:50]
-        from apps.errors import trends
-        from apps.errors.views import linked_tickets
-        return render(request, "products/product_error_detail.html", {
-            "product": product, "error_group": error_group, "occurrences": occurrences,
-            "status_choices": error_group.STATUS_CHOICES,
-            "trend": trends.detail_trend(error_group),
-            "first_version": error_group.first_version,
-            "linked_tickets": linked_tickets(request, error_group),
-        })
-
-
-class ProductErrorCreateView(CompanyMemberRequiredMixin, View):
-    def get(self, request, pk):
-        product = get_object_or_404(Product, pk=pk, company=request.company)
-        require_product_access(request, product)
-        _attach_product_counts(product)
-        from apps.errors.forms import ErrorCreateForm
-        form = ErrorCreateForm(company=request.company, user=request.user, initial={"product": product})
-        return render(request, "products/product_error_form.html", {"form": form, "product": product})
-
-    def post(self, request, pk):
-        product = get_object_or_404(Product, pk=pk, company=request.company)
-        require_product_access(request, product)
-        _attach_product_counts(product)
-        from apps.errors.forms import ErrorCreateForm
-        form = ErrorCreateForm(request.POST, company=request.company, user=request.user)
-        if form.is_valid():
-            group = form.save(company=request.company, user=request.user)
-            messages.success(request, f"Error #{group.pk} created.")
-            return redirect("products:product_error_detail", pk=product.pk, error_pk=group.pk)
-        return render(request, "products/product_error_form.html", {"form": form, "product": product})
+        get_object_or_404(product.error_groups, pk=error_pk)
+        return render_shell(request)
 
 
 class ProductTicketListView(CompanyMemberRequiredMixin, View):

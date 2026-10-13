@@ -182,31 +182,27 @@ class PagesTest(Base):
         for d in (0, 0, 1):
             self.hit(self.g, d, self.v2)
 
-    def test_the_global_list_shows_the_chart_and_flags(self):
-        self.client.login(username="owner", password="pass1234")
-        page = self.client.get(reverse("errors:error_list")).content.decode()
-        self.assertIn('class="spark', page)
-        self.assertIn("Regression", page)
-        self.assertIn("New in 2.0", page)
+    def test_the_list_carries_the_chart_and_flags_global_and_per_product(self):
+        for user, params in (("owner", {}), ("dev", {"scope": "product", "product": self.product.pk})):
+            self.client.login(username=user, password="pass1234")
+            item = self.client.get("/ui-api/v1/errors/", params).json()["items"][0]
+            self.assertEqual(item["trend"]["total"], 3)
+            self.assertTrue(item["is_regression"])
+            self.assertEqual(item["new_in_release"], "2.0")
 
-    def test_the_product_list_shows_them_too(self):
-        self.client.login(username="dev", password="pass1234")
-        page = self.client.get(reverse("products:product_errors", args=[self.product.pk])).content.decode()
-        self.assertIn('class="spark', page)
-        self.assertIn("Regression", page)
-
-    def test_both_detail_pages_show_the_trend_and_releases(self):
+    def test_the_detail_carries_the_trend_and_releases(self):
         self.client.login(username="owner", password="pass1234")
-        for url in (reverse("errors:error_detail", args=[self.g.pk]),
-                    reverse("products:product_error_detail", args=[self.product.pk, self.g.pk])):
-            page = self.client.get(url).content.decode()
-            self.assertIn("Last 30 days", page, url)
-            self.assertIn("Came back after being resolved 1 time", page, url)
-            self.assertIn("First seen in release", page, url)
+        data = self.client.get(f"/ui-api/v1/errors/{self.g.pk}/").json()
+        self.assertEqual(data["trend"]["days"], 30)
+        self.assertEqual(data["trend"]["total"], 3)
+        self.assertEqual(data["error"]["regression_count"], 1)
+        self.assertEqual(data["error"]["first_version"], "2.0")
 
     def test_access_scoping_is_unchanged(self):
         other = Product.objects.create(name="Hidden", slug="hidden", company=self.company)
         hidden = ErrorGroup.objects.create(company=self.company, product=other, fingerprint="h", title="Hidden error")
         self.client.login(username="dev", password="pass1234")
-        self.assertNotContains(self.client.get(reverse("errors:error_list")), "Hidden error")
+        titles = [i["title"] for i in self.client.get("/ui-api/v1/errors/").json()["items"]]
+        self.assertNotIn("Hidden error", titles)
+        self.assertEqual(self.client.get(f"/ui-api/v1/errors/{hidden.pk}/").status_code, 404)
         self.assertEqual(self.client.get(reverse("errors:error_detail", args=[hidden.pk])).status_code, 404)

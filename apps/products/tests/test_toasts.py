@@ -87,21 +87,6 @@ class ToastAfterMutationTest(TestCase):
         )
         self.assert_toast_after(response, "deleted")
 
-    def test_capturing_an_error_says_so(self):
-        response = self.client.post(
-            reverse("products:product_error_create", kwargs={"pk": self.product.pk}),
-            {
-                "product": self.product.pk,
-                "title": "TypeError",
-                "error_type": "TypeError",
-                "severity": "medium",
-                "environment": "production",
-                "stacktrace": "x is not a function",
-            },
-        )
-        self.assert_toast_after(response, "Error #")
-
-
     def test_adding_a_version_says_so(self):
         response = self.client.post(
             reverse("products:version_create", kwargs={"pk": self.product.pk}),

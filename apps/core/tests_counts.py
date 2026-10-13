@@ -61,17 +61,17 @@ class OpenCountsTest(TestCase):
 
     def test_error_list_header_and_sidebar_agree(self):
         self.login(self.owner)
-        res = self.client.get(reverse("errors:error_list"))
-        self.assertContains(res, "4 groups · 2 open")
-        self.assertEqual(res.context["nav_open_errors"], 2)
+        data = self.client.get("/ui-api/v1/errors/").json()
+        self.assertEqual((data["page"]["count"], data["open_count"]), (4, 2))
+        self.assertEqual(self.client.get("/ui-api/v1/bootstrap/").json()["counts"]["open_errors"], 2)
 
 
     def test_product_page_headers_count_open_work(self):
         self.login(self.owner)
         data = self.api(scope="product", product=self.p1.pk)
         self.assertEqual((data["page"]["count"], data["open_count"]), (3, 2))
-        res = self.client.get(reverse("products:product_errors", kwargs={"pk": self.p1.pk}))
-        self.assertContains(res, "2 groups · 1 open")
+        data = self.client.get("/ui-api/v1/errors/", {"scope": "product", "product": self.p1.pk}).json()
+        self.assertEqual((data["page"]["count"], data["open_count"]), (2, 1))
 
     def test_product_cards_say_open(self):
         self.login(self.owner)
