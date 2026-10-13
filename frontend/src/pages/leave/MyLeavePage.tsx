@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertDialog } from '@/components/ui/alert-dialog';
 import { api } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ export function MyLeavePage() {
   const q = useLeaveQuery<MyLeave>('me', `leave/me/${year ? `?year=${year}` : ''}`);
   const write = useLeaveWrite();
   const [busy, setBusy] = useState<number | null>(null);
+  const [wd, setWd] = useState<number | null>(null);
   useEffect(() => {
     document.title = 'My leave — PQ Platform';
   }, []);
@@ -29,6 +31,7 @@ export function MyLeavePage() {
 
   return (
     <div className="space-y-4">
+      <AlertDialog open={wd !== null} onOpenChange={(o) => !o && setWd(null)} destructive title="Withdraw this request?" description="The request will be cancelled." confirmLabel="Withdraw" onConfirm={() => wd !== null && cancel(wd)} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">My leave</h1>
         <div className="flex items-center gap-2">
@@ -71,7 +74,7 @@ export function MyLeavePage() {
                       <TableCell>{r.days_label}{r.status === 'approved' && <small className="block text-muted-foreground">{r.split_label}</small>}</TableCell>
                       <TableCell><Badge variant={TONE[r.status] ?? 'default'}>{r.status_label}</Badge></TableCell>
                       <TableCell className="text-muted-foreground">{r.decision_note || r.reason}</TableCell>
-                      <TableCell className="text-right">{r.can_cancel && <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}><TrashIcon />Withdraw</Button>}</TableCell>
+                      <TableCell className="text-right">{r.can_cancel && <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => setWd(r.id)}><TrashIcon />Withdraw</Button>}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

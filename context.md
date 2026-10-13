@@ -979,3 +979,6 @@ decided what and strike the item** rather than deleting it.
 - Toasts: `lib/api.ts` shows any write's `message`; `lib/toast.ts` drops an identical message within 1.5s. Icon-only `Button`s (size icon / icon-sm with an aria-label) get a befui Tooltip automatically.
 - `AppShell` routes clicks on in-app `<a href>` (React paths) through the router, so only real external/legacy links reload.
 - `GET /ui-api/v1/profile/` also returns joined, last_login, stats and recent activity; the profile page has Overview and Settings tabs.
+
+### 2026-10-13 Confirmations (1.34.0)
+- `pages/attendance/PunchOutDialog` (used by PunchPanel and the Home Today card) asks before punching out and shows time worked so far. Deletes of to-dos, product versions, product access, holidays (was `window.confirm`) and leave withdrawals now use `AlertDialog`.

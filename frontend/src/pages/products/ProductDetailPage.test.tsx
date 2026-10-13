@@ -108,6 +108,7 @@ it('adds and deletes versions', async () => {
   await userEvent.click(within(screen.getByRole('textbox', { name: 'Version' }).closest('form')!).getByRole('button', { name: 'Add' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('products/3/versions/', { version_string: '2.0.0', is_current: true }));
   await userEvent.click(screen.getByRole('button', { name: 'Delete version 1.0.0' }));
+  await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
   await waitFor(() => expect(del).toHaveBeenCalledWith('products/3/versions/21/'));
 });
 

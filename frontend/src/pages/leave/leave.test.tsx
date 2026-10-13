@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -41,6 +41,7 @@ it('my leave shows balances and requests, and Withdraw cancels a pending one', a
   expect(await screen.findByRole('heading', { name: 'Casual' })).toBeInTheDocument();
   expect(screen.getByText(/left of 12/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Withdraw' }));
+  await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Withdraw' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('leave/requests/7/cancel/', {}));
   await waitFor(() => expect(toast).toHaveBeenCalledWith('Done.', 'success'));
 });

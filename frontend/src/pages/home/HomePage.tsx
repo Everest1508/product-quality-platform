@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { TodoCard } from './TodoCard';
 import { useHome, usePunch } from './useHome';
+import { PunchOutDialog } from '../attendance/PunchOutDialog';
 import type { Home } from './types';
 
 const hm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '');
@@ -35,6 +36,7 @@ function Kpi({ v, l, to, alert }: { v: React.ReactNode; l: string; to: string; a
 function TodayCard({ h }: { h: Home }) {
   const a = h.attendance;
   const punch = usePunch();
+  const [confirmOut, setConfirmOut] = useState(false);
   return (
     <Card className="space-y-3 p-5">
       <div className="flex items-center justify-between gap-3">
@@ -48,8 +50,9 @@ function TodayCard({ h }: { h: Home }) {
             {a.state === 'todo' && 'Not punched in'}
           </p>
         </div>
-        {(a.state === 'open' || a.state === 'todo') && <Button loading={punch.busy} onClick={punch.punch}><LogInIcon />{a.state === 'open' ? 'Punch out' : 'Punch in'}</Button>}
+        {(a.state === 'open' || a.state === 'todo') && <Button loading={punch.busy} onClick={a.state === 'open' ? () => setConfirmOut(true) : punch.punch}><LogInIcon />{a.state === 'open' ? 'Punch out' : 'Punch in'}</Button>}
       </div>
+      <PunchOutDialog open={confirmOut} onOpenChange={setConfirmOut} sinceMs={a.check_in ? new Date(a.check_in).getTime() : null} onConfirm={punch.punch} />
       <p className="text-xs text-muted-foreground">{a.month_label}: <b className="text-foreground">{a.present_days}</b> days present · <b className="text-foreground">{a.worked_label}</b> worked</p>
     </Card>
   );

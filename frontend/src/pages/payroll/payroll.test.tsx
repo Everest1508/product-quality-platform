@@ -111,12 +111,10 @@ it('holidays: add posts the date and name; a duplicate shows under the field', a
 
 it('holidays: Remove asks first and only then deletes', async () => {
   const { del } = mount('/payroll/holidays/', <HolidaysPage />, '/payroll/holidays/', () => ({ holidays: [{ id: 3, date: '2026-11-02', label: 'Mon, 2 Nov 2026', name: 'Diwali' }] }));
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
   await userEvent.click(await screen.findByRole('button', { name: 'Remove Diwali' }));
   expect(del).not.toHaveBeenCalled();
-  await userEvent.click(screen.getByRole('button', { name: 'Remove Diwali' }));
+  await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove' }));
   await waitFor(() => expect(del).toHaveBeenCalledWith('payroll/holidays/3/'));
-  expect(confirm).toHaveBeenCalledTimes(2);
 });
 
 const profiles = (): Profiles => ({

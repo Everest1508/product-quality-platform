@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { AlertDialog } from '@/components/ui/alert-dialog';
 import { PlusIcon, XIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ export function TodoCard({ bare = false }: { bare?: boolean }) {
   const q = useTodos();
   const act = useTodoActions();
   const [text, setText] = useState('');
+  const [del, setDel] = useState<{ id: number; text: string } | null>(null);
   const [priority, setPriority] = useState('2');
   const [due, setDue] = useState('');
 
@@ -66,11 +68,12 @@ export function TodoCard({ bare = false }: { bare?: boolean }) {
                 <span className="min-w-0 flex-1 break-words">{t.text}</span>
                 <Badge variant={PRIORITY[t.priority] ?? 'default'}>{t.priority_label}</Badge>
                 {t.due && <Badge variant={t.late ? 'danger' : t.today ? 'warning' : 'outline'}>{t.late ? `Overdue · ${day(t.due)}` : t.today ? 'Today' : day(t.due)}</Badge>}
-                <Button variant="ghost" size="icon-sm" aria-label="Delete task" className="size-6 text-muted-foreground hover:text-destructive" onClick={() => act.remove(t.id)}><XIcon className="size-3.5" /></Button>
+                <Button variant="ghost" size="icon-sm" aria-label="Delete task" className="size-6 text-muted-foreground hover:text-destructive" onClick={() => setDel(t)}><XIcon className="size-3.5" /></Button>
               </li>
             ))}
             {d.todos.length === 0 && <li className="py-2 text-sm text-muted-foreground">Nothing here yet. Add the first thing you want to get done today.</li>}
           </ul>
+          <AlertDialog open={del !== null} onOpenChange={(o) => !o && setDel(null)} destructive title={`Delete “${del?.text ?? ''}”?`} description="This task will be removed from your to-do list." confirmLabel="Delete" onConfirm={() => del && act.remove(del.id)} />
           {d.done > 0 && <p className="text-xs text-muted-foreground">Finished tasks are added to today’s DSR. Add the time you spent there.</p>}
         </>
       )}

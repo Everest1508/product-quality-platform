@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -78,6 +78,7 @@ it('the to-do list adds, toggles, deletes and clears', async () => {
   await userEvent.click(screen.getByRole('checkbox', { name: 'ship it' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('todos/1/toggle/'));
   await userEvent.click(screen.getAllByRole('button', { name: 'Delete task' })[0]);
+  await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
   await waitFor(() => expect(del).toHaveBeenCalledWith('todos/1/'));
   await userEvent.click(screen.getByRole('button', { name: 'Clear done' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('todos/clear-done/'));

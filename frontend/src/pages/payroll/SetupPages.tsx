@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '@/lib/api';
+import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,6 +27,7 @@ export function HolidaysPage() {
   const [name, setName] = useState('');
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState(false);
+  const [delH, setDelH] = useState<Holiday | null>(null);
   const d = q.data;
 
   const add = async (e: FormEvent) => {
@@ -41,13 +43,13 @@ export function HolidaysPage() {
     if (r) { setDate(''); setName(''); }
   };
   const remove = (h: Holiday) => {
-    if (!window.confirm(`Remove ${h.name}? Working days go back up and any open payroll run will recalculate.`)) return;
     return write(() => api.delete<{ message: string }>(`payroll/holidays/${h.id}/`));
   };
   const err = (f: string) => errors[f]?.length ? <span className="text-xs text-destructive" role="alert">{errors[f].join(' ')}</span> : null;
 
   return (
     <div className="space-y-4">
+      <AlertDialog open={delH !== null} onOpenChange={(o) => !o && setDelH(null)} destructive title={`Remove ${delH?.name ?? ''}?`} description="Working days go back up and any open payroll run will recalculate." confirmLabel="Remove" onConfirm={() => delH && remove(delH)} />
       <PayHeader title="Company holidays" sub="A holiday is not a working day, so it is left out of the divisor — nobody is paid for it." />
       <div className="grid items-start gap-4 md:grid-cols-[20rem_1fr]">
         <Card className="p-5">
@@ -61,7 +63,7 @@ export function HolidaysPage() {
         <Card className="p-0">
           <div className="border-b p-4 font-semibold">Holidays {d && <span className="font-normal text-muted-foreground">({d.holidays.length})</span>}</div>
           {!d ? <Skeleton className="h-32 w-full" data-testid="holidays-loading" /> : d.holidays.length === 0 ? <EmptyState className="rounded-none border-0" title="No holidays yet" description={<>Add festival dates so they are not counted as payable days.</>} /> : (
-            <ul className="divide-y text-sm">{d.holidays.map((h) => <li key={h.id} className="flex items-center justify-between gap-3 p-3"><span><span className="text-muted-foreground">{h.label}</span> · {h.name}</span><Button variant="outline" size="sm" aria-label={`Remove ${h.name}`} onClick={() => remove(h)}><TrashIcon />Remove</Button></li>)}</ul>
+            <ul className="divide-y text-sm">{d.holidays.map((h) => <li key={h.id} className="flex items-center justify-between gap-3 p-3"><span><span className="text-muted-foreground">{h.label}</span> · {h.name}</span><Button variant="outline" size="sm" aria-label={`Remove ${h.name}`} onClick={() => setDelH(h)}><TrashIcon />Remove</Button></li>)}</ul>
           )}
         </Card>
       </div>

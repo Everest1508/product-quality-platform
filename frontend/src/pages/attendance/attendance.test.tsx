@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -62,6 +62,17 @@ it('before check-in the clock and the late note show, and Check in punches', asy
   await userEvent.click(screen.getByRole('button', { name: /Check in/ }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('attendance/punch/'));
   await waitFor(() => expect(toast).toHaveBeenCalledWith('Done.', 'success'));
+});
+
+it('Check out asks first, shows the time worked, and only then punches', async () => {
+  const { post } = mount('/attendance/', <AttendancePage />, '/attendance/', me({ panel: panel({ state: 'open', check_in: '9:00 AM', since_ms: Date.now() - 3 * 3600_000, day_end_ms: Date.now() + 5 * 3600_000 }) }));
+  await userEvent.click(await screen.findByRole('button', { name: /Check out/ }));
+  const dialog = await screen.findByRole('dialog');
+  expect(dialog).toHaveTextContent(/punched out for today/i);
+  expect(dialog).toHaveTextContent('3h 00m');
+  expect(post).not.toHaveBeenCalled();
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Punch out' }));
+  await waitFor(() => expect(post).toHaveBeenCalledWith('attendance/punch/'));
 });
 
 it('the late note names the penalty band by minutes', async () => {

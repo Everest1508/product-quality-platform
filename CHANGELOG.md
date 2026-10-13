@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.34.0] — 2026-10-13 · ask before punching out or deleting
+
+> In short: punching out now shows how long you worked, and every delete asks first.
+
+### New
+- **Punching out asks first and shows your time.** A box says you will be punched out for today and how long you have worked so far.
+
+### Better
+- **Every delete now asks before it happens.** To-do tasks, product versions, removed product access, holidays and withdrawn leave all show a box explaining what will be removed.
+
 ## [1.33.0] — 2026-10-13 · profile, greeting, tooltips and honest DSR hours
 
 > In short: you get a profile page, a greeting that follows the time of day, tooltips on icon buttons, a toast for every change, and DSR hours that no longer count weeks.

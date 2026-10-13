@@ -142,6 +142,7 @@ function KeysCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof u
 
 function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof useProductActions> }) {
   const [adding, setAdding] = useState(false);
+  const [delV, setDelV] = useState<{ id: number; version_string: string } | null>(null);
   const [text, setText] = useState('');
   const [current, setCurrent] = useState(false);
   const submit = async (e: FormEvent) => {
@@ -159,6 +160,7 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
         <h2 className="text-sm font-semibold">Versions</h2>
         <Button size="sm" variant="outline" onClick={() => setAdding(true)}><PlusIcon /> Add</Button>
       </div>
+      <AlertDialog open={delV !== null} onOpenChange={(o) => !o && setDelV(null)} destructive title={`Delete version ${delV?.version_string ?? ''}?`} description="This version will be removed from the product." confirmLabel="Delete" onConfirm={() => delV && act.deleteVersion(delV.id)} />
       {data.versions.length === 0 && <p className="py-3 text-center text-sm text-muted-foreground">No versions yet.</p>}
       <ul className="divide-y">
         {data.versions.map((v) => (
@@ -166,7 +168,7 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
             <span className="flex items-center gap-2 text-sm font-medium">{v.version_string}{v.is_current && <Badge variant="success">Current</Badge>}</span>
             <span className="flex items-center gap-2">
               {v.released_at && <span className="text-xs text-muted-foreground">{shortDate(v.released_at)}</span>}
-              <Button size="icon-sm" variant="ghost" aria-label={`Delete version ${v.version_string}`} onClick={() => act.deleteVersion(v.id)}><XIcon /></Button>
+              <Button size="icon-sm" variant="ghost" aria-label={`Delete version ${v.version_string}`} onClick={() => setDelV(v)}><XIcon /></Button>
             </span>
           </li>
         ))}
@@ -184,6 +186,7 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
 }
 
 function AccessCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof useProductActions> }) {
+  const [delM, setDelM] = useState<{ id: number; name: string } | null>(null);
   const allocated = data.members.filter((m) => m.allocated).length;
   return (
     <Card className="space-y-3 p-5">
@@ -191,6 +194,7 @@ function AccessCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof
         <h2 className="text-sm font-semibold">Allocated members</h2>
         <Badge>{allocated}</Badge>
       </div>
+      <AlertDialog open={delM !== null} onOpenChange={(o) => !o && setDelM(null)} destructive title={`Remove ${delM?.name ?? ''}’s access?`} description="They will no longer see this product’s tickets and errors." confirmLabel="Remove" onConfirm={() => delM && act.unallocate(delM.id)} />
       <p className="text-sm text-muted-foreground">Owners and admins have access to all products. Other members need explicit allocation.</p>
       <ul className="divide-y">
         {data.members.map((m) => (
@@ -200,7 +204,7 @@ function AccessCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof
               <div className="min-w-0"><div className="truncate text-sm font-medium">{m.name}</div><div className="truncate text-xs text-muted-foreground">{m.email}</div></div>
             </div>
             {m.allocated ? (
-              m.is_you ? <Badge variant="success">You</Badge> : <Button size="sm" variant="ghost" className="text-destructive" disabled={act.busy === 'access'} onClick={() => act.unallocate(m.id)}><TrashIcon />Remove</Button>
+              m.is_you ? <Badge variant="success">You</Badge> : <Button size="sm" variant="ghost" className="text-destructive" disabled={act.busy === 'access'} onClick={() => setDelM(m)}><TrashIcon />Remove</Button>
             ) : (
               <Button size="sm" variant="outline" disabled={act.busy === 'access'} onClick={() => act.allocate(m.id)}><UserPlusIcon />Allocate</Button>
             )}

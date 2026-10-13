@@ -9,6 +9,7 @@ import { toast } from '@/lib/toast';
 import type { MyAttendance } from './types';
 import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
+import { PunchOutDialog } from './PunchOutDialog';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const hm = (secs: number) => `${Math.floor(secs / 3600)}h ${pad(Math.floor((secs % 3600) / 60))}m`;
@@ -17,6 +18,7 @@ const hm = (secs: number) => `${Math.floor(secs / 3600)}h ${pad(Math.floor((secs
 export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [confirmOut, setConfirmOut] = useState(false);
   const refresh = useAttRefresh();
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -81,7 +83,7 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
                 </div>
               </div>
             </div>
-            <Button variant="outline" loading={busy} onClick={punch}><LogOutIcon /> Check out</Button>
+            <Button variant="outline" loading={busy} onClick={() => setConfirmOut(true)}><LogOutIcon /> Check out</Button>
           </div>
           <Progress value={pct} aria-hidden />
         </div>
@@ -124,6 +126,7 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
           </div>
         </div>
       )}
+      <PunchOutDialog open={confirmOut} onOpenChange={setConfirmOut} sinceMs={p.since_ms} onConfirm={punch} />
     </Card>
   );
 }
