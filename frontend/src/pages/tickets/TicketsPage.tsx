@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { Board } from './Board';
 import { FilterBar } from './FilterBar';
 import { TicketTable } from './TicketTable';
-import { filtersFromParams, paramsFromFilters, useTicketMeta, useTicketScope, useTickets } from './useTicketQuery';
+import { filtersFromParams, paramsFromFilters, ticketsKey, useTicketMeta, useTicketScope, useTickets } from './useTicketQuery';
 import { useTicketActions } from './useTicketActions';
 import type { TicketFilters, TicketItem } from './types';
 
@@ -79,12 +79,12 @@ export function TicketsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {view === 'list' && (
+          {(
             <Button variant="outline" size="sm" aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
               Select
             </Button>
           )}
-          {view === 'list' && selecting && selected.size > 0 && (
+          {selecting && selected.size > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setConfirm({ kind: 'many' })}>
               Delete selected ({selected.size})
             </Button>
@@ -111,7 +111,7 @@ export function TicketsPage() {
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
         </Card>
       ) : data.view === 'board' ? (
-        <Board data={data} />
+        <Board data={data} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
       ) : data.items.length === 0 ? (
         <Card className="p-10 text-center">
           <h3 className="font-medium">No tickets found</h3>

@@ -30,8 +30,11 @@ export function useTicketScope(): { productId: number | null; view: 'list' | 'bo
   return { productId: pk ? Number(pk) : null, view: pathname.endsWith('/list/') ? 'list' : 'board' };
 }
 
+// On a product page the product is the scope, not a filter.
+export const ticketsKey = (view: 'list' | 'board', productId: number | null, filters: TicketFilters) =>
+  ['tickets', view, productId, productId ? { ...filters, product: undefined } : filters] as const;
+
 export function useTickets(view: 'list' | 'board', productId: number | null, filters: TicketFilters) {
-  // On a product page the product is the scope, not a filter.
   const f = productId ? { ...filters, product: undefined } : filters;
   const parts = [`view=${view}`];
   if (productId) parts.push('scope=product', `product=${productId}`);
@@ -39,7 +42,7 @@ export function useTickets(view: 'list' | 'board', productId: number | null, fil
   if (rest) parts.push(rest);
   const path = `tickets/?${parts.join('&')}`;
   return useQuery({
-    queryKey: ['tickets', view, productId, f],
+    queryKey: ticketsKey(view, productId, filters),
     queryFn: () => api.get<ListResponse | BoardResponse>(path),
     placeholderData: keepPreviousData,
   });
