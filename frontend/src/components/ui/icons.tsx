@@ -352,6 +352,8 @@ export const ScissorsIcon = make('ScissorsIcon', [['circle', 6, 6, 3], ['circle'
 export const CropIcon = make('CropIcon', [p('M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2')]);
 export const RulerIcon = make('RulerIcon', [p('M3 16L16 3l5 5L8 21zM7 12l2 2M10 9l2 2M13 6l2 2')]);
 
+export const KeyboardIcon = make('KeyboardIcon', [['rect', 3, 6, 18, 12, 2.5], p('M7 10h.01M11 10h.01M15 10h.01M7 14h10')]);
+
 export const icons = {
   PrinterIcon,
   CallIcon,
@@ -422,6 +424,7 @@ export const icons = {
   TimerIcon,
   HourglassIcon,
   CompassIcon,
+  KeyboardIcon,
   MapIcon,
   NavigationIcon,
   BoxIcon,

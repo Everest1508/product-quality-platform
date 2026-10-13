@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { confetti } from '@/lib/confetti';
 import { api } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import type { Home, Todos } from './types';
@@ -19,7 +20,9 @@ export function useTodoActions() {
     setBusy(true);
     try {
       const d = await call();
+      const prev = qc.getQueryData<Todos>(['todos']);
       qc.setQueryData(['todos'], { ...d, message: undefined });
+      if (prev && prev.done < prev.total && d.total > 0 && d.done === d.total) confetti(); // the last one just got ticked
       qc.invalidateQueries({ queryKey: ['home'] }); // the "to-dos left" number
       if (d.message) toast(d.message, 'success');
       return true;

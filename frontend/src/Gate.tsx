@@ -4,6 +4,8 @@ import { useBootstrap } from '@/lib/bootstrap';
 import { showFlash } from '@/lib/toast';
 import { publicRoutes, shellRoutes } from '@/routes';
 import { AppShell } from '@/shell/AppShell';
+import { CrashBoundary } from '@/components/fun/CrashBoundary';
+import { NotFound } from '@/components/fun/NotFound';
 import { Toaster } from '@/shell/Toaster';
 
 // Pages that work without a login (a survey's public link, later the sign-in pages) get no sidebar and no bootstrap.
@@ -25,6 +27,7 @@ export function Gate() {
 }
 
 function PrivateApp() {
+  const { pathname } = useLocation();
   const boot = useBootstrap();
   const flash = boot.data?.messages;
   useEffect(() => {
@@ -45,12 +48,14 @@ function PrivateApp() {
   return (
     <>
       <AppShell>
+        <CrashBoundary key={pathname}>
         <Routes>
           {shellRoutes.map((r) => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}
-          <Route path="*" element={<p className="text-sm text-muted-foreground">Page not found.</p>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
+        </CrashBoundary>
       </AppShell>
       <Toaster />
     </>

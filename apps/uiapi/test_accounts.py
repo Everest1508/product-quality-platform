@@ -371,3 +371,61 @@ class ProfileOverviewApiTest(TeamApiBase):
         self.assertIsNotNone(d["joined"])
         self.assertIsInstance(d["recent"], list)
         self.assertEqual(d["user"]["username"], "dev")
+
+
+class KudosTest(TeamApiBase):
+    def _in(self, day, hour, minute=0):
+        from django.utils import timezone
+
+        from apps.attendance.models import AttendanceRecord
+
+        at = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, hour, minute), timezone.get_current_timezone())
+        return AttendanceRecord.objects.create(company=self.a, user=self.dev, date=day, check_in=at)
+
+    def test_streak_counts_on_time_weekdays_and_a_late_day_breaks_it(self):
+        from datetime import date, timedelta
+
+        from apps.attendance.service import shift_for
+        from apps.uiapi import kudos
+
+        shift = shift_for(self.a)
+        today = date(2026, 10, 14)  # a Wednesday
+        h, m = shift.start_time.hour, shift.start_time.minute
+        self._in(today, h, m)
+        self._in(today - timedelta(days=1), h, m)
+        self._in(today - timedelta(days=2), h + 3)  # late
+        self._in(today - timedelta(days=3), h, m)
+        self.assertEqual(kudos.on_time_streak(self.a, self.dev, today), 2)
+
+    def test_a_weekend_does_not_break_the_streak_and_today_without_a_punch_is_skipped(self):
+        from datetime import date
+
+        from apps.attendance.service import shift_for
+        from apps.uiapi import kudos
+
+        shift = shift_for(self.a)
+        h, m = shift.start_time.hour, shift.start_time.minute
+        self._in(date(2026, 10, 9), h, m)  # Friday
+        self._in(date(2026, 10, 12), h, m)  # Monday
+        self.assertEqual(kudos.on_time_streak(self.a, self.dev, date(2026, 10, 13)), 2)
+
+    def test_a_work_anniversary_this_week_is_a_milestone(self):
+        from datetime import date
+
+        from django.utils import timezone
+
+        from apps.uiapi import kudos
+
+        m = self.m_dev
+        Membership.objects.filter(pk=m.pk).update(created_at=timezone.make_aware(timezone.datetime(2024, 10, 12, 10), timezone.get_current_timezone()))
+        out = kudos.milestones(self.a, self.dev, date(2026, 10, 14))
+        self.assertTrue(any("2 years" in s for s in out))
+        self.assertEqual(kudos.milestones(self.a, self.dev, date(2026, 12, 1)), [])
+
+    def test_profile_and_home_carry_both(self):
+        self.login("dev")
+        d = self.client.get("/ui-api/v1/profile/").json()
+        self.assertIn("streak", d)
+        self.assertIsInstance(d["milestones"], list)
+        h = self.client.get("/ui-api/v1/dashboard/").json()
+        self.assertIn("streak", h)

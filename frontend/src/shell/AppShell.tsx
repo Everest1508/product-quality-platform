@@ -9,6 +9,7 @@ import { Palette } from './Palette';
 import { ShortcutsHelp } from './ShortcutsHelp';
 import { Sidebar } from './Sidebar';
 import { useGlobalKeys } from './keys';
+import { setTheme } from '@/lib/theme';
 import { Topbar } from './Topbar';
 
 const KEY = 'pqSidebarCollapsed';
@@ -38,7 +39,17 @@ function Frame({ children }: { children: ReactNode }) {
   const [palette, setPalette] = useState(false);
   const [help, setHelp] = useState(false);
   const b = useBootstrapData();
+  const { setCollapsed, collapsed, setMobileOpen, isDesktop } = useSidebar();
+  const nav = useNavigate();
+  useEffect(() => {
+    const open = () => setHelp(true);
+    window.addEventListener('pq:shortcuts', open);
+    return () => window.removeEventListener('pq:shortcuts', open);
+  }, []);
   useGlobalKeys({
+    onNavigate: nav,
+    onToggleSidebar: useCallback(() => (isDesktop ? setCollapsed(!collapsed) : setMobileOpen(true)), [isDesktop, collapsed, setCollapsed, setMobileOpen]),
+    onToggleTheme: useCallback(() => setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'), []),
     onPalette: useCallback((m) => setPalette((o) => (m === 'toggle' ? !o : true)), []),
     onHelp: useCallback(() => setHelp(true), []),
     newTicketUrl: b.urls.ticket_create,

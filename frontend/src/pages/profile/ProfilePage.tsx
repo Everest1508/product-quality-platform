@@ -12,6 +12,8 @@ import { ago } from '@/lib/time';
 import { ErrorState } from '@/components/ui/error-state';
 import { Avatar } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
+import { ShortcutList } from '@/shell/ShortcutList';
+import { Milestones, StreakBadge } from '@/components/fun/Kudos';
 import { RefreshIcon, SaveIcon } from '@/components/ui/icons';
 
 type Profile = {
@@ -21,6 +23,8 @@ type Profile = {
   company: string;
   joined: string | null;
   last_login: string | null;
+  streak: number;
+  milestones: string[];
   stats: { open_tickets: number; resolved_30d: number; dsr_week: string; days_present: number; products: number };
   recent: { id: number; title: string; created_at: string }[];
   message?: string;
@@ -110,7 +114,7 @@ export function ProfilePage() {
               <Avatar name={p.user.name} size="xl" />
               <div className="min-w-0 flex-1">
                 <h1 className="truncate text-2xl font-semibold">{p.user.name}</h1>
-                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">@{p.user.username} <Badge variant="info">{p.role_label}</Badge> <span>{p.company}</span></p>
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">@{p.user.username} <Badge variant="info">{p.role_label}</Badge> <span>{p.company}</span> <StreakBadge days={p.streak} /></p>
                 <p className="mt-1 text-sm text-muted-foreground">{p.user.email}{p.user.discord_id ? ` · Discord ${p.user.discord_id}` : ''}</p>
               </div>
               <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -130,8 +134,10 @@ export function ProfilePage() {
             <TabsList aria-label="Profile sections">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="shortcuts">Keyboard shortcuts</TabsTrigger>
             </TabsList>
-            <TabsContent value="overview" className="mt-4">
+            <TabsContent value="overview" className="mt-4 space-y-4">
+              {p.milestones.length > 0 && <Card className="p-5"><Milestones items={p.milestones} /></Card>}
               <Card className="p-5">
                 <h2 className="mb-2 text-sm font-semibold">Recent activity</h2>
                 {p.recent.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">Nothing yet. What you do shows up here.</p> : (
@@ -139,6 +145,7 @@ export function ProfilePage() {
                 )}
               </Card>
             </TabsContent>
+            <TabsContent value="shortcuts" className="mt-4"><Card className="p-5"><ShortcutList /><p className="mt-4 text-xs text-muted-foreground">Shortcuts pause while you type in a field. On a Mac, ⌘ is used where other systems use Ctrl.</p></Card></TabsContent>
             <TabsContent value="settings" className="mt-4 max-w-3xl"><ProfileForm p={p} /></TabsContent>
           </Tabs>
         </>

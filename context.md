@@ -982,3 +982,8 @@ decided what and strike the item** rather than deleting it.
 
 ### 2026-10-13 Confirmations (1.34.0)
 - `pages/attendance/PunchOutDialog` (used by PunchPanel and the Home Today card) asks before punching out and shows time worked so far. Deletes of to-dos, product versions, product access, holidays (was `window.confirm`) and leave withdrawals now use `AlertDialog`.
+
+### 2026-10-13 Friendly touches and shortcuts (1.35.0)
+- `shell/shortcuts.ts` is the one list behind the help dialog, the profile "Keyboard shortcuts" tab and the `g` + key table (`GO_TO`); `lib/platform.ts` picks ⌘ vs Ctrl for display only (handlers accept both). `keys.ts` handles `g` sequences (1.5s window), `[` sidebar, `t` theme; the account menu item opens the dialog via the `pq:shortcuts` window event.
+- `apps/uiapi/kudos.py`: `on_time_streak` (weekends, holidays and approved leave are skipped; a late check-in beyond grace breaks it; today without a punch is skipped) and `milestones` (anniversary within 7 days, round ticket counts). Both are on `/dashboard/` and `/profile/`.
+- `components/fun/`: `CountUp`, `Kudos` (streak/milestones), `NotFound`, `CrashBoundary`; `lib/confetti.ts` (DOM particles, off for reduced motion).

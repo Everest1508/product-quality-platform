@@ -59,3 +59,30 @@ it('single-key shortcuts ignore keys pressed inside menus and dialogs', () => {
   expect(h.onPalette).not.toHaveBeenCalled();
   expect(h.onHelp).not.toHaveBeenCalled();
 });
+
+it('g then a key goes to that page; the pair is ignored while typing or after a pause', () => {
+  const onNavigate = vi.fn();
+  renderHook(() => useGlobalKeys({ onPalette: vi.fn(), onHelp: vi.fn(), newTicketUrl: '/x/', onNavigate }));
+  press('g');
+  press('t');
+  expect(onNavigate).toHaveBeenCalledWith('/tickets/');
+  const input = document.body.appendChild(document.createElement('input'));
+  press('g', {}, input);
+  press('d', {}, input);
+  expect(onNavigate).toHaveBeenCalledTimes(1);
+  press('g');
+  press('z');
+  expect(onNavigate).toHaveBeenCalledTimes(1);
+});
+
+it('[ toggles the sidebar and t the theme, but not with Ctrl or Cmd held', () => {
+  const onToggleSidebar = vi.fn();
+  const onToggleTheme = vi.fn();
+  renderHook(() => useGlobalKeys({ onPalette: vi.fn(), onHelp: vi.fn(), newTicketUrl: '/x/', onToggleSidebar, onToggleTheme }));
+  press('[');
+  press('t');
+  press('t', { metaKey: true });
+  press('t', { ctrlKey: true });
+  expect(onToggleSidebar).toHaveBeenCalledTimes(1);
+  expect(onToggleTheme).toHaveBeenCalledTimes(1);
+});

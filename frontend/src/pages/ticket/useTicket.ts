@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { confetti } from '@/lib/confetti';
 import { api } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import type { FieldErrors, TicketDetail, TicketInput } from './types';
@@ -58,6 +59,7 @@ export function useTicketActions(id: number) {
         await qc.invalidateQueries({ queryKey: ['ticket', id] });
         refreshLists();
         const label = (key: string) => before?.statuses.find(([k]) => k === key)?.[1] ?? key;
+        if (status === 'resolved' || status === 'closed') confetti();
         toast(`${before?.ticket.key ?? ''}: status ${before?.ticket.status_label ?? ''} → ${label(status)}.`, 'success');
         return true;
       } catch (e) {

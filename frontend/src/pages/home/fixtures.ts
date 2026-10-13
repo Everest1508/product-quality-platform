@@ -1,7 +1,7 @@
 import type { Home, Todos } from './types';
 
 export const home = (over: Partial<Home> = {}): Home => ({
-  first_name: 'Olive', company: 'Acme', quote: 'Clear tickets, clear head.', server_greeting: 'Good morning', on_leave_today: false, dsr_nudge: false,
+  first_name: 'Olive', company: 'Acme', quote: 'Clear tickets, clear head.', server_greeting: 'Good morning', streak: 0, milestones: [], on_leave_today: false, dsr_nudge: false,
   kpis: { my_tickets: 3, overdue: 1, todos_left: 2, week_total: '12h 30m', week_target: '8h 00m' },
   attendance: { state: 'todo', check_in: null, check_out: null, worked_hours: null, present_days: 4, worked_label: '30', month_label: 'October' },
   needs_attention: null,

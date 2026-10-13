@@ -21,11 +21,14 @@ const short = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00`).toLocaleDat
 
 const Empty = ({ children }: { children: React.ReactNode }) => <p className="py-6 text-center text-sm text-muted-foreground">{children}</p>;
 
+import { CountUp } from '@/components/fun/CountUp';
+import { Milestones, StreakBadge } from '@/components/fun/Kudos';
+
 function Kpi({ v, l, to, alert }: { v: React.ReactNode; l: string; to: string; alert?: boolean }) {
   return (
     <Link to={to}>
       <Card hoverable className={cn('p-4', alert && 'border-destructive/40')}>
-        <div className={cn('text-2xl font-semibold tabular-nums', alert && 'text-destructive')}>{v}</div>
+        <div className={cn('text-2xl font-semibold tabular-nums', alert && 'text-destructive')}>{typeof v === 'number' ? <CountUp value={v} /> : v}</div>
         <div className="text-sm text-muted-foreground">{l}</div>
       </Card>
     </Link>
@@ -53,6 +56,7 @@ function TodayCard({ h }: { h: Home }) {
         {(a.state === 'open' || a.state === 'todo') && <Button loading={punch.busy} onClick={a.state === 'open' ? () => setConfirmOut(true) : punch.punch}><LogInIcon />{a.state === 'open' ? 'Punch out' : 'Punch in'}</Button>}
       </div>
       <PunchOutDialog open={confirmOut} onOpenChange={setConfirmOut} sinceMs={a.check_in ? new Date(a.check_in).getTime() : null} onConfirm={punch.punch} />
+      <StreakBadge days={h.streak} />
       <p className="text-xs text-muted-foreground">{a.month_label}: <b className="text-foreground">{a.present_days}</b> days present · <b className="text-foreground">{a.worked_label}</b> worked</p>
     </Card>
   );
@@ -140,10 +144,11 @@ function Greeting({ h, now }: { h: Home; now: Date }) {
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} · {h.company}</p>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-            <span className="group/ic grid size-9 cursor-default place-items-center rounded-full bg-background/70 text-primary shadow-sm transition-transform duration-300 hover:scale-110 hover:[&_svg]:motion-safe:animate-[wiggle_0.7s_ease-in-out] [&_svg]:size-5"><Icon /></span>
+            <span className="group grid size-9 cursor-default place-items-center rounded-full bg-background/70 text-primary shadow-sm transition-transform duration-300 hover:scale-110 [&_svg]:size-5"><Icon draw speed={1100} /></span>
             {GREET[period]}{h.first_name ? `, ${h.first_name}` : ''}
           </h1>
           <p className="mt-1 min-h-5 text-sm text-muted-foreground"><Typewriter lines={LINES[period]} start={now.getDay()} /></p>
+          {h.milestones.length > 0 && <div className="mt-2"><Milestones items={h.milestones} /></div>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline"><a href="/leave/apply/"><SendIcon />Request leave</a></Button>

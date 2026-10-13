@@ -10,6 +10,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.35.0] — 2026-10-13 · friendlier, with more keyboard shortcuts
+
+> In short: celebrations, an on-time streak, milestones, friendlier empty and error pages, and many more keyboard shortcuts.
+
+### New
+- **Keyboard shortcuts for moving around.** Press g and then h, t, e, p, d, a, l, r, m or u to jump to Home, Tickets, Errors, Products, DSR, Attendance, My leave, Reports, Team or your profile.
+- **More shortcuts for everyday things.** Press t to switch light and dark, and [ to fold the sidebar. They work on Mac, Windows and Linux, and show ⌘ on a Mac and Ctrl elsewhere.
+- **A list of every shortcut lives in your profile and the account menu.** Press ? anywhere to see it too.
+- **An on-time streak.** Your profile and the Today card show how many working days in a row you checked in on time, and leave and holidays do not break it.
+- **Milestones get a line of praise.** A work anniversary or a round number of resolved tickets shows on Home and in your profile.
+- **Small celebrations.** Confetti when you resolve a ticket, tick the last to-do, or finish a full working day.
+
+### Better
+- **The numbers on Home count up when the page opens.** It is a small touch that makes the page feel alive.
+- **Empty states look friendlier.** A missing page, or a page that fails, now says so calmly and gives you a way back.
+- **The greeting icon redraws itself when you hover it.** The strokes draw in again, one by one.
+
 ## [1.34.1] — 2026-10-13 · a friendlier greeting
 
 > In short: the Home greeting types out its lines, and its icon wiggles when you hover it.

@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from apps.accounts import service
 from apps.accounts.models import ExternalAuthCode, Membership
 from apps.core.redirects import safe_next
+from apps.uiapi import kudos
 from apps.uiapi.tickets import form_errors
 from apps.uiapi.views import CompanyAPIView
 
@@ -226,6 +227,8 @@ class ProfileAPIView(CompanyAPIView):
                 "days_present": AttendanceRecord.objects.filter(company=company, user=user, date__year=today.year, date__month=today.month, check_in__isnull=False).count(),
                 "products": accessible_products(user, company).count(),
             },
+            "streak": kudos.on_time_streak(company, user),
+            "milestones": kudos.milestones(company, user),
             "recent": [
                 {"id": a.pk, "title": a.title, "created_at": a.created_at.isoformat(), "url": ""}
                 for a in ActivityLog.objects.filter(company=company, actor=user).order_by("-created_at")[:8]

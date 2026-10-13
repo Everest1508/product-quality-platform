@@ -8,7 +8,7 @@ import { ProfilePage } from './ProfilePage';
 
 afterEach(() => vi.restoreAllMocks());
 
-const data = { user: { username: 'alice', name: 'Alice Wonder', initial: 'A', first_name: 'Alice', last_name: 'Wonder', email: 'alice@t.io', discord_id: '' }, role: 'developer', role_label: 'Developer', company: 'Acme', joined: '2026-01-05T00:00:00Z', last_login: null, stats: { open_tickets: 3, resolved_30d: 2, dsr_week: '4h', days_present: 5, products: 2 }, recent: [{ id: 1, title: 'Ticket AUM-001 created', created_at: new Date().toISOString() }] };
+const data = { user: { username: 'alice', name: 'Alice Wonder', initial: 'A', first_name: 'Alice', last_name: 'Wonder', email: 'alice@t.io', discord_id: '' }, role: 'developer', role_label: 'Developer', company: 'Acme', joined: '2026-01-05T00:00:00Z', last_login: null, streak: 3, milestones: ['1 year with Acme this week. Thank you!'], stats: { open_tickets: 3, resolved_30d: 2, dsr_week: '4h', days_present: 5, products: 2 }, recent: [{ id: 1, title: 'Ticket AUM-001 created', created_at: new Date().toISOString() }] };
 
 function setup() {
   vi.spyOn(api, 'get').mockResolvedValue(data as never);

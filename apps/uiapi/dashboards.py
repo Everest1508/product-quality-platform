@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from apps.core.templatetags.event_tags import event_pill, event_url
 from apps.dashboards import quotes
+from apps.uiapi import kudos
 from apps.dashboards import todos as todo_service
 from apps.dashboards.models import ActivityLog, Todo
 from apps.dashboards.service import (
@@ -129,6 +130,8 @@ class HomeAPIView(CompanyAPIView):
             "dsr_nudge": d["dsr_nudge"],
             "kpis": {"my_tickets": d["my_ticket_count"], "overdue": d["overdue_count"], "todos_left": d["todo_open"],
                      "week_total": d["chart_week_total"], "week_target": d["chart_week_target"]},
+            "streak": kudos.on_time_streak(request.company, request.user),
+            "milestones": kudos.milestones(request.company, request.user),
             "attendance": {
                 "state": state,
                 "check_in": rec.check_in.isoformat() if rec and rec.check_in else None,

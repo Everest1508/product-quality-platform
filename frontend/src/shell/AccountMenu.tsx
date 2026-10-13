@@ -1,7 +1,8 @@
-import { ChevronDownIcon, LogOutIcon, UserIcon } from '@/components/ui/icons';
+import { ChevronDownIcon, KeyboardIcon, LogOutIcon, UserIcon } from '@/components/ui/icons';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { ThemeSwitch } from './ThemeSwitch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Kbd } from '@/components/ui/kbd';
 import { Avatar } from '@/components/ui/avatar';
 
 export function AccountMenu() {
@@ -19,6 +20,7 @@ export function AccountMenu() {
       <DropdownMenuContent align="end" className="w-52">
         <div className="px-2 pb-2 pt-1"><ThemeSwitch /></div>
         <DropdownMenuItem asChild><a href={urls.profile}><UserIcon /> My profile</a></DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => window.dispatchEvent(new Event('pq:shortcuts'))}><KeyboardIcon /> Keyboard shortcuts<Kbd className="ml-auto">?</Kbd></DropdownMenuItem>
         {/* A real form post, so signing out works without JavaScript. */}
         <form method="post" action={urls.logout}>
           <input type="hidden" name="csrfmiddlewaretoken" value={csrf} />

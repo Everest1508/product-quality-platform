@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LogInIcon, LogOutIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { api } from '@/lib/api';
+import { confetti } from '@/lib/confetti';
 import { cn } from '@/lib/utils';
 import { reason, useAttRefresh } from './useAttendance';
 import { toast } from '@/lib/toast';
@@ -42,6 +43,11 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
   const secs = p.since_ms ? Math.max(0, Math.floor((now - p.since_ms) / 1000)) : 0;
   const dayEnd = p.day_end_ms;
   const dayDone = !!dayEnd && now >= dayEnd;
+  const wasDone = useRef(dayDone);
+  useEffect(() => {
+    if (dayDone && !wasDone.current && p.state === 'open') confetti(); // the full day was just completed
+    wasDone.current = dayDone;
+  }, [dayDone, p.state]);
   const left = dayEnd ? Math.max(0, Math.floor((dayEnd - now) / 1000)) : 0;
   const over = dayEnd ? Math.max(0, Math.floor((now - dayEnd) / 60000)) : 0;
   const pct = dayEnd && p.since_ms ? Math.min(100, Math.round(((now - p.since_ms) / (dayEnd - p.since_ms)) * 100)) : 0;

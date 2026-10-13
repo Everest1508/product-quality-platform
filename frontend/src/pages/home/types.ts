@@ -3,6 +3,8 @@ export type Home = {
   company: string;
   quote: string;
   server_greeting: string;
+  streak: number;
+  milestones: string[];
   on_leave_today: boolean;
   dsr_nudge: boolean;
   kpis: { my_tickets: number; overdue: number; todos_left: number; week_total: string; week_target: string };
