@@ -24,7 +24,7 @@ it('is a combobox over options and highlights the first result', () => {
   setup();
   expect(screen.getByRole('combobox')).toBeInTheDocument();
   const options = screen.getAllByRole('option');
-  expect(options).toHaveLength(3);
+  expect(options).toHaveLength(3 + 5); // the results, then five quick actions
   expect(options[0]).toHaveAttribute('aria-selected', 'true');
 });
 
@@ -72,4 +72,12 @@ it('says so when nothing matches', async () => {
   setup({ groups: [], loading: false });
   await userEvent.type(screen.getByRole('combobox'), 'zzzz');
   expect(screen.getByText(/no matches for/i)).toBeInTheDocument();
+});
+
+it('quick actions match what you type and run', async () => {
+  const go = vi.spyOn(nav, 'go').mockImplementation(() => {});
+  setup({ groups: [], loading: false });
+  await userEvent.type(screen.getByRole('combobox'), 'leave');
+  await userEvent.click(screen.getByRole('option', { name: /request leave/i }));
+  expect(go).toHaveBeenCalledWith('/leave/apply/');
 });

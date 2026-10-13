@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useInRouterContext, useNavigate } from 'react-router-dom';
+import { matchActions } from './actions';
 import { go } from '@/lib/go';
 import { clearRecent, highlight, loadRecent, rememberSearch, useSearch, type SearchItem } from '@/lib/search';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { Button } from '@/components/ui/button';
 import { XIcon } from '@/components/ui/icons';
+
+// The palette works with or without a router (the tests mount it bare); without one, links reload the page.
+const useGo = () => (useInRouterContext() ? useNavigate() : go);
 
 function Marked({ text, query }: { text: string; query: string }) {
   return (
@@ -20,6 +25,8 @@ export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange(op
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const { groups, loading } = useSearch(query);
+  const to = useGo();
+  const actions = matchActions(query);
 
   useEffect(() => {
     if (open) {
@@ -57,7 +64,17 @@ export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange(op
             ))}
           </CommandGroup>
         ))}
-        {!groups.length && !loading && (trimmed.length >= 2 || !recent.length) && (
+        {actions.length > 0 && (
+          <CommandGroup heading="Actions">
+            {actions.map((a) => (
+              <CommandItem key={a.id} value={`action:${a.id}`} onSelect={() => { onOpenChange(false); a.run((p) => to(p)); }}>
+                <span>{a.label}</span>
+                {a.keys && <span className="ml-auto flex gap-1">{a.keys.split(' ').map((k) => <Kbd key={k}>{k}</Kbd>)}</span>}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+        {!groups.length && !actions.length && !loading && (trimmed.length >= 2 || !recent.length) && (
           <CommandEmpty>{trimmed.length >= 2 ? `No matches for “${trimmed}”` : 'Start typing to search'}</CommandEmpty>
         )}
         {!trimmed && (

@@ -33,7 +33,7 @@ export function DsrPage() {
   const query = useDsrLog({ range, user, q });
   const act = useDsrActions(user);
   const log = query.data;
-  const [dialog, setDialog] = useState<{ entry?: LogRow } | null>(null);
+  const [dialog, setDialog] = useState<{ entry?: LogRow } | null>(params.get('log') ? {} : null);
   const [confirm, setConfirm] = useState<LogRow | null>(null);
   useEffect(() => {
     document.title = 'DSR — PQ Platform';
@@ -94,9 +94,9 @@ export function DsrPage() {
               <TableRow className="bg-secondary hover:bg-secondary">
                 <TableHead className="w-28 text-center">Date</TableHead>
                 {everyone && <TableHead className="w-36">Employee</TableHead>}
-                <TableHead className="min-w-64">Task</TableHead>
-                <TableHead className="w-36">Project</TableHead>
-                <TableHead className="w-40">Category</TableHead>
+                <TableHead className="md:min-w-64">Task</TableHead>
+                <TableHead className="w-36 max-md:hidden">Project</TableHead>
+                <TableHead className="w-40 max-md:hidden">Category</TableHead>
                 <TableHead className="w-24 text-center">Time</TableHead>
                 <TableHead className="w-32 text-center">Status</TableHead>
                 <TableHead className="w-24 text-center">Actions</TableHead>
@@ -121,10 +121,11 @@ export function DsrPage() {
                         {r.source && <Badge variant="outline" title={`Submitted through the DSR MCP from ${r.source}`}>via MCP</Badge>}
                       </div>
                       {r.from_time && r.to_time && <p className="mt-0.5 text-xs text-muted-foreground">Created {r.from_time} → completed {r.to_time}</p>}
+                      <p className="mt-0.5 text-xs text-muted-foreground md:hidden" aria-hidden>{[r.product?.name, r.category_label].filter(Boolean).join(' · ')}</p>
                       {r.notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.notes}</p>}
                     </TableCell>
-                    <TableCell className="text-sm">{r.product?.name ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                    <TableCell className="text-sm">{r.category_label}</TableCell>
+                    <TableCell className="text-sm max-md:hidden">{r.product?.name ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell className="text-sm max-md:hidden">{r.category_label}</TableCell>
                     <TableCell className="whitespace-nowrap text-center font-semibold tabular-nums">{r.hours}</TableCell>
                     <TableCell className="text-center"><Badge variant={STATUS[r.status] ?? 'default'}>{r.status_label}</Badge></TableCell>
                     <TableCell className="whitespace-nowrap text-center">

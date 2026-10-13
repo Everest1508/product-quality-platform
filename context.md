@@ -987,3 +987,9 @@ decided what and strike the item** rather than deleting it.
 - `shell/shortcuts.ts` is the one list behind the help dialog, the profile "Keyboard shortcuts" tab and the `g` + key table (`GO_TO`); `lib/platform.ts` picks ⌘ vs Ctrl for display only (handlers accept both). `keys.ts` handles `g` sequences (1.5s window), `[` sidebar, `t` theme; the account menu item opens the dialog via the `pq:shortcuts` window event.
 - `apps/uiapi/kudos.py`: `on_time_streak` (weekends, holidays and approved leave are skipped; a late check-in beyond grace breaks it; today without a punch is skipped) and `milestones` (anniversary within 7 days, round ticket counts). Both are on `/dashboard/` and `/profile/`.
 - `components/fun/`: `CountUp`, `Kudos` (streak/milestones), `NotFound`, `CrashBoundary`; `lib/confetti.ts` (DOM particles, off for reduced motion).
+
+### 2026-10-13 Exports, team pages, notification settings, timeline (1.36.0)
+- CSV: `?export=csv` on `dsr/log/`, `attendance/timesheet/` (admin) and `payroll/runs/<id>/` (admin) through `apps/core/csvx.csv_response` (a cell starting with = + - @ gets a leading quote). The frontend `ExportLink` is a plain `<a download>`.
+- `NotificationMute` (apps/notifications): no row = on; `notify()` returns None for a muted kind; `system` can't be muted. API `profile/notifications/` (GET, PUT {kind, enabled}); `api.put` was added. @mentions already existed (`apps/tickets/mentions.py`).
+- `GET team/<membership id>/` (page `/team/:id/`): streak, milestones, counts and open tickets limited to `accessible_tickets` for the viewer; email only for owners and admins. The PATCH/DELETE handlers (account editing) are untouched.
+- Ticket detail JSON has `events` (ActivityLog rows with target ticket, minus comments); `Timeline` merges them with comments. Palette actions live in `shell/actions.ts`; the DSR opens its dialog on `?log=1`.

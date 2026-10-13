@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.36.0] — 2026-10-13 · exports, team pages, notification settings and tidier pages
+
+> In short: export your data, open a colleague's page, choose what notifies you, and see a ticket's whole story in one column.
+
+### New
+- **You can export to a spreadsheet.** The DSR, the attendance timesheet and each payroll run have an Export CSV button.
+- **Every team member has their own page.** Click a name in Team to see their streak, their numbers and the open work of theirs you are allowed to see.
+- **You choose what notifies you.** The new Notifications tab in your profile has a switch for each kind of notification.
+- **Ticket pages show one activity timeline.** Status changes, priority changes, assignments and comments appear together in time order.
+- **The search box can do things.** Press Ctrl or ⌘ K and type "leave", "log" or "punch" to jump straight to the action.
+
+### Better
+- **Attendance is one tidy sheet.** The month calendar and your days sit side by side under one set of figures.
+- **Charts replaced the hand-drawn bars.** The week, error history, survey scores and product trends use the same charts as Reports.
+- **Tables are easier on a phone.** Tickets and the DSR hide their less important columns on small screens.
+
 ## [1.35.0] — 2026-10-13 · friendlier, with more keyboard shortcuts
 
 > In short: celebrations, an on-time streak, milestones, friendlier empty and error pages, and many more keyboard shortcuts.

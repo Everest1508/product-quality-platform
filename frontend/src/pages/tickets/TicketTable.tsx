@@ -46,9 +46,9 @@ export function TicketTable({ items, selecting, selected, onSelect, onDelete }: 
           <TableHead className="px-3 py-2">ID</TableHead>
           <TableHead className="px-3 py-2">Title</TableHead>
           <TableHead className="px-3 py-2">Status</TableHead>
-          <TableHead className="px-3 py-2">Priority</TableHead>
-          <TableHead className="px-3 py-2">Assignees</TableHead>
-          <TableHead className="px-3 py-2">Updated</TableHead>
+          <TableHead className="px-3 py-2 max-md:hidden">Priority</TableHead>
+          <TableHead className="px-3 py-2 max-sm:hidden">Assignees</TableHead>
+          <TableHead className="px-3 py-2 max-md:hidden">Updated</TableHead>
           <TableHead className="px-3 py-2"><span className="sr-only">Actions</span></TableHead>
         </TableRow>
       </TableHeader>
@@ -70,19 +70,19 @@ export function TicketTable({ items, selecting, selected, onSelect, onDelete }: 
               </div>
             </TableCell>
             <TableCell className="px-3 py-3"><Badge variant={statusVariant[t.status] ?? 'default'}>{t.status_label}</Badge></TableCell>
-            <TableCell className="px-3 py-3">
+            <TableCell className="px-3 py-3 max-md:hidden">
               <span className="inline-flex items-center gap-1.5 text-xs">
                 <span className={cn('size-2 rounded-full', priorityDot[t.priority])} />
                 {t.priority_label}
               </span>
             </TableCell>
-            <TableCell className="px-3 py-3">
+            <TableCell className="px-3 py-3 max-sm:hidden">
               <span className="flex items-center gap-2">
                 <Assignees people={t.assignees} />
                 {t.is_overdue && <Badge variant="danger">Overdue</Badge>}
               </span>
             </TableCell>
-            <TableCell className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground" title={new Date(t.updated_at).toLocaleString()}>{ago(t.updated_at)}</TableCell>
+            <TableCell className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground max-md:hidden" title={new Date(t.updated_at).toLocaleString()}>{ago(t.updated_at)}</TableCell>
             <TableCell className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
               {t.can_delete && (
                 <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.key}`} onClick={() => onDelete(t)}>
