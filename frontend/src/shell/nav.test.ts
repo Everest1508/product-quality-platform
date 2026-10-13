@@ -30,9 +30,10 @@ it('exactly one item is active, and the longest prefix wins', () => {
 import { isReactPath, productIdFromPath, productSection } from './nav';
 
 it('knows which paths React owns', () => {
-  for (const p of ['/notifications/', '/tickets/', '/tickets/kanban/', '/tickets/list/', '/products/3/tickets/', '/products/3/tickets/kanban/', '/products/12/tickets/list/'])
+  for (const p of ['/notifications/', '/tickets/', '/tickets/kanban/', '/tickets/list/', '/products/3/tickets/', '/products/3/tickets/kanban/', '/products/12/tickets/list/',
+    '/tickets/create/', '/tickets/5/', '/tickets/5/edit/', '/products/3/tickets/create/', '/products/3/tickets/5/'])
     expect(isReactPath(p), p).toBe(true);
-  for (const p of ['/tickets/5/', '/tickets/create/', '/products/3/', '/products/3/errors/', '/products/3/tickets/5/', '/leave/'])
+  for (const p of ['/tickets/5/status/', '/tickets/5/foo/', '/products/3/', '/products/3/errors/', '/products/3/tickets/create/x/', '/products/3/tickets/5/edit/', '/leave/'])
     expect(isReactPath(p), p).toBe(false);
 });
 

@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { api, configure, hooks } from './api';
+import { api, configure, hooks, type ApiError } from './api';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -53,4 +53,23 @@ it('a 403 that is about the session or CSRF still goes through the auth hook', a
     await expect(api.get('bootstrap/')).rejects.toThrow();
     expect(lost, detail).toHaveBeenCalledTimes(1);
   }
+});
+
+it('api.patch sends PATCH JSON with the CSRF token', async () => {
+  configure({ api: '/ui-api/v1/', csrf: 'tok' });
+  const f = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+  await api.patch('tickets/4/', { title: 'x' });
+  const init = f.mock.calls[0][1]!;
+  expect(init.method).toBe('PATCH');
+  expect(init.body).toBe(JSON.stringify({ title: 'x' }));
+  expect((init.headers as Record<string, string>)['X-CSRFToken']).toBe('tok');
+});
+
+it('a 400 keeps the whole body on the error, so forms can show field errors', async () => {
+  const body = { errors: { title: ['This field is required.'] }, detail: 'Could not save. Title: This field is required.' };
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(body), { status: 400 }));
+  const err = (await api.post('tickets/', {}).catch((e) => e)) as ApiError;
+  expect(err.message).toBe(body.detail);
+  expect(err.status).toBe(400);
+  expect(err.body).toEqual(body);
 });

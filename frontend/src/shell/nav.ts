@@ -13,6 +13,8 @@ const REACT_PATH_RES = [
   /^\/notifications\/$/,
   /^\/tickets\/(kanban\/|list\/)?$/,
   /^\/products\/\d+\/tickets\/(kanban\/|list\/)?$/,
+  /^\/tickets\/(create\/|\d+\/|\d+\/edit\/)$/,
+  /^\/products\/\d+\/tickets\/(create\/|\d+\/)$/,
 ];
 export const isReactPath = (path: string) => REACT_PATH_RES.some((re) => re.test(path));
 

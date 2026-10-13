@@ -7,6 +7,7 @@ export type PresenceUser = {
   activity?: string;
   clocked_in_at?: string | null;
   tickets_in_progress?: number;
+  ticket_id?: number | null;
 };
 export type ServerEvent =
   | { event: 'presence'; users: PresenceUser[] }
