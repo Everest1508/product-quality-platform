@@ -17,6 +17,7 @@ import { AuditLogPage } from '@/pages/dashboards/AuditLogPage';
 import { ProductDashboardPage } from '@/pages/dashboards/ProductDashboardPage';
 import { ReportsPage } from '@/pages/dashboards/ReportsPage';
 import { HomePage } from '@/pages/home/HomePage';
+import { DsrPage } from '@/pages/dsr/DsrPage';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -48,6 +49,7 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/', element: <ProductDetailPage /> },
   { path: '/products/:pk/edit/', element: <ProductFormPage /> },
   { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
+  { path: '/dsr/', element: <DsrPage /> },
   { path: '/dashboards/', element: <HomePage /> },
   { path: '/dashboards/reports/', element: <ReportsPage /> },
   { path: '/dashboards/audit/', element: <AuditLogPage /> },

@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.20.0] — 2026-10-13 · the DSR sheet, redone
+
+> In short: the daily status report has a new look where every row saves as you edit it, and your work from the day is suggested for you to confirm.
+
+### New
+
+- **A new DSR sheet.** Change a task, its project, category, time or status right in the row and it saves when you leave the field.
+- **Suggestions from your work.** Tickets you touched or have in progress are listed with a guess at the time, and one click logs them with the time you confirm.
+- **Pick any day.** Step back and forward or choose a date, and past days stay readable while only today can be edited.
+
+### Better
+
+- **Owners and admins can open a teammate's sheet.** The team overview shows who has logged how much, and a click opens their day.
+- **Times are easy to type.** Write 45m, 1h 30m or 1.5 and the sheet understands.
+
 ## [1.19.0] — 2026-10-13 · home, reports and the audit log, redone
 
 > In short: the home page, the reports, the audit log and each product's dashboard have a new look, and the home page now punches you in and out without leaving it.

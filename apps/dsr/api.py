@@ -18,7 +18,7 @@ from apps.accounts.models import ExternalAccessToken, Membership
 from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
 from apps.dsr.service import submission_window, suggestions
-from apps.dsr.views import _is_privileged
+from apps.dsr.service import is_privileged as _is_privileged
 from django.db.models import Q
 from django.utils.text import slugify
 

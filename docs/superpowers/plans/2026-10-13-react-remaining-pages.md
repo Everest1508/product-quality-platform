@@ -8,7 +8,7 @@ Order (tick when merged on the branch):
 - [x] products (list/create/edit/detail/api docs; keys, versions, milestones, access)
 - [x] product-scoped surveys + rules, global feedback (surveys, CS hub, public survey page), automation
 - [x] dashboards (home, product dashboard, reports, audit log); `/search/` stays a JSON endpoint used by the palette
-- [ ] DSR
+- [x] DSR
 - [ ] accounts (login, company setup/switch, team, profile, Serop OAuth screens)
 - [ ] attendance
 - [ ] leave

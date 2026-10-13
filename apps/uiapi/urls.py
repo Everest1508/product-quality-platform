@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import automation, dashboards, errors, feedback, products, tickets, views
+from apps.uiapi import automation, dashboards, dsr, errors, feedback, products, tickets, views
 
 app_name = "uiapi"
 
@@ -55,6 +55,10 @@ urlpatterns = [
     path("dashboards/product/<int:pk>/", dashboards.ProductDashboardAPIView.as_view(), name="product_dashboard"),
     path("reports/", dashboards.ReportAPIView.as_view(), name="reports"),
     path("audit/", dashboards.AuditLogAPIView.as_view(), name="audit"),
+    path("dsr/", dsr.DsrSheetAPIView.as_view(), name="dsr"),
+    path("dsr/entries/", dsr.DsrEntriesAPIView.as_view(), name="dsr_entries"),
+    path("dsr/entries/<int:pk>/", dsr.DsrEntryAPIView.as_view(), name="dsr_entry"),
+    path("dsr/suggestions/add/", dsr.DsrSuggestionAPIView.as_view(), name="dsr_suggestion_add"),
     path("company/switch/", views.CompanySwitchAPIView.as_view(), name="company_switch"),
     path("bootstrap/", views.BootstrapView.as_view(), name="bootstrap"),
     path("notifications/", views.NotificationListView.as_view(), name="notifications"),

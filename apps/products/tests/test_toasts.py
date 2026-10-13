@@ -63,33 +63,7 @@ class ToastAfterMutationTest(TestCase):
         self.assertIn('id="toast-seed"', body, "no toast was rendered on the next page")
         self.assertIn(fragment, body, f"expected {fragment!r} in the rendered toast")
 
-    def test_logging_dsr_time_says_so(self):
-        response = self.client.post(
-            reverse("dsr:dsr_add"),
-            {
-                "date": timezone.localdate().isoformat(),
-                "task_name": "Fixed the login redirect",
-                "hours_spent": "2.00",
-                "category": "bug_fix",
-                "status": "completed",
-            },
-        )
-        self.assert_toast_after(response, "Fixed the login redirect")
-
-    def test_deleting_a_dsr_entry_says_so(self):
-        from apps.dsr.models import DSREntry
-
-        entry = DSREntry.objects.create(
-            company=self.company,
-            user=self.user,
-            date=timezone.localdate(),
-            task_name="Chased the flaky test",
-            hours_spent=1,
-        )
-        response = self.client.post(reverse("dsr:dsr_delete", kwargs={"pk": entry.pk}))
-        self.assert_toast_after(response, "Chased the flaky test")
-
     def test_an_empty_queue_renders_no_script_at_all(self):
         """An empty ``<script>`` block on every page is noise; see the tag."""
-        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        body = self.client.get(reverse("attendance:my_attendance")).content.decode()
         self.assertNotIn('id="toast-seed"', body)

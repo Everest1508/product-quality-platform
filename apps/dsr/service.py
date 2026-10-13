@@ -4,6 +4,14 @@ from django.utils import timezone
 from apps.dsr.models import DSREntry
 
 
+def is_privileged(user, company):
+    """Owners and admins: the people who may fix a closed day or read a colleague's sheet."""
+    from apps.accounts.models import Membership
+
+    membership = Membership.objects.filter(user=user, company=company).first()
+    return bool(membership and membership.role in (Membership.Role.OWNER, Membership.Role.ADMIN))
+
+
 def submission_window(day, is_privileged=False):
     """Whether a DSR day still accepts writes, and why not when it doesn't.
 
@@ -173,3 +181,93 @@ def suggestions(company, user, day, limit=8):
         )
     rows.sort(key=lambda r: (not r["touched"], -(r["last"].timestamp() if r["last"] else 0), r["number"]))
     return rows[:limit]
+
+
+# ── Writes, shared by the JSON API. Access and the day's window are checked by the caller. ──
+
+def add_entry(company, actor, target_user, day, data, products):
+    """A manual row. Returns (entry, form); entry is None when the form is invalid."""
+    from apps.dashboards.service import log_activity
+    from apps.dsr.forms import DSREntryForm
+
+    form = DSREntryForm(data, products=products)
+    if not form.is_valid():
+        return None, form
+    entry = form.save(commit=False)
+    entry.company, entry.user, entry.date, entry.is_auto_logged = company, target_user, day, False
+    entry.save()
+    log_activity(
+        company, "dsr_entry_added", f"{entry.task_name} logged",
+        description=f"{entry.date} · {entry.category} · {entry.hours_spent}h", actor=actor,
+        metadata={"user_id": entry.user_id, "date": entry.date.isoformat(), "product_id": entry.product_id},
+    )
+    return entry, form
+
+
+def update_entry(company, actor, entry, data, products):
+    """Edit a row. Fields that are not sent keep their value (a ticket's row keeps its own product).
+    Returns (entry, form); entry is None when the form is invalid and nothing was saved."""
+    from apps.dashboards.service import log_activity
+    from apps.dsr.forms import DSREntryForm
+
+    merged = {
+        "task_name": data.get("task_name", entry.task_name),
+        "product": data.get("product", entry.product_id or ""),
+        "category": data.get("category", entry.category),
+        "hours_spent": data.get("hours_spent", entry.hours_spent),
+        "status": data.get("status", entry.status),
+        "notes": data.get("notes", entry.notes),
+    }
+    form = DSREntryForm(merged, instance=entry, products=products)
+    if not form.is_valid():
+        entry.refresh_from_db()
+        return None, form
+    form.save()
+    log_activity(
+        company, "dsr_entry_updated", f"{entry.task_name} updated on the DSR",
+        description=f"{entry.date} · {entry.hours_spent}h · {entry.get_status_display()}", actor=actor,
+        metadata={"user_id": entry.user_id, "date": entry.date.isoformat(), "product_id": entry.product_id},
+    )
+    return entry, form
+
+
+def delete_entry(company, actor, entry):
+    from apps.dashboards.service import log_activity
+
+    day, owner, name, hours = entry.date, entry.user, entry.task_name, entry.hours_spent
+    entry.delete()
+    log_activity(
+        company, "dsr_entry_deleted", f"\"{name}\" removed from the DSR", description=f"{day} · {hours}h", actor=actor,
+        metadata={"user_id": owner.pk, "date": day.isoformat()},
+    )
+    return name
+
+
+def add_suggested(company, actor, target_user, day, ticket_id, hours):
+    """Log one suggested ticket with the hours the person confirmed.
+    Returns (entry, error); only a ticket the sheet actually suggests can be added."""
+    from apps.dashboards.service import log_activity
+    from apps.dsr.duration import MESSAGE, format_hm, parse_hours
+
+    try:
+        ticket_id = int(ticket_id)
+        hours = parse_hours(hours if hours is not None else "")
+    except (TypeError, ValueError):
+        return None, MESSAGE + "."
+    if hours is None or hours <= 0 or hours > 24:
+        return None, "Time must be more than 0 and at most 24 hours."
+    match = next((r for r in suggestions(company, target_user, day, limit=50) if r["number"] == ticket_id), None)
+    if match is None:
+        return None, "That ticket is not in your suggestions for this day."
+    ticket = match["ticket"]
+    entry = DSREntry.objects.create(
+        company=company, user=target_user, date=day, ticket=ticket, product=ticket.product,
+        task_name=f"{ticket.key} {ticket.title}"[:255], category=match["category"],
+        hours_spent=hours.quantize(Decimal("0.01")), status=match["status"], is_auto_logged=False,
+    )
+    log_activity(
+        company, "dsr_entry_added", f"{entry.task_name} logged",
+        description=f"{entry.date} · {entry.category} · {entry.hours_spent}h", actor=actor,
+        metadata={"user_id": entry.user_id, "date": entry.date.isoformat(), "product_id": entry.product_id},
+    )
+    return entry, f"Added {ticket.key} with {format_hm(hours)}."

@@ -1596,7 +1596,6 @@ class SidebarActiveStateTest(LeaveTestBase):
             ("/payroll/holidays/", "Payroll"),
             ("/payroll/preview/", "Payroll"),
             ("/payroll/me/", "My payslips"),
-            ("/dsr/", "DSR Sheet"),
             ("/leave/approvals/", "Leave approvals"),
         ]:
             with self.subTest(url=url):
@@ -1619,7 +1618,7 @@ class SidebarActiveStateTest(LeaveTestBase):
             "meta", "param", "source", "track", "wbr", "path", "circle", "rect",
             "line", "polyline", "polygon", "ellipse", "use", "stop",
         }
-        for url in ["/dsr/", "/leave/", "/attendance/", "/payroll/me/", "/team/"]:
+        for url in ["/attendance/", "/leave/", "/attendance/", "/payroll/me/", "/team/"]:
             with self.subTest(url=url):
                 page = self.client.get(url, follow=True).content.decode()
                 # <script>/<style> hold text, not markup: tokenizing them turns
