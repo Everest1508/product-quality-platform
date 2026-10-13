@@ -151,6 +151,8 @@ class TeamAttendanceAPIView(CompanyAPIView):
                 anchor = date.fromisoformat(request.query_params.get("week", ""))
             except ValueError:
                 anchor = today
+            if not 1900 <= anchor.year <= 2200:
+                anchor = today
             monday = anchor - timedelta(days=anchor.weekday())
             rows = service.get_team_week(company, monday, shift)
             rows.sort(key=lambda r: (r["user"].pk != request.user.pk, r["user"].username.lower()))
@@ -262,7 +264,8 @@ class RecordAPIView(CompanyAPIView):
     def patch(self, request, pk):
         record = self._record(request, pk)
         d = request.data
-        parsed_in, parsed_out = service.parse_local_dt(d.get("check_in") or ""), service.parse_local_dt(d.get("check_out") or "")
+        text = lambda v: v if isinstance(v, str) else ""
+        parsed_in, parsed_out = service.parse_local_dt(text(d.get("check_in"))), service.parse_local_dt(text(d.get("check_out")))
         if parsed_in and parsed_out and parsed_out < parsed_in:
             return Response({"detail": "Check-out cannot be before check-in."}, status=400)
         if not parsed_in and record.check_in is None:
@@ -271,7 +274,7 @@ class RecordAPIView(CompanyAPIView):
         if problem:
             return Response({"detail": problem}, status=400)
         record.check_in, record.check_out = parsed_in, parsed_out
-        record.notes = (d.get("notes") or "")[:255]
+        record.notes = text(d.get("notes"))[:255]
         record.is_edited = True
         record.save()
         who = _name(record.user)
@@ -288,7 +291,7 @@ class RecordAPIView(CompanyAPIView):
 
 def _day(raw):
     try:
-        return date.fromisoformat((raw or "").strip())
+        return date.fromisoformat(raw.strip()) if isinstance(raw, str) else timezone.localdate()
     except ValueError:
         return timezone.localdate()
 

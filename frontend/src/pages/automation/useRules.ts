@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -54,23 +55,32 @@ export function useRuleRefresh() {
 
 export function useRuleActions() {
   const refresh = useRuleRefresh();
+  const inflight = useRef(false); // a double click must not toggle twice
   return {
     async toggle(id: number) {
+      if (inflight.current) return;
+      inflight.current = true;
       try {
         const r = await api.post<{ message: string }>(`rules/${id}/toggle/`);
         refresh();
         toast(r.message, 'success');
       } catch (e) {
         toast(reason(e), 'error');
+      } finally {
+        inflight.current = false;
       }
     },
     async remove(id: number) {
+      if (inflight.current) return;
+      inflight.current = true;
       try {
         const r = await api.delete<{ deleted: string }>(`rules/${id}/`);
         refresh();
         toast(`Rule '${r.deleted}' deleted.`, 'success');
       } catch (e) {
         toast(reason(e), 'error');
+      } finally {
+        inflight.current = false;
       }
     },
   };

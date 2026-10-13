@@ -52,6 +52,7 @@ export function usePunch() {
         const r = await api.post<{ message: string; ok: boolean }>('attendance/punch/');
         toast(r.message, r.ok ? 'success' : 'info');
         qc.invalidateQueries({ queryKey: ['home'] });
+        qc.invalidateQueries({ queryKey: ['attendance'] });
         qc.invalidateQueries({ queryKey: ['bell'] });
       } catch (e) {
         toast(reason(e), 'error');

@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.24.1] — 2026-10-13 · sturdier forms
+
+> In short: odd or broken input no longer ends in an error page, and leave approvals follow two stricter rules.
+
+### Better
+
+- **Double clicks no longer send things twice.** Toggling an automation rule, deciding or cancelling a correction request, and saving an attendance edit now ignore a second click while the first is still going.
+- **Punching from the home page refreshes your attendance page.** It shows your new state straight away.
+
+### Fixed
+
+- **Saving a product with a broken milestone list no longer half-saves it.** Odd input in product, key, milestone, correction, attendance and payroll forms is refused or ignored instead of ending in an error page.
+- **A leave request whose start date has passed can now be rejected.** It used to be stuck as waiting forever.
+
+### Security
+
+- **You can't approve your own leave while another approver exists.** The request waits for someone else, the same rule attendance corrections already follow.
+
 ## [1.24.0] — 2026-10-13 · payroll, redone
 
 > In short: payroll has a new look, from the cycle preview and runs to payslips, holidays and salary setup, and every page of the app now uses the same new design.

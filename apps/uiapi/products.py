@@ -292,11 +292,12 @@ class ProductMilestoneAddAPIView(CompanyAPIView):
         from datetime import datetime
 
         product = _product(request, pk)
-        title = (request.data.get("title") or "").strip()
+        title = request.data.get("title")
+        title = title.strip() if isinstance(title, str) else ""
         try:
             target = datetime.strptime(str(request.data.get("target_date", "")), "%Y-%m-%d").date()
-            order = int(request.data.get("order") or product.milestones.count() + 1)
-        except ValueError:
+            order = min(int(request.data.get("order") or product.milestones.count() + 1), 100000)
+        except (ValueError, TypeError):
             return Response({"detail": "Enter a title, a valid date and a number for the order."}, status=400)
         if not title:
             return Response({"detail": "Enter a title, a valid date and a number for the order."}, status=400)

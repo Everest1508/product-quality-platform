@@ -165,6 +165,7 @@ export function RecordEditPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     const r = await write(() => api.patch<RecordEdit>(`attendance/records/${d.id}/`, { check_in: inn, check_out: out, notes }), 'success');
     setBusy(false);

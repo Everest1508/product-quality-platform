@@ -41,8 +41,11 @@ def add_milestones(product, rows):
     a bad date falls back to today. They go after the milestones already there."""
     start = product.milestones.count()
     n = 0
-    for row in rows or []:
-        title = (row.get("title") or "").strip()
+    for row in rows if isinstance(rows, list) else []:
+        if not isinstance(row, dict):
+            continue
+        title = row.get("title")
+        title = title.strip() if isinstance(title, str) else ""
         if not title or not row.get("date"):
             continue
         n += 1
@@ -118,7 +121,8 @@ def delete_version(version, actor, company):
 
 
 def create_key(product, name, actor, company):
-    name = (name or "").strip()[:100] or "default"
+    name = name.strip()[:100] if isinstance(name, str) else ""
+    name = name or "default"
     key, raw = APIKey.create_key(product=product, name=name)
     log_activity(
         company, "api_key_created", f"API key '{name}' created for {product.name}", actor=actor,
@@ -142,7 +146,7 @@ def rotate_key(old, grace, actor, company):
     working for a day or a week so the application can be switched first.
 
     Returns (new_key, raw, message), or (None, None, error)."""
-    if grace not in ROTATE_GRACE:
+    if not isinstance(grace, str) or grace not in ROTATE_GRACE:
         return None, None, "Unknown grace period."
     if not old.is_usable:
         return None, None, "Only a working key can be rotated."

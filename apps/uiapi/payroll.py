@@ -35,6 +35,8 @@ def _cycle(request, source):
         anchor = datetime.date.fromisoformat(source.get("anchor") or source.get("cycle") or "")
     except (TypeError, ValueError):
         anchor = timezone.localdate()
+    if not 1900 <= anchor.year <= 2200:
+        anchor = timezone.localdate()
     return service.cycle_bounds(anchor)
 
 
@@ -201,7 +203,8 @@ class ProfileListAPIView(CompanyAPIView):
 
     def post(self, request):
         _admin(request)
-        membership = get_object_or_404(Membership, pk=request.data.get("membership"), company=request.company)
+        pk = str(request.data.get("membership", ""))
+        membership = get_object_or_404(Membership, pk=int(pk) if pk.isdecimal() else 0, company=request.company)
         message, form = actions.save_profile(request.company, request.user, membership, request.data)
         if message is None:
             return Response(form_errors(form), status=400)

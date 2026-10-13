@@ -88,6 +88,16 @@ def decide(company, approver, leave, action, data):
     if not leave.is_pending:
         return None, "That request has already been decided."
     who = _who(leave.user)
+    if approver.pk == leave.user_id and any(u.pk != approver.pk for u in approvers(company)):
+        return None, "This is your own request, so another approver has to decide it."
+    if action == "reject":
+        # A rejection only needs the note: validating dates here would leave a request whose start has passed undecidable.
+        note = data.get("note")
+        leave.status, leave.decision_note = LeaveRequest.Status.REJECTED, (note.strip()[:255] if isinstance(note, str) else "")
+        leave.decided_by, leave.decided_at = approver, timezone.now()
+        leave.save(update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"])
+        _decision_log(company, approver, leave, "leave_rejected", "rejected")
+        return f"Leave for {who} rejected.", None
     form = LeaveDecisionForm(data, company=company, leave=leave)
     if not form.is_valid():
         # A rejection carrying an unparseable date is a stale dialog; say so rather than decide the wrong request.
@@ -99,12 +109,6 @@ def decide(company, approver, leave, action, data):
         return None, errors or ["Could not save that decision."]
     c = form.cleaned_data
     now = timezone.now()
-    if action == "reject":
-        leave.status, leave.decision_note = LeaveRequest.Status.REJECTED, c.get("note", "").strip()
-        leave.decided_by, leave.decided_at = approver, now
-        leave.save(update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"])
-        _decision_log(company, approver, leave, "leave_rejected", "rejected")
-        return f"Leave for {who} rejected.", None
     leave.start_date, leave.end_date = c["start_date"], c["end_date"]
     leave.is_half_day = c.get("is_half_day", False)
     leave.days, leave.paid_days, leave.unpaid_days = c["days"], c["paid_days"], c["unpaid_days"]
