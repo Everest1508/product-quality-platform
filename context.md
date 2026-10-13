@@ -1000,3 +1000,6 @@ decided what and strike the item** rather than deleting it.
 
 ### 2026-10-13 Release names (1.37.1)
 - Every numbered release in `CHANGELOG.md` now has a unique bird name in its heading (`## [1.37.1] "Hoopoe" — date · title`), oldest 1.0.1 "Albatross" … newest 1.37.1 "Hoopoe"; next unused names: Cormorant, then pick more. `parse_changelog` returns `name`; `get_version_info()["name"]`, bootstrap `version_name` and the What's new dialog show it. `ReleaseNameTest` enforces unique names. The three old `[Unreleased]` blocks are unnamed on purpose.
+
+### 2026-10-13 What's new redesign (1.38.0 "Cormorant")
+- `shell/Changelog.tsx`: release cards on a timeline (newest open, older collapsed and paged by 6), search and type chips (counts) across all releases, gradient header with the current release name.

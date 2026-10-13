@@ -41,14 +41,16 @@ it('fetches the changelog and shows the newest release alone', async () => {
 it('older releases are one click away', async () => {
   setup();
   await screen.findByText('Shiny.');
+  expect(screen.queryByText('Ancient.')).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: /older releases/i }));
+  await userEvent.click(await screen.findByRole('button', { name: /v1\.11\.0/ })); // an older release opens when you click it
   expect(await screen.findByText('Ancient.')).toBeInTheDocument();
 });
 
-it('a type chip narrows the current release', async () => {
+it('a type chip narrows every release', async () => {
   setup();
   await screen.findByText('Shiny.');
-  await userEvent.click(screen.getByRole('button', { name: 'Fixed' }));
+  await userEvent.click(screen.getByRole('button', { name: /^Fixed/ }));
   expect(screen.queryByText('Shiny.')).not.toBeInTheDocument();
   expect(screen.getByText('Broken.')).toBeInTheDocument();
 });
@@ -68,5 +70,17 @@ it('shows a release name beside its version', async () => {
   vi.spyOn(bootstrap, 'useBootstrapData').mockReturnValue(sampleBootstrap());
   vi.spyOn(api, 'get').mockResolvedValue({ releases: [{ tag: '1.12.0', name: 'Heron', date: '2026-10-12', title: 'newest', released: true, summary: '', sections: [] }] } as never);
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><Changelog open onOpenChange={() => {}} /></QueryClientProvider>);
-  expect(await screen.findByText(/v1\.12\.0 “Heron” · newest/)).toBeInTheDocument();
+  expect(await screen.findByText('Heron')).toBeInTheDocument();
+  expect(screen.getByText('Latest')).toBeInTheDocument();
+});
+
+it('search looks through older releases too and a miss says so', async () => {
+  setup();
+  await screen.findByText('Shiny.');
+  await userEvent.type(screen.getByRole('searchbox', { name: /search the changelog/i }), 'ancient');
+  expect(await screen.findByText('Ancient.')).toBeInTheDocument();
+  expect(screen.queryByText('Shiny.')).not.toBeInTheDocument();
+  await userEvent.clear(screen.getByRole('searchbox'));
+  await userEvent.type(screen.getByRole('searchbox'), 'zzzz');
+  expect(await screen.findByText(/nothing matches/i)).toBeInTheDocument();
 });

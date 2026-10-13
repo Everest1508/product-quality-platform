@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.38.0] "Cormorant" — 2026-10-13 · a calmer What's new
+
+> In short: the What's new window is easier to scan, search and filter.
+
+### Better
+- **Each release is its own card on a timeline.** You see the version, its name, the date and how many changes it holds, and the newest one starts open.
+- **You can search the whole history.** Type a word and every release that mentions it opens with the matching changes.
+- **The type buttons count what is behind them and look through every release.** Pick Fixed or Security to see only those, all the way back.
+- **Older releases load a few at a time.** Open one by clicking it, instead of scrolling through all of them at once.
+
 ## [1.37.1] "Hoopoe" — 2026-10-13 · the right shortcut hint
 
 > In short: the search box now shows the shortcut your computer actually uses.
