@@ -174,7 +174,7 @@ Access checks live in the view/mixin layer. `apps/core/mixins.py`: `CompanyMembe
 
 The same domain logic exists in two places and both must be kept in sync:
 
-- **Global views:** `apps/tickets/`, `apps/errors/`, `apps/dashboards/`, `apps/feedback/`, `apps/automation/`, `apps/dsr/`, `apps/attendance/` — mounted at `/tickets/`, `/errors/`, etc. Operate across all products the user can access.
+- **Global views:** `apps/tickets/`, `apps/errors/`, `apps/dashboards/`, `apps/feedback/`, `apps/automation/`, `apps/dsr/`, `apps/attendance/`, `apps/leave/` — mounted at `/tickets/`, `/errors/`, etc. Operate across all products the user can access.
 - **Product-scoped views:** `apps/products/views.py` + `apps/products/urls.py`, mounted at `/products/<pk>/tickets/`, `/products/<pk>/errors/`, etc. Re-implement the list/detail/create flows against `product.tickets` / `product.error_groups`, and always call `require_product_access` first.
 
 ### Ingestion API (`/api/v1/`)

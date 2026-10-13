@@ -23,6 +23,11 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { OAuthPage } from '@/pages/auth/OAuthPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { TeamPage } from '@/pages/team/TeamPage';
+import { ApplyPage } from '@/pages/leave/ApplyPage';
+import { ApprovalsPage } from '@/pages/leave/ApprovalsPage';
+import { CalendarPage } from '@/pages/leave/CalendarPage';
+import { MyLeavePage } from '@/pages/leave/MyLeavePage';
+import { PoliciesPage } from '@/pages/leave/PoliciesPage';
 import { AttendancePage } from '@/pages/attendance/AttendancePage';
 import { CorrectionQueuePage, CorrectionRequestPage, RecordEditPage } from '@/pages/attendance/CorrectionPages';
 import { TeamAttendancePage } from '@/pages/attendance/TeamPage';
@@ -58,6 +63,11 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/', element: <ProductDetailPage /> },
   { path: '/products/:pk/edit/', element: <ProductFormPage /> },
   { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
+  { path: '/leave/', element: <MyLeavePage /> },
+  { path: '/leave/apply/', element: <ApplyPage /> },
+  { path: '/leave/calendar/', element: <CalendarPage /> },
+  { path: '/leave/approvals/', element: <ApprovalsPage /> },
+  { path: '/leave/policies/', element: <PoliciesPage /> },
   { path: '/attendance/', element: <AttendancePage /> },
   { path: '/attendance/team/', element: <TeamAttendancePage /> },
   { path: '/attendance/timesheet/', element: <TimesheetPage /> },

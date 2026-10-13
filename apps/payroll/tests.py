@@ -1205,7 +1205,7 @@ class MyPayslipAccessTest(PayrollTestBase):
 
     def test_the_sidebar_offers_my_payslips_to_an_employee(self):
         self.client.login(username="dev", password="pass1234")
-        response = self.get(reverse("leave:my_leave"))
+        response = self.get(reverse("payroll:my_payslips"))
         self.assertContains(response, reverse("payroll:my_payslips"))
         # ...but not the admin-only setup pages.
         self.assertNotContains(response, reverse("payroll:profiles"))

@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.23.0] — 2026-10-13 · leave, redone
+
+> In short: leave has a new look, from your balances and the apply form with a live paid/unpaid preview to the calendar, the approvals queue and the leave types page.
+
+### New
+
+- **A live preview when you apply.** Pick your dates and see how many days are paid and unpaid, and who else is already off, before you send the request.
+- **A new approvals screen.** Review a request in one dialog: correct the dates, make it a half day, accept the automatic paid/unpaid split or set your own, and add a note to the person.
+- **A new leave calendar.** A month grid on a wide screen and an agenda list on a phone, with holidays named and waiting requests drawn dashed.
+
+### Better
+
+- **My leave shows every balance as a bar.** What you have taken, what is waiting and what is left, for each type and any year.
+- **The leave types page edits in a dialog.** Blank still means unlimited, and a mistake is shown under the field you typed it in.
+
+### Fixed
+
+- **Adding a leave type with a name that already exists no longer fails with an error page.** It now tells you the name is taken.
+
 ## [1.22.0] — 2026-10-13 · attendance, redone
 
 > In short: attendance has a new look, from the punch clock and your month at a glance to the team view, the timesheet and correction requests, with every number the same as your payslip uses.

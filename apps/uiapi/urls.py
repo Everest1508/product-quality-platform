@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import accounts, attendance, automation, dashboards, dsr, errors, feedback, products, tickets, views
+from apps.uiapi import accounts, attendance, automation, dashboards, dsr, errors, feedback, leave, products, tickets, views
 
 app_name = "uiapi"
 
@@ -74,6 +74,15 @@ urlpatterns = [
     path("team/", accounts.TeamListAPIView.as_view(), name="team"),
     path("team/<int:pk>/", accounts.TeamMemberAPIView.as_view(), name="team_member"),
     path("profile/", accounts.ProfileAPIView.as_view(), name="profile"),
+    path("leave/me/", leave.MyLeaveAPIView.as_view(), name="leave_me"),
+    path("leave/apply/", leave.ApplyAPIView.as_view(), name="leave_apply"),
+    path("leave/preview/", leave.SplitPreviewAPIView.as_view(), name="leave_preview"),
+    path("leave/calendar/", leave.CalendarAPIView.as_view(), name="leave_calendar"),
+    path("leave/approvals/", leave.QueueAPIView.as_view(), name="leave_approvals"),
+    path("leave/policies/", leave.PolicyListAPIView.as_view(), name="leave_policies"),
+    path("leave/policies/<int:pk>/", leave.PolicyAPIView.as_view(), name="leave_policy"),
+    path("leave/requests/<int:pk>/cancel/", leave.CancelAPIView.as_view(), name="leave_cancel"),
+    path("leave/requests/<int:pk>/<str:action>/", leave.DecisionAPIView.as_view(), name="leave_decision"),
     path("company/switch/", views.CompanySwitchAPIView.as_view(), name="company_switch"),
     path("bootstrap/", views.BootstrapView.as_view(), name="bootstrap"),
     path("notifications/", views.NotificationListView.as_view(), name="notifications"),

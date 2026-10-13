@@ -11,7 +11,7 @@ Order (tick when merged on the branch):
 - [x] DSR
 - [x] accounts (login, company setup, team, profile, Serop OAuth sign-in; `accounts:company_switch` stays for the legacy sidebar until cleanup)
 - [x] attendance
-- [ ] leave
+- [x] leave
 - [ ] payroll
 - [ ] cleanup: remove htmx, Alpine, django_htmx, `core/base.html`, legacy CSS, partials, `HTMXRequiredMixin`, message bridge; update CLAUDE.md/AGENTS.md; remaining error/404 pages
 - [ ] merge `feat/react-ui-pilot` to main (ask the user first)

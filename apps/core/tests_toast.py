@@ -95,27 +95,21 @@ class ToastSeedIsWiredTest(TestCase):
         carry an empty queue -- which is exactly what makes a toast test pass
         for the wrong reason.
         """
-        response = self.client.post(
-            "/leave/policies/add/",
-            {
-                "name": "Casual",
-                "max_days_per_year": "12",
-                "max_consecutive_days": "3",
-                "is_paid": "on",
-                "color": "green",
-            },
-        )
+        from apps.payroll.models import Holiday
+
+        holiday = Holiday.objects.create(company=self.company, date="2026-12-25", name="Casual")
+        response = self.client.post(f"/payroll/holidays/{holiday.pk}/delete/")
         self.assertEqual(response.status_code, 302)
         return self.get_html(response.url)
 
     def test_a_message_reaches_the_page(self):
         html = self.add_policy()
         self.assertIn('id="toast-seed"', html)
-        self.assertIn("Casual leave type added.", html)
+        self.assertIn("Casual removed.", html)
 
     def test_no_seed_tag_when_there_is_nothing_to_say(self):
         """An empty queue must not ship an empty script block."""
-        html = self.get_html("/leave/")
+        html = self.get_html("/payroll/me/")
         self.assertNotIn('id="toast-seed"', html)
 
     def test_the_seed_precedes_the_container_that_reads_it(self):
@@ -134,7 +128,7 @@ class ToastSeedIsWiredTest(TestCase):
         component, which is why the ban is scoped to the toast rather than to the
         token. Any `alpine:init` handler that mentions the toast is the bug.
         """
-        html = self.get_html("/leave/")
+        html = self.get_html("/payroll/me/")
         self.assertNotIn("__x", html)
         self.assertNotIn(".$data", html)
         for hook in ("alpine:init",):
