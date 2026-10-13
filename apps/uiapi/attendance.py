@@ -207,6 +207,9 @@ class TeamAttendanceAPIView(CompanyAPIView):
         })
 
 
+from apps.core.csvx import csv_response  # noqa: E402
+
+
 class TimesheetAPIView(CompanyAPIView):
     """Admin: per-month totals for every employee."""
 
@@ -214,6 +217,11 @@ class TimesheetAPIView(CompanyAPIView):
         _admin(request)
         year, month, m = _month(request.query_params.get("month"))
         rows = service.get_monthly_rows(request.company, year, month)
+        if request.query_params.get("export") == "csv":
+            return csv_response(
+                f"attendance-{year}-{month:02d}.csv", ["Employee", "Present days", "Absent days", "Leave days", "Late days", "Open days", "Total", "Average per day"],
+                [[_name(r["user"]), r["present_days"], r["absent_days"], r["leave_day_count"], r["late_days"], r["open_days"], r["total_formatted"], r["avg_per_day_formatted"]] for r in rows],
+            )
         total = sum(r["total_minutes"] for r in rows)
         return Response({
             "month": m, "company_total": format_minutes(total),

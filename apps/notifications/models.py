@@ -84,3 +84,16 @@ class PushSubscription(models.Model):
 
     def __str__(self):
         return f"push for {self.user_id}"
+
+
+class NotificationMute(models.Model):
+    """A kind of notification one person has switched off. No row means it is on."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_mutes")
+    kind = models.CharField(max_length=24, choices=Notification.Kind.choices)
+
+    class Meta:
+        unique_together = [("user", "kind")]
+
+    def __str__(self):
+        return f"{self.user_id} mutes {self.kind}"

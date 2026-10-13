@@ -190,6 +190,9 @@ class DsrSuggestionAPIView(CompanyAPIView):
         return Response(sheet_json(request, target, day, message=message), status=201)
 
 
+from apps.core.csvx import csv_response  # noqa: E402
+
+
 class DsrLogAPIView(CompanyAPIView):
     """Submitted work over a date range as one list: today and history in the same table.
 
@@ -225,6 +228,11 @@ class DsrLogAPIView(CompanyAPIView):
             qs = qs.filter(Q(task_name__icontains=q) | Q(notes__icontains=q) | Q(product__name__icontains=q))
         entries = list(qs.order_by("-date", "user__username", "-created_at")[: self.MAX_ROWS])
 
+        if params.get("export") == "csv":
+            return csv_response(
+                f"dsr-{start}-to-{end}.csv", ["Date", "Employee", "Task", "Project", "Category", "Hours", "Status", "Notes"],
+                [[e.date.isoformat(), _name(e.user), e.task_name, e.product.name if e.product else "", e.get_category_display(), e.hours_spent, e.get_status_display(), e.notes] for e in entries],
+            )
         days, rows, lines = {}, [], []
         for e in entries:
             editable = (e.user_id == request.user.pk or privileged) and service.submission_window(e.date, privileged)[0]

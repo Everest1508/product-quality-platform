@@ -429,3 +429,71 @@ class KudosTest(TeamApiBase):
         self.assertIsInstance(d["milestones"], list)
         h = self.client.get("/ui-api/v1/dashboard/").json()
         self.assertIn("streak", h)
+
+
+class NotificationSettingsApiTest(TeamApiBase):
+    def test_switching_a_kind_off_stops_those_notifications_and_on_brings_them_back(self):
+        from apps.notifications import service as notes
+        from apps.notifications.models import Notification
+
+        self.login("dev")
+        url = "/ui-api/v1/profile/notifications/"
+        kinds = {k["kind"]: k for k in self.client.get(url).json()["kinds"]}
+        self.assertTrue(kinds["mention"]["enabled"])
+        self.assertTrue(kinds["system"]["locked"])
+        r = self.client.put(url, {"kind": "mention", "enabled": False}, content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("off", r.json()["message"])
+        self.assertIsNone(notes.notify(user=self.dev, company=self.a, kind="mention", title="x", actor=self.owner))
+        self.assertIsNotNone(notes.notify(user=self.dev, company=self.a, kind="comment", title="y", actor=self.owner))
+        self.client.put(url, {"kind": "mention", "enabled": True}, content_type="application/json")
+        self.assertIsNotNone(notes.notify(user=self.dev, company=self.a, kind="mention", title="z", actor=self.owner))
+        self.assertEqual(Notification.objects.filter(user=self.dev).count(), 2)
+
+    def test_system_and_unknown_kinds_cannot_be_changed(self):
+        self.login("dev")
+        for kind in ("system", "nope"):
+            r = self.client.put("/ui-api/v1/profile/notifications/", {"kind": kind, "enabled": False}, content_type="application/json")
+            self.assertEqual(r.status_code, 400)
+
+
+class TeamMemberPageApiTest(TeamApiBase):
+    def test_a_colleague_page_shows_their_numbers_and_only_admins_see_the_email(self):
+        self.login("dev")
+        d = self.client.get(f"/ui-api/v1/team/{self.m_admin.pk}/").json()
+        self.assertEqual(d["user"]["username"], "admin")
+        self.assertEqual(d["email"], "")
+        self.assertIn("streak", d)
+        self.assertEqual(d["stats"]["open_tickets"], 0)
+        self.client.logout()
+        self.login("owner")
+        self.assertEqual(self.client.get(f"/ui-api/v1/team/{self.m_admin.pk}/").json()["email"], "admin@test.com")
+
+    def test_another_company_member_is_a_404(self):
+        self.login("dev")
+        self.assertEqual(self.client.get(f"/ui-api/v1/team/{self.m_bob.pk}/").status_code, 404)
+
+
+class CsvExportApiTest(TeamApiBase):
+    def test_dsr_csv_has_the_rows_and_neutralises_formulas(self):
+        from django.utils import timezone
+
+        from apps.dsr.models import DSREntry
+
+        DSREntry.objects.create(company=self.a, user=self.dev, date=timezone.localdate(), task_name="=HYPERLINK(\"x\")", hours_spent="1.50", category="development", status="completed")
+        self.login("dev")
+        r = self.client.get("/ui-api/v1/dsr/log/?range=today&export=csv")
+        self.assertEqual(r["Content-Type"], "text/csv; charset=utf-8")
+        body = r.content.decode("utf-8-sig")
+        self.assertIn("Date,Employee,Task", body)
+        self.assertIn("'=HYPERLINK", body)
+        self.assertNotIn(",=HYPERLINK", body)
+
+    def test_timesheet_and_payroll_csv_are_admin_only(self):
+        self.login("dev")
+        self.assertEqual(self.client.get("/ui-api/v1/attendance/timesheet/?export=csv").status_code, 403)
+        self.client.logout()
+        self.login("owner")
+        r = self.client.get("/ui-api/v1/attendance/timesheet/?export=csv")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Employee,Present days", r.content.decode("utf-8-sig"))

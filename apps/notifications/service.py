@@ -15,7 +15,7 @@ from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils import timezone
 
-from apps.notifications.models import Notification, PushSubscription
+from apps.notifications.models import Notification, NotificationMute, PushSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,8 @@ def notify(*, user, company, kind, title, body="", url="", actor=None):
         return None
     if actor is not None and actor.pk == user.pk:
         return None
+    if NotificationMute.objects.filter(user=user, kind=kind).exists():
+        return None  # the person turned this kind off in their profile
     notification = Notification.objects.create(
         company=company,
         user=user,
@@ -143,3 +145,19 @@ def _send_all(subs, payload):
                 logger.warning("web push failed: %s", exc)
         except Exception:
             logger.exception("web push failed")
+
+
+def settings_for(user):
+    """Every kind with whether this person gets it. System messages cannot be turned off."""
+    muted = set(NotificationMute.objects.filter(user=user).values_list("kind", flat=True))
+    return [{"kind": k, "label": label, "enabled": k not in muted, "locked": k == Notification.Kind.SYSTEM} for k, label in Notification.Kind.choices]
+
+
+def set_enabled(user, kind, enabled):
+    if kind not in Notification.Kind.values or kind == Notification.Kind.SYSTEM:
+        return False
+    if enabled:
+        NotificationMute.objects.filter(user=user, kind=kind).delete()
+    else:
+        NotificationMute.objects.get_or_create(user=user, kind=kind)
+    return True

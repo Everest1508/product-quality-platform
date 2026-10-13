@@ -68,6 +68,11 @@ class TeamListView(CompanyMemberRequiredMixin, View):
         return render_shell(request)
 
 
+class TeamMemberView(CompanyMemberRequiredMixin, View):
+    def get(self, request, pk):
+        return render_shell(request)
+
+
 class ProfileView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         return render_shell(request)

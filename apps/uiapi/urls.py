@@ -75,6 +75,7 @@ urlpatterns = [
     path("team/", accounts.TeamListAPIView.as_view(), name="team"),
     path("team/<int:pk>/", accounts.TeamMemberAPIView.as_view(), name="team_member"),
     path("profile/", accounts.ProfileAPIView.as_view(), name="profile"),
+    path("profile/notifications/", accounts.NotificationSettingsAPIView.as_view(), name="profile_notifications"),
     path("payroll/runs/", payroll.RunListAPIView.as_view(), name="payroll_runs"),
     path("payroll/preview/", payroll.PreviewAPIView.as_view(), name="payroll_preview"),
     path("payroll/runs/<int:pk>/", payroll.RunAPIView.as_view(), name="payroll_run"),

@@ -100,11 +100,20 @@ class PreviewAPIView(CompanyAPIView):
         return Response({"run_id": run.pk, "message": message})
 
 
+from apps.core.csvx import csv_response  # noqa: E402
+
+
 class RunAPIView(CompanyAPIView):
     def get(self, request, pk):
         _admin(request)
         run = get_object_or_404(PayrollRun, pk=pk, company=request.company)
         slips = list(run.payslips.select_related("user", "run").order_by("user__username"))
+        if request.query_params.get("export") == "csv":
+            return csv_response(
+                f"payroll-{run.period_start}-to-{run.period_end}.csv",
+                ["Employee", "Currency", "Monthly salary", "Working days", "Paid leave days", "Unpaid leave days", "Late half days", "Late penalty", "Payable days", "Deduction", "Gross"],
+                [[(p.user.get_full_name() or p.user.username), p.currency, (p.breakdown or {}).get("monthly_salary", ""), p.working_days, p.paid_leave_days, p.unpaid_leave_days, p.late_half_days, p.late_penalty, p.payable_days, p.deduction, p.gross] for p in slips],
+            )
         return Response({
             **run_json(run, slips), "slips": [slip_json(p, full=False) for p in slips],
             "total_payable": str(sum((p.payable_days for p in slips), ZERO)),

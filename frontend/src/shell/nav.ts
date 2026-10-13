@@ -19,6 +19,7 @@ const REACT_PATH_RES = [
   /^\/leave\/(apply\/|calendar\/|approvals\/|policies\/)?$/,
   /^\/attendance\/(team\/|timesheet\/(\d+\/)?|corrections\/(request\/)?|\d+\/edit\/)?$/,
   /^\/(team|profile)\/$/,
+  /^\/team\/\d+\/$/,
   /^\/dashboards\/(reports\/|audit\/|product\/\d+\/)?$/,
   /^\/feedback\/(create\/|cs-hub\/|\d+\/)?$/,
   /^\/products\/\d+\/(surveys|rules)\/(create\/)?$/,

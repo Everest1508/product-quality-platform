@@ -166,6 +166,30 @@ class TeamListAPIView(CompanyAPIView):
 
 
 class TeamMemberAPIView(CompanyAPIView):
+    def get(self, request, pk):
+        """A colleague's page: who they are and the work of theirs this viewer is allowed to see."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.products.access import accessible_tickets
+
+        m = _membership(request, pk)
+        admin = request.company_role in ("owner", "admin")
+        theirs = accessible_tickets(request.user, request.company).filter(assignees=m.user).select_related("product")
+        open_ = theirs.exclude(status__in=["resolved", "closed"]).order_by("-updated_at")
+        return Response({
+            **member_json(m, request),
+            "streak": kudos.on_time_streak(request.company, m.user),
+            "milestones": kudos.milestones(request.company, m.user),
+            "email": m.user.email if admin else "",
+            "stats": {
+                "open_tickets": open_.count(),
+                "resolved_30d": theirs.filter(status__in=["resolved", "closed"], updated_at__gte=timezone.now() - timedelta(days=30)).count(),
+            },
+            "tickets": [{"id": t.pk, "key": t.key, "title": t.title, "status": t.get_status_display(), "url": f"/tickets/{t.pk}/"} for t in open_[:10]],
+        })
+
     def patch(self, request, pk):
         _admin(request)
         membership = _membership(request, pk)
@@ -243,3 +267,21 @@ class ProfileAPIView(CompanyAPIView):
         if not ok:
             return Response(form_errors(form), status=400)
         return Response({**self._json(request), "message": "Profile updated."})
+
+
+class NotificationSettingsAPIView(CompanyAPIView):
+    """Which kinds of notification this person gets. Applies to every workspace they belong to."""
+
+    def get(self, request):
+        from apps.notifications import service as notes
+
+        return Response({"kinds": notes.settings_for(request.user)})
+
+    def put(self, request):
+        from apps.notifications import service as notes
+
+        kind, enabled = request.data.get("kind"), bool(request.data.get("enabled"))
+        if not notes.set_enabled(request.user, kind, enabled):
+            return Response({"detail": "That kind of notification can't be changed."}, status=400)
+        label = next(k["label"] for k in notes.settings_for(request.user) if k["kind"] == kind)
+        return Response({"kinds": notes.settings_for(request.user), "message": f"{label}: {'on' if enabled else 'off'}."})
