@@ -19,26 +19,6 @@ class TopbarFeaturesTest(TestCase):
         self.product = Product.objects.create(name="App", slug="app", company=self.company)
         self.client.login(username="alice", password="pass1234")
 
-    def test_punching_toasts_and_leaves_a_receipt_in_the_bell(self):
-        resp = self.client.post(reverse("attendance:punch"), HTTP_HX_REQUEST="true")
-        self.assertIn("HX-Trigger", resp.headers)
-        self.assertIn("Checked in at", resp.headers["HX-Trigger"])
-        self.assertTrue(Notification.objects.filter(user=self.user, title__startswith="Checked in at").exists())
-
-    def test_correction_message_shows_the_times_that_were_filled_in(self):
-        day = timezone.localdate() - timedelta(days=1)
-        resp = self.client.post(
-            reverse("attendance:correction_request"),
-            {"date": day.isoformat(), "check_in": "09:45", "check_out": "18:30", "reason": "forgot"},
-        )
-        self.assertEqual(resp.status_code, 302)
-        text = " ".join(str(m) for m in get_messages(resp.wsgi_request))
-        self.assertIn("In 9:45 AM", text)
-        self.assertIn("Out 6:30 PM", text)
-        page = self.client.get(reverse("attendance:my_attendance")).content.decode()
-        self.assertIn("9:45 AM", page)
-        self.assertIn("6:30 PM", page)
-
     def test_search_reaches_ticket_descriptions_and_comments(self):
         t = Ticket.objects.create(
             company=self.company, product=self.product, title="Plain title",
@@ -84,21 +64,6 @@ class FeatureRoundTwoTest(TestCase):
             company=self.company, user=user, date=day, check_in=aware(at_in),
             check_out=aware(at_out) if at_out else None,
         )
-
-    def test_team_week_grid_shows_times_and_lateness(self):
-        from datetime import time
-
-        monday = timezone.localdate() - timedelta(days=timezone.localdate().weekday())
-        self._record(self.dev, monday, time(10, 40), time(18, 30))  # 40 min late: major band
-        page = self.client.get(reverse("attendance:team_attendance"), {"view": "week"}).content.decode()
-        self.assertIn("tw-table", page)
-        self.assertIn("40m late", page)
-        self.assertIn("10:40", page)
-
-    def test_idle_punch_panel_carries_the_late_rules_for_the_preview(self):
-        page = self.client.get(reverse("attendance:my_attendance")).content.decode()
-        self.assertIn("punch-latenote", page)
-        self.assertIn("&quot;majorAmt&quot;", page)
 
     def test_dsr_nudge_after_the_day_ends_and_only_one_bell_line(self):
         from datetime import time

@@ -421,19 +421,19 @@ class VersionFooterUiTest(TestCase):
 
     def test_sidebar_shows_a_clickable_version(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("data-changelog-open", body)
         self.assertIn('aria-haspopup="dialog"', body)
         self.assertIn(f"v{settings.APP_VERSION}", body)
 
     def test_version_label_describes_what_the_button_does(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn(f'aria-label="What\'s new in v{settings.APP_VERSION}"', body)
 
     def test_dialog_is_present_and_reads_from_the_api(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn('id="pq-changelog"', body)
         self.assertIn("/api/v1/changelog/", body)
         self.assertIn('role="dialog"', body)
@@ -441,12 +441,12 @@ class VersionFooterUiTest(TestCase):
     def test_dialog_sits_outside_the_clipped_sidebar(self):
         """.sidebar is overflow-x:hidden; a dialog inside it would be clipped."""
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertGreater(body.index('id="pq-changelog"'), body.index('class="shell"'))
 
     def test_trigger_dispatches_the_event_the_dialog_listens_for(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("[data-changelog-open]", body)
         self.assertIn("pq:changelog", body)
 
@@ -457,39 +457,39 @@ class VersionFooterUiTest(TestCase):
 
     def test_trigger_is_reachable_by_keyboard(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("side-version:focus-visible", body)
 
     def test_dialog_opens_on_this_version_rather_than_the_whole_file(self):
         """`releases.slice(1)` is what keeps 56 bullets off the first screen."""
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("releases.slice(1)", body)
         self.assertIn("var older = releases.slice(1);", body)
 
     def test_older_releases_are_a_disclosure_not_a_dead_end(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("changelog-older", body)
         self.assertIn("aria-expanded", body)
         self.assertIn("aria-controls=\"pq-changelog-older-list\"", body)
 
     def test_type_filters_are_real_buttons_with_pressed_state(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn('id="pq-changelog-filters"', body)
         self.assertIn('aria-label="Filter changes by type"', body)
         self.assertIn('aria-pressed="', body)
 
     def test_dates_are_formatted_for_a_reader_not_shown_as_iso_columns(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("function fmtDate", body)
         self.assertIn("esc(fmtDate(rel.date))", body)
 
     def test_header_states_how_many_changes_are_in_this_version(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         # The phrase is assembled from a pluralising helper, so assert its parts
         # rather than a string that never appears contiguously.
         self.assertIn("plural(total, 'change', 'changes')", body)
@@ -498,7 +498,7 @@ class VersionFooterUiTest(TestCase):
 
     def test_filtering_is_keyboard_and_mouse_driven_from_the_body(self):
         self.client.force_login(self.user)
-        body = self.client.get("/attendance/").content.decode()
+        body = self.client.get("/payroll/me/").content.decode()
         self.assertIn("data-filter", body)
         self.assertIn("closest('#pq-changelog-older')", body)
 
@@ -670,7 +670,7 @@ class ChangelogDialogDesignTest(TestCase):
         self.client.force_login(self.user)
 
     def body(self):
-        return self.client.get("/attendance/").content.decode()
+        return self.client.get("/payroll/me/").content.decode()
 
     def test_the_dialog_shows_the_summary_and_colored_sections(self):
         body = self.body()

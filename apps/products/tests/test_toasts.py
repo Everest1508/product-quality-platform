@@ -65,5 +65,5 @@ class ToastAfterMutationTest(TestCase):
 
     def test_an_empty_queue_renders_no_script_at_all(self):
         """An empty ``<script>`` block on every page is noise; see the tag."""
-        body = self.client.get(reverse("attendance:my_attendance")).content.decode()
+        body = self.client.get(reverse("payroll:my_payslips")).content.decode()
         self.assertNotIn('id="toast-seed"', body)

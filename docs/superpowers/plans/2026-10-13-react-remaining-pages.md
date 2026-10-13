@@ -10,7 +10,7 @@ Order (tick when merged on the branch):
 - [x] dashboards (home, product dashboard, reports, audit log); `/search/` stays a JSON endpoint used by the palette
 - [x] DSR
 - [x] accounts (login, company setup, team, profile, Serop OAuth sign-in; `accounts:company_switch` stays for the legacy sidebar until cleanup)
-- [ ] attendance
+- [x] attendance
 - [ ] leave
 - [ ] payroll
 - [ ] cleanup: remove htmx, Alpine, django_htmx, `core/base.html`, legacy CSS, partials, `HTMXRequiredMixin`, message bridge; update CLAUDE.md/AGENTS.md; remaining error/404 pages

@@ -715,41 +715,6 @@ class MyLeaveViewTest(LeaveTestBase):
         self.assertEqual(response.status_code, 200)
 
 
-class TeamEditApproverTest(LeaveTestBase):
-    def test_admin_can_flag_an_approver(self):
-        membership = Membership.objects.get(user=self.emp, company=self.company)
-        self.client.login(username="owner", password="pass1234")
-        self.client.post(
-            reverse("accounts:team_edit", args=[membership.pk]),
-            {
-                "first_name": "",
-                "last_name": "",
-                "email": "emp@acme.test",
-                "discord_id": "",
-                "role": "developer",
-                "is_leave_approver": "true",
-            },
-        )
-        membership.refresh_from_db()
-        self.assertTrue(membership.is_leave_approver)
-
-    def test_unchecking_clears_the_flag(self):
-        membership = Membership.objects.get(user=self.approver, company=self.company)
-        self.client.login(username="owner", password="pass1234")
-        self.client.post(
-            reverse("accounts:team_edit", args=[membership.pk]),
-            {
-                "first_name": "",
-                "last_name": "",
-                "email": "approver@acme.test",
-                "discord_id": "",
-                "role": "developer",
-            },
-        )
-        membership.refresh_from_db()
-        self.assertFalse(membership.is_leave_approver)
-
-
 class OnLeaveTest(LeaveTestBase):
     def test_approved_leave_covers_the_date(self):
         start = self.monday()
@@ -1535,24 +1500,14 @@ class SidebarActiveStateTest(LeaveTestBase):
 
     def test_exactly_one_item_is_active_per_page(self):
         for url, expected in [
-            ("/attendance/", "My attendance"),
-            ("/attendance/team/", "Team attendance"),
-            ("/attendance/timesheet/", "Timesheet"),
             ("/leave/", "My leave"),
             ("/leave/policies/", "Leave Policy"),
-            ("/team/", "Team"),
         ]:
             with self.subTest(url=url):
                 self.assertEqual(self.active_labels(url), [expected])
 
-    def test_the_team_page_does_not_also_light_up_my_attendance(self):
-        """The exact regression: a shared path fragment lit up two items."""
-        labels = self.active_labels("/attendance/team/")
-        self.assertNotIn("My attendance", labels)
-        self.assertNotIn("Team", labels)
-
     def test_active_item_is_marked_with_aria_current(self):
-        for url in ("/leave/", "/leave/policies/", "/attendance/team/"):
+        for url in ("/leave/", "/leave/policies/"):
             with self.subTest(url=url):
                 bar = self.sidebar(url)
                 self.assertEqual(bar.count('aria-current="page"'), 1)
@@ -1618,7 +1573,7 @@ class SidebarActiveStateTest(LeaveTestBase):
             "meta", "param", "source", "track", "wbr", "path", "circle", "rect",
             "line", "polyline", "polygon", "ellipse", "use", "stop",
         }
-        for url in ["/attendance/", "/leave/", "/attendance/", "/payroll/me/", "/team/"]:
+        for url in ["/payroll/me/", "/leave/"]:
             with self.subTest(url=url):
                 page = self.client.get(url, follow=True).content.decode()
                 # <script>/<style> hold text, not markup: tokenizing them turns
@@ -1655,19 +1610,6 @@ class SidebarActiveStateTest(LeaveTestBase):
                     "give it a column of its own",
                 )
                 self.assertGreater(aside_open, -1)
-
-    def test_the_settings_page_marks_the_user_menu_instead(self):
-        """It has no nav item, so the menu link carries the state.
-
-        A 404-free page with zero `aria-current` reads as "you are nowhere",
-        which is how the orphaned pages above were spotted in the first place.
-        """
-        bar = self.sidebar("/profile/")
-        self.assertEqual(self.active_labels("/profile/"), [])
-        self.assertEqual(bar.count('aria-current="page"'), 0)
-        body = self.client.get("/profile/", follow=True).content.decode()
-        menu = body[body.index('class="side-user-menu"') :]
-        self.assertIn('aria-current="page"', menu[: menu.index("</div>")])
 
     def test_every_nav_landmark_is_named(self):
         """Four `<nav>` elements with no `aria-label` are four identical

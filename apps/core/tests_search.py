@@ -116,6 +116,6 @@ class SearchTest(TestCase):
 
     def test_the_page_carries_the_palette_and_a_search_button(self):
         self.client.login(username="dev", password="pass1234")
-        page = self.client.get(reverse("attendance:my_attendance"), follow=True).content.decode()
+        page = self.client.get(reverse("payroll:my_payslips"), follow=True).content.decode()
         self.assertIn('role="combobox"', page)
         self.assertIn("pq-palette", page)

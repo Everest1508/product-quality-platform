@@ -909,3 +909,9 @@ decided what and strike the item** rather than deleting it.
 - Behaviour fix: editing the owner's membership through the team API is 403 (the old form let an admin demote the owner by posting it by hand). Removing yourself or the owner is 400.
 - Kept: `accounts:logout` (POST, redirect with "Signed out."), `accounts:company_switch` (legacy sidebar form, goes at the final cleanup), the OAuth `token`/`me` JSON endpoints, and the OAuth GET that sends a signed-in person straight back with a code.
 - Removed: `team_invite`, `team_edit`, `team_remove`, the whole `templates/accounts` folder and the legacy login/throttle/team tests (ported to `apps/uiapi/test_accounts.py`).
+
+### 2026-10-13 React attendance
+- `/attendance/`, `/attendance/team/` (today and `?view=week`), `/attendance/timesheet/`, `/attendance/timesheet/<user_id>/`, `/attendance/corrections/`, `/attendance/corrections/request/` and `/attendance/<pk>/edit/` are served by the React shell with the same rights as before (team, timesheet, queue and edit are owner/admin only; edit is 404 outside the company). Endpoints in `apps/uiapi/attendance.py`.
+- What the pages show now comes from `apps/attendance/panel.py` (`punch_panel`, `month_summary`, `week_strip`, `last_week`, moved out of the views); the rules are unchanged (`service`, `corrections`). Times are sent as server-formatted labels in the company timezone so a visitor's own timezone cannot change what a punch reads; only the live counters use epoch milliseconds.
+- The record edit is `PATCH attendance/records/<pk>/` with local `datetime-local` strings; it returns a `warning` when the day is still open.
+- Removed: `punch`, `correction_cancel`, `correction_decision` routes (POSTs are API now), the whole `templates/attendance` folder and ~1,500 lines of HTML-reading tests (ported as `apps/uiapi/test_attendance.py`; model and service tests stayed). Legacy-sidebar tests now point at `/payroll/me/` and `/leave/`.

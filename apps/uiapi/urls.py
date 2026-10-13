@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import accounts, automation, dashboards, dsr, errors, feedback, products, tickets, views
+from apps.uiapi import accounts, attendance, automation, dashboards, dsr, errors, feedback, products, tickets, views
 
 app_name = "uiapi"
 
@@ -48,6 +48,15 @@ urlpatterns = [
     path("dashboard/", dashboards.HomeAPIView.as_view(), name="home"),
     path("dashboard/quote/", dashboards.QuoteAPIView.as_view(), name="quote"),
     path("attendance/punch/", dashboards.PunchAPIView.as_view(), name="punch"),
+    path("attendance/me/", attendance.MyAttendanceAPIView.as_view(), name="attendance_me"),
+    path("attendance/team/", attendance.TeamAttendanceAPIView.as_view(), name="attendance_team"),
+    path("attendance/timesheet/", attendance.TimesheetAPIView.as_view(), name="attendance_timesheet"),
+    path("attendance/timesheet/<int:user_id>/", attendance.TimesheetDetailAPIView.as_view(), name="attendance_timesheet_detail"),
+    path("attendance/records/<int:pk>/", attendance.RecordAPIView.as_view(), name="attendance_record"),
+    path("attendance/corrections/", attendance.CorrectionQueueAPIView.as_view(), name="attendance_corrections"),
+    path("attendance/corrections/request/", attendance.CorrectionRequestAPIView.as_view(), name="attendance_correction_request"),
+    path("attendance/corrections/<int:pk>/cancel/", attendance.CorrectionCancelAPIView.as_view(), name="attendance_correction_cancel"),
+    path("attendance/corrections/<int:pk>/<str:action>/", attendance.CorrectionDecisionAPIView.as_view(), name="attendance_correction_decision"),
     path("todos/", dashboards.TodoListAPIView.as_view(), name="todos"),
     path("todos/clear-done/", dashboards.TodoClearDoneAPIView.as_view(), name="todo_clear_done"),
     path("todos/<int:pk>/toggle/", dashboards.TodoToggleAPIView.as_view(), name="todo_toggle"),

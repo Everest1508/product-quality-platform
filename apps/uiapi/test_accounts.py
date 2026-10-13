@@ -273,6 +273,17 @@ class TeamWriteApiTest(TeamApiBase):
         self.assertEqual((row.metadata["from"], row.metadata["to"]), ("developer", "admin"))
         self.assertEqual(patch(email="owner@test.com").status_code, 400)
 
+    def test_an_admin_can_flag_a_leave_approver_and_unflag_one(self):
+        self.login("owner")
+        url = f"/ui-api/v1/team/{self.m_dev.pk}/"
+        patch = lambda **o: self.client.patch(url, self.edit_body(**o), content_type="application/json")
+        patch(is_leave_approver=True)
+        self.m_dev.refresh_from_db()
+        self.assertTrue(self.m_dev.is_leave_approver)
+        patch()  # the box left unticked
+        self.m_dev.refresh_from_db()
+        self.assertFalse(self.m_dev.is_leave_approver)
+
     def test_the_owner_cannot_be_edited_or_removed_and_nobody_removes_themselves(self):
         self.login("admin")
         self.assertEqual(self.client.patch(f"/ui-api/v1/team/{self.m_owner.pk}/", self.edit_body(role="viewer"), content_type="application/json").status_code, 403)

@@ -10,6 +10,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.22.0] — 2026-10-13 · attendance, redone
+
+> In short: attendance has a new look, from the punch clock and your month at a glance to the team view, the timesheet and correction requests, with every number the same as your payslip uses.
+
+### New
+
+- **A new punch panel.** A live clock before you check in with a warning if arriving now would be late, a countdown to the end of your day while you work, and the hours worked after you check out.
+- **Your month at a glance.** A calendar that tells a full day from a part day, a missing punch and a day you never checked out of.
+- **A new team page.** Who is on the clock now, anyone who forgot to check out with a button to fix it, and a week view with late arrivals marked.
+- **A new timesheet.** Month totals for everyone, and one person's day-by-day calendar with a link to correct any day.
+- **Correction requests in one place.** Ask for new times, see your open requests, and owners and admins approve or reject them with a note.
+
+### Better
+
+- **Forgotten check-outs are easy to spot and fix.** The warning lists each day and links straight to the request form, and admins get the end of the shift filled in.
+- **Late arrivals read the same everywhere.** The punch panel, the notification and the payslip all use one rule.
+
 ## [1.21.0] — 2026-10-13 · sign-in, team and settings, redone
 
 > In short: the sign-in page, first-run company setup, the team page and your settings have a new look, and the owner can no longer be demoted by an admin by mistake.

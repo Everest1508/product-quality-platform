@@ -5,14 +5,11 @@ from apps.attendance import views
 app_name = "attendance"
 
 urlpatterns = [
-    path("", views.MyAttendanceView.as_view(), name="my_attendance"),
-    path("punch/", views.AttendancePunchView.as_view(), name="punch"),
-    path("team/", views.TeamAttendanceView.as_view(), name="team_attendance"),
-    path("timesheet/", views.TimesheetView.as_view(), name="timesheet"),
-    path("timesheet/<int:user_id>/", views.TimesheetDetailView.as_view(), name="timesheet_detail"),
-    path("corrections/", views.CorrectionQueueView.as_view(), name="corrections"),
-    path("corrections/request/", views.CorrectionRequestView.as_view(), name="correction_request"),
-    path("corrections/<int:pk>/cancel/", views.CorrectionCancelView.as_view(), name="correction_cancel"),
-    path("corrections/<int:pk>/<str:action>/", views.CorrectionDecisionView.as_view(), name="correction_decision"),
+    path("", views.AttendanceShellView.as_view(), name="my_attendance"),
+    path("team/", views.AttendanceAdminShellView.as_view(), name="team_attendance"),
+    path("timesheet/", views.AttendanceAdminShellView.as_view(), name="timesheet"),
+    path("timesheet/<int:user_id>/", views.AttendanceAdminShellView.as_view(), name="timesheet_detail"),
+    path("corrections/", views.AttendanceAdminShellView.as_view(), name="corrections"),
+    path("corrections/request/", views.AttendanceShellView.as_view(), name="correction_request"),
     path("<int:pk>/edit/", views.AttendanceEditView.as_view(), name="attendance_edit"),
 ]

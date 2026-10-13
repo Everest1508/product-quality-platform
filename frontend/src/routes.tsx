@@ -23,6 +23,10 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { OAuthPage } from '@/pages/auth/OAuthPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { TeamPage } from '@/pages/team/TeamPage';
+import { AttendancePage } from '@/pages/attendance/AttendancePage';
+import { CorrectionQueuePage, CorrectionRequestPage, RecordEditPage } from '@/pages/attendance/CorrectionPages';
+import { TeamAttendancePage } from '@/pages/attendance/TeamPage';
+import { TimesheetDetailPage, TimesheetPage } from '@/pages/attendance/TimesheetPages';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -54,6 +58,13 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/', element: <ProductDetailPage /> },
   { path: '/products/:pk/edit/', element: <ProductFormPage /> },
   { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
+  { path: '/attendance/', element: <AttendancePage /> },
+  { path: '/attendance/team/', element: <TeamAttendancePage /> },
+  { path: '/attendance/timesheet/', element: <TimesheetPage /> },
+  { path: '/attendance/timesheet/:user_id/', element: <TimesheetDetailPage /> },
+  { path: '/attendance/corrections/', element: <CorrectionQueuePage /> },
+  { path: '/attendance/corrections/request/', element: <CorrectionRequestPage /> },
+  { path: '/attendance/:id/edit/', element: <RecordEditPage /> },
   { path: '/team/', element: <TeamPage /> },
   { path: '/profile/', element: <ProfilePage /> },
   { path: '/dsr/', element: <DsrPage /> },
