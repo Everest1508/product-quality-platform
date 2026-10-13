@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderIcon } from './icons';
+import { Tooltip, TooltipProvider } from './tooltip';
 import { cn } from '@/lib/utils';
 
 export const buttonVariants = cva(
@@ -47,7 +48,9 @@ export interface ButtonProps
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, shape, asChild, loading, children, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
-    return (
+    const label = (props as { 'aria-label'?: string })['aria-label'];
+    const iconOnly = (size === 'icon' || size === 'icon-sm') && !!label;
+    const button = (
       <Comp
         ref={ref}
         className={cn(buttonVariants({ variant, size, shape }), className)}
@@ -64,6 +67,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </Comp>
     );
+    // An icon-only button has no words, so its name shows on hover and focus.
+    return iconOnly ? <TooltipProvider><Tooltip content={label}>{button}</Tooltip></TooltipProvider> : button;
   },
 );
 Button.displayName = 'Button';

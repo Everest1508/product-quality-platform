@@ -1,4 +1,4 @@
-import { ChevronDownIcon, LogOutIcon, SettingsIcon } from '@/components/ui/icons';
+import { ChevronDownIcon, LogOutIcon, UserIcon } from '@/components/ui/icons';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { ThemeSwitch } from './ThemeSwitch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -18,7 +18,7 @@ export function AccountMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <div className="px-2 pb-2 pt-1"><ThemeSwitch /></div>
-        <DropdownMenuItem asChild><a href={urls.profile}><SettingsIcon /> Settings</a></DropdownMenuItem>
+        <DropdownMenuItem asChild><a href={urls.profile}><UserIcon /> My profile</a></DropdownMenuItem>
         {/* A real form post, so signing out works without JavaScript. */}
         <form method="post" action={urls.logout}>
           <input type="hidden" name="csrfmiddlewaretoken" value={csrf} />

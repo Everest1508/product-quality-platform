@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Segmented } from '@/components/ui/segmented';
 import { DateField } from '@/components/ui/date-field';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { LineChart } from '@/components/ui/line-chart';
 
 const fmt = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const md = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -103,24 +104,16 @@ export function ReportsPage() {
             {d.daily_bars.length > 0 && (
               <section className="space-y-3 bg-card p-5 lg:col-span-2">
                 <div className="flex items-center justify-between"><h2 className="font-semibold">Day by day</h2><span className="text-xs text-muted-foreground">{d.daily_bars.length} day{d.daily_bars.length === 1 ? '' : 's'}</span></div>
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><i className="size-2 rounded-full bg-info" />Tickets created</span>
-                  <span className="flex items-center gap-1"><i className="size-2 rounded-full bg-success" />Tickets resolved</span>
-                  <span className="flex items-center gap-1"><i className="size-2 rounded-full bg-destructive" />Errors captured</span>
-                  <span className="flex items-center gap-1"><i className="size-2 rounded-full bg-primary" />Errors resolved</span>
-                </div>
-                <div role="img" aria-label="Daily tickets and errors, created and resolved" className="flex h-36 items-end gap-1">
-                  {d.daily_bars.map((b) => (
-                    <div key={b.date} className="flex h-full flex-1 items-end gap-px" title={`${md(b.date)}: ${b.row.tickets_created} tickets created, ${b.row.tickets_resolved} resolved, ${b.row.errors_captured} errors captured, ${b.row.errors_resolved} resolved`}>
-                      {([['created', 'bg-info'], ['resolved', 'bg-success'], ['captured', 'bg-destructive'], ['fixed', 'bg-primary']] as const).map(([k, c]) => (
-                        <span key={k} className={cn('block flex-1 rounded-t', c)} style={{ height: `${Math.max(b[k], 1)}%`, opacity: b[k] ? 1 : 0.15 }} />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-1 text-[10px] text-muted-foreground" aria-hidden>
-                  {d.daily_bars.map((b) => <span key={b.date} className="flex-1 truncate">{b.label ? md(b.date) : ''}</span>)}
-                </div>
+                <LineChart
+                  area
+                  labels={d.daily_bars.map((b) => md(b.date))}
+                  series={[
+                    { name: 'Tickets created', data: d.daily_bars.map((b) => b.row.tickets_created ?? 0), color: 'text-info' },
+                    { name: 'Tickets resolved', data: d.daily_bars.map((b) => b.row.tickets_resolved ?? 0), color: 'text-success' },
+                    { name: 'Errors captured', data: d.daily_bars.map((b) => b.row.errors_captured ?? 0), color: 'text-destructive' },
+                    { name: 'Errors resolved', data: d.daily_bars.map((b) => b.row.errors_resolved ?? 0), color: 'text-primary' },
+                  ]}
+                />
               </section>
             )}
             <section className="space-y-4 bg-card p-5">

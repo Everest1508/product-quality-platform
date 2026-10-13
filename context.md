@@ -973,3 +973,9 @@ decided what and strike the item** rather than deleting it.
 - 1.31.0: `components/ui/ledger.tsx` (`Ledger`, `LedgerRow`: tone edge, monogram, metrics row, actions) is used by products, surveys and automation rules. Reports use hairline-divided panels (`gap-px bg-border` grid) instead of cards. Not converted: errors and tickets lists (dense tables), CS Hub, team.
 
 - 1.32.0: team and CS Hub use `Ledger`/`LedgerRow` and divided sheets. The sheet's slide animations (`animate-slide-left/right`, `slide-out-*`, `fade-out`) were referenced but never defined in `index.css`, so the mobile sidebar did not animate; they exist now. Desktop collapse: width eases over 0.3s and labels fade in (`animate-in`).
+
+### 2026-10-13 Profile, tooltips, toasts, DSR hours (1.33.0)
+- DSR auto-log (`apps/dsr/service.auto_log_ticket_dsr`) now logs `min(elapsed, shift working hours)` and keeps `created_time` / `completed_time`; `python manage.py fix_dsr_hours [--dry-run]` caps old auto entries. The grid shows "Created … → completed …" under the task.
+- Toasts: `lib/api.ts` shows any write's `message`; `lib/toast.ts` drops an identical message within 1.5s. Icon-only `Button`s (size icon / icon-sm with an aria-label) get a befui Tooltip automatically.
+- `AppShell` routes clicks on in-app `<a href>` (React paths) through the router, so only real external/legacy links reload.
+- `GET /ui-api/v1/profile/` also returns joined, last_login, stats and recent activity; the profile page has Overview and Settings tabs.

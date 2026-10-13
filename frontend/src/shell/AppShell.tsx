@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { isReactPath } from './nav';
 import { socket } from '@/lib/presence';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { Changelog } from './Changelog';
@@ -43,6 +44,20 @@ function Frame({ children }: { children: ReactNode }) {
     newTicketUrl: b.urls.ticket_create,
   });
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  // A plain <a href> to a page React owns would reload the whole app (sidebar data, socket, presence); route it in place instead.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!a || a.target === '_blank' || a.hasAttribute('download') || a.origin !== location.origin) return;
+      if (!isReactPath(a.pathname)) return;
+      e.preventDefault();
+      navigate(a.pathname + a.search + a.hash);
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [navigate]);
   useEffect(() => {
     socket.start();
     const stop = () => socket.stop();

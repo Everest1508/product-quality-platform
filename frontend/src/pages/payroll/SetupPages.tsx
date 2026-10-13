@@ -87,11 +87,11 @@ function SetupRow({ row, workingDays }: { row: ProfileRow; workingDays: number }
     setBusy(false);
   };
   return (
-    <div className={`grid grid-cols-1 items-center gap-3 border-b p-3 last:border-0 md:grid-cols-[minmax(11rem,2fr)_7rem_11rem_10rem_10rem_4rem] ${on ? '' : 'opacity-80'}`}>
+    <div className={`grid grid-cols-1 items-center gap-3 border-b p-3 last:border-0 md:grid-cols-[minmax(9rem,1.6fr)_5.5rem_minmax(9rem,1.3fr)_minmax(8.5rem,1fr)_minmax(7rem,1fr)_5rem] ${on ? '' : 'opacity-80'}`}>
       <div><Who p={row.person} /><span className="text-[11px] text-muted-foreground">{row.role}</span></div>
       <Label className="flex items-center gap-2 text-sm"><Switch aria-label={`${who} on payroll`} checked={on} onCheckedChange={setOn} /> {on ? 'On' : 'Off'}</Label>
       <div>
-        <div className="flex items-center gap-1"><Input type="number" step="0.01" min="0" className="w-28 text-right" placeholder="24000" aria-label={`${who} monthly salary`} value={salary} onChange={(e) => setSalary(e.target.value)} /><span className="text-xs text-muted-foreground">/mo {row.currency}</span></div>
+        <div className="flex items-center gap-1"><Input type="number" step="0.01" min="0" className="w-full min-w-24 text-right" placeholder="24000" aria-label={`${who} monthly salary`} value={salary} onChange={(e) => setSalary(e.target.value)} /><span className="text-xs text-muted-foreground">/mo {row.currency}</span></div>
         <div className="mt-1 text-xs text-muted-foreground">{daily ? <><b>{daily}</b>/day · {salary} ÷ {workingDays} days</> : 'Not set'}</div>
       </div>
       <div><DateField aria-label={`${who} rate effective from`} value={from} onChange={setFrom} /><div className="mt-1 text-xs text-muted-foreground">{row.rates > 1 ? `${row.rates} rates on record` : row.has_profile ? `Since ${row.since}` : 'Not set yet'}</div></div>
@@ -116,8 +116,8 @@ export function ProfilesPage() {
               <StatCard key={String(l)} value={v} label={String(l)} />
             ))}
           </div>
-          <Card className="p-0">
-            <div className="hidden grid-cols-[minmax(11rem,2fr)_7rem_11rem_10rem_10rem_4rem] gap-3 border-b p-3 text-xs font-medium uppercase text-muted-foreground md:grid"><div>Employee</div><div>On payroll</div><div>Monthly salary</div><div>Effective from</div><div>This cycle</div><div /></div>
+          <Card className="overflow-hidden p-0">
+            <div className="hidden grid-cols-[minmax(9rem,1.6fr)_5.5rem_minmax(9rem,1.3fr)_minmax(8.5rem,1fr)_minmax(7rem,1fr)_5rem] gap-3 border-b p-3 text-xs font-medium uppercase text-muted-foreground md:grid"><div>Employee</div><div>On payroll</div><div>Monthly salary</div><div>Effective from</div><div>This cycle</div><div /></div>
             {d.rows.length === 0 && <EmptyState className="rounded-none border-0" title="No team members yet" />}
             {d.rows.map((r) => <SetupRow key={`${r.person.id}-${r.effective_from}-${r.monthly_salary}-${r.is_on_payroll}`} row={r} workingDays={d.working_days} />)}
           </Card>

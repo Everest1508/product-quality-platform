@@ -1,3 +1,5 @@
+import { toast } from './toast';
+
 export type Notice = {
   id: number;
   kind: string;
@@ -55,7 +57,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (res.status === 401 || (res.status === 403 && sessionProblem)) hooks.onAuthLost();
     throw new ApiError(detail || `Request failed (${res.status})`, res.status, body);
   }
-  return res.json() as Promise<T>;
+  const data = (await res.json()) as T;
+  // Every write that answers with a `message` says so on screen, whatever page made it.
+  const method = init?.method ?? 'GET';
+  const message = method !== 'GET' && data && typeof data === 'object' ? (data as { message?: unknown }).message : undefined;
+  if (typeof message === 'string' && message) toast(message, 'success');
+  return data;
 }
 
 export const getNotifications = (filter: Filter) =>

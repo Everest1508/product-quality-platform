@@ -46,14 +46,22 @@ def _target(request):
     return request.user
 
 
+def _moment(value, day):
+    """A local clock time, with the date in front when it is not the entry's own day ("2 Oct 09:15")."""
+    if not value:
+        return ""
+    local = timezone.localtime(value)
+    return local.strftime("%H:%M") if local.date() == day else local.strftime("%-d %b %H:%M")
+
+
 def entry_json(e):
     return {
         "id": e.pk, "task_name": e.task_name, "category": e.category, "category_label": e.get_category_display(),
         "status": e.status, "status_label": e.get_status_display(), "hours": format_hm(e.hours_spent),
         "hours_value": str(e.hours_spent), "notes": e.notes, "auto": e.is_auto_logged,
         "source": e.source, "source_id": e.source_id,
-        "from_time": timezone.localtime(e.created_time).strftime("%H:%M") if e.created_time else "",
-        "to_time": timezone.localtime(e.completed_time).strftime("%H:%M") if e.completed_time else "",
+        "from_time": _moment(e.created_time, e.date),
+        "to_time": _moment(e.completed_time, e.date),
         "product": {"id": e.product_id, "name": e.product.name} if e.product_id else None,
         "ticket": {"id": e.ticket_id, "key": e.ticket.key,
                    "url": f"/products/{e.ticket.product_id}/tickets/{e.ticket_id}/" if e.ticket.product_id else f"/tickets/{e.ticket_id}/"} if e.ticket_id else None,

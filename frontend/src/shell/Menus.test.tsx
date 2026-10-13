@@ -23,11 +23,11 @@ it('New menu offers tickets, leave and corrections, and New product only to admi
   expect(screen.getByRole('menuitem', { name: /new product/i })).toBeInTheDocument();
 });
 
-it('Account menu has Settings and a real sign-out form with the CSRF token', async () => {
+it('Account menu has My profile and a real sign-out form with the CSRF token', async () => {
   vi.spyOn(bootstrap, 'useBootstrapData').mockReturnValue(sampleBootstrap());
   render(<AccountMenu />);
   await userEvent.click(screen.getByRole('button', { name: /account menu/i }));
-  expect(screen.getByRole('menuitem', { name: /settings/i })).toHaveAttribute('href', '/profile/');
+  expect(screen.getByRole('menuitem', { name: /my profile/i })).toHaveAttribute('href', '/profile/');
   const form = screen.getByRole('menuitem', { name: /sign out/i }).closest('form')!;
   expect(form).toHaveAttribute('method', 'post');
   expect(form).toHaveAttribute('action', '/logout/');

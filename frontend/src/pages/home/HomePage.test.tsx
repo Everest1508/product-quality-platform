@@ -72,7 +72,6 @@ it('banners for leave and an empty DSR', async () => {
 
 it('the to-do list adds, toggles, deletes and clears', async () => {
   const { post, del } = setup();
-  await userEvent.click(await screen.findByRole('tab', { name: /To-do/ }));
   await userEvent.type(await screen.findByLabelText('New task'), 'write tests');
   await userEvent.click(screen.getByRole('button', { name: 'Add' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('todos/', { text: 'write tests', priority: '2', due: '' }));

@@ -15,11 +15,18 @@ export function dismiss(id: number) {
   emit();
 }
 
+const recent = new Map<string, number>();
+
+// The same message twice within a moment (a page's own toast plus the server's message) is shown once.
 export function toast(text: string, tags: Tags = 'info') {
+  const key = `${tags}:${text}`;
+  const now = Date.now();
+  if (now - (recent.get(key) ?? 0) < 1500) return;
+  recent.set(key, now);
   const id = nextId++;
   items = [...items, { id, text, tags }];
   emit();
-  setTimeout(() => dismiss(id), 4000);
+  setTimeout(() => dismiss(id), tags === 'error' || tags === 'warning' ? 7000 : 5000);
 }
 
 // Messages queued by a legacy Django view arrive with the bootstrap payload.
@@ -44,6 +51,7 @@ export const useToasts = () =>
 
 export function _reset() {
   items = [];
+  recent.clear();
   delivered.clear();
   emit();
 }

@@ -43,15 +43,9 @@ class DSRSystemTest(TestCase):
         self.assertEqual(entry.status, "completed")
         self.assertGreater(entry.hours_spent, Decimal("0"))
 
-    def test_a_long_open_ticket_cannot_break_the_dashboard(self):
-        """A ticket open longer than 999.99h used to 500 the dashboard.
-
-        `auto_log_ticket_dsr` writes `now - ticket.created_at` with no upper
-        bound and no full_clean, and the field used to be max_digits=5. Any
-        ticket open 42+ days therefore stored a value the decimal converter
-        could not read back, and `_personal_dsr` raised InvalidOperation on
-        every dashboard load for that user.
-        """
+    def test_a_long_open_ticket_logs_at_most_one_working_day_but_keeps_both_moments(self):
+        """A ticket that sat open for 60 days used to log 1440 hours. It now logs one working day and keeps the
+        created and completed times, so the DSR shows when it started and finished."""
         old = timezone.now() - timedelta(days=60)
         Ticket.objects.filter(pk=self.ticket.pk).update(created_at=old)
         self.ticket.refresh_from_db()
@@ -59,9 +53,9 @@ class DSRSystemTest(TestCase):
         self.ticket.transition_to("resolved", actor=self.member)
 
         entry = DSREntry.objects.get(ticket=self.ticket)
-        # 60 days == 1440h, which the old 5-digit field could not store.
-        self.assertGreater(entry.hours_spent, Decimal("999.99"))
-        # And it must survive the read-back that used to explode.
+        self.assertEqual(entry.hours_spent, Decimal("7.50"))  # the default shift, 10:00-18:30 less a 60 minute break
+        self.assertEqual(entry.created_time, old)
+        self.assertIsNotNone(entry.completed_time)
         self.assertEqual(DSREntry.objects.get(pk=entry.pk).hours_spent, entry.hours_spent)
 
         self.client.login(username="member", password="password")
@@ -82,3 +76,25 @@ class DSRSystemTest(TestCase):
         self.assertEqual(stored.hours_spent, Decimal("99999.99"))
         response = self.client.get("/ui-api/v1/dashboard/")
         self.assertEqual(response.status_code, 200)
+
+
+class FixDsrHoursCommandTest(TestCase):
+    def test_it_caps_only_inflated_auto_entries(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.accounts.models import Company
+
+        company = Company.objects.create(name="Co", slug="co")
+        user = get_user_model().objects.create_user("u", "u@t.local", "x")
+        big = DSREntry.objects.create(company=company, user=user, task_name="auto big", hours_spent=Decimal("1440.00"), is_auto_logged=True)
+        small = DSREntry.objects.create(company=company, user=user, task_name="auto small", hours_spent=Decimal("2.00"), is_auto_logged=True)
+        manual = DSREntry.objects.create(company=company, user=user, task_name="manual", hours_spent=Decimal("20.00"), is_auto_logged=False)
+        call_command("fix_dsr_hours", "--dry-run", stdout=StringIO())
+        big.refresh_from_db()
+        self.assertEqual(big.hours_spent, Decimal("1440.00"))
+        call_command("fix_dsr_hours", stdout=StringIO())
+        for e in (big, small, manual):
+            e.refresh_from_db()
+        self.assertEqual((big.hours_spent, small.hours_spent, manual.hours_spent), (Decimal("7.50"), Decimal("2.00"), Decimal("20.00")))

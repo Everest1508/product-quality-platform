@@ -118,6 +118,7 @@ export function DsrPage() {
                         {r.auto && <Badge variant="info" title="Added automatically when the ticket was resolved">Auto</Badge>}
                         {r.source && <Badge variant="outline" title={`Submitted through the DSR MCP from ${r.source}`}>via MCP</Badge>}
                       </div>
+                      {r.from_time && r.to_time && <p className="mt-0.5 text-xs text-muted-foreground">Created {r.from_time} → completed {r.to_time}</p>}
                       {r.notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.notes}</p>}
                     </TableCell>
                     <TableCell className="text-sm">{r.product?.name ?? <span className="text-muted-foreground">—</span>}</TableCell>

@@ -46,9 +46,13 @@ def auto_log_ticket_dsr(ticket, actor=None):
     log_date = timezone.localdate(now)
 
     start_time = ticket.created_at
-    duration = now - start_time
-    total_seconds = max(0, duration.total_seconds())
-    hours_spent = Decimal(str(round(max(0.25, total_seconds / 3600), 2)))
+    # The entry keeps the real created and completed moments, but the hours it claims for this day can never be more than
+    # a working day: a ticket that sat open for weeks did not take weeks of someone's time.
+    from apps.attendance.service import shift_for
+
+    day_hours = Decimal(shift_for(ticket.company).worked_minutes_per_day) / Decimal(60)
+    elapsed_hours = Decimal(str(max(0, (now - start_time).total_seconds()))) / Decimal(3600)
+    hours_spent = max(Decimal("0.25"), min(elapsed_hours, day_hours or Decimal("8"))).quantize(Decimal("0.01"))
 
     target_users = list(ticket.assignees.all())
     if not target_users:

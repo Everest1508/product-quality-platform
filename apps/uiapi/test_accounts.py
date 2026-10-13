@@ -361,3 +361,13 @@ class ProfileApiTest(TestCase):
         r = self.patch(email="not an email")
         self.assertEqual(r.status_code, 400)
         self.assertIn("email", r.json()["errors"])
+
+
+class ProfileOverviewApiTest(TeamApiBase):
+    def test_the_profile_carries_a_membership_date_numbers_and_recent_activity(self):
+        self.login("dev")
+        d = self.client.get("/ui-api/v1/profile/").json()
+        self.assertEqual(sorted(d["stats"]), ["days_present", "dsr_week", "open_tickets", "products", "resolved_30d"])
+        self.assertIsNotNone(d["joined"])
+        self.assertIsInstance(d["recent"], list)
+        self.assertEqual(d["user"]["username"], "dev")

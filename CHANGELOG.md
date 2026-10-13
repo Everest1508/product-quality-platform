@@ -10,6 +10,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.33.0] — 2026-10-13 · profile, greeting, tooltips and honest DSR hours
+
+> In short: you get a profile page, a greeting that follows the time of day, tooltips on icon buttons, a toast for every change, and DSR hours that no longer count weeks.
+
+### New
+
+- **A profile page.** Your name, role, company, since when you've been a member and your last sign-in, five numbers about your work, your recent activity, and your settings on a second tab.
+- **A greeting that follows the clock.** The Home banner changes colour and icon through morning, afternoon, evening and night, with one line for the moment.
+- **Tooltips on icon buttons.** Hover or focus an icon-only button and it says what it does.
+- **Line and bar charts from the shared library.** The report's day by day chart and the week on Home.
+
+### Better
+
+- **Every change shows a toast.** Anything the server confirms, such as adding or removing a holiday, appears as a message, errors stay longer, and the same message never shows twice.
+- **Links no longer reload the whole app.** Links inside the page, the New menu and notifications switch pages in place, so the live online list stays steady.
+- **My to-do is back on Home.** It sits beside Today instead of hiding in a tab.
+- **Payroll setup fits the screen.** The Save button is no longer cut off.
+
+### Fixed
+
+- **A resolved ticket no longer logs weeks of hours in the DSR.** It logs at most one working day and keeps its created and completed times, shown on the entry. The `fix_dsr_hours` command caps entries logged the old way.
+
 ## [1.32.0] — 2026-10-13 · team and CS Hub strips, and a smoother sidebar
 
 > In short: the team list and the CS Hub follow the same strip style as the rest, and the sidebar slides open and closed.

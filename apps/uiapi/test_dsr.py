@@ -325,3 +325,11 @@ class LogApiTest(DsrBase):
         rows = {r["task_name"]: r for r in self.log().json()["rows"]}
         self.assertEqual((rows["Timed"]["from_time"], rows["Timed"]["to_time"]), ("09:15", "17:30"))
         self.assertEqual((rows["Untimed"]["from_time"], rows["Untimed"]["to_time"]), ("", ""))
+
+    def test_a_start_on_an_earlier_day_carries_its_date(self):
+        done = timezone.make_aware(datetime.combine(self.today, time(17, 30)))
+        self.entry(task_name="Long", created_time=done - timedelta(days=3), completed_time=done)
+        self.login("dev")
+        row = self.log().json()["rows"][0]
+        self.assertEqual(row["to_time"], "17:30")
+        self.assertRegex(row["from_time"], r"^\d{1,2} \w{3} \d\d:\d\d$")

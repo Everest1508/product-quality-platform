@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarIcon, LogInIcon, PlusIcon, RefreshIcon, SendIcon, WalletIcon, FileTextIcon } from '@/components/ui/icons';
+import { CalendarIcon, CoffeeIcon, FlameIcon, MoonIcon, SunIcon, LogInIcon, PlusIcon, RefreshIcon, SendIcon, WalletIcon, FileTextIcon } from '@/components/ui/icons';
 import { Alert } from '@/components/ui/alert';
+import { BarChart } from '@/components/ui/charts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ErrorState } from '@/components/ui/error-state';
-import { PageHeader } from '@/components/ui/page-header';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +17,6 @@ import type { Home } from './types';
 
 const hm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '');
 const short = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-const greeting = (d: Date) => (d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening');
 
 const Empty = ({ children }: { children: React.ReactNode }) => <p className="py-6 text-center text-sm text-muted-foreground">{children}</p>;
 
@@ -61,13 +60,8 @@ function WeekCard({ h }: { h: Home }) {
   return (
     <Card className="space-y-3 p-5">
       <div className="flex items-baseline justify-between"><h2 className="text-sm font-semibold">This week</h2><span className="text-xs text-muted-foreground">{h.kpis.week_total} · goal {h.kpis.week_target}/day</span></div>
-      <div role="img" aria-label="Hours worked each day this week" className="flex h-20 items-end gap-1.5">
-        {h.week.map((d) => (
-          <div key={d.label} title={`${d.label}: ${d.hours}`} className={cn('flex h-full flex-1 flex-col items-center justify-end gap-1', d.future && 'opacity-40')}>
-            <span className="flex w-full flex-1 items-end rounded bg-secondary"><i className={cn('block w-full rounded', d.met ? 'bg-success' : 'bg-primary/70')} style={{ height: `${d.pct}%` }} /></span>
-            <span className={cn('text-[10px]', d.today ? 'font-semibold' : 'text-muted-foreground')}>{d.label}</span>
-          </div>
-        ))}
+      <div role="img" aria-label="Hours worked each day this week">
+        <BarChart height={110} data={h.week.map((d) => ({ label: d.label, value: d.future ? 0 : d.pct }))} />
       </div>
     </Card>
   );
@@ -80,6 +74,49 @@ function Tile({ icon, title, to, children, link }: { icon: React.ReactNode; titl
       <div className="flex-1 space-y-1 text-sm">{children}</div>
       <a href={to} className="text-sm text-primary hover:underline">{link} →</a>
     </Card>
+  );
+}
+
+type Period = 'morning' | 'afternoon' | 'evening' | 'night';
+const periodOf = (d: Date): Period => (d.getHours() < 5 ? 'night' : d.getHours() < 12 ? 'morning' : d.getHours() < 17 ? 'afternoon' : d.getHours() < 21 ? 'evening' : 'night');
+const SKY: Record<Period, string> = {
+  morning: 'from-amber-300/30 via-orange-200/20 to-sky-200/20',
+  afternoon: 'from-sky-300/30 via-blue-200/20 to-cyan-100/20',
+  evening: 'from-fuchsia-300/25 via-orange-300/20 to-indigo-300/25',
+  night: 'from-indigo-500/25 via-slate-500/15 to-blue-900/25',
+};
+const GREET: Record<Period, string> = { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Working late' };
+// One line per period and weekday, so it is the same all day and changes tomorrow.
+const LINES: Record<Period, string[]> = {
+  morning: ['Pick the one thing that matters today.', 'A clear head makes the first hour count.', 'Start with the smallest ticket and build momentum.'],
+  afternoon: ['Halfway there. Keep the momentum.', 'Close one thing before the next one opens.', 'A quick DSR line now saves the evening.'],
+  evening: ['Time to wrap up. Log your day.', 'Leave tomorrow a clean board.', 'Resolve what you can, hand off the rest.'],
+  night: ['Rest counts as work too.', 'Whatever is left will keep until morning.', 'Log it, then log off.'],
+};
+
+// A sky that follows the clock: gradient, sun or moon, and one line for the moment.
+function Greeting({ h, now }: { h: Home; now: Date }) {
+  const period = periodOf(now);
+  const line = LINES[period][now.getDay() % LINES[period].length];
+  const Icon = { morning: SunIcon, afternoon: CoffeeIcon, evening: FlameIcon, night: MoonIcon }[period];
+  return (
+    <section aria-label="Welcome" className={cn('relative overflow-hidden rounded-2xl border bg-gradient-to-r p-5 sm:p-6', SKY[period])}>
+      <span className="pointer-events-none absolute -right-4 -top-4 text-foreground/10 [&_svg]:size-32 motion-safe:animate-[float_6s_ease-in-out_infinite]" aria-hidden><Icon /></span>
+      <div className="relative flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} · {h.company}</p>
+          <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
+            <span className="grid size-9 place-items-center rounded-full bg-background/70 text-primary shadow-sm [&_svg]:size-5"><Icon /></span>
+            {GREET[period]}{h.first_name ? `, ${h.first_name}` : ''}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{line}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline"><a href="/leave/apply/"><SendIcon />Request leave</a></Button>
+          <Button asChild><Link to="/tickets/create/"><PlusIcon />New ticket</Link></Button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -99,14 +136,7 @@ export function HomePage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title={`${greeting(now)}${h.first_name ? `, ${h.first_name}` : ''}`}
-        sub={`${now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} · ${h.company}`}
-        actions={<>
-          <Button asChild variant="outline"><a href="/leave/apply/"><SendIcon />Request leave</a></Button>
-          <Button asChild><Link to="/tickets/create/"><PlusIcon />New ticket</Link></Button>
-        </>}
-      />
+      <Greeting h={h} now={now} />
 
       {h.on_leave_today && <Alert variant="info" title="You’re on approved leave today.">Payroll won’t deduct these days, and attendance won’t mark you absent.</Alert>}
       {h.dsr_nudge && <Alert variant="warning" title="Your DSR is empty for today.">Take a minute to log what you worked on before you go. <a href="/dsr/" className="ml-1 font-semibold underline">Open DSR →</a></Alert>}
@@ -131,7 +161,6 @@ export function HomePage() {
             <TabsList variant="pill" aria-label="My work">
               <TabsTrigger value="assigned" className="px-3 py-1">Assigned{h.kpis.my_tickets ? ` (${h.kpis.my_tickets})` : ''}</TabsTrigger>
               <TabsTrigger value="due" className="px-3 py-1">Due soon{h.due_soon.length ? ` (${h.due_soon.length})` : ''}</TabsTrigger>
-              <TabsTrigger value="todo" className="px-3 py-1">To-do{h.kpis.todos_left ? ` (${h.kpis.todos_left})` : ''}</TabsTrigger>
             </TabsList>
             <TabsContent value="assigned" className="mt-3">
               {h.my_tickets.length === 0 ? <Empty>No open tickets assigned to you. Nice.</Empty> : (
@@ -148,16 +177,16 @@ export function HomePage() {
                 </ul>
               )}
             </TabsContent>
-            <TabsContent value="todo" className="mt-3"><TodoCard bare /></TabsContent>
           </Tabs>
         </Card>
         <div className="space-y-4">
           <TodayCard h={h} />
-          <WeekCard h={h} />
+          <TodoCard />
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <WeekCard h={h} />
         <Tile icon={<WalletIcon />} title="Pay" to={slip ? slip.url : '/payroll/me/'} link={slip ? 'Full breakdown' : 'My payslips'}>
           {slip ? (
             <>

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PageHeader } from '@/components/ui/page-header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ago } from '@/lib/time';
 import { ErrorState } from '@/components/ui/error-state';
 import { Avatar } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,10 @@ type Profile = {
   role: string;
   role_label: string;
   company: string;
+  joined: string | null;
+  last_login: string | null;
+  stats: { open_tickets: number; resolved_30d: number; dsr_week: string; days_present: number; products: number };
+  recent: { id: number; title: string; created_at: string }[];
   message?: string;
 };
 type FieldErrors = Record<string, string[]>;
@@ -84,29 +89,58 @@ function ProfileForm({ p }: { p: Profile }) {
   );
 }
 
+const date = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+
 export function ProfilePage() {
   const q = useQuery({ queryKey: ['profile'], queryFn: () => api.get<Profile>('profile/') });
   useEffect(() => {
-    document.title = 'Settings — PQ Platform';
+    document.title = 'Profile — PQ Platform';
   }, []);
   const p = q.data;
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <PageHeader title="Settings" sub="Manage your profile details, email address, and notification preferences." />
+    <div className="mx-auto max-w-4xl space-y-5">
       {q.isError && !p ? (
-        <Card><ErrorState title="Couldn’t load your settings."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load your profile."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !p ? (
-        <div className="space-y-3" data-testid="profile-loading"><Skeleton className="h-20 w-full" /><Skeleton className="h-48 w-full" /></div>
+        <div className="space-y-3" data-testid="profile-loading"><Skeleton className="h-32 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (
         <>
-          <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
-            <div className="flex min-w-0 items-center gap-4">
-              <Avatar name={p.user.name} size="md" />
-              <div className="min-w-0"><div className="truncate font-semibold">{p.user.name}</div><div className="text-sm text-muted-foreground">@{p.user.username} · <Badge variant="info">{p.role_label}</Badge></div></div>
+          <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-r from-primary/15 via-accent to-transparent p-6">
+            <div className="flex flex-wrap items-center gap-5">
+              <Avatar name={p.user.name} size="xl" />
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-2xl font-semibold">{p.user.name}</h1>
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">@{p.user.username} <Badge variant="info">{p.role_label}</Badge> <span>{p.company}</span></p>
+                <p className="mt-1 text-sm text-muted-foreground">{p.user.email}{p.user.discord_id ? ` · Discord ${p.user.discord_id}` : ''}</p>
+              </div>
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                <dt className="text-muted-foreground">Member since</dt><dd className="text-right font-medium">{date(p.joined)}</dd>
+                <dt className="text-muted-foreground">Last sign-in</dt><dd className="text-right font-medium">{date(p.last_login)}</dd>
+              </dl>
             </div>
-            <div className="text-sm text-muted-foreground">Company: <b className="text-foreground">{p.company}</b></div>
-          </Card>
-          <ProfileForm p={p} />
+          </section>
+
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-5">
+            {([['Open tickets', p.stats.open_tickets], ['Resolved (30 days)', p.stats.resolved_30d], ['Logged this week', p.stats.dsr_week], ['Days present', p.stats.days_present], ['Products', p.stats.products]] as [string, string | number][]).map(([l, v]) => (
+              <div key={l} className="bg-card p-4"><div className="text-2xl font-semibold tabular-nums">{v}</div><div className="text-xs text-muted-foreground">{l}</div></div>
+            ))}
+          </div>
+
+          <Tabs defaultValue="overview">
+            <TabsList aria-label="Profile sections">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview" className="mt-4">
+              <Card className="p-5">
+                <h2 className="mb-2 text-sm font-semibold">Recent activity</h2>
+                {p.recent.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">Nothing yet. What you do shows up here.</p> : (
+                  <ul className="divide-y text-sm">{p.recent.map((a) => <li key={a.id} className="flex justify-between gap-3 py-2"><span className="truncate">{a.title}</span><span className="shrink-0 text-xs text-muted-foreground">{ago(a.created_at)}</span></li>)}</ul>
+                )}
+              </Card>
+            </TabsContent>
+            <TabsContent value="settings" className="mt-4 max-w-3xl"><ProfileForm p={p} /></TabsContent>
+          </Tabs>
         </>
       )}
     </div>

@@ -193,7 +193,43 @@ class ProfileAPIView(CompanyAPIView):
             "user": {"username": u.username, "name": _name(u), "initial": (u.username[:1] or "?").upper(), "first_name": u.first_name,
                      "last_name": u.last_name, "email": u.email, "discord_id": u.discord_id},
             "role": request.company_role, "role_label": request.company_role.title() if request.company_role else "",
-            "company": request.company.name,
+            "company": request.company.name, **self._overview(request),
+        }
+
+    @staticmethod
+    def _overview(request):
+        """What a person would want on their own profile: since when, how busy, what they touched lately."""
+        from datetime import timedelta
+        from decimal import Decimal
+
+        from django.db.models import Sum
+        from django.utils import timezone
+
+        from apps.attendance.models import AttendanceRecord
+        from apps.dashboards.models import ActivityLog
+        from apps.dsr.duration import format_hm
+        from apps.dsr.models import DSREntry
+        from apps.products.access import accessible_products, accessible_tickets
+
+        user, company, today = request.user, request.company, timezone.localdate()
+        membership = Membership.objects.filter(user=user, company=company).first()
+        mine = accessible_tickets(user, company).filter(assignees=user)
+        week_start = today - timedelta(days=today.weekday())
+        hours = DSREntry.objects.filter(company=company, user=user, date__gte=week_start).aggregate(t=Sum("hours_spent"))["t"] or Decimal("0")
+        return {
+            "joined": membership.created_at.isoformat() if membership else None,
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "stats": {
+                "open_tickets": mine.exclude(status__in=["resolved", "closed"]).count(),
+                "resolved_30d": mine.filter(status__in=["resolved", "closed"], updated_at__gte=timezone.now() - timedelta(days=30)).count(),
+                "dsr_week": format_hm(hours) if hours else "0m",
+                "days_present": AttendanceRecord.objects.filter(company=company, user=user, date__year=today.year, date__month=today.month, check_in__isnull=False).count(),
+                "products": accessible_products(user, company).count(),
+            },
+            "recent": [
+                {"id": a.pk, "title": a.title, "created_at": a.created_at.isoformat(), "url": ""}
+                for a in ActivityLog.objects.filter(company=company, actor=user).order_by("-created_at")[:8]
+            ],
         }
 
     def get(self, request):
