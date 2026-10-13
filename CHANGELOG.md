@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.14.0] — 2026-10-13 · tickets, redone
+
+> In short: the ticket board and the ticket list have a new look and feel quicker, and each product now shows its own menu in the sidebar.
+
+### New
+
+- **A new ticket board.** Drag a ticket to another column and it moves straight away; if it cannot move you see why and the ticket jumps back. On a phone, use the Move button on the ticket instead.
+- **A new ticket list.** Search, filter and sort as before, with the filters kept in the web address so you can bookmark a view or come back to it with the Back button.
+- **Keyboard shortcuts on tickets.** Press j and k to move through tickets, Enter to open one and e to edit it.
+- **A menu for each product.** Inside a product, the sidebar shows its Overview, Errors, Tickets, Feedback and Automation with their counts, and a switcher to jump to another product.
+
+### Better
+
+- **Deleting several tickets is clearer.** Choose Select, tick the tickets and confirm; you are told how many were deleted and how many were skipped because you may not delete them.
+- **Counts stay right.** The numbers in the sidebar and on the product menu update as soon as you move or delete a ticket.
+
 ## [1.13.0] — 2026-10-13 · a new navigation
 
 > In short: the notifications page now opens inside a new, faster navigation bar and sidebar, with search, alerts and who-is-online built in.

@@ -23,6 +23,7 @@ entry here is unfinished.
 | Area | Where it lives | The one thing to know |
 |---|---|---|
 | App shell / nav | `templates/core/base.html`, `templates/core/_sidebar.html` | One `<style>` block, htmx + Alpine from CDN, **no build step** |
+| React tickets (list/board) | `frontend/src/pages/tickets/`, `apps/uiapi/{tickets,products}.py`, `apps/tickets/{filters,service}.py` | `scope=product` vs `product=` filter; see the 2026-10-13 entry |
 | React shell | `frontend/src/shell/`, `apps/uiapi/{views,shell}.py`, `templates/uiapi/shell.html` | Owns sidebar/topbar/bell/presence/search/toasts; see the 2026-10-12 (React shell) entry |
 | React UI (migrating) | `frontend/`, `apps/uiapi/`, `apps/core/ui_assets.py` | See the 2026-10-12 (React shell) entry; `REACT_PAGES` and the scoped theme from the pilot were removed |
 | Toasts | `templates/core/base.html`, `apps/core/templatetags/toast_tags.py` | Seed must sit **above** `#toast-container`; every mutation must call `messages.*` |
@@ -69,6 +70,16 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-13 (React tickets list/board) — the six ticket list and board pages moved to React; their legacy templates, views and htmx are gone
+
+- **What moved.** `/tickets/`, `/tickets/kanban/`, `/tickets/list/` and `/products/<pk>/tickets/`, `.../kanban/`, `.../list/` (URL names `tickets:ticket_board|ticket_kanban|ticket_list`, `products:product_board|product_ticket_kanban|product_tickets` unchanged). The Django views now do the same checks as before (member, `require_product_access`) and return `apps.uiapi.shell.render_shell`; React renders them (`frontend/src/pages/tickets/`).
+- **API.** `GET /ui-api/v1/tickets/?view=list|board&...` (same filter query string as before; `scope=product&product=<pk>` means "this product's page" and 404s without access, a bare `product=<pk>` is only the filter dropdown), `GET /ui-api/v1/tickets/meta/` (filter choices), `POST /ui-api/v1/tickets/<pk>/status/`, `DELETE /ui-api/v1/tickets/<pk>/`, `POST /ui-api/v1/tickets/bulk-delete/` (skips and counts what the user may not delete), `GET /ui-api/v1/products/<pk>/nav/` (the sidebar's product section). All use `CompanyAPIView`, `accessible_tickets` / `require_product_access` / `require_ticket_access`.
+- **Shared logic.** `apps/tickets/filters.py` (filters/sort/`OPEN_EXCLUDED`) and `apps/tickets/service.py` (`change_status`, `delete_ticket`, `can_delete_ticket`, with the activity log, notifications, webhook and DSR auto-log) were extracted from the views; the legacy detail page's status/delete views call the same functions.
+- **Deleted.** `templates/tickets/{ticket_kanban,ticket_list}.html`, five `tickets/partials/_*` files, `templates/products/{product_ticket_kanban,product_ticket_list}.html` and three product partials, `TicketBulkDeleteView` / `ProductTicketBulkDeleteView` and their URLs, the bulk-delete script in `base.html`, and the old HTML tests (filter dropdown class, `response.context` checks). Behaviour is covered by `apps/uiapi/test_tickets.py`. htmx dropped from 229 attributes in 36 templates to 212 in 31.
+- **Stays legacy (plan B).** Ticket detail, create/edit forms, comments, assign, deadline, priority and follow controls. The list rows link to them with plain links.
+- **UI notes.** Filters live in the URL (reload and Back restore them); drag-and-drop on the board is optimistic and rolls back with the server's reason; "Move to…" is the touch alternative; `j`/`k`/Enter/`e` work on lists and boards; the sidebar shows the product section on `/products/<pk>/...` pages. `border-color` base rule restored in `index.css` (Tailwind 4 defaults to currentColor).
+- **Tests re-pointed.** `apps/core/tests.py` legacy sidebar/changelog tests now load `/dashboards/` (a page still on the legacy shell), not `/tickets/`. When the last legacy page moves these go with the legacy sidebar.
 
 ### 2026-10-12 (React shell) — sidebar, topbar, bell, presence, search and toasts in React; notifications page moves in
 

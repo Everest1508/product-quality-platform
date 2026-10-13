@@ -1603,7 +1603,7 @@ class SidebarActiveStateTest(LeaveTestBase):
             ("/payroll/me/", "My payslips"),
             ("/dsr/", "DSR Sheet"),
             ("/leave/approvals/", "Leave approvals"),
-            ("/tickets/kanban/", "All tickets"),
+            ("/tickets/create/", "All tickets"),
             ("/errors/create/", "All errors"),
             ("/products/create/", "Products"),
         ]:

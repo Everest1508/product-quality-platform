@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useBootstrapData } from '@/lib/bootstrap';
@@ -39,6 +39,9 @@ export function TicketsPage() {
   const base = productId ? `/products/${productId}/tickets/` : '/tickets/';
   const newTicket = productId ? `/products/${productId}/tickets/create/` : urls.ticket_create;
   const title = productId ? `${productNav?.name ?? 'Product'} tickets` : 'All tickets';
+  useEffect(() => {
+    document.title = `${productId ? productNav?.name ?? 'Product' : 'All'} tickets — PQ Platform`;
+  }, [productId, productNav?.name]);
   const data = tickets.data?.view === view ? tickets.data : undefined;
   const total = data ? (data.view === 'list' ? data.page.count : data.total) : 0;
 
