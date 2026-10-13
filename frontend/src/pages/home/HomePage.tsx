@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { TodoCard } from './TodoCard';
 import { useHome, usePunch } from './useHome';
 import type { Home } from './types';
+import { ErrorState } from '@/components/ui/error-state';
 
 const clock = (d: Date) => ({
   greeting: d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening',
@@ -132,7 +133,7 @@ export function HomePage() {
     document.title = 'Home — PQ Platform';
   }, []);
   const h = q.data;
-  if (q.isError && !h) return <Card className="p-6 text-center"><p className="text-sm">Couldn’t load your home page.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>;
+  if (q.isError && !h) return <ErrorState message="Couldn’t load your home page." onRetry={() => q.refetch()} />;
   if (!h) return <div className="space-y-4" data-testid="home-loading"><Skeleton className="h-36 w-full" /><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
   const p = h.payroll;
   const slip = p.payslip;

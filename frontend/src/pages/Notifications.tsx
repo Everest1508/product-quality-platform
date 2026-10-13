@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ago } from '@/lib/time';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+import { ErrorState } from '@/components/ui/error-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 function Row({ n }: { n: Notice }) {
   return (
@@ -90,18 +92,10 @@ export function Notifications() {
           </div>
         )}
         {list.isError && !list.data && (
-          <div className="p-6 text-center">
-            <p className="text-sm">Couldn’t load notifications.</p>
-            <Button className="mt-3" size="sm" variant="outline" onClick={() => list.refetch()}>
-              Try again
-            </Button>
-          </div>
+          <ErrorState message="Couldn’t load notifications." onRetry={() => list.refetch()} />
         )}
         {list.data && list.data.items.length === 0 && (
-          <div className="p-8 text-center">
-            <h3 className="font-medium">{filter === 'unread' ? 'Nothing unread' : 'No notifications yet'}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">You will see assignments, mentions and decisions here.</p>
-          </div>
+          <EmptyState title={filter === 'unread' ? 'Nothing unread' : 'No notifications yet'}>You will see assignments, mentions and decisions here.</EmptyState>
         )}
         {list.data?.items.map((n) => (
           <Row key={n.id} n={n} />

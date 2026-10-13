@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useAttQuery } from './useAttendance';
 import type { TeamToday, TeamWeek } from './types';
+import { PageHeader } from '@/components/ui/page-header';
+import { ErrorState } from '@/components/ui/error-state';
 
 const DOT: Record<string, string> = { worked: 'bg-success', leave: 'bg-info', open: 'bg-warning', none: 'bg-destructive/50', weekend: 'bg-secondary', future: 'bg-secondary' };
 const STATE: Record<string, ['success' | 'warning' | 'danger' | 'info' | 'default', string]> = {
@@ -36,7 +38,7 @@ export function TeamAttendancePage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold">Team attendance</h1><p className="mt-1 text-sm text-muted-foreground">Who is on the clock, and how the team’s days look.</p></div>
+        <PageHeader title="Team attendance" sub="Who is on the clock, and how the team’s days look." />
         <div className="flex gap-2">
           <div className="flex rounded-lg bg-secondary p-0.5">
             <button type="button" aria-pressed={!week} onClick={() => set({ view: null, week: null })} className={cn('rounded-md px-3 py-1 text-sm', !week ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground')}>Today</button>
@@ -47,7 +49,7 @@ export function TeamAttendancePage() {
       </div>
 
       {q.isError && !d ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the team.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load the team." onRetry={() => q.refetch()} />
       ) : !d ? (
         <div className="space-y-3" data-testid="team-att-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>
       ) : d.view === 'today' ? (

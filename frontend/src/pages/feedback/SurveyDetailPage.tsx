@@ -12,12 +12,9 @@ import { ago } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { useSurveyActions, useSurveyDetail } from './useFeedback';
 import type { SurveyDetail } from './types';
+import { Stat } from '@/components/ui/stat';
 
 const NEXT: Record<string, string> = { draft: 'Activate', active: 'Close', closed: 'Reopen' };
-
-function Stat({ value, label }: { value: React.ReactNode; label: string }) {
-  return <Card className="p-4 text-center"><div className="text-2xl font-semibold">{value}</div><div className="text-xs text-muted-foreground">{label}</div></Card>;
-}
 
 export function SurveyDetailPage() {
   const id = Number(useParams().id);

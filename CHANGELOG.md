@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.25.1] — 2026-10-13 · matching empty and error screens
+
+> In short: every list now shows the same empty and "couldn't load" screens, with the same stat tiles and page titles.
+
+### Better
+
+- **Empty lists look the same everywhere.** Tickets, errors, products, surveys, rules, team, the audit log, reports and notifications show a centred title with a hint about what to try.
+- **A failed load looks the same everywhere too.** It says what couldn't load and offers Try again.
+
 ## [1.25.0] — 2026-10-13 · dark mode and a tidier layout
 
 > In short: the app has a dark theme, a wider page area, and tables, page titles and empty screens that look the same everywhere.

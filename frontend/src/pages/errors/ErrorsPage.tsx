@@ -15,6 +15,8 @@ import { useProductNav } from '@/lib/useProductNav';
 import { Flags, SeverityBadge, SeverityDot, Sparkline, StatusBadge } from './parts';
 import { filtersFromParams, paramsFromFilters, useDeleteError, useErrorMeta, useErrorScope, useErrors } from './useErrors';
 import type { ErrorFilters, ErrorItem } from './types';
+import { ErrorState } from '@/components/ui/error-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const SORTS: [string, string][] = [
   ['-last_seen', 'Most recent'],
@@ -135,19 +137,13 @@ export function ErrorsPage() {
       </div>
 
       {errors.isError && !data ? (
-        <Card className="p-6 text-center">
-          <p className="text-sm">Couldn’t load errors.</p>
-          <Button className="mt-3" size="sm" variant="outline" onClick={() => errors.refetch()}>Try again</Button>
-        </Card>
+        <ErrorState message="Couldn’t load errors." onRetry={() => errors.refetch()} />
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="errors-loading">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
         </Card>
       ) : data.items.length === 0 ? (
-        <Card className="p-10 text-center">
-          <h3 className="font-medium">No errors found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{filters.q ? 'Try a different search term.' : 'Errors will appear here once your products start reporting.'}</p>
-        </Card>
+        <Card><EmptyState title="No errors found">{filters.q ? 'Try a different search term.' : 'Errors will appear here once your products start reporting.'}</EmptyState></Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">

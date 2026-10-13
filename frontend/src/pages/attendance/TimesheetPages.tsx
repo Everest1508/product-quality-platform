@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { MonthNav } from './parts';
 import { useAttQuery } from './useAttendance';
 import type { Timesheet, TimesheetDetail } from './types';
+import { PageHeader } from '@/components/ui/page-header';
+import { ErrorState } from '@/components/ui/error-state';
 
 function useMonthParam() {
   const [params, setParams] = useSearchParams();
@@ -32,10 +34,10 @@ export function TimesheetPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold">Timesheet</h1><p className="mt-1 text-sm text-muted-foreground">Per-month totals for every employee.</p></div>
+        <PageHeader title="Timesheet" sub="Per-month totals for every employee." />
         {d && <MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} />}
       </div>
-      {q.isError && !d ? <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the timesheet.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+      {q.isError && !d ? <ErrorState message="Couldn’t load the timesheet." onRetry={() => q.refetch()} />
         : !d ? <Skeleton className="h-64 w-full" data-testid="ts-loading" />
         : (
           <Card className="overflow-x-auto p-0">

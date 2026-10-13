@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/lib/toast';
 import { AddForm, EntryTable, Suggestions } from './Entries';
 import { useDsr, useDsrActions } from './useDsr';
+import { ErrorState } from '@/components/ui/error-state';
 
 const long = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -33,7 +34,7 @@ export function DsrPage() {
     setParams(next);
   };
 
-  if (q.isError && !sheet) return <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the DSR sheet.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>;
+  if (q.isError && !sheet) return <ErrorState message="Couldn’t load the DSR sheet." onRetry={() => q.refetch()} />;
   if (!sheet) return <div className="space-y-3" data-testid="dsr-loading"><Skeleton className="h-10 w-72" /><Skeleton className="h-48 w-full" /></div>;
   const isToday = sheet.date === sheet.today;
 

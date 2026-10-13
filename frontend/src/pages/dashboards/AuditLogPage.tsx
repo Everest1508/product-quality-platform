@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Actor, EventBadge } from './EventBadge';
 import { useAudit } from './useDashboards';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
 
 const KEYS = ['q', 'type', 'actor', 'from', 'to', 'page'] as const;
 
@@ -66,11 +68,11 @@ export function AuditLogPage() {
       </div>
 
       {q.isError && !d ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the audit log.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load the audit log." onRetry={() => q.refetch()} />
       ) : !d ? (
         <Card className="space-y-3 p-4" data-testid="audit-loading">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : d.items.length === 0 ? (
-        <Card className="p-10 text-center"><h3 className="font-medium">No activity logged</h3><p className="mt-1 text-sm text-muted-foreground">No audit events match the current filter criteria.</p></Card>
+        <Card><EmptyState title="No activity logged">No audit events match the current filter criteria.</EmptyState></Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">

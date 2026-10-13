@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useProductList } from './useProducts';
 import type { ProductItem } from './types';
+import { ErrorState } from '@/components/ui/error-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const SORTS: [string, string][] = [
   ['name', 'Name A-Z'], ['-name', 'Name Z-A'], ['-created', 'Newest first'], ['created', 'Oldest first'], ['-versions', 'Most versions'],
@@ -128,17 +130,11 @@ export function ProductsPage() {
       </div>
 
       {list.isError && !data ? (
-        <Card className="p-6 text-center">
-          <p className="text-sm">Couldn’t load products.</p>
-          <Button className="mt-3" size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button>
-        </Card>
+        <ErrorState message="Couldn’t load products." onRetry={() => list.refetch()} />
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="products-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
-        <Card className="p-10 text-center">
-          <h3 className="font-medium">No products found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</p>
-        </Card>
+        <Card><EmptyState title="No products found">{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</EmptyState></Card>
       ) : view === 'grid' ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{data.items.map((p) => <ProductCard key={p.id} p={p} canEdit={data.can_create} />)}</div>
       ) : (

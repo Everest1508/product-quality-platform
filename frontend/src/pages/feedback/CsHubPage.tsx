@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ago } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { useCsHub } from './useFeedback';
+import { ErrorState } from '@/components/ui/error-state';
 
 const tone = (n: number | null) => (n === null ? 'text-muted-foreground' : n >= 4 ? 'text-success' : n >= 3 ? 'text-warning' : 'text-destructive');
 const bar = (n: number) => (n >= 4 ? 'bg-success' : n >= 3 ? 'bg-warning' : 'bg-destructive');
@@ -33,7 +34,7 @@ export function CsHubPage() {
       </div>
 
       {q.isError && !d ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the hub.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load the hub." onRetry={() => q.refetch()} />
       ) : !d ? (
         <div className="space-y-3" data-testid="hub-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (

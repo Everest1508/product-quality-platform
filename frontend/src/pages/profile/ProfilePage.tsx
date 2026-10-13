@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/ui/page-header';
+import { ErrorState } from '@/components/ui/error-state';
 
 type Profile = {
   user: { username: string; name: string; initial: string; first_name: string; last_name: string; email: string; discord_id: string };
@@ -87,9 +89,9 @@ export function ProfilePage() {
   const p = q.data;
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div><h1 className="text-2xl font-semibold">Settings</h1><p className="mt-1 text-sm text-muted-foreground">Manage your profile details, email address, and notification preferences.</p></div>
+      <PageHeader title="Settings" sub="Manage your profile details, email address, and notification preferences." />
       {q.isError && !p ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load your settings.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load your settings." onRetry={() => q.refetch()} />
       ) : !p ? (
         <div className="space-y-3" data-testid="profile-loading"><Skeleton className="h-20 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (

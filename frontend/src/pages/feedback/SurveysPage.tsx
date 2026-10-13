@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { useProductNav } from '@/lib/useProductNav';
 import { useLocation } from 'react-router-dom';
 import { filtersFromParams, paramsFromFilters, useSurveyScope, useSurveys, type SurveyFilters } from './useFeedback';
+import { ErrorState } from '@/components/ui/error-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-responses', 'Most responses']];
 const STATUS_TABS: [string, string][] = [['', 'All'], ['active', 'Active'], ['draft', 'Draft'], ['closed', 'Closed']];
@@ -85,14 +87,11 @@ export function SurveysPage() {
       </div>
 
       {list.isError && !data ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load surveys.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load surveys." onRetry={() => list.refetch()} />
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="surveys-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
-        <Card className="p-10 text-center">
-          <h3 className="font-medium">No surveys found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{filters.q ? 'Try a different search term.' : 'Create a survey to start collecting feedback.'}</p>
-        </Card>
+        <Card><EmptyState title="No surveys found">{filters.q ? 'Try a different search term.' : 'Create a survey to start collecting feedback.'}</EmptyState></Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">

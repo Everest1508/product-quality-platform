@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { MemberDialog } from './MemberDialog';
 import { useRemoveMember, useTeam } from './useTeam';
 import type { Member } from './types';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
 
 const SORTS: [string, string][] = [['-role', 'Role (high first)'], ['role', 'Role (low first)'], ['name', 'Name A-Z'], ['-joined', 'Newest first'], ['joined', 'Oldest first']];
 const TONE: Record<string, 'info' | 'warning' | 'success' | 'default'> = { owner: 'info', admin: 'warning', developer: 'success', support: 'default', viewer: 'default' };
@@ -84,11 +86,11 @@ export function TeamPage() {
       </div>
 
       {q.isError && !d ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the team.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load the team." onRetry={() => q.refetch()} />
       ) : !d ? (
         <Card className="space-y-3 p-4" data-testid="team-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</Card>
       ) : d.items.length === 0 ? (
-        <Card className="p-10 text-center"><h3 className="font-medium">No members found</h3><p className="mt-1 text-sm text-muted-foreground">Try a different search term or role.</p></Card>
+        <Card><EmptyState title="No members found">Try a different search term or role.</EmptyState></Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">

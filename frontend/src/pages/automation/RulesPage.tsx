@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { useProductNav } from '@/lib/useProductNav';
 import { filtersFromParams, paramsFromFilters, useRuleActions, useRuleScope, useRules, type RuleFilters } from './useRules';
 import type { Rule } from './types';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-fired', 'Most triggered']];
 const TABS: [string, string][] = [['', 'All'], ['1', 'Active'], ['0', 'Inactive']];
@@ -75,11 +77,11 @@ export function RulesPage() {
       </div>
 
       {list.isError && !data ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load rules.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load rules." onRetry={() => list.refetch()} />
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="rules-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
-        <Card className="p-10 text-center"><h3 className="font-medium">No rules found</h3><p className="mt-1 text-sm text-muted-foreground">{filters.q ? 'Try a different search term.' : 'Create a rule to open tickets automatically when errors pile up.'}</p></Card>
+        <Card><EmptyState title="No rules found">{filters.q ? 'Try a different search term.' : 'Create a rule to open tickets automatically when errors pile up.'}</EmptyState></Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">

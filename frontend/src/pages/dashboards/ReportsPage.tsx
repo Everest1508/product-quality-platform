@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Actor, EventBadge } from './EventBadge';
 import { useReport } from './useDashboards';
+import { ErrorState } from '@/components/ui/error-state';
 
 const fmt = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const md = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -78,7 +79,7 @@ export function ReportsPage() {
       </div>
 
       {q.isError && !d ? (
-        <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the report.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
+        <ErrorState message="Couldn’t load the report." onRetry={() => q.refetch()} />
       ) : !d ? (
         <div className="space-y-3" data-testid="report-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-56 w-full" /></div>
       ) : (

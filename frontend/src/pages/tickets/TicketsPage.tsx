@@ -16,6 +16,8 @@ import { filtersFromParams, paramsFromFilters, ticketsKey, useTicketMeta, useTic
 import { useTicketActions } from './useTicketActions';
 import { useTicketKeys } from './useTicketKeys';
 import type { TicketFilters, TicketItem } from './types';
+import { ErrorState } from '@/components/ui/error-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type Confirm = { kind: 'one'; item: TicketItem } | { kind: 'many' } | null;
 
@@ -113,10 +115,7 @@ export function TicketsPage() {
       <FilterBar filters={filters} onChange={setFilters} meta={meta.data} showStatus={view === 'list'} showProduct={!productId} view={view} />
 
       {tickets.isError && !data ? (
-        <Card className="p-6 text-center">
-          <p className="text-sm">Couldn’t load tickets.</p>
-          <Button className="mt-3" size="sm" variant="outline" onClick={() => tickets.refetch()}>Try again</Button>
-        </Card>
+        <ErrorState message="Couldn’t load tickets." onRetry={() => tickets.refetch()} />
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="tickets-loading">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -124,12 +123,7 @@ export function TicketsPage() {
       ) : data.view === 'board' ? (
         <Board data={data} disabled={tickets.isPlaceholderData} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
       ) : data.items.length === 0 ? (
-        <Card className="p-10 text-center">
-          <h3 className="font-medium">No tickets found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {filters.q ? 'Try a different search term.' : 'Create a ticket to start tracking work.'}
-          </p>
-        </Card>
+        <Card><EmptyState title="No tickets found">{filters.q ? 'Try a different search term.' : 'Create a ticket to start tracking work.'}</EmptyState></Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <TicketTable items={data.items} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
