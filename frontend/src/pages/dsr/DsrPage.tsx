@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/lib/toast';
+import { ExportLink } from '@/components/ExportLink';
 import { EntryDialog } from './Entries';
 import { useDsrActions, useDsrLog } from './useDsr';
 import type { LogRow } from './types';
@@ -61,6 +62,7 @@ export function DsrPage() {
         sub={everyone ? 'Everyone’s submitted work.' : `${log.target.is_me ? 'Your' : `${log.target.name}’s`} submitted work.`}
         actions={<>
           <Button variant="outline" onClick={() => navigator.clipboard.writeText(log.summary_text).then(() => toast('DSR copied to the clipboard.', 'success'))}><CopyIcon />Copy summary</Button>
+          <ExportLink path={`dsr/log/?${new URLSearchParams({ ...(log.range === 'custom' ? { from: log.from, to: log.to } : { range: log.range }), ...(user ? { user_id: user } : {}), ...(q ? { q } : {}) })}`} />
           {canLog && <Button onClick={() => setDialog({})}><PlusIcon />Log work</Button>}
         </>}
       />

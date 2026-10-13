@@ -23,6 +23,7 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { OAuthPage } from '@/pages/auth/OAuthPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { TeamPage } from '@/pages/team/TeamPage';
+import { MemberPage } from '@/pages/team/MemberPage';
 import { ApplyPage } from '@/pages/leave/ApplyPage';
 import { ApprovalsPage } from '@/pages/leave/ApprovalsPage';
 import { CalendarPage } from '@/pages/leave/CalendarPage';
@@ -87,6 +88,7 @@ export const shellRoutes: RouteObject[] = [
   { path: '/attendance/corrections/request/', element: <CorrectionRequestPage /> },
   { path: '/attendance/:id/edit/', element: <RecordEditPage /> },
   { path: '/team/', element: <TeamPage /> },
+  { path: '/team/:id/', element: <MemberPage /> },
   { path: '/profile/', element: <ProfilePage /> },
   { path: '/dsr/', element: <DsrPage /> },
   { path: '/dashboards/', element: <HomePage /> },

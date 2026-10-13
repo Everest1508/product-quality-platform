@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ExportLink } from '@/components/ExportLink';
 import { LockBadge, Note, Num, PayHeader, Th, Who } from './parts';
 import { day, money, reason, usePayQuery, usePayWrite } from './usePayroll';
 import type { Preview, RunDetail, RunList } from './types';
@@ -116,6 +117,7 @@ export function RunDetailPage() {
   return (
     <div className="space-y-4">
       <PayHeader title={d.label} sub={<>{d.working_days} working days <LockBadge locked={d.is_locked} /></>} actions={<>
+        <ExportLink path={`payroll/runs/${d.id}/`} />
         <Button asChild variant="outline" size="sm"><Link to={`/payroll/preview/?anchor=${d.start}`}><RefreshIcon />Re-preview</Link></Button>
         <Button variant="outline" size="sm" disabled={busy} onClick={lock}><UnlockIcon />{d.is_locked ? 'Unlock' : 'Lock'}</Button>
       </>} />

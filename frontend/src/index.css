@@ -126,3 +126,10 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* A payslip printed or saved as PDF is just the page, without the sidebar and top bar. */
+@media print {
+  [data-collapsed], header { display: none !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  body { background: #fff !important; }
+}

@@ -12,6 +12,7 @@ import { ago } from '@/lib/time';
 import { ErrorState } from '@/components/ui/error-state';
 import { Avatar } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
+import { NotificationSettings } from './NotificationSettings';
 import { ShortcutList } from '@/shell/ShortcutList';
 import { Milestones, StreakBadge } from '@/components/fun/Kudos';
 import { RefreshIcon, SaveIcon } from '@/components/ui/icons';
@@ -134,6 +135,7 @@ export function ProfilePage() {
             <TabsList aria-label="Profile sections">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="shortcuts">Keyboard shortcuts</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="mt-4 space-y-4">
@@ -145,6 +147,7 @@ export function ProfilePage() {
                 )}
               </Card>
             </TabsContent>
+            <TabsContent value="notifications" className="mt-4 max-w-3xl"><NotificationSettings /></TabsContent>
             <TabsContent value="shortcuts" className="mt-4"><Card className="p-5"><ShortcutList /><p className="mt-4 text-xs text-muted-foreground">Shortcuts pause while you type in a field. On a Mac, ⌘ is used where other systems use Ctrl.</p></Card></TabsContent>
             <TabsContent value="settings" className="mt-4 max-w-3xl"><ProfileForm p={p} /></TabsContent>
           </Tabs>

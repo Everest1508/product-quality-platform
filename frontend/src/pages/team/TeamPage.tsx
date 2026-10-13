@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { EditIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -101,7 +101,7 @@ export function TeamPage() {
                 tone={ROLE_TONE[m.role] ?? 'off'}
                 title={<>
                   <Avatar name={m.user.name} />
-                  <span className="truncate text-base font-semibold">{m.user.name}{m.is_you && <span className="ml-1 text-xs font-normal text-muted-foreground">(you)</span>}</span>
+                  <Link to={`/team/${m.id}/`} className="truncate text-base font-semibold hover:underline">{m.user.name}{m.is_you && <span className="ml-1 text-xs font-normal text-muted-foreground">(you)</span>}</Link>
                   <Badge variant={TONE[m.role] ?? 'default'}>{m.role_label}</Badge>
                   {m.is_leave_approver && <Badge variant="outline">Leave approver</Badge>}
                 </>}

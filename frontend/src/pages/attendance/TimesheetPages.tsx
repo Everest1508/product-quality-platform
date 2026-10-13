@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { MonthNav } from './parts';
 import { useAttQuery } from './useAttendance';
 import type { Timesheet, TimesheetDetail } from './types';
+import { ExportLink } from '@/components/ExportLink';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -38,7 +39,7 @@ export function TimesheetPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader title="Timesheet" sub="Per-month totals for every employee." />
-        {d && <MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} />}
+        {d && <div className="flex items-center gap-2"><ExportLink path={`attendance/timesheet/${qs}`} /><MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} /></div>}
       </div>
       {q.isError && !d ? <Card><ErrorState title="Couldn’t load the timesheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
         : !d ? <Skeleton className="h-64 w-full" data-testid="ts-loading" />
