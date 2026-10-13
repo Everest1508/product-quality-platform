@@ -85,9 +85,9 @@ export function ReportsPage() {
       ) : (
         <>
           <p className="text-sm text-muted-foreground">{fmt(d.start_date)} to {fmt(d.end_date)}{d.scope === 'mine' ? ', your activity only' : ''}. Arrows compare with the same number of days just before.</p>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:grid-cols-5">
             {d.kpis.map((k) => (
-              <Card key={k.key} className="p-4">
+              <div key={k.key} className="bg-card p-4">
                 <div className="text-xs text-muted-foreground">{k.label}</div>
                 <div className={cn('text-2xl font-semibold', TONE[k.tone])}>{k.value}</div>
                 <div className={cn('flex items-center gap-1 text-xs', k.dir === 'up' ? 'text-success' : k.dir === 'down' ? 'text-destructive' : 'text-muted-foreground')}>
@@ -95,13 +95,13 @@ export function ReportsPage() {
                   {k.pct !== null ? `${k.pct}%` : k.dir === 'up' ? 'new' : 'no change'}
                   <small className="text-muted-foreground">vs {k.before} before</small>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-px overflow-hidden rounded-xl border bg-border lg:grid-cols-3">
             {d.daily_bars.length > 0 && (
-              <Card className="space-y-3 p-5 lg:col-span-2">
+              <section className="space-y-3 bg-card p-5 lg:col-span-2">
                 <div className="flex items-center justify-between"><h2 className="font-semibold">Day by day</h2><span className="text-xs text-muted-foreground">{d.daily_bars.length} day{d.daily_bars.length === 1 ? '' : 's'}</span></div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><i className="size-2 rounded-full bg-info" />Tickets created</span>
@@ -121,22 +121,22 @@ export function ReportsPage() {
                 <div className="flex gap-1 text-[10px] text-muted-foreground" aria-hidden>
                   {d.daily_bars.map((b) => <span key={b.date} className="flex-1 truncate">{b.label ? md(b.date) : ''}</span>)}
                 </div>
-              </Card>
+              </section>
             )}
-            <Card className="space-y-4 p-5">
+            <section className="space-y-4 bg-card p-5">
               <h2 className="font-semibold">How much got finished</h2>
               <div className="flex items-center gap-3"><Ring pct={d.resolution_rate} /><div className="text-sm"><strong className="block">Tickets</strong>{d.tickets.resolved} resolved out of {d.tickets.created} created. {d.tickets.in_progress} moved to in progress.</div></div>
               <div className="flex items-center gap-3"><Ring pct={d.error_fix_rate} /><div className="text-sm"><strong className="block">Errors</strong>{d.errors.resolved} resolved out of {d.errors.captured} captured. {d.errors.ignored} ignored.</div></div>
-            </Card>
-            <Card className="space-y-3 p-5">
+            </section>
+            <section className="space-y-3 bg-card p-5">
               <div className="flex items-center justify-between"><h2 className="font-semibold">Busiest products</h2><span className="text-xs text-muted-foreground">tickets, errors and feedback</span></div>
               {d.product_bars.length === 0 ? <p className="text-sm text-muted-foreground">No product activity in this range.</p> : <Bars tone="bg-primary" rows={d.product_bars.map((r) => ({ name: r.name, n: r.total, pct: r.pct }))} />}
-            </Card>
-            <Card className="space-y-3 p-5 lg:col-span-2">
+            </section>
+            <section className="space-y-3 bg-card p-5 lg:col-span-2">
               <div className="flex items-center justify-between"><h2 className="font-semibold">What happened most</h2><span className="text-xs text-muted-foreground">{d.total_events} event{d.total_events === 1 ? '' : 's'}</span></div>
               {d.event_mix.length === 0 ? <p className="text-sm text-muted-foreground">Nothing was logged in this range.</p> : <Bars tone="bg-success" rows={d.event_mix.map((r) => ({ name: r.label, n: r.count, pct: r.pct }))} />}
               <p className="text-xs text-muted-foreground">Feedback {d.feedback_received} · survey answers {d.survey_responses} · assigned {d.tickets.assigned}</p>
-            </Card>
+            </section>
           </div>
 
           {d.product_rows.length > 0 && (

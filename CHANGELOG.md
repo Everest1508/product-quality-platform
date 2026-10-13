@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.31.0] — 2026-10-13 · ledgers and sheets
+
+> In short: surveys, automation rules and reports follow the products page, so lists read as full-width strips and reports as one divided sheet.
+
+### Better
+
+- **Surveys and automation rules are strips.** A coloured edge shows state (active, draft, closed), a short badge shows the type or severity, and the numbers sit in a divided row with the actions beside them.
+- **Reports read as one sheet.** The five headline numbers are one divided strip and the charts share one panel with hairline dividers instead of separate cards.
+- **One list style across the app.** The strip is a single shared piece, so the next list that needs it looks the same.
+
 ## [1.30.1] — 2026-10-13 · products as a ledger
 
 > In short: the products page is a list of full-width strips instead of cards.

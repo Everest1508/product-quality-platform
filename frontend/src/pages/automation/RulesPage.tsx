@@ -19,6 +19,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
 import { Switch } from '@/components/ui/switch';
+import { Ledger, LedgerRow } from '@/components/ui/ledger';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-fired', 'Most triggered']];
 const TABS: [string, string][] = [['', 'All'], ['1', 'Active'], ['0', 'Inactive']];
@@ -78,29 +79,30 @@ export function RulesPage() {
       ) : data.items.length === 0 ? (
         <EmptyState title="No rules found" description={<>{filters.q ? 'Try a different search term.' : 'Create a rule to open tickets automatically when errors pile up.'}</>} />
       ) : (
-        <Card className="overflow-x-auto p-0">
-          <Table>
-            <TableHeader><TableRow><TableHead>Rule</TableHead><TableHead>Trigger</TableHead><TableHead>Action</TableHead><TableHead>Status</TableHead><TableHead>Fired</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
-            <TableBody>
-              {data.items.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell><Link to={`/automation/${r.id}/edit/`} className="font-medium hover:underline">{r.name}</Link><div className="text-xs text-muted-foreground">{r.product ? r.product.name : 'All products'}</div></TableCell>
-                  <TableCell>{r.threshold_count} errors in {r.window_minutes}m{r.severity ? ` (${r.severity})` : ''}</TableCell>
-                  <TableCell>{r.action_label}</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-2">
-                      <Switch aria-label={`${r.is_active ? 'Disable' : 'Enable'} ${r.name}`} checked={r.is_active} onCheckedChange={() => actions.toggle(r.id)} />
-                      {r.is_active ? <Badge variant="success">Active</Badge> : <Badge>Disabled</Badge>}
-                    </span>
-                  </TableCell>
-                  <TableCell>{r.trigger_count}</TableCell>
-                  <TableCell><div className="flex justify-end gap-1.5"><Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}><EditIcon />Edit</Link></Button><Button size="sm" variant="destructive" onClick={() => setConfirm(r)}><TrashIcon />Delete</Button></div></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {data.page.num_pages > 1 && <div className="flex justify-end border-t p-3"><Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} /></div>}
-        </Card>
+        <>
+          <Ledger>
+            {data.items.map((r) => (
+              <LedgerRow
+                key={r.id}
+                tone={r.is_active ? 'good' : 'off'}
+                mark={r.severity ? r.severity.slice(0, 4) : 'ANY'}
+                title={<>
+                  <Link to={`/automation/${r.id}/edit/`} className="truncate text-base font-semibold hover:underline">{r.name}</Link>
+                  <Switch aria-label={`${r.is_active ? 'Disable' : 'Enable'} ${r.name}`} checked={r.is_active} onCheckedChange={() => actions.toggle(r.id)} />
+                  {r.is_active ? <Badge variant="success">Active</Badge> : <Badge>Disabled</Badge>}
+                </>}
+                sub={`${r.threshold_count} errors in ${r.window_minutes}m${r.severity ? ` (${r.severity})` : ''} → ${r.action_label}`}
+                extra={<p className="text-xs text-muted-foreground">{r.product ? r.product.name : 'All products'}</p>}
+                metrics={[{ label: 'Fired', value: r.trigger_count, dim: r.trigger_count === 0 }]}
+                actions={<>
+                  <Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}><EditIcon />Edit</Link></Button>
+                  <Button size="sm" variant="outline" className="text-destructive" onClick={() => setConfirm(r)}><TrashIcon />Delete</Button>
+                </>}
+              />
+            ))}
+          </Ledger>
+          {data.page.num_pages > 1 && <div className="flex justify-end"><Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} /></div>}
+        </>
       )}
 
       {data && data.recent_logs.length > 0 && (

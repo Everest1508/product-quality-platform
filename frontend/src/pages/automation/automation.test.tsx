@@ -46,7 +46,7 @@ function mount(path: string, meta: RuleMeta = ruleMeta()) {
 it('lists rules with trigger text, status and recent activity', async () => {
   mount('/automation/');
   expect(await screen.findByText('Wide')).toBeInTheDocument();
-  expect(screen.getByText('10 errors in 30m')).toBeInTheDocument();
+  expect(screen.getByText(/10 errors in 30m/)).toBeInTheDocument();
   expect(screen.getByText('All products')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'AUM-001' })).toHaveAttribute('href', '/tickets/1/');
 });

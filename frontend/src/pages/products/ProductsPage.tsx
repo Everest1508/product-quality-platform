@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
+import { Ledger, LedgerRow } from '@/components/ui/ledger';
 
 const SORTS: [string, string][] = [
   ['name', 'Name A-Z'], ['-name', 'Name Z-A'], ['-created', 'Newest first'], ['created', 'Oldest first'], ['-versions', 'Most versions'],
@@ -32,43 +33,35 @@ function Tile({ value, label, tone }: { value: number; label: string; tone?: 'wa
   );
 }
 
-const BAR = { healthy: 'bg-success', warning: 'bg-warning', critical: 'bg-destructive' } as Record<string, string>;
+const TONE = { healthy: 'good', warning: 'warn', critical: 'bad' } as const;
 
-// A product as one strip of a ledger: health colour down the edge, the key as its identity, numbers in a divided row.
 function ProductRow({ p, canEdit }: { p: ProductItem; canEdit: boolean }) {
   const peak = Math.max(1, ...p.spark);
   return (
-    <li className="group relative flex flex-wrap items-center gap-x-6 gap-y-3 py-4 pl-6 pr-4 transition-colors hover:bg-muted/50">
-      <span className={cn('absolute inset-y-0 left-0 w-1.5', BAR[p.health] ?? 'bg-muted-foreground')} aria-hidden />
-      <span className="grid h-12 w-16 shrink-0 place-items-center rounded-md border bg-secondary font-mono text-sm font-bold tracking-wider" aria-hidden>{p.key || p.name.slice(0, 3).toUpperCase()}</span>
-      <div className="min-w-0 flex-1 basis-60">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link to={p.url} className="truncate text-base font-semibold hover:underline">{p.name}</Link>
-          <Health health={p.health} />
-        </div>
-        <p className="truncate text-sm text-muted-foreground">{p.description || 'No description yet.'}</p>
-        <p className="font-mono text-xs text-muted-foreground">{p.slug}</p>
-      </div>
-      <dl className="grid shrink-0 grid-cols-4 divide-x rounded-lg border bg-background text-center">
-        {([['Errors', p.open_errors, true], ['Tickets', p.open_tickets, true], ['Versions', p.version_count, false], ['Keys', p.api_key_count, false]] as [string, number, boolean][]).map(([l, v, alert]) => (
-          <div key={l} className="min-w-16 px-3 py-1.5">
-            <dd className={cn('text-lg font-semibold tabular-nums leading-tight', alert && v === 0 && 'text-muted-foreground')}>{v}</dd>
-            <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{l}</dt>
+    <LedgerRow
+      tone={TONE[p.health as keyof typeof TONE] ?? 'off'}
+      mark={p.key || p.name.slice(0, 3)}
+      title={<><Link to={p.url} className="truncate text-base font-semibold hover:underline">{p.name}</Link><Health health={p.health} /></>}
+      sub={p.description || 'No description yet.'}
+      extra={<p className="font-mono text-xs text-muted-foreground">{p.slug}</p>}
+      metrics={[
+        { label: 'Errors', value: p.open_errors, dim: p.open_errors === 0 },
+        { label: 'Tickets', value: p.open_tickets, dim: p.open_tickets === 0 },
+        { label: 'Versions', value: p.version_count },
+        { label: 'Keys', value: p.api_key_count },
+      ]}
+      actions={<>
+        <div className="mr-2 w-28" title={`Error occurrences, last 7 days: ${p.week_errors}`}>
+          <div className="flex h-8 items-end gap-0.5" aria-hidden>
+            {p.spark.map((h, i) => <i key={i} className={cn('block flex-1 rounded-sm', h > 4 ? 'bg-destructive/70' : 'bg-border')} style={{ height: `${Math.max(12, (h / peak) * 100)}%` }} />)}
           </div>
-        ))}
-      </dl>
-      <div className="w-28 shrink-0" title={`Error occurrences, last 7 days: ${p.week_errors}`}>
-        <div className="flex h-8 items-end gap-0.5" aria-hidden>
-          {p.spark.map((h, i) => <i key={i} className={cn('block flex-1 rounded-sm', h > 4 ? 'bg-destructive/70' : 'bg-border')} style={{ height: `${Math.max(12, (h / peak) * 100)}%` }} />)}
+          <div className="mt-1 text-xs text-muted-foreground">{p.week_errors} errors this week</div>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">{p.week_errors} errors this week</div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
         <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}><LayoutDashboardIcon />Dashboard</a></Button>
         <Button asChild size="sm"><Link to={p.url}><EyeIcon />Open</Link></Button>
         {canEdit && <Button asChild variant="ghost" size="icon-sm" aria-label={`Edit ${p.name}`}><Link to={`${p.url}edit/`}><EditIcon /></Link></Button>}
-      </div>
-    </li>
+      </>}
+    />
   );
 }
 
@@ -143,7 +136,7 @@ export function ProductsPage() {
       ) : data.items.length === 0 ? (
         <EmptyState title="No products found" description={<>{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</>} />
       ) : view === 'grid' ? (
-        <ul className="divide-y overflow-hidden rounded-xl border bg-card">{data.items.map((p) => <ProductRow key={p.id} p={p} canEdit={data.can_create} />)}</ul>
+        <Ledger>{data.items.map((p) => <ProductRow key={p.id} p={p} canEdit={data.can_create} />)}</Ledger>
       ) : (
         <Card className="overflow-x-auto p-0">
           <Table>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusIcon, RefreshIcon, SearchIcon } from '@/components/ui/icons';
+import { EyeIcon, PlusIcon, RefreshIcon, SearchIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
+import { Ledger, LedgerRow } from '@/components/ui/ledger';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-responses', 'Most responses']];
 const STATUS_TABS: [string, string][] = [['', 'All'], ['active', 'Active'], ['draft', 'Draft'], ['closed', 'Closed']];
@@ -82,32 +83,24 @@ export function SurveysPage() {
       ) : data.items.length === 0 ? (
         <EmptyState title="No surveys found" description={<>{filters.q ? 'Try a different search term.' : 'Create a survey to start collecting feedback.'}</>} />
       ) : (
-        <Card className="overflow-x-auto p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead><TableHead>Type</TableHead>
-                {!productId && <TableHead>Product</TableHead>}
-                <TableHead>Status</TableHead><TableHead>Responses</TableHead><TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.items.map((s) => (
-                <TableRow key={s.id} className="cursor-pointer hover:bg-secondary/50" onClick={() => navigate(s.url)}>
-                  <TableCell><Link to={s.url} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{s.name}</Link></TableCell>
-                  <TableCell><Badge variant="info">{s.type_label}</Badge></TableCell>
-                  {!productId && <TableCell className="text-muted-foreground">{s.product.name}</TableCell>}
-                  <TableCell><Badge variant={STATUS_VARIANT[s.status] ?? 'default'}>{s.status_label}</Badge></TableCell>
-                  <TableCell>{s.response_count}</TableCell>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">{ago(s.created_at)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <>
+          <Ledger>
+            {data.items.map((s) => (
+              <LedgerRow
+                key={s.id}
+                tone={s.status === 'active' ? 'good' : s.status === 'draft' ? 'warn' : 'off'}
+                mark={s.type}
+                title={<><Link to={s.url} className="truncate text-base font-semibold hover:underline">{s.name}</Link><Badge variant={STATUS_VARIANT[s.status] ?? 'default'}>{s.status_label}</Badge></>}
+                sub={`${s.type_label}${productId ? '' : ` · ${s.product.name}`} · created ${ago(s.created_at)}`}
+                metrics={[{ label: 'Responses', value: s.response_count, dim: s.response_count === 0 }]}
+                actions={<Button asChild size="sm"><Link to={s.url}><EyeIcon />Open</Link></Button>}
+              />
+            ))}
+          </Ledger>
           {data.page.num_pages > 1 && (
-            <div className="flex justify-end border-t p-3"><Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} /></div>
+            <div className="flex justify-end"><Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} /></div>
           )}
-        </Card>
+        </>
       )}
     </div>
   );

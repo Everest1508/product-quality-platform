@@ -969,3 +969,5 @@ decided what and strike the item** rather than deleting it.
 - Product detail: header + quick links + `Tabs` (Roadmap, Versions, API keys, Team access for admins, Integrations); `#api-key-list` opens the API keys tab. Ticket detail: single column, properties row, description with the linked error, comments; the "back to board" button was dropped (the breadcrumb does it).
 
 - 1.30.1: the products grid view is a ledger of `ProductRow` strips (health colour edge, key monogram, divided metrics, 7-day bars) instead of `ProductCard`s; the table view is unchanged.
+
+- 1.31.0: `components/ui/ledger.tsx` (`Ledger`, `LedgerRow`: tone edge, monogram, metrics row, actions) is used by products, surveys and automation rules. Reports use hairline-divided panels (`gap-px bg-border` grid) instead of cards. Not converted: errors and tickets lists (dense tables), CS Hub, team.
