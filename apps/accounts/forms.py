@@ -11,15 +11,12 @@ User = get_user_model()
 
 class SignupForm(UserCreationForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
-        "class": "form-input",
         "placeholder": "you@company.com",
     }))
     first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "First name",
     }))
     last_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "Last name",
     }))
 
@@ -28,7 +25,6 @@ class SignupForm(UserCreationForm):
         fields = ("username", "email", "first_name", "last_name", "password1", "password2")
         widgets = {
             "username": forms.TextInput(attrs={
-                "class": "form-input",
                 "placeholder": "Username",
             }),
         }
@@ -36,11 +32,9 @@ class SignupForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["password1"].widget.attrs.update({
-            "class": "form-input",
             "placeholder": "Password",
         })
         self.fields["password2"].widget.attrs.update({
-            "class": "form-input",
             "placeholder": "Confirm password",
         })
 
@@ -53,7 +47,6 @@ class LoginForm(forms.Form):
     # submitting the wrong value. "current-password" likewise distinguishes
     # this from a saved sign-in for some other site.
     username = forms.CharField(widget=forms.TextInput(attrs={
-        "class": "auth-input",
         "placeholder": "Username or email",
         "autofocus": True,
         "autocomplete": "username",
@@ -62,7 +55,6 @@ class LoginForm(forms.Form):
         "spellcheck": "false",
     }))
     password = forms.CharField(widget=forms.PasswordInput(attrs={
-        "class": "auth-input",
         "placeholder": "Password",
         "autocomplete": "current-password",
         # Flipped by the eye button in the surrounding .pw-wrap; inert where no
@@ -95,7 +87,6 @@ class CompanyCreateForm(forms.ModelForm):
         fields = ["name"]
         widgets = {
             "name": forms.TextInput(attrs={
-                "class": "form-input",
                 "placeholder": "Acme Corp",
             }),
         }
@@ -119,29 +110,24 @@ class CompanyCreateForm(forms.ModelForm):
 
 class TeamCreateMemberForm(forms.Form):
     username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "Username",
     }))
     email = forms.EmailField(widget=forms.EmailInput(attrs={
-        "class": "form-input",
         "placeholder": "teammate@company.com",
     }))
     first_name = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "First name",
     }))
     last_name = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "Last name",
     }))
     password = forms.CharField(widget=forms.PasswordInput(attrs={
-        "class": "form-input",
         "placeholder": "Password",
     }))
     role = forms.ChoiceField(
         choices=[(r.value, r.label) for r in Membership.Role if r.value != "owner"],
         initial="developer",
-        widget=forms.Select(attrs={"class": "form-input"}),
+        widget=forms.Select(attrs={}),
     )
 
     def __init__(self, *args, company=None, **kwargs):
@@ -177,24 +163,20 @@ class TeamCreateMemberForm(forms.Form):
 
 class TeamEditForm(forms.Form):
     first_name = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "First name",
     }))
     last_name = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "Last name",
     }))
     email = forms.EmailField(widget=forms.EmailInput(attrs={
-        "class": "form-input",
         "placeholder": "Email",
     }))
     discord_id = forms.CharField(max_length=64, required=False, widget=forms.TextInput(attrs={
-        "class": "form-input",
         "placeholder": "e.g. 123456789012345678",
     }))
     role = forms.ChoiceField(
         choices=[(r.value, r.label) for r in Membership.Role if r.value != "owner"],
-        widget=forms.Select(attrs={"class": "form-input"}),
+        widget=forms.Select(attrs={}),
     )
     is_leave_approver = forms.BooleanField(
         required=False,
@@ -240,16 +222,12 @@ class ProfileForm(forms.ModelForm):
         fields = ["first_name", "last_name", "email", "discord_id"]
         widgets = {
             "first_name": forms.TextInput(attrs={
-                "class": "form-input",
-            }),
+                }),
             "last_name": forms.TextInput(attrs={
-                "class": "form-input",
-            }),
+                }),
             "email": forms.EmailInput(attrs={
-                "class": "form-input",
-            }),
+                }),
             "discord_id": forms.TextInput(attrs={
-                "class": "form-input",
                 "placeholder": "e.g. 123456789012345678",
             }),
         }

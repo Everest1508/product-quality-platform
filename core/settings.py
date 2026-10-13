@@ -31,7 +31,6 @@ INSTALLED_APPS = [
     # WebSocket routes (/ws/presence/, /ws/inbox/) as well as HTTP. Without it
     # runserver is plain WSGI and every WebSocket gets a 404.
     "daphne",
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

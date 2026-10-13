@@ -59,3 +59,12 @@ class NoAdminNoBrowsableApiTest(P):
         self.assertEqual(self.client.get("/admin/").status_code, 404)
         r = self.client.get("/ui-api/v1/bootstrap/", HTTP_ACCEPT="text/html")
         self.assertNotIn("text/html", r["Content-Type"])
+
+
+class ErrorPagesTest(P):
+    def test_errors_are_json_for_the_api_and_the_shell_for_pages(self):
+        r = self.client.get("/ui-api/v1/nope/")
+        self.assertEqual((r.status_code, r.json()["detail"]), (404, "Not found."))
+        page = self.client.get("/no/such/page/")
+        self.assertEqual(page.status_code, 404)
+        self.assertContains(page, 'id="root"', status_code=404)

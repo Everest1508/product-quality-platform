@@ -44,3 +44,8 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+handler400 = "apps.core.errors.bad_request"
+handler403 = "apps.core.errors.forbidden"
+handler404 = "apps.core.errors.not_found"
+handler500 = "apps.core.errors.server_error"

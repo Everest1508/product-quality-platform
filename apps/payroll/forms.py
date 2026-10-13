@@ -13,9 +13,9 @@ class HolidayForm(forms.ModelForm):
         model = Holiday
         fields = ["date", "name"]
         widgets = {
-            "date": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+            "date": forms.DateInput(attrs={"type": "date"}),
             "name": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "Diwali, Christmas…"}
+                attrs={"placeholder": "Diwali, Christmas…"}
             ),
         }
 
@@ -56,19 +56,19 @@ class PayrollProfileForm(forms.ModelForm):
         ]
         widgets = {
             "monthly_salary": forms.NumberInput(
-                attrs={"class": "form-input", "step": "0.01", "min": "0"}
+                attrs={"step": "0.01", "min": "0"}
             ),
             "daily_rate": forms.NumberInput(
-                attrs={"class": "form-input", "step": "0.01", "min": "0"}
+                attrs={"step": "0.01", "min": "0"}
             ),
             # No inline width: the setup screen sizes this with .aux, and an
             # inline style would win and blow out the column.
-            "currency": forms.TextInput(attrs={"class": "form-input", "maxlength": 8}),
+            "currency": forms.TextInput(attrs={"maxlength": 8}),
             "effective_from": forms.DateInput(
-                attrs={"type": "date", "class": "form-input"}
+                attrs={"type": "date"}
             ),
             "is_on_payroll": forms.CheckboxInput(),
-            "notes": forms.TextInput(attrs={"class": "form-input"}),
+            "notes": forms.TextInput(attrs={}),
         }
 
     def __init__(self, *args, user=None, company=None, **kwargs):
@@ -132,7 +132,7 @@ class CycleForm(forms.Form):
 
     anchor = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+        widget=forms.DateInput(attrs={"type": "date"}),
     )
 
     def clean_anchor(self):

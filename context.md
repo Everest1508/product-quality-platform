@@ -931,3 +931,7 @@ decided what and strike the item** rather than deleting it.
 - `/admin/` is gone and DRF renders JSON only. The final review's input-crash findings (products milestones/keys, corrections, attendance edit and week, payroll ids and dates) are fixed with tests in `apps/uiapi/test_hardening.py`.
 - Leave: rejecting only needs the note (a past-dated pending request was undecidable); an approver cannot decide their own request while another approver exists.
 - Deliberately not changed: a company admin can still edit a member's global name/email/discord id through `PATCH team/<id>/`, and `ProfileForm` has no email-uniqueness check (review finding 8). Both predate the React move and need a product decision (open question).
+
+### 2026-10-13 Last HTML leftovers
+- `django.contrib.admin` removed from `INSTALLED_APPS`; `design-system.md` deleted; the `form-input` CSS classes stripped from every `forms.py` (the forms only validate API data now).
+- `handler400/403/404/500` (`apps/core/errors.py`): JSON for `/api/`, `/ui-api/` and `/oauth/`, the React shell with the real status code for pages (React shows "Page not found."). The only HTML Django still produces is the shell host page and the offline page.
