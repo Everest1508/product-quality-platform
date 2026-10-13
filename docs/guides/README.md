@@ -5,6 +5,7 @@ Short how-tos for the people using PQ Platform, plus one for whoever runs it.
 | Guide | Who it is for |
 |---|---|
 | [Getting started](getting-started.md) | Everyone, first day |
+| [Feature guide](../feature-guide.md) | Everyone: what was added, when, why and how to use it |
 | [Attendance and leave](attendance-and-leave.md) | Everyone |
 | [The DSR](dsr.md) | Everyone who logs work |
 | [Tickets and errors](tickets-and-errors.md) | Developers and support |

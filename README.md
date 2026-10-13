@@ -406,6 +406,7 @@ One test (`test_signup_creates_user`) fails on a clean checkout because the self
 | Where | What |
 | :--- | :--- |
 | [docs/running-the-project.md](docs/running-the-project.md) | Install, run, configure, schedule jobs, use Docker, deploy, troubleshoot. |
+| [docs/feature-guide.md](docs/feature-guide.md) | What was added, when, why, and how to use it, with a release timeline. |
 | [docs/guides/](docs/guides/README.md) | How-tos for the people using the app: attendance, DSR, tickets, home and reports, presence. |
 | [CHANGELOG.md](CHANGELOG.md) | Every release, each with its own name. The same text feeds the in-app **What's new**. |
 | [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) | How the code is organised and the rules each area follows, for anyone changing it. |

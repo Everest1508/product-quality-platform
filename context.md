@@ -1004,3 +1004,4 @@ decided what and strike the item** rather than deleting it.
 ### 2026-10-13 What's new redesign (1.38.0 "Cormorant")
 - `shell/Changelog.tsx`: release cards on a timeline (newest open, older collapsed and paged by 6), search and type chips (counts) across all releases, gradient header with the current release name.
 - 1.38.1 "Bluethroat": changelog dialog animates (cl-in/cl-out/cl-card keyframes in index.css; cards expand with grid-template-rows 0fr/1fr and are `inert` when closed). Next unused release name: pick a new bird.
+- 1.39.0 "Thrasher": What's new auto-opens once per release (`shell/whatsNew.ts`, localStorage `pq:seen-version`, 1.5s after load, skipped if another dialog is open). `docs/feature-guide.md` lists features with version/date/why/how; keep it updated with each release. Next release name: pick a new bird.

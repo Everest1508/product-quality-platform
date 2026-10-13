@@ -5,6 +5,7 @@ import { isReactPath } from './nav';
 import { socket } from '@/lib/presence';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { Changelog } from './Changelog';
+import { markSeen, seenVersion } from './whatsNew';
 import { Palette } from './Palette';
 import { ShortcutsHelp } from './ShortcutsHelp';
 import { Sidebar } from './Sidebar';
@@ -39,6 +40,17 @@ function Frame({ children }: { children: ReactNode }) {
   const [palette, setPalette] = useState(false);
   const [help, setHelp] = useState(false);
   const b = useBootstrapData();
+  // A new release is shown once, a moment after the page loads, unless something else is already open.
+  useEffect(() => {
+    if (seenVersion() === b.version) return;
+    const t = setTimeout(() => {
+      if (!document.querySelector('[role=dialog]')) setChangelog(true);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [b.version]);
+  useEffect(() => {
+    if (changelog) markSeen(b.version);
+  }, [changelog, b.version]);
   const { setCollapsed, collapsed, setMobileOpen, isDesktop } = useSidebar();
   const nav = useNavigate();
   useEffect(() => {

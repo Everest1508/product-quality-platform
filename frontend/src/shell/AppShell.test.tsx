@@ -1,8 +1,9 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { socket } from '@/lib/presence';
 import * as productNav from '@/lib/useProductNav';
 import { AppShell } from './AppShell';
@@ -86,3 +87,15 @@ it('shows the product section and switcher on a product page, with one active it
   expect(screen.getByRole('menuitem', { name: 'Mobile' })).toHaveAttribute('href', '/products/4/tickets/');
   expect(screen.getByRole('menuitem', { name: /view all products/i })).toHaveAttribute('href', '/products/');
 });
+
+it('shows What’s new once for a release this browser has not seen, and never again after', async () => {
+  vi.spyOn(api, 'get').mockResolvedValue({ releases: [{ tag: '1.12.0', name: 'Heron', date: '2026-10-12', title: 'newest', released: true, summary: '', sections: [] }] } as never);
+  renderShell('/tickets/', { version: '1.12.0' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
+  expect(localStorage.getItem('pq:seen-version')).toBe('1.12.0');
+  cleanup();
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><AppShell><p>content</p></AppShell></MemoryRouter></QueryClientProvider>);
+  await new Promise((r) => setTimeout(r, 1800));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+}, 8000);

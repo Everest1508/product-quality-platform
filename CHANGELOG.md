@@ -10,6 +10,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.39.0] "Thrasher" — 2026-10-13 · What's new shows itself once
+
+> In short: when the app is updated, the What's new window opens by itself one time so you can read it, and stays one click away in the sidebar.
+
+### New
+- **A new release is shown to you once.** A moment after you open a page, What's new opens with the latest changes, and it will not open again until the next update.
+- **A feature guide and a guide to running the project.** They explain what was added, when, why and how to use it, and how to set the app up and run it.
+
+### Better
+- **What's new stays in the sidebar.** Open it any time to read an update again, search it, or look back through older releases.
+
 ## [1.38.1] "Bluethroat" — 2026-10-13 · a smoother What's new
 
 > In short: the What's new window and its cards now open, close and slide in smoothly.
