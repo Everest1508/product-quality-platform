@@ -502,7 +502,7 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         from apps.products.access import product_users
         from apps.tickets.models import Ticket
-        from apps.tickets.views import apply_ticket_filters, sort_tickets
+        from apps.tickets.filters import apply_ticket_filters, sort_tickets
 
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
@@ -536,7 +536,7 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         from apps.products.access import product_users
         from apps.tickets.models import Ticket
-        from apps.tickets.views import apply_ticket_filters, sort_tickets
+        from apps.tickets.filters import apply_ticket_filters, sort_tickets
 
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)

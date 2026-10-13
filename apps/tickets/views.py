@@ -17,9 +17,11 @@ from apps.products.access import (
 from apps.products.models import Product
 from apps.notifications import service
 from apps.notifications.models import Notification
-from apps.products.webhook import notify_ticket_assigned, notify_ticket_created, notify_ticket_status_changed
+from apps.products.webhook import notify_ticket_assigned, notify_ticket_created
 from apps.tickets.forms import error_summary, TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
 from apps.tickets import mentions
+from apps.tickets.filters import OPEN_EXCLUDED, SORT_MAP, TICKET_FILTER_KEYS, apply_ticket_filters, sort_tickets  # noqa: F401
+from apps.tickets import service as ticket_service
 from apps.tickets.models import Ticket, TicketComment
 from apps.core.timefmt import t12
 
@@ -31,88 +33,6 @@ def _ticket_redirect(ticket):
     if ticket.product_id:
         return "products:product_ticket_detail", {"pk": ticket.product_id, "ticket_pk": ticket.pk}
     return "tickets:ticket_detail", {"pk": ticket.pk}
-
-
-SORT_MAP = {
-    "created": "created_at",
-    "-created": "-created_at",
-    "updated": "updated_at",
-    "-updated": "-updated_at",
-    "priority": "priority",
-    "-priority": "-priority",
-    "status": "status",
-    "-status": "-status",
-    "title": "title",
-    "-title": "-title",
-}
-
-# The filters shared by the ticket kanban and list views, so both boards
-# expose the same controls. Kanban additionally groups by status (columns);
-# the List view adds a `status` dropdown on top of this.
-TICKET_FILTER_KEYS = ("q", "type", "priority", "product", "assigned", "overdue", "sort")
-
-
-def apply_ticket_filters(request, qs):
-    """Apply the shared ticket filter querystring to ``qs``.
-
-    Returns ``(qs, ctx)`` where ``ctx`` holds the ``current_*`` values used to
-    re-render the filter bar. Does not apply ``sort`` (see ``sort_tickets``).
-    """
-    ctx = {}
-
-    search = request.GET.get("q", "").strip()
-    if search:
-        qs = qs.filter(title__icontains=search)
-    ctx["search"] = search
-
-    ticket_type = request.GET.get("type")
-    if ticket_type:
-        qs = qs.filter(ticket_type=ticket_type)
-    ctx["current_type"] = ticket_type
-
-    priority = request.GET.get("priority")
-    if priority:
-        qs = qs.filter(priority=priority)
-    ctx["current_priority"] = priority
-
-    product_id = request.GET.get("product")
-    if product_id:
-        qs = qs.filter(product_id=product_id)
-    ctx["current_product"] = product_id
-
-    assigned = request.GET.get("assigned")
-    if assigned == "me":
-        qs = qs.filter(assignees=request.user)
-    elif assigned == "unassigned":
-        qs = qs.filter(assignees__isnull=True)
-    elif assigned:
-        qs = qs.filter(assignees__id=assigned).distinct()
-    ctx["current_assigned"] = assigned
-
-    overdue = request.GET.get("overdue")
-    if overdue:
-        qs = qs.filter(
-            deadline__isnull=False,
-            deadline__lt=timezone.now(),
-        ).exclude(status__in=["resolved", "closed"])
-    ctx["current_overdue"] = overdue
-
-    ctx["current_sort"] = request.GET.get("sort", "")
-    return qs, ctx
-
-
-def sort_tickets(request, qs, default):
-    """Order ``qs`` by the ``sort`` querystring, falling back to ``default``
-    (a tuple of field names) when it is missing or unrecognised."""
-    sort = request.GET.get("sort", "")
-    if sort in SORT_MAP:
-        return qs.order_by(SORT_MAP[sort])
-    return qs.order_by(*default)
-
-
-# Statuses that no longer count as work in progress. The sidebar badge, the
-# dashboard and the list headers all use this one definition, so the numbers agree.
-OPEN_EXCLUDED = ("resolved", "closed")
 
 
 class TicketListView(CompanyMemberRequiredMixin, View):
@@ -329,36 +249,13 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
 
         is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-        if not ticket.can_transition_to(new_status):
-            msg = (
-                f"'{new_status}' is not a valid status."
-            )
+        old_display = ticket.get_status_display()
+        error = ticket_service.change_status(ticket, new_status, request.user, request.company)
+        if error:
             if is_ajax:
-                return JsonResponse({"ok": False, "error": msg}, status=400)
-            messages.error(request, msg)
+                return JsonResponse({"ok": False, "error": error}, status=400)
+            messages.error(request, error)
         else:
-            old_value = ticket.status
-            old_display = ticket.get_status_display()
-            ticket.transition_to(new_status, actor=request.user)
-            notify_ticket_status_changed(ticket, old_display)
-            service.notify_many(
-                ticket.watchers.all(),
-                company=request.company,
-                kind=Notification.Kind.COMMENT,
-                title=f"{ticket.key} moved to {ticket.get_status_display()}",
-                body=ticket.title,
-                url=f"/tickets/{ticket.pk}/",
-                actor=request.user,
-            )
-            log_activity(
-                request.company, "ticket_status_changed",
-                f"Ticket {ticket.key} status changed",
-                description=f"{old_display} → {ticket.get_status_display()}",
-                actor=request.user,
-                target_content_type="ticket",
-                target_object_id=ticket.pk,
-                metadata={"product_id": ticket.product_id, "from": old_value, "to": ticket.status},
-            )
             if is_ajax:
                 return JsonResponse({"ok": True, "status": ticket.status})
             messages.success(request, f"{ticket.key}: status {old_display} → {ticket.get_status_display()}.")
@@ -596,22 +493,10 @@ class TicketDeleteView(CompanyMemberRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk, company=request.company)
         require_ticket_access(request, ticket)
-        if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
+        if not ticket_service.can_delete_ticket(request.user, request.company_role, ticket):
             return HttpResponseForbidden("You can only delete tickets you created.")
-        ticket_id = ticket.pk
-        ticket_key = ticket.key
         product_id = ticket.product_id
-        title = ticket.title
-        ticket.delete()
-        log_activity(
-            request.company, "ticket_deleted",
-            f"Ticket {ticket_key} deleted",
-            description=title,
-            actor=request.user,
-            target_content_type="ticket",
-            target_object_id=ticket_id,
-            metadata={"product_id": product_id},
-        )
+        ticket_key = ticket_service.delete_ticket(ticket, request.user, request.company)
         messages.success(request, f"Ticket {ticket_key} deleted.")
 
         if product_id:
@@ -634,21 +519,8 @@ class TicketBulkDeleteView(CompanyMemberRequiredMixin, View):
                 request.user, request.company, ticket.product
             ):
                 continue
-            if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
+            if not ticket_service.can_delete_ticket(request.user, request.company_role, ticket):
                 continue
-            ticket_id = ticket.pk
-            ticket_key = ticket.key
-            product_id = ticket.product_id
-            title = ticket.title
-            ticket.delete()
-            log_activity(
-                request.company, "ticket_deleted",
-                f"Ticket {ticket_key} deleted",
-                description=title,
-                actor=request.user,
-                target_content_type="ticket",
-                target_object_id=ticket_id,
-                metadata={"product_id": product_id},
-            )
+            ticket_service.delete_ticket(ticket, request.user, request.company)
             deleted += 1
         return JsonResponse({"deleted": deleted})
