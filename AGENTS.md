@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Historical notes (2026-10-13).** The whole UI is now React. Anything below that talks about `templates/`, `{% dropdown %}`, htmx, Alpine, the toast seed, `partials/`, `core/base.html` or the legacy sidebar describes code that has been deleted; it stays only because it records why the rules exist. The business rules (attendance, leave, payroll, access control, counts, changelog) still apply and live in each app's `service.py`. Current structure: `CLAUDE.md`; recent decisions: `context.md`.
+
 This file provides guidance to coding agents working in this repository. It is
 authoritative for *how to work here*; **`context.md` is authoritative for *what
 was done and why*** — read it before changing any area. `CLAUDE.md` is an older,
@@ -38,7 +40,7 @@ One test in `apps.accounts.tests.test_tenant_isolation` fails on a clean checkou
 
 Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`. **The container builds its own copy of the source, so a fix in your working tree is not in a running container** — rebuild before concluding a change "doesn't work" in Docker. That is how a correct fix can look broken: check `docker compose build --no-cache && docker compose up` before debugging your own code.
 
-There is no frontend build step. Templates render server-side; htmx and Alpine.js load from CDN in `templates/core/base.html`. All CSS is a single `<style>` block in `base.html` driven by CSS custom properties (`--accent`, `--panel`, `--border`, …). `static/` does not exist, so the `staticfiles.W004` check warning is expected.
+The UI is React (`frontend/`, built with `npm run build`, served at `/ui/`); Django renders only the shell page. See `CLAUDE.md`.
 
 Root-level `test_api*.py`, `check_db*.py`, `check_serializer.py` are ad-hoc throwaway scripts, not part of the test suite.
 
@@ -174,7 +176,7 @@ Access checks live in the view/mixin layer. `apps/core/mixins.py`: `CompanyMembe
 
 The same domain logic exists in two places and both must be kept in sync:
 
-- **Global views:** `apps/tickets/`, `apps/errors/`, `apps/dashboards/`, `apps/feedback/`, `apps/automation/`, `apps/dsr/`, `apps/attendance/` — mounted at `/tickets/`, `/errors/`, etc. Operate across all products the user can access.
+- **Global views:** `apps/tickets/`, `apps/errors/`, `apps/dashboards/`, `apps/feedback/`, `apps/automation/`, `apps/dsr/`, `apps/attendance/`, `apps/leave/` — mounted at `/tickets/`, `/errors/`, etc. Operate across all products the user can access.
 - **Product-scoped views:** `apps/products/views.py` + `apps/products/urls.py`, mounted at `/products/<pk>/tickets/`, `/products/<pk>/errors/`, etc. Re-implement the list/detail/create flows against `product.tickets` / `product.error_groups`, and always call `require_product_access` first.
 
 ### Ingestion API (`/api/v1/`)
@@ -277,6 +279,10 @@ A silent success is a bug. The action worked and the screen says nothing, which 
 - **htmx views cannot host a toast.** Any view answering `HX-Request` with a `partials/` fragment never renders `base.html`, so no seed is emitted and the message surfaces on the **next full page load**. For instant feedback the fragment must carry the payload or dispatch the `django-message` window event, which the container already listens for (`x-on:django-message.window`).
 - **Auditing is not optional.** Clicking through the app misses handlers; parse the POST bodies instead (an `ast` walk over `apps/*/views.py` for `messages.` is ~20 lines). `apps/products/tests/test_toasts.py` is the regression net and shows the shape of the assertion: check the POST *queued* the message **and** that the page rendered after it contains `id="toast-seed"` — a view can pass the first and fail the second, which is precisely what the old bug was.
 - Writing one of those tests: send the form's **real** field names and the model's **literal lowercase choice values** (`priority="high"`, DSR `category="other"`), and pass `company=` to tenant-scoped models. A wrong field name re-renders the form with 200 and queues nothing, which is indistinguishable from a broken toast.
+
+### React UI (in migration)
+
+The UI is being moved page by page to React in `frontend/` (Vite, TypeScript, Tailwind 4, befui components, TanStack Query). Django stays the backend. The React app is a shell (`frontend/src/shell/`: sidebar, topbar, bell, presence, Ctrl-K palette, toasts) served by the standalone page `templates/uiapi/shell.html`; it loads `GET /ui-api/v1/bootstrap/` for the user, workspaces, counts, nav URLs and any Django flash messages queued by a legacy redirect. Pages that have not moved yet keep the legacy shell (`core/base.html`, htmx, Alpine) and are linked to with normal full-page links. JSON endpoints live in `apps/uiapi/` (`/ui-api/v1/`, DRF `SessionAuthentication`, CSRF enforced, `CompanyAPIView`) and **reuse `service.py` and the `accessible_*` / `require_*` helpers, never re-derive access rules**. To move a page: add a route in `frontend/src/routes.tsx` and its path to `REACT_PATHS` in `shell/nav.ts`, make the Django view return `apps.uiapi.shell.render_shell(request)`, add the endpoints, and delete the legacy template, view code and htmx for that page in the same change (no per-page switch: the legacy page is removed once the React page has parity). Build with `cd frontend && npm run build` (Django serves `frontend/dist` at `/ui/`), test with `npm test`. The React CSS is befui's standard global setup and is loaded only by the shell page. Moved so far: notifications, attendance (all seven pages; `apps/uiapi/attendance.py`, what the pages show is derived in `apps/attendance/panel.py`, punching is `service.punch_user`), sign-in/company setup/OAuth sign-in (public routes), team and profile (`apps/accounts/service.py`, `apps/uiapi/accounts.py`), the DSR sheet (`apps/uiapi/dsr.py`, writes in `apps/dsr/service.py`), home + reports + audit log + product dashboard (`apps/uiapi/dashboards.py`; punching is `apps/attendance/service.punch_user`), surveys + CS hub + the public survey page (`apps/feedback/service.py`, `apps/uiapi/feedback.py`; public pages live in `publicRoutes` in `frontend/src/routes.tsx` and render without the shell or bootstrap), automation rules (`apps/automation/service.py`, `apps/uiapi/automation.py`), the products pages (list, create/edit, detail, API docs; `apps/products/service.py`, `apps/uiapi/products.py`), the errors area (list, detail, report form; global and product-scoped, one endpoint `GET /ui-api/v1/errors/`, rules in `apps/errors/service.py`) and the whole tickets area: the list/board pages (global and product-scoped, one endpoint `GET /ui-api/v1/tickets/`, `scope=product` for a product page) and the detail page, create/edit forms and comments. Details: `context.md` 2026-10-12 (React shell).
 
 ### Changelog and version
 

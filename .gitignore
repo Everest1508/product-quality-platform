@@ -9,3 +9,5 @@ media/
 staticfiles/
 .pytest_cache/
 pq_sdk/
+frontend/node_modules/
+frontend/dist/

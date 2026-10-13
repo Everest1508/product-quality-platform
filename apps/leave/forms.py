@@ -24,18 +24,18 @@ class LeaveRequestForm(forms.Form):
     policy_id = forms.ChoiceField(
         choices=(),
         widget=forms.Select(
-            attrs={"class": "form-input", "id": "apply-policy"}
+            attrs={"id": "apply-policy"}
         ),
         label="Leave type",
     )
     start_date = forms.DateField(
         widget=forms.DateInput(
-            attrs={"class": "form-input", "type": "date", "id": "apply-start"}
+            attrs={"type": "date", "id": "apply-start"}
         ),
     )
     end_date = forms.DateField(
         widget=forms.DateInput(
-            attrs={"class": "form-input", "type": "date", "id": "apply-end"}
+            attrs={"type": "date", "id": "apply-end"}
         ),
         required=False,
     )
@@ -46,7 +46,7 @@ class LeaveRequestForm(forms.Form):
     )
     reason = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={"class": "form-input", "rows": 3}),
+        widget=forms.Textarea(attrs={"rows": 3}),
     )
 
     def __init__(self, *args, company=None, user=None, **kwargs):
@@ -143,16 +143,16 @@ class LeaveDecisionForm(forms.Form):
     """
 
     start_date = forms.DateField(
-        widget=forms.DateInput(attrs={"class": "form-input", "type": "date"}),
+        widget=forms.DateInput(attrs={"type": "date"}),
     )
     end_date = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={"class": "form-input", "type": "date"}),
+        widget=forms.DateInput(attrs={"type": "date"}),
     )
     is_half_day = forms.BooleanField(required=False, widget=forms.CheckboxInput())
     split_mode = forms.ChoiceField(
         choices=LeaveRequest.SplitMode.choices,
-        widget=forms.RadioSelect(attrs={"class": "form-split-mode"}),
+        widget=forms.RadioSelect(attrs={}),
         initial=LeaveRequest.SplitMode.AUTO,
     )
     paid_days = forms.DecimalField(
@@ -160,7 +160,7 @@ class LeaveDecisionForm(forms.Form):
         decimal_places=1,
         min_value=Decimal("0"),
         widget=forms.NumberInput(
-            attrs={"class": "form-input", "step": "0.5", "min": "0"}
+            attrs={"step": "0.5", "min": "0"}
         ),
     )
     unpaid_days = forms.DecimalField(
@@ -168,12 +168,12 @@ class LeaveDecisionForm(forms.Form):
         decimal_places=1,
         min_value=Decimal("0"),
         widget=forms.NumberInput(
-            attrs={"class": "form-input", "step": "0.5", "min": "0"}
+            attrs={"step": "0.5", "min": "0"}
         ),
     )
     note = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={"class": "form-input", "rows": 2}),
+        widget=forms.Textarea(attrs={"rows": 2}),
     )
 
     def __init__(self, *args, company=None, leave=None, **kwargs):
@@ -258,7 +258,7 @@ class LeavePolicyForm(forms.ModelForm):
         decimal_places=1,
         min_value=Decimal("0"),
         widget=forms.NumberInput(
-            attrs={"class": "form-input", "step": "0.5", "placeholder": "No cap"}
+            attrs={"step": "0.5", "placeholder": "No cap"}
         ),
     )
     max_consecutive_days = forms.DecimalField(
@@ -267,7 +267,7 @@ class LeavePolicyForm(forms.ModelForm):
         decimal_places=1,
         min_value=Decimal("0.5"),
         widget=forms.NumberInput(
-            attrs={"class": "form-input", "step": "0.5", "placeholder": "No cap"}
+            attrs={"step": "0.5", "placeholder": "No cap"}
         ),
     )
 
@@ -282,13 +282,13 @@ class LeavePolicyForm(forms.ModelForm):
             "icon",
         ]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "form-input"}),
+            "name": forms.TextInput(attrs={}),
             "is_paid": forms.CheckboxInput(),
             "color": forms.Select(
-                attrs={"class": "form-input lp-colour"}
+                attrs={}
             ),
             "icon": forms.Select(
-                attrs={"class": "form-input lp-icon-select"}
+                attrs={}
             ),
         }
 

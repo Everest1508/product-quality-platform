@@ -34,7 +34,7 @@ class DSREntryForm(forms.ModelForm):
         required=False,
         max_length=255,
         widget=forms.TextInput(
-            attrs={"class": "form-input", "placeholder": "What did you work on?"}
+            attrs={"placeholder": "What did you work on?"}
         ),
     )
 
@@ -42,21 +42,21 @@ class DSREntryForm(forms.ModelForm):
         choices=HOUR_CHOICES,
         required=False,
         initial="0",
-        widget=forms.Select(attrs={"class": "form-input dc-time-select"}),
+        widget=forms.Select(attrs={}),
     )
 
     minutes = forms.ChoiceField(
         choices=MINUTE_CHOICES,
         required=False,
         initial="0",
-        widget=forms.Select(attrs={"class": "form-input dc-time-select"}),
+        widget=forms.Select(attrs={}),
     )
 
     product = ProductChoiceField(
         queryset=Product.objects.none(),
         required=False,
         empty_label="No product",
-        widget=forms.Select(attrs={"class": "form-input"}),
+        widget=forms.Select(attrs={}),
     )
 
     def __init__(self, *args, id_prefix="dsr-add", products=None, **kwargs):
@@ -89,10 +89,10 @@ class DSREntryForm(forms.ModelForm):
         fields = ["task_name", "product", "category", "hours_spent", "status", "notes"]
         widgets = {
             "hours_spent": forms.HiddenInput(),
-            "category": forms.Select(attrs={"class": "form-input"}),
-            "status": forms.Select(attrs={"class": "form-input"}),
+            "category": forms.Select(attrs={}),
+            "status": forms.Select(attrs={}),
             "notes": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "Optional note"}
+                attrs={"placeholder": "Optional note"}
             ),
         }
 

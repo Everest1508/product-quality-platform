@@ -26,7 +26,7 @@ MIN_QUERY = 2
 
 def _pages(request):
     """(label, url, keywords, admin_only) for every place worth jumping to."""
-    from apps.leave.views import is_approver
+    from apps.leave.actions import is_approver
 
     is_admin = request.company_role in ("owner", "admin")
     approver = is_admin or is_approver(request.user, request.company)

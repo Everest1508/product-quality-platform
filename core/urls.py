@@ -1,10 +1,10 @@
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
 from apps.core.brand import brand_file, favicon_ico
+from apps.core.ui_assets import ui_file
 from apps.core.search import SearchView
 from apps.core.pwa import manifest, offline, service_worker
 
@@ -15,10 +15,11 @@ urlpatterns = [
     path("sw.js", service_worker),
     path("offline/", offline),
     path("brand/<str:name>", brand_file),
-    path("admin/", admin.site.urls),
+    path("ui/<str:name>", ui_file),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),
+    path("ui-api/v1/", include("apps.uiapi.urls")),
     path("api/serop/", include("apps.serop.urls")),
     path("products/", include("apps.products.urls")),
     path("errors/", include("apps.errors.urls")),
@@ -43,3 +44,8 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+handler400 = "apps.core.errors.bad_request"
+handler403 = "apps.core.errors.forbidden"
+handler404 = "apps.core.errors.not_found"
+handler500 = "apps.core.errors.server_error"

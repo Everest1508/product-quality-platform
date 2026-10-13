@@ -23,6 +23,10 @@ entry here is unfinished.
 | Area | Where it lives | The one thing to know |
 |---|---|---|
 | App shell / nav | `templates/core/base.html`, `templates/core/_sidebar.html` | One `<style>` block, htmx + Alpine from CDN, **no build step** |
+| React ticket detail/forms | `frontend/src/pages/ticket/`, `apps/uiapi/tickets.py`, `apps/tickets/service.py` | Deadlines are wall-clock strings; `ticket_status`/`ticket_assign` kept for the dashboard; see the 2026-10-13 (React ticket detail/forms) entry |
+| React tickets (list/board) | `frontend/src/pages/tickets/`, `apps/uiapi/{tickets,products}.py`, `apps/tickets/{filters,service}.py` | `scope=product` vs `product=` filter; see the 2026-10-13 entry |
+| React shell | `frontend/src/shell/`, `apps/uiapi/{views,shell}.py`, `templates/uiapi/shell.html` | Owns sidebar/topbar/bell/presence/search/toasts; see the 2026-10-12 (React shell) entry |
+| React UI (migrating) | `frontend/`, `apps/uiapi/`, `apps/core/ui_assets.py` | See the 2026-10-12 (React shell) entry; `REACT_PAGES` and the scoped theme from the pilot were removed |
 | Toasts | `templates/core/base.html`, `apps/core/templatetags/toast_tags.py` | Seed must sit **above** `#toast-container`; every mutation must call `messages.*` |
 | Multi-tenancy | `apps/products/access.py`, `apps/core/middleware.py`, `apps/core/mixins.py` | Company isolation **and** per-product access — both required, see `AGENTS.md` |
 | Attendance | `apps/attendance/{models,service,views}.py` | `models.punch()` is the only write path; hours never move a payslip |
@@ -67,6 +71,48 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-13 (React ticket detail/forms) — the whole tickets area is React; detail, create and edit and their legacy code are gone
+
+- **What moved.** `/tickets/<pk>/`, `/products/<pk>/tickets/<ticket_pk>/` (detail), `/tickets/create/`, `/products/<pk>/tickets/create/` (create) and `/tickets/<pk>/edit/` (edit). The Django views keep the access checks (member, `require_ticket_access`, `require_product_access`, and "the ticket must belong to that product" on the product URL) and return `render_shell`; React renders `frontend/src/pages/ticket/` (`TicketDetailPage`, `TicketFormPage`, `MentionTextarea`, `AssigneePicker`, `DeadlineField`, `CommentList`).
+- **API** (all `CompanyAPIView`, 404 without access): `GET/PATCH/DELETE /ui-api/v1/tickets/<pk>/` (detail with comments, members, mention candidates, statuses, priorities; PATCH is the edit form, 400 body `{errors: {field: [..]}, detail}`), `POST /ui-api/v1/tickets/` (create; `warnings` lists assignees skipped for lack of product access), `POST .../<pk>/priority|assign|deadline|follow|comments/`, plus the existing `.../status/`. Each action returns the fresh detail so the page replaces its cache entry.
+- **Service layer.** `apps/tickets/service.py` now holds `set_priority`, `assign`, `set_deadline`, `toggle_follow`, `add_comment` (mentions + the mention/comment notification split), `create_ticket`, `update_ticket` alongside `change_status`/`delete_ticket`. Behaviour and activity-event names are unchanged.
+- **Deadlines** travel as the company wall clock `YYYY-MM-DDTHH:MM` (`deadline_local`), never an ISO string with offset, so a browser in another timezone cannot shift them. `DeadlineField` saves on blur/Enter and ignores a half-typed date (`validity.badInput`).
+- **Kept on purpose.** `tickets:ticket_status` and `tickets:ticket_assign` (and the partials `_ticket_status`, `_ticket_assignee`, `_assignee_multiselect` they render) because the legacy home dashboard `hx-post`s to them; they go when the dashboard moves.
+- **Deleted.** `ticket_detail/ticket_form` templates (global and product), seven partials, routes `ticket_priority|deadline|follow|comment|delete` and their views, the `ticket_tags` template tag and `mentions.render_comment` (React renders mentions as parts, never HTML). Old-HTML tests were converted to API checks or removed where `apps/uiapi/test_ticket_detail.py` covers the behaviour. htmx now 194 attributes in 27 templates (was 212 in 31).
+- **UI notes.** Assignees auto-save 600 ms after the last change (one request); comments post once on double click and keep the text on failure; `e` on a ticket opens the edit form; "also viewing" uses presence `ticket_id`; success and delete navigate with the router.
+
+### 2026-10-13 (React tickets list/board) — the six ticket list and board pages moved to React; their legacy templates, views and htmx are gone
+
+- **What moved.** `/tickets/`, `/tickets/kanban/`, `/tickets/list/` and `/products/<pk>/tickets/`, `.../kanban/`, `.../list/` (URL names `tickets:ticket_board|ticket_kanban|ticket_list`, `products:product_board|product_ticket_kanban|product_tickets` unchanged). The Django views now do the same checks as before (member, `require_product_access`) and return `apps.uiapi.shell.render_shell`; React renders them (`frontend/src/pages/tickets/`).
+- **API.** `GET /ui-api/v1/tickets/?view=list|board&...` (same filter query string as before; `scope=product&product=<pk>` means "this product's page" and 404s without access, a bare `product=<pk>` is only the filter dropdown), `GET /ui-api/v1/tickets/meta/` (filter choices), `POST /ui-api/v1/tickets/<pk>/status/`, `DELETE /ui-api/v1/tickets/<pk>/`, `POST /ui-api/v1/tickets/bulk-delete/` (skips and counts what the user may not delete), `GET /ui-api/v1/products/<pk>/nav/` (the sidebar's product section). All use `CompanyAPIView`, `accessible_tickets` / `require_product_access` / `require_ticket_access`.
+- **Shared logic.** `apps/tickets/filters.py` (filters/sort/`OPEN_EXCLUDED`) and `apps/tickets/service.py` (`change_status`, `delete_ticket`, `can_delete_ticket`, with the activity log, notifications, webhook and DSR auto-log) were extracted from the views; the legacy detail page's status/delete views call the same functions.
+- **Deleted.** `templates/tickets/{ticket_kanban,ticket_list}.html`, five `tickets/partials/_*` files, `templates/products/{product_ticket_kanban,product_ticket_list}.html` and three product partials, `TicketBulkDeleteView` / `ProductTicketBulkDeleteView` and their URLs, the bulk-delete script in `base.html`, and the old HTML tests (filter dropdown class, `response.context` checks). Behaviour is covered by `apps/uiapi/test_tickets.py`. htmx dropped from 229 attributes in 36 templates to 212 in 31.
+- **Stays legacy (plan B).** Ticket detail, create/edit forms, comments, assign, deadline, priority and follow controls. The list rows link to them with plain links.
+- **UI notes.** Filters live in the URL (reload and Back restore them); drag-and-drop on the board is optimistic and rolls back with the server's reason; "Move to…" is the touch alternative; `j`/`k`/Enter/`e` work on lists and boards; the sidebar shows the product section on `/products/<pk>/...` pages. `border-color` base rule restored in `index.css` (Tailwind 4 defaults to currentColor).
+- **Review fixes.** A failed board move now refetches instead of restoring a snapshot (it used to undo other cards' moves) and queries are cancelled before the optimistic write; moves are disabled while the board shows the previous filters' data; the selection is cleared when filters/page/view change; a 403 with a business reason (e.g. "you can only delete tickets you created") no longer reloads the page (only 401 and session/CSRF/no-company 403s do, in `lib/api.ts`); non-numeric `?product=`/`?assigned=` are ignored (they used to 500); bulk delete dedupes ids and caps at 500; search debounce no longer undoes a dropdown change; Enter/`e` are left to the focused button/link; the board's sort control shows its real default (`-priority`).
+- **Known minors, not fixed.** The j/k highlight is lost when a card moves (new DOM node); the delete dialog title flickers to "Delete 0 tickets?" while closing; `created_by` select_related is unused; `.selection-mode`/kanban CSS in `templates/core/css` is dead.
+- **Tests re-pointed.** `apps/core/tests.py` legacy sidebar/changelog tests now load `/dashboards/` (a page still on the legacy shell), not `/tickets/`. When the last legacy page moves these go with the legacy sidebar.
+
+### 2026-10-12 (React shell) — sidebar, topbar, bell, presence, search and toasts in React; notifications page moves in
+
+- **What exists now.** `GET /ui-api/v1/bootstrap/` (user, workspaces, counts, version, `urls` from `reverse()`, vapid key, flash messages consumed once) and `POST /ui-api/v1/company/switch/` (shares `apps/accounts/workspace.activate_company` with the classic view). `templates/uiapi/shell.html` is a standalone entry page (no legacy CSS, htmx or Alpine); `apps/uiapi/shell.render_shell(request)` renders it. React: `frontend/src/shell/` (`AppShell`, `Sidebar`, `Topbar`, `nav.ts`, `Bell`, `PresenceMenu`, `Palette`, `Changelog`, `NewMenu`, `AccountMenu`, `ShortcutsHelp`, `Toaster`, `keys.ts`) and `frontend/src/lib/` (`bootstrap`, `toast`, `presence`, `usePresence`, `notifications`, `search`, `pwa`, `go`).
+- **Decisions.** Nav URLs come from the bootstrap (never hardcoded). Exactly one nav item is active: longest URL-prefix match (`nav.activeKey`). Presence and live notifications share one WebSocket (`lib/presence.ts`); after two failed connects it polls `POST /presence/beat/`. The bell's feed is the react-query key `['bell']`, and live arrivals and mark-read invalidate `['notifications']`, so an open Notifications page refreshes by itself (this fixed the pilot's stale-list minor). Flash messages queued by legacy views are returned by bootstrap once and shown by `lib/toast.showFlash` (de-duplicated). `Toaster` is our own (befui's Toast is provider based). `lib/go.ts` is the single navigation seam so tests can replace it.
+- **CSS.** The React CSS is now befui's standard global setup (Tailwind reset, variables on `:root`, no `important`). The pilot's `.befui` scoping was removed because dialogs and menus render in portals outside `#root` and lost their variables, and no legacy page loads this stylesheet any more. Legacy pages keep their own inline CSS.
+- **Deleted.** `templates/notifications/list.html` and `list_react.html`, and the old pilot `#react-root` entry. Kept (legacy bell and web push use them): `/notifications/feed/`, `/notifications/read-all/`, `/notifications/<id>/open/`, `/notifications/push/*`.
+- **Review fixes.** A failed background bootstrap refresh no longer replaces the app with an error (only a failed first load does); after back/forward cache restore the socket reconnects (`pageshow`) and a replaced socket's late `onclose` is ignored; Mark all read on the page also invalidates the bell feed (`['bell']`); single-key shortcuts ignore keys pressed inside menus/dialogs/listboxes. `REACT_PAGES` was removed (nothing used it).
+- **Known minors, not fixed.** 401/403 on a POST (e.g. stale CSRF) reloads silently; `showFlash` de-dupes by content for the page lifetime; a failed company switch queues a Django error message that shows again on the next bootstrap; flash messages can land in the wrong tab (bootstrap polling consumes them); presence close codes 4401/4403 arrive as 1006 behind Daphne so a signed-out tab keeps retrying; mobile drawer is not `inert` when closed; palette recents sit inside the listbox and Enter during the debounce opens the previous query's result; very long user names are not truncated; an in-page `Notification` can duplicate a web push; the palette searches once on every shell load.
+- **Deliberately deferred.** `j`/`k`/`e` ticket shortcuts and the product sub-navigation (`/ui-api/v1/products/<pk>/nav/`) move with the tickets plan; confirm dialog, datepicker, dropdown and tooltip legacy scripts leave with the pages that use them; befui Tooltip/Avatar not copied (native `title`, plain div).
+- **To add the next React page.** Add a route to `frontend/src/routes.tsx`, its path to `REACT_PATHS` in `nav.ts`, make the Django view return `render_shell(request)`, add JSON endpoints in `apps/uiapi/`, and delete the legacy template/view/htmx in the same change.
+
+### 2026-10-12 (React UI) — notifications page moved to React + befui, behind a switch (pilot; the switch and scoped CSS were later removed, see React shell)
+
+- **What exists now.** `frontend/` (Vite, React 19, TypeScript, Tailwind 4, befui components copied into `frontend/src/components/ui/`), `apps/uiapi/` (session-cookie JSON API at `/ui-api/v1/`, for now only notifications), `apps/core/ui_assets.py` (serves `frontend/dist/app.js|app.css` at `/ui/<name>`), and `settings.REACT_PAGES` (env `REACT_PAGES=notifications,...`). `/notifications/` renders `notifications/list_react.html` when `"notifications"` is in it; the legacy `list.html` stays and is the default. Spec: `docs/superpowers/specs/2026-10-12-react-ui-migration-design.md`; plan: `docs/superpowers/plans/2026-10-12-react-ui-foundation-notifications-pilot.md`.
+- **Why the CSS looks the way it does.** The React page sits inside the legacy shell, whose unlayered CSS defines `--border`, `--accent` etc. on `:root` and styles bare `button`/`a`. So befui's variables live on `.befui` (not `:root`), Tailwind's preflight is not loaded (a scoped mini-reset is in `@layer base`), and utilities are `important` (Tailwind layers them; unlayered legacy rules would otherwise win). Without `important` the card had no border and buttons were flat.
+- **befui source.** `npx befui add` is not on npm and `npx github:RandomKid24/befui` was blocked by the sandbox; the four components in use (button, card, badge, skeleton) were copied from the site's source blocks. Button uses lucide's `LoaderCircle`, and its decorative variants were dropped.
+- **Bell parity.** The classic page reloaded after "Mark all read", which refreshed the topbar bell (an Alpine store). React does not reload, so it resets `Alpine.store('notifications')` itself.
+- **Deliberately not changed.** The legacy notifications template and views stay until the React page has run in production for a while. No dark mode, no hashed asset names, no HMR (`npm run dev` is a watch build). The `/ui-api/v1/bootstrap/` endpoint waits for the first React-owned shell.
+- **Build.** `cd frontend && npm run build` (tests: `npm test`). The Dockerfile has a Node stage; production runs no Node.
 
 ### 2026-10-12 (audit) — toasts for the silent mutations, audit rows for the unlogged ones
 
@@ -826,3 +872,136 @@ decided what and strike the item** rather than deleting it.
 | Q8 | Should the committed API token in `test_api.py` be rotated? | Found 2026-09-30, unfixed. Re-verified 2026-10-02: the key is present in plaintext in `test_api.py` and `test_api10.py`, committed since July. It returns `403 Invalid or revoked API key` everywhere, so **nothing is being written** — but it must be **rotated, not edited in place**, in case it was ever valid elsewhere. Separately, importing either file fires ~45 real `POST`s to `localhost:8000`; discovery skips them under `manage.py test apps` but **not** under bare `manage.py test` from the repo root. |
 | Q9 | Should `Ticket.transition_to` stop swallowing auto-log failures? | `apps/tickets/models.py` wraps `auto_log_ticket_dsr` in `except Exception: pass`, which is **why the decimal crash went unnoticed** for so long. Deliberately left alone on 2026-10-02 (scope was the crash only). The obvious replacement is `logger.exception`, but a ticket status change then risks a visible error where the DSR write was merely best-effort. |
 | Q10 | Should the attendance dashboard test stop depending on wall-clock time? | `PersonalDashboardTest.test_attendance_reflects_only_my_own_punches` asserts one punch is shorter than another, so it passes early in the day and fails late (`AssertionError: 480 not less than 480`). Long-standing, unrelated to any recent change. The fix is to derive the expectation from `apps/attendance/service.py` rather than comparing two live values. |
+### 2026-10-13 review fixes (ticket detail/forms)
+- Edit and assign now only accept people who can open the ticket (`mentions.candidates`); a status change made in the edit form goes through `change_status` (activity log, DSR, watchers, webhook); a pending assignee change is sent when leaving the page.
+- Deferred minors: impossible deadline string 500s in `TicketDeadlineAPIView` (wrap `parse_datetime` ValueError); PATCH acts like PUT; assignee picker flicker while a save is in flight; form save leaves `['ticket', id]`/`['tickets']`/`['bootstrap']` stale; mention list ignores IME composition; product in the detail URL not checked on in-app navigation; unused imports in `apps/tickets/views.py` and unused `TicketDeadlineForm`/`TicketCommentForm`; deleted comment author shows as "System"; presence activity not reported on route change.
+
+### 2026-10-13 React errors
+- The six error pages (`/errors/`, `/errors/create/`, `/errors/<pk>/` and the three under `/products/<pk>/errors/`) are served by the React shell. Endpoints in `apps/uiapi/errors.py`; the rules (status, convert to ticket, delete) moved to `apps/errors/service.py`. Resolve and ignore keep their own activity events; other moves log `error_status_changed` with from/to.
+- Legacy routes removed: `error_status`, `error_delete`, `error_convert_to_ticket`, `product_error_convert_to_ticket`. Kept: `error_resolve` / `error_ignore` (home dashboard hx-posts to them) and the `_error_status_badge.html` partial they return.
+- The product-scoped list gained the Regressed tab and severity filter the old product page lacked (one endpoint serves both). Remaining htmx: 26 templates.
+
+### 2026-10-13 React products
+- `/products/`, `/products/create/`, `/products/<pk>/`, `/products/<pk>/edit/`, `/products/<pk>/api/` are served by the React shell. Rules moved to `apps/products/service.py`; endpoints in `apps/uiapi/products.py` (list, detail, versions, API keys incl. rotate/revoke, team access, milestones, API docs, key suggestion). Create/edit stay owner/admin only (403 on the page too); access add/remove still 404 for non-admins.
+- Removed legacy routes: `product_delete`, `product_key_suggest`, `api_key_*`, `version_*`, `product_access_*`, `milestone_*`. Product-scoped surveys and rules pages still use legacy templates until feedback/automation move.
+- `CompanyAPIView` now answers 400 to a write whose body is not a JSON object (an array used to 500). Number parsing in the API uses `isdecimal` (`"²".isdigit()` is true but `int("²")` raises).
+- Master checklist for the rest of the migration: `docs/superpowers/plans/2026-10-13-react-remaining-pages.md`.
+
+### 2026-10-13 React surveys, CS hub, automation
+- `/feedback/`, `/feedback/create/`, `/feedback/<pk>/`, `/feedback/cs-hub/`, `/automation/`, `/automation/create/`, `/automation/<pk>/edit/` and the product-scoped `/products/<pk>/surveys/(create/)` and `/products/<pk>/rules/(create/)` are served by the React shell. The public link `/feedback/respond/<pk>/` is the first **public page**: `publicRoutes` in `routes.tsx`, `Gate` skips bootstrap and the sidebar for them; its API is `GET/POST /ui-api/v1/public/surveys/<pk>/` (no login, active surveys only).
+- Behaviour change (security): surveys and rules were company-wide for every member (the old list/detail/toggle/delete ignored `accessible_products`). They now follow product access; create forms offer only accessible products; rules with no product (company-wide) are visible and editable by owners and admins only.
+- Removed legacy routes: `survey_toggle`, `survey_delete`, `rule_delete`, `rule_toggle`.
+
+### 2026-10-13 React home, reports, audit log, product dashboard
+- `/dashboards/`, `/dashboards/reports/`, `/dashboards/audit/`, `/dashboards/product/<pk>/` are served by the React shell. Endpoints in `apps/uiapi/dashboards.py`: home (`dashboard/`, `dashboard/quote/`), `todos/*`, `attendance/punch/` (rules extracted to `apps.attendance.service.punch_user`), `reports/`, `audit/` (owners/admins), `dashboards/product/<pk>/`.
+- Removed as dead: the old home partials (`_attention`, `_my_work`, `_product_cards` were no longer included anywhere), `get_user_dashboard_data` and `_build_attention`, the legacy to-do and quote views, `apps/dashboards/templatetags`, and the routes `tickets:ticket_status`, `tickets:ticket_assign`, `errors:error_resolve`, `errors:error_ignore` and the whole `templates/tickets` and `templates/errors` folders.
+- Legacy-page tests that only needed *a* legacy page (changelog dialog, sidebar balance, palette) now point at `/dsr/`; they go with `core/base.html` at the final cleanup.
+
+### 2026-10-13 React DSR
+- `/dsr/` is served by the React shell; endpoints in `apps/uiapi/dsr.py` (`dsr/`, `dsr/entries/`, `dsr/entries/<pk>/`, `dsr/suggestions/add/`), each write answering with the fresh sheet. Add/update/delete/suggestion rules moved to `apps/dsr/service.py` (`add_entry`, `update_entry`, `delete_entry`, `add_suggested`, `is_privileged`); the DSR MCP API (`apps/dsr/api.py`) is unchanged apart from importing `is_privileged` from the service.
+- Day window unchanged (`submission_window`): only today is writable for employees, owners and admins may fix a past day, nobody may write a future day. A closed-day write is 403 with the reason.
+- Removed legacy routes `dsr_add`, `dsr_update`, `dsr_delete`, `dsr_suggestion_add` and the `templates/dsr` folder. Tests that only needed some legacy page now use `/attendance/`.
+
+### 2026-10-13 React accounts
+- `/login/`, `/company/setup/` and `/oauth/authorize/` are **public routes** (`publicRoutes`): they render without the shell or bootstrap (a person with no workspace has nothing to bootstrap). `/team/` and `/profile/` are normal shell pages. Endpoints: `auth/login/` (GET page state + flash messages, POST sign in), `auth/oauth/authorize/`, `auth/company/`, `team/`, `team/<pk>/`, `profile/` in `apps/uiapi/accounts.py`; rules in `apps/accounts/service.py` (`sign_in` keeps the throttle and the single "incorrect username or password" message).
+- DRF's `UNAUTHENTICATED_USER` is None here, so `request.user` is None for anonymous requests on public endpoints.
+- Sign-in and OAuth sign-in enforce CSRF by hand (DRF only checks signed-in sessions); the shell page sets the token. A failed CSRF check on those pages reloads once through the 403 handler.
+- Behaviour fix: editing the owner's membership through the team API is 403 (the old form let an admin demote the owner by posting it by hand). Removing yourself or the owner is 400.
+- Kept: `accounts:logout` (POST, redirect with "Signed out."), `accounts:company_switch` (legacy sidebar form, goes at the final cleanup), the OAuth `token`/`me` JSON endpoints, and the OAuth GET that sends a signed-in person straight back with a code.
+- Removed: `team_invite`, `team_edit`, `team_remove`, the whole `templates/accounts` folder and the legacy login/throttle/team tests (ported to `apps/uiapi/test_accounts.py`).
+
+### 2026-10-13 React attendance
+- `/attendance/`, `/attendance/team/` (today and `?view=week`), `/attendance/timesheet/`, `/attendance/timesheet/<user_id>/`, `/attendance/corrections/`, `/attendance/corrections/request/` and `/attendance/<pk>/edit/` are served by the React shell with the same rights as before (team, timesheet, queue and edit are owner/admin only; edit is 404 outside the company). Endpoints in `apps/uiapi/attendance.py`.
+- What the pages show now comes from `apps/attendance/panel.py` (`punch_panel`, `month_summary`, `week_strip`, `last_week`, moved out of the views); the rules are unchanged (`service`, `corrections`). Times are sent as server-formatted labels in the company timezone so a visitor's own timezone cannot change what a punch reads; only the live counters use epoch milliseconds.
+- The record edit is `PATCH attendance/records/<pk>/` with local `datetime-local` strings; it returns a `warning` when the day is still open.
+- Removed: `punch`, `correction_cancel`, `correction_decision` routes (POSTs are API now), the whole `templates/attendance` folder and ~1,500 lines of HTML-reading tests (ported as `apps/uiapi/test_attendance.py`; model and service tests stayed). Legacy-sidebar tests now point at `/payroll/me/` and `/leave/`.
+
+### 2026-10-13 React leave
+- `/leave/`, `/leave/apply/`, `/leave/calendar/`, `/leave/approvals/` (approvers only, 403 for members) and `/leave/policies/` (owner/admin) are served by the React shell. Endpoints in `apps/uiapi/leave.py` (`leave/me|apply|preview|calendar|approvals|policies`, `leave/requests/<pk>/cancel|approve|reject/`); the writes live in `apps/leave/actions.py` (`apply_for_leave`, `cancel_request`, `decide`, `save_policy`, `is_approver`), rules in `service`.
+- Preview, decision and queue numbers are sent with one decimal ("3.0"). A leave type with a taken name is a 400 field error (it used to be an IntegrityError).
+- Removed: the whole `templates/leave` folder, `templatetags/leave_tags`, the old view classes and the routes `split_preview`, `cancel`, `decision`, `policy_add`, `policy_update`; ~1,000 lines of HTML tests (ported as `apps/uiapi/test_leave.py`). Legacy sidebar and toast tests now point at `/payroll/` pages, and go with payroll.
+
+### 2026-10-13 React payroll, and the legacy shell is gone
+- `/payroll/`, `/payroll/preview/`, `/payroll/runs/<pk>/`, `/payroll/payslips/<pk>/`, `/payroll/me/`, `/payroll/me/<pk>/`, `/payroll/holidays/` and `/payroll/profiles/` are served by the React shell with the same rights (admin pages 403 for members and 404 outside the company; `me/<pk>` is 404 for anyone else's slip). Endpoints in `apps/uiapi/payroll.py`; writes in `apps/payroll/actions.py` (`generate`, `toggle_lock`, `add_holiday`, `remove_holiday`, `save_profile`). Amounts are sent as the Decimal strings the old templates printed.
+- Removed routes: `run_lock`, `holiday_delete`. Removed: `templates/payroll`, the HTML payroll tests (ported as `apps/uiapi/test_payroll.py`).
+- **Final cleanup.** No page uses `core/base.html` any more, so the whole legacy front end was deleted: `templates/core` (base, sidebar, topbar, palette, presence, notifications, changelog modal, partials and the four page CSS files; `_tokens.css` stays for the offline page), the `dropdown`, `htmx`, `toast`, `json` and `time` template tags, `HTMXRequiredMixin`, `HtmxMessagesMiddleware`, `django_htmx` (settings and requirements), the `product_context` / `workspace_context` / `version_context` / `webpush` context processors, and the legacy `accounts:company_switch`. The tests that read that HTML (sidebar, changelog dialog, toast seed, palette, dropdowns, short_ago, version footer) went with it; the changelog parser, API and release-note tests stayed.
+- Still open: Q6 (`test_signup_creates_user` fails on a clean checkout; the signup route does not exist).
+
+### 2026-10-13 Review fixes (1.24.1) and no admin
+- `/admin/` is gone and DRF renders JSON only. The final review's input-crash findings (products milestones/keys, corrections, attendance edit and week, payroll ids and dates) are fixed with tests in `apps/uiapi/test_hardening.py`.
+- Leave: rejecting only needs the note (a past-dated pending request was undecidable); an approver cannot decide their own request while another approver exists.
+- Deliberately not changed: a company admin can still edit a member's global name/email/discord id through `PATCH team/<id>/`, and `ProfileForm` has no email-uniqueness check (review finding 8). Both predate the React move and need a product decision (open question).
+
+### 2026-10-13 Last HTML leftovers
+- `django.contrib.admin` removed from `INSTALLED_APPS`; `design-system.md` deleted; the `form-input` CSS classes stripped from every `forms.py` (the forms only validate API data now).
+- `handler400/403/404/500` (`apps/core/errors.py`): JSON for `/api/`, `/ui-api/` and `/oauth/`, the React shell with the real status code for pages (React shows "Page not found."). The only HTML Django still produces is the shell host page and the offline page.
+
+### 2026-10-13 Layout polish with befui (1.25.0)
+- Dark theme: tokens under `:root.dark` in `frontend/src/index.css`, `lib/theme.ts` (light/dark/system, `pqTheme` in localStorage, class on `<html>` because dialogs render in portals), a pre-paint script in `shell.html`, and `shell/ThemeSwitch.tsx` in the account menu.
+- Shared page pieces in `components/ui`: `page-header`, `empty-state`, `stat`; payroll and leave pages use them. Page tables are styled once by `main table` rules in `index.css`, so a page only declares columns. h1s are `text-2xl`; the main column is `max-w-7xl` with a `page-in` fade keyed on the path.
+- Not yet converted to the shared pieces: the older pages (tickets, errors, products, etc.) still use their own headers and empty states; they pick up the table and title styling through the global rules.
+- 1.25.1: the older pages now use `EmptyState`, `ErrorState` (`components/ui/error-state.tsx`), `Stat` and `PageHeader` where their markup matched exactly; headers with inline counts or custom action rows were left as they were (same h1 size already).
+
+### 2026-10-13 befui everywhere (1.26.0)
+- Components come from befui's registry via `scripts/befui_add.py` (befui is not on npm). Now used: Table (all 27 tables), Tabs, Segmented, Switch, RadioGroup, Avatar, Progress, StatCard, Alert, EmptyState, ErrorState, Breadcrumb, Sidebar (`SidebarProvider` + parts, replaces our own), Command (search palette, cmdk), plus a restyled Toaster. Local patches and suggested new befui components: `docs/befui-suggestions.md`.
+- Dark mode (1.25.0) uses the same tokens. jsdom has no `matchMedia`, so `src/test-setup.ts` stubs it as a desktop screen.
+- Not converted: the ticket Kanban board (server-confirmed moves, selecting mode), date inputs (native), home charts, and a few local `Stat` tiles with footers.
+
+### 2026-10-13 befui, second pass (1.27.0)
+- Dates and times: `components/ui/date-field.tsx` wraps befui's DatePicker/TimePicker so pages keep ISO strings (`DateField`, `DateTimeField`, `TimeField`). Tests drive them with `pickDate` / `pickTime` in `src/test-utils.ts`. A date field must not sit inside a `<label>` (the label re-clicks its first control); pages use a `<div><span>` and an `aria-label`.
+- Ticket board is befui's `Kanban` (one status change per drop; reordering inside a column is not saved). Home donut, report rings and product sparklines use `charts` / `progress-ring`. Raw `<button>`s became `Button`, `Chip`, `Switch` or `Segmented`; payslip lines use `DescriptionList`; labels use `Label`.
+- Still hand-built: the bar clusters with state colours (hours this week, error histogram, survey scores chart), the textarea (befui has none), and the errors-list sparkline, which draws server-computed points.
+
+### 2026-10-13 Release 1.28.0
+- README rewritten for the React front end (badges, features incl. attendance/leave/payroll, quickstart with the npm build, tech stack, structure). 1.28.0 is a summary release of the migration and polish work (1.16.0 to 1.27.0); no code change beyond the version.
+
+### 2026-10-13 befui icons (1.28.1)
+- `lucide-react` is gone: every icon is befui's (`components/ui/icons.tsx`). Every `Button` with a text label has an icon in front of it (links inside `Button asChild` carry it inside the link); icon-only buttons keep an `aria-label`. When adding a button, pick the icon by meaning (Save, Plus, Trash, X, Check, Edit, Eye, Send, Refresh ...). nav.ts items use `React.ComponentType<IconProps>`.
+
+### 2026-10-13 Calmer Home, DSR log table, theme fade (1.29.0)
+- DSR page now reads `GET /ui-api/v1/dsr/log/` (`DsrLogAPIView`): `range` today|yesterday|7d|30d or `from`/`to` (max 92 days, 500 rows), `user_id` = member id or `all` (owners/admins only; a member's value is ignored), `q`. Rows carry `editable` (today for members, any day for owners/admins, the same `submission_window` rule). Writes still use the per-entry endpoints; the day-sheet endpoint `dsr/` stays for other callers. Add/edit use one dialog (`pages/dsr/Entries.tsx`).
+- Home lost the hero quote, clock, donut, errors card and recent activity (the errors and status charts live in Reports and the product dashboard). The `dashboard/quote/` endpoint is now unused by the page.
+- Theme change cross-fades with the View Transitions API (CSS `::view-transition-*`), with a `theme-fade` class fallback and no animation under reduced motion.
+- Other pages that are still heavy and worth simplifying next: product detail, ticket detail, reports, attendance.
+
+### 2026-10-13 Spreadsheet DSR, product and ticket pages (1.30.0)
+- DSR table is a bordered grid with the columns we actually have (Date, Employee when looking at everyone, Task with notes and Auto/MCP badges, Project, Category, Time, Status, Actions) and a merged date cell per day (the screenshot's calling columns were deliberately not copied); `from_time` / `to_time` on each entry come from `created_time` / `completed_time` (auto-logged entries have them). There is no approval workflow in DSR, so no Approve/Reject columns.
+- Product detail: header + quick links + `Tabs` (Roadmap, Versions, API keys, Team access for admins, Integrations); `#api-key-list` opens the API keys tab. Ticket detail: single column, properties row, description with the linked error, comments; the "back to board" button was dropped (the breadcrumb does it).
+
+- 1.30.1: the products grid view is a ledger of `ProductRow` strips (health colour edge, key monogram, divided metrics, 7-day bars) instead of `ProductCard`s; the table view is unchanged.
+
+- 1.31.0: `components/ui/ledger.tsx` (`Ledger`, `LedgerRow`: tone edge, monogram, metrics row, actions) is used by products, surveys and automation rules. Reports use hairline-divided panels (`gap-px bg-border` grid) instead of cards. Not converted: errors and tickets lists (dense tables), CS Hub, team.
+
+- 1.32.0: team and CS Hub use `Ledger`/`LedgerRow` and divided sheets. The sheet's slide animations (`animate-slide-left/right`, `slide-out-*`, `fade-out`) were referenced but never defined in `index.css`, so the mobile sidebar did not animate; they exist now. Desktop collapse: width eases over 0.3s and labels fade in (`animate-in`).
+
+### 2026-10-13 Profile, tooltips, toasts, DSR hours (1.33.0)
+- DSR auto-log (`apps/dsr/service.auto_log_ticket_dsr`) now logs `min(elapsed, shift working hours)` and keeps `created_time` / `completed_time`; `python manage.py fix_dsr_hours [--dry-run]` caps old auto entries. The grid shows "Created … → completed …" under the task.
+- Toasts: `lib/api.ts` shows any write's `message`; `lib/toast.ts` drops an identical message within 1.5s. Icon-only `Button`s (size icon / icon-sm with an aria-label) get a befui Tooltip automatically.
+- `AppShell` routes clicks on in-app `<a href>` (React paths) through the router, so only real external/legacy links reload.
+- `GET /ui-api/v1/profile/` also returns joined, last_login, stats and recent activity; the profile page has Overview and Settings tabs.
+
+### 2026-10-13 Confirmations (1.34.0)
+- `pages/attendance/PunchOutDialog` (used by PunchPanel and the Home Today card) asks before punching out and shows time worked so far. Deletes of to-dos, product versions, product access, holidays (was `window.confirm`) and leave withdrawals now use `AlertDialog`.
+
+### 2026-10-13 Friendly touches and shortcuts (1.35.0)
+- `shell/shortcuts.ts` is the one list behind the help dialog, the profile "Keyboard shortcuts" tab and the `g` + key table (`GO_TO`); `lib/platform.ts` picks ⌘ vs Ctrl for display only (handlers accept both). `keys.ts` handles `g` sequences (1.5s window), `[` sidebar, `t` theme; the account menu item opens the dialog via the `pq:shortcuts` window event.
+- `apps/uiapi/kudos.py`: `on_time_streak` (weekends, holidays and approved leave are skipped; a late check-in beyond grace breaks it; today without a punch is skipped) and `milestones` (anniversary within 7 days, round ticket counts). Both are on `/dashboard/` and `/profile/`.
+- `components/fun/`: `CountUp`, `Kudos` (streak/milestones), `NotFound`, `CrashBoundary`; `lib/confetti.ts` (DOM particles, off for reduced motion).
+
+### 2026-10-13 Exports, team pages, notification settings, timeline (1.36.0)
+- CSV: `?export=csv` on `dsr/log/`, `attendance/timesheet/` (admin) and `payroll/runs/<id>/` (admin) through `apps/core/csvx.csv_response` (a cell starting with = + - @ gets a leading quote). The frontend `ExportLink` is a plain `<a download>`.
+- `NotificationMute` (apps/notifications): no row = on; `notify()` returns None for a muted kind; `system` can't be muted. API `profile/notifications/` (GET, PUT {kind, enabled}); `api.put` was added. @mentions already existed (`apps/tickets/mentions.py`).
+- `GET team/<membership id>/` (page `/team/:id/`): streak, milestones, counts and open tickets limited to `accessible_tickets` for the viewer; email only for owners and admins. The PATCH/DELETE handlers (account editing) are untouched.
+- Ticket detail JSON has `events` (ActivityLog rows with target ticket, minus comments); `Timeline` merges them with comments. Palette actions live in `shell/actions.ts`; the DSR opens its dialog on `?log=1`.
+
+### 2026-10-13 Reminders, add-all DSR, board polish (1.37.0)
+- `apps/attendance/reminders.send(company, now, dry_run)` + `manage.py send_attendance_reminders`: needs cron every 5-10 min (not wired to a scheduler here). Kinds `attendance_checkin` / `attendance_checkout` (mutable in Profile → Notifications). Only people with a punch in the last 30 days; skips weekends, holidays, approved leave; one per kind per day.
+- `POST dsr/suggestions/add-all/` (`service.add_all_suggested`) backs the DSR banner. Board: compact density (`usePref`), hover peek (Tooltip), `card-drop` animation and a lift on drag (local kanban patch). Forms use `stickyBar`; `components/skeletons.tsx` has page-shaped loaders.
+
+### 2026-10-13 Release names (1.37.1)
+- Every numbered release in `CHANGELOG.md` now has a unique bird name in its heading (`## [1.37.1] "Hoopoe" — date · title`), oldest 1.0.1 "Albatross" … newest 1.37.1 "Hoopoe"; next unused names: Cormorant, then pick more. `parse_changelog` returns `name`; `get_version_info()["name"]`, bootstrap `version_name` and the What's new dialog show it. `ReleaseNameTest` enforces unique names. The three old `[Unreleased]` blocks are unnamed on purpose.
+
+### 2026-10-13 What's new redesign (1.38.0 "Cormorant")
+- `shell/Changelog.tsx`: release cards on a timeline (newest open, older collapsed and paged by 6), search and type chips (counts) across all releases, gradient header with the current release name.
+- 1.38.1 "Bluethroat": changelog dialog animates (cl-in/cl-out/cl-card keyframes in index.css; cards expand with grid-template-rows 0fr/1fr and are `inert` when closed). Next unused release name: pick a new bird.
+- 1.39.0 "Thrasher": What's new auto-opens once per release (`shell/whatsNew.ts`, localStorage `pq:seen-version`, 1.5s after load, skipped if another dialog is open). `docs/feature-guide.md` lists features with version/date/why/how; keep it updated with each release. Next release name: pick a new bird.
