@@ -10,6 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.39.1] "Wigeon" — 2026-10-13 · how long a ticket was open
+
+> In short: an auto-logged DSR row now says how long its ticket was open, so the real elapsed time is never lost.
+
+### Better
+- **The DSR shows how long a ticket was open.** Under an auto-logged task you now see its created and completed times and, beside them, how long it was open, such as "open for 11d 1h".
+
 ## [1.39.0] "Thrasher" — 2026-10-13 · What's new shows itself once
 
 > In short: when the app is updated, the What's new window opens by itself one time so you can read it, and stays one click away in the sidebar.

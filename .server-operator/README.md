@@ -24,7 +24,7 @@ is just a rebuild: no separate front-end host, no `collectstatic`. `entrypoint.s
 
 ## After the first deploy of a new release
 
-1. `[Dry Run Fix DSR Hours]`, read the list, then `[Fix DSR Hours]` once (it takes its own backup).
+1. `[Dry Run Fix DSR Hours]` shows old auto-logged rows with more than a working day of hours. Applying `[Fix DSR Hours]` is optional: leaving them as they are keeps the full elapsed hours in the Time column, and new auto-logged rows are capped at one working day but show how long the ticket was open.
 2. `[Dry Run Reminders]` during working hours to see how many reminders would go out.
 3. `[Dry Run Automation Rules]` to see which rules would file tickets.
 

@@ -1,6 +1,6 @@
 export type DsrEntry = {
   id: number; task_name: string; category: string; category_label: string; status: string; status_label: string;
-  hours: string; hours_value: string; notes: string; auto: boolean; source: string; source_id: string; from_time?: string; to_time?: string;
+  hours: string; hours_value: string; notes: string; auto: boolean; source: string; source_id: string; from_time?: string; to_time?: string; elapsed?: string;
   product: { id: number; name: string } | null;
   ticket: { id: number; key: string; url: string } | null;
 };

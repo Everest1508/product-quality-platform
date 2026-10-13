@@ -173,9 +173,10 @@ in the [release timeline](#release-timeline) at the end.
 ### Honest hours for resolved tickets
 - **Added:** 1.33.0 "Rook" (2026-10-13).
 - **Why:** a ticket open for weeks logged weeks of hours (even about 1000) when it was resolved.
-- **How:** a resolved ticket now logs at most one working day and shows "Created … → completed …" under the task. To
-  repair older rows an admin runs `python manage.py fix_dsr_hours --dry-run`, checks the list, then runs it without
-  `--dry-run`.
+- **How:** a resolved ticket now logs at most one working day and shows "Created … → completed … · open for 11d 1h"
+  under the task (the open-for part came in 1.39.1 "Wigeon"), so the real elapsed time is still visible. Older rows keep
+  their full hours unless an admin chooses to cap them with `python manage.py fix_dsr_hours --dry-run`, checking the list,
+  then running it without `--dry-run`. That step is optional.
 
 ---
 
@@ -252,6 +253,7 @@ in the [release timeline](#release-timeline) at the end.
 
 | Version | Name | Date | What it was about |
 |---|---|---|---|
+| 1.39.1 | Wigeon | 2026-10-13 | How long a ticket was open, shown in the DSR |
 | 1.39.0 | Thrasher | 2026-10-13 | What's new shown once per release |
 | 1.38.1 | Bluethroat | 2026-10-13 | A smoother What's new |
 | 1.38.0 | Cormorant | 2026-10-13 | A calmer What's new |

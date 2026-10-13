@@ -342,6 +342,7 @@ class LogApiTest(DsrBase):
         rows = {r["task_name"]: r for r in self.log().json()["rows"]}
         self.assertEqual((rows["Timed"]["from_time"], rows["Timed"]["to_time"]), ("09:15", "17:30"))
         self.assertEqual((rows["Untimed"]["from_time"], rows["Untimed"]["to_time"]), ("", ""))
+        self.assertEqual((rows["Timed"]["elapsed"], rows["Untimed"]["elapsed"]), ("8h 15m", ""))
 
     def test_a_start_on_an_earlier_day_carries_its_date(self):
         done = timezone.make_aware(datetime.combine(self.today, time(17, 30)))
@@ -350,3 +351,4 @@ class LogApiTest(DsrBase):
         row = self.log().json()["rows"][0]
         self.assertEqual(row["to_time"], "17:30")
         self.assertRegex(row["from_time"], r"^\d{1,2} \w{3} \d\d:\d\d$")
+        self.assertEqual(row["elapsed"], "3d 0h")  # how long it really took, even though the hours column is capped
