@@ -967,3 +967,5 @@ decided what and strike the item** rather than deleting it.
 ### 2026-10-13 Spreadsheet DSR, product and ticket pages (1.30.0)
 - DSR table is a bordered grid with the columns we actually have (Date, Employee when looking at everyone, Task with notes and Auto/MCP badges, Project, Category, Time, Status, Actions) and a merged date cell per day (the screenshot's calling columns were deliberately not copied); `from_time` / `to_time` on each entry come from `created_time` / `completed_time` (auto-logged entries have them). There is no approval workflow in DSR, so no Approve/Reject columns.
 - Product detail: header + quick links + `Tabs` (Roadmap, Versions, API keys, Team access for admins, Integrations); `#api-key-list` opens the API keys tab. Ticket detail: single column, properties row, description with the linked error, comments; the "back to board" button was dropped (the breadcrumb does it).
+
+- 1.30.1: the products grid view is a ledger of `ProductRow` strips (health colour edge, key monogram, divided metrics, 7-day bars) instead of `ProductCard`s; the table view is unchanged.

@@ -15,7 +15,6 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
-import { Sparkline } from '@/components/ui/charts';
 
 const SORTS: [string, string][] = [
   ['name', 'Name A-Z'], ['-name', 'Name Z-A'], ['-created', 'Newest first'], ['created', 'Oldest first'], ['-versions', 'Most versions'],
@@ -33,33 +32,43 @@ function Tile({ value, label, tone }: { value: number; label: string; tone?: 'wa
   );
 }
 
-function ProductCard({ p, canEdit }: { p: ProductItem; canEdit: boolean }) {
+const BAR = { healthy: 'bg-success', warning: 'bg-warning', critical: 'bg-destructive' } as Record<string, string>;
+
+// A product as one strip of a ledger: health colour down the edge, the key as its identity, numbers in a divided row.
+function ProductRow({ p, canEdit }: { p: ProductItem; canEdit: boolean }) {
+  const peak = Math.max(1, ...p.spark);
   return (
-    <Card hoverable className="flex flex-col gap-3 p-4">
-      <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent font-semibold text-accent-foreground">{p.name.slice(0, 1).toUpperCase()}</span>
-        <div className="min-w-0 flex-1">
-          <Link to={p.url} className="block truncate font-medium hover:underline">{p.name}</Link>
-          <span className="text-xs text-muted-foreground">{p.key && <b>{p.key} · </b>}{p.slug}</span>
+    <li className="group relative flex flex-wrap items-center gap-x-6 gap-y-3 py-4 pl-6 pr-4 transition-colors hover:bg-muted/50">
+      <span className={cn('absolute inset-y-0 left-0 w-1.5', BAR[p.health] ?? 'bg-muted-foreground')} aria-hidden />
+      <span className="grid h-12 w-16 shrink-0 place-items-center rounded-md border bg-secondary font-mono text-sm font-bold tracking-wider" aria-hidden>{p.key || p.name.slice(0, 3).toUpperCase()}</span>
+      <div className="min-w-0 flex-1 basis-60">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={p.url} className="truncate text-base font-semibold hover:underline">{p.name}</Link>
+          <Health health={p.health} />
         </div>
-        <Health health={p.health} />
+        <p className="truncate text-sm text-muted-foreground">{p.description || 'No description yet.'}</p>
+        <p className="font-mono text-xs text-muted-foreground">{p.slug}</p>
       </div>
-      <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{p.description || 'No description yet.'}</p>
-      <div className="grid grid-cols-4 gap-2 text-center">
-        {([['Errors', p.open_errors], ['Tickets', p.open_tickets], ['Versions', p.version_count], ['Keys', p.api_key_count]] as [string, number][]).map(([l, v]) => (
-          <div key={l}><div className={cn('font-semibold', l === 'Errors' || l === 'Tickets' ? v === 0 && 'text-muted-foreground' : '')}>{v}</div><div className="text-xs text-muted-foreground">{l}</div></div>
+      <dl className="grid shrink-0 grid-cols-4 divide-x rounded-lg border bg-background text-center">
+        {([['Errors', p.open_errors, true], ['Tickets', p.open_tickets, true], ['Versions', p.version_count, false], ['Keys', p.api_key_count, false]] as [string, number, boolean][]).map(([l, v, alert]) => (
+          <div key={l} className="min-w-16 px-3 py-1.5">
+            <dd className={cn('text-lg font-semibold tabular-nums leading-tight', alert && v === 0 && 'text-muted-foreground')}>{v}</dd>
+            <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{l}</dt>
+          </div>
         ))}
+      </dl>
+      <div className="w-28 shrink-0" title={`Error occurrences, last 7 days: ${p.week_errors}`}>
+        <div className="flex h-8 items-end gap-0.5" aria-hidden>
+          {p.spark.map((h, i) => <i key={i} className={cn('block flex-1 rounded-sm', h > 4 ? 'bg-destructive/70' : 'bg-border')} style={{ height: `${Math.max(12, (h / peak) * 100)}%` }} />)}
+        </div>
+        <div className="mt-1 text-xs text-muted-foreground">{p.week_errors} errors this week</div>
       </div>
-      <div className="flex items-center gap-2" title={`Error occurrences, last 7 days: ${p.week_errors}`}>
-        <span className="block h-6 flex-1" aria-hidden><Sparkline data={p.spark} /></span>
-        <span className="text-xs text-muted-foreground">{p.week_errors} errors this week</span>
-      </div>
-      <div className="mt-auto flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}><LayoutDashboardIcon />Dashboard</a></Button>
         <Button asChild size="sm"><Link to={p.url}><EyeIcon />Open</Link></Button>
-        {canEdit && <Button asChild variant="ghost" size="icon-sm" className="ml-auto" aria-label={`Edit ${p.name}`}><Link to={`${p.url}edit/`}><EditIcon /></Link></Button>}
+        {canEdit && <Button asChild variant="ghost" size="icon-sm" aria-label={`Edit ${p.name}`}><Link to={`${p.url}edit/`}><EditIcon /></Link></Button>}
       </div>
-    </Card>
+    </li>
   );
 }
 
@@ -134,7 +143,7 @@ export function ProductsPage() {
       ) : data.items.length === 0 ? (
         <EmptyState title="No products found" description={<>{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</>} />
       ) : view === 'grid' ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{data.items.map((p) => <ProductCard key={p.id} p={p} canEdit={data.can_create} />)}</div>
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">{data.items.map((p) => <ProductRow key={p.id} p={p} canEdit={data.can_create} />)}</ul>
       ) : (
         <Card className="overflow-x-auto p-0">
           <Table>

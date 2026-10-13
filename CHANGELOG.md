@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.30.1] — 2026-10-13 · products as a ledger
+
+> In short: the products page is a list of full-width strips instead of cards.
+
+### Better
+
+- **Each product is one strip.** A coloured edge shows its health, the product key stands in as its badge, and errors, tickets, versions and keys sit in one divided row with the last seven days of errors beside it.
+
 ## [1.30.0] — 2026-10-13 · a spreadsheet DSR, and simpler product and ticket pages
 
 > In short: the DSR reads like a spreadsheet, and the product and ticket pages show one thing at a time.
