@@ -21,6 +21,19 @@ shows up in a list, in search, or in a count.
 * Collapse the sidebar with the arrow at the bottom. Hover any icon to see its name.
   A blue dot on an icon means something is waiting there.
 
+## Keyboard shortcuts
+
+Press **?** anywhere to see them all, or open **Keyboard shortcuts** under your profile. A few to start with:
+
+| Keys | What it does |
+|---|---|
+| **g** then **h**, **t**, **d**, **a** | Go to Home, Tickets, DSR or Attendance. |
+| **c** | Create a ticket. |
+| **t** | Switch between light and dark. |
+| **[** | Fold or open the sidebar. |
+
+They use ⌘ on a Mac and Ctrl on Windows and Linux, and pause while you type in a field.
+
 ## Install it on your phone
 
 Open the site in Chrome or Safari and choose "Add to Home Screen". The app

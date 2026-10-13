@@ -16,7 +16,7 @@
 
 **PQ Platform** bridges the chasm between production telemetry, sprint execution, customer feedback, and engineering accountability. Instead of paying for and juggling five disconnected SaaS tools (Sentry, Linear, Toggl, Zendesk, and Zapier), PQ Platform consolidates the entire developer feedback loop into a single, cohesive, blazing-fast workspace.
 
-[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Quickstart Guide](#-quickstart-guide) • [Demo Personas](#-demo-accounts--personas) • [API Reference](#-ingestion-api-reference) • [Design Philosophy](#-tech-stack--design-philosophy)
+[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Quickstart Guide](#-quickstart-guide) • [Run it](docs/running-the-project.md) • [Docs](#-documentation) • [Demo Personas](#-demo-accounts--personas) • [API Reference](#-ingestion-api-reference) • [Design Philosophy](#-tech-stack--design-philosophy)
 
 </div>
 
@@ -105,8 +105,9 @@ flowchart TD
 - **Triage Actions:** Resolve or ignore errors directly from the dashboard or error detail views.
 
 ### 3. 📊 Automated DSR (Daily Status Report) & Timesheets
-- **Interactive Spreadsheet Grid:** An editable DSR table with inline editing for hours, notes, and task categorizations.
-- **Automatic Duration Tracking:** Resolving or closing a ticket automatically calculates active duration and logs a `[AUTO]` DSR entry for assignees.
+- **A table of everything submitted:** Today and history in one grid grouped by day (date, task, project, category, time, status), with range and person filters, search, edit and delete in place, and an **Export CSV** button.
+- **Automatic Duration Tracking:** Resolving or closing a ticket logs an `Auto` DSR entry for assignees showing when the ticket was created and completed, with hours capped at one working day. `manage.py fix_dsr_hours` repairs older rows.
+- **One-click catch-up:** A banner lists tickets you worked on today that are not in your DSR and adds them all at suggested hours.
 - **Daily Target Progress:** Dynamic visual progress meter tracking completion toward the standard 8.0-hour daily goal.
 - **Manager & Admin Oversight:** Company leadership can view team-wide progress bars, completed task metrics, and inspect individual timesheets.
 - **Standup Formatter:** 1-click clipboard button that formats today's logged work into a clean Slack/Teams standup message.
@@ -126,15 +127,22 @@ flowchart TD
 - **Native User Mentions:** Maps user profiles to Discord IDs (`<@discord_id>`) for direct attention and notification routing.
 
 ### 7. 🕒 Attendance, Leave & Payroll
-- **Attendance:** One-click check-in and check-out with a live day counter, lateness bands that feed pay, a month view, a team view, and correction requests that owners and admins approve.
+- **Attendance:** One-click check-in and check-out (asking first, with your time worked), a live day counter, lateness bands that feed pay, a month sheet, a team view, correction requests that owners and admins approve, and reminders to check in and out.
 - **Leave:** Leave types with yearly allowances and per-spell caps, a live paid/unpaid preview when you apply, a team calendar, and an approvals queue where approvers can adjust dates and the split.
 - **Payroll:** Monthly salaries divided over each 27th–26th cycle's working days, cycle preview, locked runs, payslips that show how every figure was worked out, and company holidays.
 
 ### 8. 🔎 Search, Notifications & Presence
 - **Ctrl K search** across tickets, errors, products and pages, limited to what you can open.
-- **Notifications** in the app and as web push, **who is online** in the top bar, and a **What's new** dialog fed by `CHANGELOG.md`.
+- **Notifications** in the app (grouped by day, filterable) and as web push, with a switch per kind in your profile. **Who is online** in the top bar.
+- **Keyboard shortcuts:** `g` then a letter jumps between pages, `c` makes a ticket, `t` flips the theme, `[` folds the sidebar, `?` lists them all. They use ⌘ on a Mac and Ctrl elsewhere.
+- **What's new:** a searchable timeline of every release, each with its own name, fed by `CHANGELOG.md`.
 
-### 9. 🛡️ Two-Tier Multi-Tenancy & Access Control
+### 9. 🙂 A Friendly Interface
+- A greeting that changes with the time of day, an on-time streak, milestone messages, and small celebrations when you finish things.
+- Light and dark themes with a smooth switch, animated sidebar, tooltips on icon buttons, and a toast for every action.
+- A profile page for you and a page for each colleague, a command palette that can also run actions, and export to CSV.
+
+### 10. 🛡️ Two-Tier Multi-Tenancy & Access Control
 - **Layer 1 (Company Isolation):** Complete tenant partitioning via `Company` and `Membership` roles (`Owner`, `Admin`, `Developer`, `Support`, `Viewer`).
 - **Layer 2 (Per-Product RBAC):** Fine-grained `ProductAccess` controls ensuring developers and support agents only see products and tickets they have been explicitly granted.
 
@@ -152,7 +160,7 @@ flowchart TD
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/product-quality-platform.git
+git clone https://github.com/Everest1508/product-quality-platform.git
 cd product-quality-platform
 
 # 2. Create and activate a Python virtual environment
@@ -165,19 +173,18 @@ pip install -r requirements.txt
 # 4. Build the React front end (Django serves frontend/dist at /ui/)
 (cd frontend && npm ci && npm run build)
 
-# 5. Run database migrations
-python manage.py migrate
+# 5. Migrate, load the Acme Corp demo workspace and create a superuser
+./bootstrap.sh
 
-# 6. Populate workspace with demo data (Acme Corp)
-python manage.py seed_data
-
-# 7. Start the development server
+# 6. Start the development server
 python manage.py runserver 8010
 ```
 
-For front-end work run `npm test` in `frontend/` (Vitest) and rebuild with `npm run build` after changes.
+Visit **[http://localhost:8010](http://localhost:8010)** and sign in as `owner` / `testpass123`.
 
-Visit **[http://localhost:8010](http://localhost:8010)** in your browser.
+For front-end work keep `npm run dev` running in `frontend/` (it rebuilds on save) and run `npm test` for the tests.
+**The full guide, with settings, scheduled jobs, Docker, deploying and troubleshooting, is in
+[docs/running-the-project.md](docs/running-the-project.md).**
 
 ---
 
@@ -305,6 +312,9 @@ Reminds people to check in (a few minutes after their shift starts) and to check
 python manage.py send_attendance_reminders [--dry-run]
 ```
 
+### `notify_todos`, `fix_dsr_hours`
+`notify_todos` sends one reminder a day about overdue to-dos (run it every morning). `fix_dsr_hours [--dry-run]` caps old auto-logged DSR rows that show more than one working day of hours.
+
 ### `seed_data`
 Resets the database and populates high-fidelity sample data across all entities:
 
@@ -354,10 +364,13 @@ product-quality-platform/
 ├── core/
 │   ├── settings.py     # Global Django configuration & security parameters
 │   ├── urls.py         # Root URL routing table
-│   └── wsgi.py         # Production WSGI application gateway
+│   ├── asgi.py         # ASGI app: HTTP plus the WebSocket routes
+│   └── wsgi.py         # WSGI entry point (no WebSockets)
+├── docs/               # Running the project, user guides, befui notes
 ├── frontend/           # React app: src/pages, src/components/ui (befui), src/shell
 ├── scripts/            # befui_add.py: copy a befui component into the front end
 ├── templates/          # Only the page that boots React, and the offline page
+├── bootstrap.sh        # Migrate, seed demo data, create a superuser
 ├── docker-compose.yml  # Local container orchestration
 ├── Dockerfile          # Multi-stage production container image
 ├── entrypoint.sh       # Container migration & startup script
@@ -385,6 +398,18 @@ python manage.py test apps.ingestion
 ```
 
 One test (`test_signup_creates_user`) fails on a clean checkout because the self-serve signup route does not exist; it is not a regression.
+
+---
+
+## 📚 Documentation
+
+| Where | What |
+| :--- | :--- |
+| [docs/running-the-project.md](docs/running-the-project.md) | Install, run, configure, schedule jobs, use Docker, deploy, troubleshoot. |
+| [docs/guides/](docs/guides/README.md) | How-tos for the people using the app: attendance, DSR, tickets, home and reports, presence. |
+| [CHANGELOG.md](CHANGELOG.md) | Every release, each with its own name. The same text feeds the in-app **What's new**. |
+| [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) | How the code is organised and the rules each area follows, for anyone changing it. |
+| [docs/befui-suggestions.md](docs/befui-suggestions.md) | Notes on the befui components and the local changes made to them. |
 
 ---
 
