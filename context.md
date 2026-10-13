@@ -965,5 +965,5 @@ decided what and strike the item** rather than deleting it.
 - Other pages that are still heavy and worth simplifying next: product detail, ticket detail, reports, attendance.
 
 ### 2026-10-13 Spreadsheet DSR, product and ticket pages (1.30.0)
-- DSR table is a bordered grid with a two-row header (`Work details` group over Product, Category, Ticket, Source, Notes) and a merged date cell per day; `from_time` / `to_time` on each entry come from `created_time` / `completed_time` (auto-logged entries have them). There is no approval workflow in DSR, so no Approve/Reject columns.
+- DSR table is a bordered grid with the columns we actually have (Date, Employee when looking at everyone, Task with notes and Auto/MCP badges, Project, Category, Time, Status, Actions) and a merged date cell per day (the screenshot's calling columns were deliberately not copied); `from_time` / `to_time` on each entry come from `created_time` / `completed_time` (auto-logged entries have them). There is no approval workflow in DSR, so no Approve/Reject columns.
 - Product detail: header + quick links + `Tabs` (Roadmap, Versions, API keys, Team access for admins, Integrations); `#api-key-list` opens the API keys tab. Ticket detail: single column, properties row, description with the linked error, comments; the "back to board" button was dropped (the breadcrumb does it).

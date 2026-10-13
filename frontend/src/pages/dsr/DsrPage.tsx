@@ -87,23 +87,17 @@ export function DsrPage() {
         {log.rows.length === 0 ? (
           <EmptyState className="rounded-none border-0" title="Nothing submitted" description={q ? 'No entries match your search.' : 'Nothing was logged in this period.'} action={canLog ? <Button size="sm" onClick={() => setDialog({})}><PlusIcon />Log work</Button> : undefined} />
         ) : (
-          <Table className="min-w-[1180px] border-collapse [&_td]:border [&_th]:border">
+          <Table className="border-collapse [&_td]:border [&_th]:border">
             <TableHeader className="sticky top-0 z-10 bg-secondary">
               <TableRow className="bg-secondary hover:bg-secondary">
-                <TableHead rowSpan={2} className="w-28 text-center">Date</TableHead>
-                <TableHead rowSpan={2} className="w-40">Employee</TableHead>
-                <TableHead rowSpan={2} className="min-w-64">Task details</TableHead>
-                <TableHead rowSpan={2} className="w-36 text-center">Hours</TableHead>
-                <TableHead colSpan={5} className="bg-accent text-center text-accent-foreground">Work details</TableHead>
-                <TableHead rowSpan={2} className="w-32 text-center">Status</TableHead>
-                <TableHead rowSpan={2} className="w-24 text-center">Actions</TableHead>
-              </TableRow>
-              <TableRow className="bg-secondary hover:bg-secondary">
-                <TableHead className="w-32">Product</TableHead>
-                <TableHead className="w-36">Category</TableHead>
-                <TableHead className="w-24">Ticket</TableHead>
-                <TableHead className="w-24">Source</TableHead>
-                <TableHead className="min-w-40">Notes</TableHead>
+                <TableHead className="w-28 text-center">Date</TableHead>
+                {everyone && <TableHead className="w-36">Employee</TableHead>}
+                <TableHead className="min-w-64">Task</TableHead>
+                <TableHead className="w-36">Project</TableHead>
+                <TableHead className="w-40">Category</TableHead>
+                <TableHead className="w-24 text-center">Time</TableHead>
+                <TableHead className="w-32 text-center">Status</TableHead>
+                <TableHead className="w-24 text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -114,22 +108,21 @@ export function DsrPage() {
                     {i === 0 && (
                       <TableCell rowSpan={rows.length} className="bg-muted/40 text-center align-middle">
                         <div className="font-semibold">{d.date === log.today ? 'Today' : d.label}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">{d.hours}</div>
-                        <div className="text-xs text-muted-foreground">{d.count} {d.count === 1 ? 'entry' : 'entries'}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{d.hours} · {d.count} {d.count === 1 ? 'entry' : 'entries'}</div>
                       </TableCell>
                     )}
-                    <TableCell><div className="font-medium">{r.person.name}</div><div className="text-xs text-muted-foreground">{r.person.username}</div></TableCell>
-                    <TableCell className="text-sm font-medium">{r.ticket ? <Link to={r.ticket.url} className="hover:underline">{r.task_name}</Link> : r.task_name}</TableCell>
-                    <TableCell className="text-center whitespace-nowrap">
-                      {r.from_time && r.to_time ? <><div className="font-semibold tabular-nums">{r.from_time} – {r.to_time}</div><div className="text-xs text-muted-foreground">({r.hours})</div></> : <div className="font-semibold tabular-nums">{r.hours}</div>}
-                    </TableCell>
-                    <TableCell>{r.product ? <Badge variant="info">{r.product.name}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
-                    <TableCell><Badge variant="outline">{r.category_label}</Badge></TableCell>
-                    <TableCell>{r.ticket ? <Link to={r.ticket.url} className="text-primary hover:underline">{r.ticket.key}</Link> : <span className="text-muted-foreground">—</span>}</TableCell>
+                    {everyone && <TableCell className="whitespace-nowrap text-sm font-medium">{r.person.name}</TableCell>}
                     <TableCell>
-                      {r.auto ? <Badge variant="default" title="Added automatically when the ticket was resolved">Auto</Badge> : r.source ? <Badge variant="outline" title={`Submitted through the DSR MCP from ${r.source}`}>via MCP</Badge> : <span className="text-xs text-muted-foreground">Manual</span>}
+                      <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+                        {r.ticket ? <Link to={r.ticket.url} className="hover:underline">{r.task_name}</Link> : r.task_name}
+                        {r.auto && <Badge variant="info" title="Added automatically when the ticket was resolved">Auto</Badge>}
+                        {r.source && <Badge variant="outline" title={`Submitted through the DSR MCP from ${r.source}`}>via MCP</Badge>}
+                      </div>
+                      {r.notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.notes}</p>}
                     </TableCell>
-                    <TableCell className="max-w-64 text-xs text-muted-foreground">{r.notes || '—'}</TableCell>
+                    <TableCell className="text-sm">{r.product?.name ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell className="text-sm">{r.category_label}</TableCell>
+                    <TableCell className="whitespace-nowrap text-center font-semibold tabular-nums">{r.hours}</TableCell>
                     <TableCell className="text-center"><Badge variant={STATUS[r.status] ?? 'default'}>{r.status_label}</Badge></TableCell>
                     <TableCell className="whitespace-nowrap text-center">
                       {r.editable ? (

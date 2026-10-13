@@ -16,8 +16,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### New
 
-- **The DSR is a spreadsheet-style grid.** Date, employee, task, hours, a "Work details" group (product, category, ticket, source, notes), status and actions each get their own bordered column, with the day's total in the date cell.
-- **Start and end times show in the Hours column.** Entries that have them show the times, with the duration underneath.
+- **The DSR is a spreadsheet-style grid.** Date, task, project, category, time and status each get a bordered column, with the day's total in the date cell and an Employee column when you look at everyone.
 
 ### Better
 
