@@ -1,3 +1,4 @@
+import { modLabel } from '@/lib/platform';
 import { SearchIcon } from '@/components/ui/icons';
 import { useLocation } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
@@ -22,7 +23,7 @@ export function Topbar({ onOpenPalette }: Props) {
       <Button variant="outline" onClick={onOpenPalette} aria-label="Search" className="min-w-0 flex-1 justify-start gap-2 bg-muted px-3 font-normal text-muted-foreground md:max-w-md">
         <SearchIcon className="size-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate text-left max-sm:hidden">Search tickets, errors, products</span>
-        <Kbd className="max-sm:hidden">Ctrl K</Kbd>
+        <Kbd className="max-sm:hidden">{modLabel()} K</Kbd>
       </Button>
       <div className="ml-auto flex items-center gap-2">
         <NewMenu />
