@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Historical notes (2026-10-13).** The whole UI is now React. Anything below that talks about `templates/`, `{% dropdown %}`, htmx, Alpine, the toast seed, `partials/`, `core/base.html` or the legacy sidebar describes code that has been deleted; it stays only because it records why the rules exist. The business rules (attendance, leave, payroll, access control, counts, changelog) still apply and live in each app's `service.py`. Current structure: `CLAUDE.md`; recent decisions: `context.md`.
+
 This file provides guidance to coding agents working in this repository. It is
 authoritative for *how to work here*; **`context.md` is authoritative for *what
 was done and why*** — read it before changing any area. `CLAUDE.md` is an older,
@@ -38,7 +40,7 @@ One test in `apps.accounts.tests.test_tenant_isolation` fails on a clean checkou
 
 Docker: `docker-compose up` builds and serves on `:8011` via `entrypoint.sh` (migrate + runserver), bind-mounting `db.sqlite3`. **The container builds its own copy of the source, so a fix in your working tree is not in a running container** — rebuild before concluding a change "doesn't work" in Docker. That is how a correct fix can look broken: check `docker compose build --no-cache && docker compose up` before debugging your own code.
 
-There is no frontend build step. Templates render server-side; htmx and Alpine.js load from CDN in `templates/core/base.html`. All CSS is a single `<style>` block in `base.html` driven by CSS custom properties (`--accent`, `--panel`, `--border`, …). `static/` does not exist, so the `staticfiles.W004` check warning is expected.
+The UI is React (`frontend/`, built with `npm run build`, served at `/ui/`); Django renders only the shell page. See `CLAUDE.md`.
 
 Root-level `test_api*.py`, `check_db*.py`, `check_serializer.py` are ad-hoc throwaway scripts, not part of the test suite.
 

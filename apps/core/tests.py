@@ -413,97 +413,6 @@ class VersionApiTest(TestCase):
             self.assertEqual(section["count"], len(section["items"]))
 
 
-class VersionFooterUiTest(TestCase):
-    def setUp(self):
-        self.company = Company.objects.create(name="Acme", slug="acme")
-        self.user = get_user_model().objects.create_user(username="owner", password="pass1234")
-        Membership.objects.create(user=self.user, company=self.company, role=Membership.Role.OWNER)
-
-    def test_sidebar_shows_a_clickable_version(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("data-changelog-open", body)
-        self.assertIn('aria-haspopup="dialog"', body)
-        self.assertIn(f"v{settings.APP_VERSION}", body)
-
-    def test_version_label_describes_what_the_button_does(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn(f'aria-label="What\'s new in v{settings.APP_VERSION}"', body)
-
-    def test_dialog_is_present_and_reads_from_the_api(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn('id="pq-changelog"', body)
-        self.assertIn("/api/v1/changelog/", body)
-        self.assertIn('role="dialog"', body)
-
-    def test_dialog_sits_outside_the_clipped_sidebar(self):
-        """.sidebar is overflow-x:hidden; a dialog inside it would be clipped."""
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertGreater(body.index('id="pq-changelog"'), body.index('class="shell"'))
-
-    def test_trigger_dispatches_the_event_the_dialog_listens_for(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("[data-changelog-open]", body)
-        self.assertIn("pq:changelog", body)
-
-    def test_logged_out_pages_have_no_version_footer(self):
-        body = self.client.get("/login/").content.decode()
-        self.assertNotIn("data-changelog-open", body)
-        self.assertNotIn('id="pq-changelog"', body)
-
-    def test_trigger_is_reachable_by_keyboard(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("side-version:focus-visible", body)
-
-    def test_dialog_opens_on_this_version_rather_than_the_whole_file(self):
-        """`releases.slice(1)` is what keeps 56 bullets off the first screen."""
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("releases.slice(1)", body)
-        self.assertIn("var older = releases.slice(1);", body)
-
-    def test_older_releases_are_a_disclosure_not_a_dead_end(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("changelog-older", body)
-        self.assertIn("aria-expanded", body)
-        self.assertIn("aria-controls=\"pq-changelog-older-list\"", body)
-
-    def test_type_filters_are_real_buttons_with_pressed_state(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn('id="pq-changelog-filters"', body)
-        self.assertIn('aria-label="Filter changes by type"', body)
-        self.assertIn('aria-pressed="', body)
-
-    def test_dates_are_formatted_for_a_reader_not_shown_as_iso_columns(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("function fmtDate", body)
-        self.assertIn("esc(fmtDate(rel.date))", body)
-
-    def test_header_states_how_many_changes_are_in_this_version(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        # The phrase is assembled from a pluralising helper, so assert its parts
-        # rather than a string that never appears contiguously.
-        self.assertIn("plural(total, 'change', 'changes')", body)
-        self.assertIn("' in this version'", body)
-        self.assertIn('id="pq-changelog-sub"', body)
-
-    def test_filtering_is_keyboard_and_mouse_driven_from_the_body(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/payroll/me/").content.decode()
-        self.assertIn("data-filter", body)
-        self.assertIn("closest('#pq-changelog-older')", body)
-
-
-
 class BrandFileTests(TestCase):
     def test_favicon_and_touch_icon_are_served(self):
         for url, kind in (("/favicon.ico", "image/"), ("/brand/favicon-32.png", "image/png"),
@@ -567,32 +476,6 @@ class TemplateCommentTest(TestCase):
                 line = text.count("\n", 0, match.start()) + 1
                 offenders.append(f"{path.relative_to(settings.BASE_DIR)}:{line}")
         self.assertEqual(offenders, [], "use {% comment %} for notes that span lines")
-
-
-class ShortAgoTest(TestCase):
-    """`short_ago` keeps table cells to one line."""
-
-    def test_keeps_only_the_largest_unit(self):
-        from datetime import timedelta
-
-        from django.utils import timezone
-
-        from apps.core.templatetags.time_tags import short_ago
-
-        value = timezone.now() - timedelta(days=2, hours=3)
-        self.assertEqual(short_ago(value), "2 days ago")
-
-    def test_a_moment_ago(self):
-        from django.utils import timezone
-
-        from apps.core.templatetags.time_tags import short_ago
-
-        self.assertEqual(short_ago(timezone.now()), "just now")
-
-    def test_empty_value(self):
-        from apps.core.templatetags.time_tags import short_ago
-
-        self.assertEqual(short_ago(None), "")
 
 
 class ChangelogSummaryTest(TestCase):
@@ -659,26 +542,3 @@ class ShippedChangelogTest(TestCase):
                     lead = re.match(r"<strong>([^<]*)</strong>", item)
                     if lead:
                         self.assertRegex(lead.group(1), r"[.!?]$", item[:80])
-
-
-class ChangelogDialogDesignTest(TestCase):
-    def setUp(self):
-        self.user = get_user_model().objects.create_user("dlg", "d@t.local", "pass1234")
-        Company.objects.create(name="C", slug="c")
-        company = Company.objects.get(slug="c")
-        Membership.objects.create(user=self.user, company=company, role="owner")
-        self.client.force_login(self.user)
-
-    def body(self):
-        return self.client.get("/payroll/me/").content.decode()
-
-    def test_the_dialog_shows_the_summary_and_colored_sections(self):
-        body = self.body()
-        self.assertIn("changelog-summary", body)
-        self.assertIn("cl-sec cl-sec-", body)
-        self.assertIn("cl-lead", body)
-
-    def test_older_releases_fold_away(self):
-        body = self.body()
-        self.assertIn('<details class="changelog-rel is-old">', body)
-        self.assertIn("releaseHtml(rel, 'h4', true)", body)

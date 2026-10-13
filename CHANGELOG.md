@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.24.0] — 2026-10-13 · payroll, redone
+
+> In short: payroll has a new look, from the cycle preview and runs to payslips, holidays and salary setup, and every page of the app now uses the same new design.
+
+### New
+
+- **A new cycle preview.** Pick any date to see the whole cycle with each person's monthly salary, the days it is divided by, leave, deductions and gross, then generate the payslips when it looks right.
+- **A new salary setup page.** Each person has their own row with an on/off switch, the monthly salary, the date the rate starts and the day rate it works out to as you type.
+- **Payslips that explain themselves.** Both the admin's copy and your own show how the day rate was worked out and every late arrival with what it cost.
+
+### Better
+
+- **Locking a run and removing a holiday are one click.** Removing a holiday still asks first, because open runs recalculate.
+- **Payroll pages share one set of section tabs.** Runs, Salaries, Holidays and My payslips are a click apart.
+
+### Security
+
+- **Payslips stay private.** Anyone else's payslip, or one from another company, still answers "not found" rather than confirming it exists.
+
 ## [1.23.0] — 2026-10-13 · leave, redone
 
 > In short: leave has a new look, from your balances and the apply form with a live paid/unpaid preview to the calendar, the approvals queue and the leave types page.

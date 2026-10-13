@@ -28,6 +28,9 @@ import { ApprovalsPage } from '@/pages/leave/ApprovalsPage';
 import { CalendarPage } from '@/pages/leave/CalendarPage';
 import { MyLeavePage } from '@/pages/leave/MyLeavePage';
 import { PoliciesPage } from '@/pages/leave/PoliciesPage';
+import { MyPayslipsPage, PayslipPage } from '@/pages/payroll/SlipPages';
+import { PreviewPage, RunDetailPage, RunListPage } from '@/pages/payroll/RunPages';
+import { HolidaysPage, ProfilesPage } from '@/pages/payroll/SetupPages';
 import { AttendancePage } from '@/pages/attendance/AttendancePage';
 import { CorrectionQueuePage, CorrectionRequestPage, RecordEditPage } from '@/pages/attendance/CorrectionPages';
 import { TeamAttendancePage } from '@/pages/attendance/TeamPage';
@@ -68,6 +71,14 @@ export const shellRoutes: RouteObject[] = [
   { path: '/leave/calendar/', element: <CalendarPage /> },
   { path: '/leave/approvals/', element: <ApprovalsPage /> },
   { path: '/leave/policies/', element: <PoliciesPage /> },
+  { path: '/payroll/', element: <RunListPage /> },
+  { path: '/payroll/preview/', element: <PreviewPage /> },
+  { path: '/payroll/runs/:id/', element: <RunDetailPage /> },
+  { path: '/payroll/payslips/:id/', element: <PayslipPage /> },
+  { path: '/payroll/me/', element: <MyPayslipsPage /> },
+  { path: '/payroll/me/:id/', element: <PayslipPage mine /> },
+  { path: '/payroll/holidays/', element: <HolidaysPage /> },
+  { path: '/payroll/profiles/', element: <ProfilesPage /> },
   { path: '/attendance/', element: <AttendancePage /> },
   { path: '/attendance/team/', element: <TeamAttendancePage /> },
   { path: '/attendance/timesheet/', element: <TimesheetPage /> },

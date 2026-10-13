@@ -3,16 +3,6 @@ from django.conf import settings
 from apps.products.models import Product
 
 
-def version_context(request):
-    """The running version, for the sidebar footer.
-
-    Cheap and unconditional: it reads one setting and parses nothing. The
-    changelog itself is fetched from /api/v1/changelog/ on demand instead, so it
-    is not paid for on every page.
-    """
-    return {"app_version": getattr(settings, "APP_VERSION", "0.0.0")}
-
-
 def _attach_product_counts(product):
     from apps.ingestion.models import ErrorGroup
     from apps.tickets.models import Ticket
@@ -30,35 +20,6 @@ def _attach_product_counts(product):
     product.survey_count = product.surveys.count()
     product.version_count = product.versions.count()
     product.rule_count = product.auto_ticket_rules.count()
-
-
-def product_context(request):
-    ctx = {}
-    try:
-        match = request.resolver_match
-        if not match:
-            return ctx
-        pk = match.kwargs.get("product_pk") or match.kwargs.get("pk")
-        if not pk:
-            return ctx
-        path = request.path
-        if path.startswith(f"/products/{pk}/"):
-            product = Product.objects.filter(
-                company=request.company,
-                pk=pk,
-            ).first()
-            if product:
-                _attach_product_counts(product)
-                ctx["product"] = product
-                from apps.products.access import accessible_products
-                ctx["nav_products"] = list(
-                    accessible_products(request.user, request.company)
-                    .order_by("name")
-                    .values("pk", "name")
-                )
-    except Exception:
-        pass
-    return ctx
 
 
 def nav_counts(user, company, role):
@@ -82,23 +43,3 @@ def nav_counts(user, company, role):
         if role in ("owner", "admin")
         else 0,
     }
-
-
-def workspace_context(request):
-    if not request.user.is_authenticated:
-        return {}
-
-    ctx = {"workspaces": list(request.user.memberships.select_related("company").all())}
-
-    company = getattr(request, "company", None)
-    if company is not None:
-        try:
-            counts = nav_counts(request.user, company, request.company_role)
-            ctx["nav_open_tickets"] = counts["open_tickets"]
-            ctx["nav_open_errors"] = counts["open_errors"]
-            if request.company_role in ("owner", "admin"):
-                ctx["nav_pending_corrections"] = counts["pending_corrections"]
-        except Exception:
-            pass
-
-    return ctx

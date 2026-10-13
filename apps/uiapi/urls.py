@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import accounts, attendance, automation, dashboards, dsr, errors, feedback, leave, products, tickets, views
+from apps.uiapi import accounts, attendance, automation, dashboards, dsr, errors, feedback, leave, payroll, products, tickets, views
 
 app_name = "uiapi"
 
@@ -74,6 +74,16 @@ urlpatterns = [
     path("team/", accounts.TeamListAPIView.as_view(), name="team"),
     path("team/<int:pk>/", accounts.TeamMemberAPIView.as_view(), name="team_member"),
     path("profile/", accounts.ProfileAPIView.as_view(), name="profile"),
+    path("payroll/runs/", payroll.RunListAPIView.as_view(), name="payroll_runs"),
+    path("payroll/preview/", payroll.PreviewAPIView.as_view(), name="payroll_preview"),
+    path("payroll/runs/<int:pk>/", payroll.RunAPIView.as_view(), name="payroll_run"),
+    path("payroll/runs/<int:pk>/lock/", payroll.RunLockAPIView.as_view(), name="payroll_run_lock"),
+    path("payroll/payslips/<int:pk>/", payroll.PayslipAPIView.as_view(), name="payroll_payslip"),
+    path("payroll/me/", payroll.MyPayslipsAPIView.as_view(), name="payroll_me"),
+    path("payroll/me/<int:pk>/", payroll.MyPayslipAPIView.as_view(), name="payroll_my_payslip"),
+    path("payroll/holidays/", payroll.HolidayListAPIView.as_view(), name="payroll_holidays"),
+    path("payroll/holidays/<int:pk>/", payroll.HolidayAPIView.as_view(), name="payroll_holiday"),
+    path("payroll/profiles/", payroll.ProfileListAPIView.as_view(), name="payroll_profiles"),
     path("leave/me/", leave.MyLeaveAPIView.as_view(), name="leave_me"),
     path("leave/apply/", leave.ApplyAPIView.as_view(), name="leave_apply"),
     path("leave/preview/", leave.SplitPreviewAPIView.as_view(), name="leave_preview"),

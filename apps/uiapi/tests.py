@@ -199,8 +199,8 @@ class BootstrapTest(TestCase):
 
     def test_flash_messages_are_delivered_once(self):
         self.login("dev")
-        # queue a message the way a legacy view would
-        self.client.post(reverse("accounts:company_switch"), {"company_id": self.acme.pk})
+        # switching workspace queues a flash message, as a redirecting view would
+        self.client.post("/ui-api/v1/company/switch/", {"company_id": self.acme.pk}, content_type="application/json")
         first = self.client.get(self.url).json()["messages"]
         again = self.client.get(self.url).json()["messages"]
         self.assertEqual([m["tags"] for m in first], ["success"])
@@ -252,10 +252,6 @@ class CompanySwitchApiTest(TestCase):
         self.assertEqual(
             strict.post(self.url, {"company_id": self.b.pk}, content_type="application/json").status_code, 403
         )
-
-    def test_legacy_view_still_switches(self):
-        self.client.post(reverse("accounts:company_switch"), {"company_id": self.b.pk})
-        self.assertEqual(self.client.session[settings.ACTIVE_COMPANY_SESSION_KEY], self.b.pk)
 
     def test_bootstrap_advertises_the_switch_url(self):
         self.client.post(self.url, {"company_id": self.a.pk}, content_type="application/json")

@@ -11,7 +11,6 @@ from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlencode
 
 from apps.accounts.models import ExternalAccessToken, ExternalAuthCode
-from apps.accounts.workspace import activate_company
 from apps.core.mixins import CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.uiapi.shell import render_shell
 
@@ -53,14 +52,6 @@ class LogoutView(View):
 class DashboardView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         return redirect("dashboards:index")
-
-
-class CompanySwitchView(LoginRequiredMixin, View):
-    """Only the legacy sidebar (attendance, leave, payroll) posts here; the React shell uses /ui-api/v1/company/switch/."""
-
-    def post(self, request):
-        activate_company(request, request.POST.get("company_id"))
-        return redirect("accounts:dashboard")
 
 
 class CompanySetupView(LoginRequiredMixin, View):
