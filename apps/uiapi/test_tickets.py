@@ -167,3 +167,95 @@ class TicketMetaApiTest(Base):
         self.login("dev")
         r = self.client.get(self.url, {"product": self.p_hidden.pk, "scope": "product"})
         self.assertEqual(r.status_code, 404)
+
+
+from unittest import mock  # noqa: E402
+
+from apps.dashboards.models import ActivityLog  # noqa: E402
+
+
+class TicketMutationApiTest(Base):
+    def post_json(self, url, body):
+        return self.client.post(url, body, content_type="application/json")
+
+    def test_status_move_works_and_runs_the_side_effects(self):
+        t = self.make(self.p_open)
+        watcher = member("watcher", self.acme)
+        ProductAccess.objects.create(company=self.acme, user=watcher, product=self.p_open)
+        t.watchers.add(watcher)
+        self.login("owner")
+        with mock.patch("apps.tickets.service.notify_ticket_status_changed") as hook:
+            r = self.post_json(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "testing"})
+        self.assertEqual(r.json(), {"ok": True, "status": "testing"})
+        t.refresh_from_db()
+        self.assertEqual(t.status, "testing")
+        hook.assert_called_once()
+        self.assertTrue(ActivityLog.objects.filter(event_type="ticket_status_changed").exists())
+        from apps.notifications.models import Notification
+
+        self.assertTrue(Notification.objects.filter(user=watcher, title__contains="moved to Testing").exists())
+
+    def test_resolving_auto_logs_to_the_dsr(self):
+        t = self.make(self.p_open)
+        t.set_assignees([self.owner])
+        self.login("owner")
+        with mock.patch("apps.dsr.service.auto_log_ticket_dsr") as dsr:
+            self.post_json(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "resolved"})
+        dsr.assert_called_once()
+
+    def test_invalid_status_is_400_and_changes_nothing(self):
+        t = self.make(self.p_open)
+        self.login("owner")
+        r = self.post_json(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "bogus"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("not a valid status", r.json()["detail"])
+        t.refresh_from_db()
+        self.assertEqual(t.status, "open")
+
+    def test_status_on_an_inaccessible_ticket_is_404(self):
+        t = self.make(self.p_hidden)
+        self.login("dev")
+        self.assertEqual(self.post_json(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "testing"}).status_code, 404)
+        t.refresh_from_db()
+        self.assertEqual(t.status, "open")
+
+    def test_status_on_another_companys_ticket_is_404(self):
+        t = self.make(self.p_foreign)
+        self.login("owner")
+        self.assertEqual(self.post_json(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "testing"}).status_code, 404)
+
+    def test_csrf_is_enforced_on_writes(self):
+        t = self.make(self.p_open)
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="owner", password="pass1234")
+        body = {"status": "testing"}
+        self.assertEqual(strict.post(f"/ui-api/v1/tickets/{t.pk}/status/", body, content_type="application/json").status_code, 403)
+        self.assertEqual(strict.delete(f"/ui-api/v1/tickets/{t.pk}/").status_code, 403)
+
+    def test_delete_by_creator_and_admin_but_not_by_a_stranger(self):
+        mine = self.make(self.p_open, created_by=self.dev)
+        theirs = self.make(self.p_open, created_by=self.owner)
+        self.login("dev")
+        self.assertEqual(self.client.delete(f"/ui-api/v1/tickets/{theirs.pk}/").status_code, 403)
+        self.assertTrue(Ticket.objects.filter(pk=theirs.pk).exists())
+        self.assertEqual(self.client.delete(f"/ui-api/v1/tickets/{mine.pk}/").json(), {"deleted": mine.key})
+        self.assertFalse(Ticket.objects.filter(pk=mine.pk).exists())
+        self.assertTrue(ActivityLog.objects.filter(event_type="ticket_deleted").exists())
+        self.login("owner")
+        self.assertEqual(self.client.delete(f"/ui-api/v1/tickets/{theirs.pk}/").status_code, 200)
+
+    def test_bulk_delete_skips_what_it_must_and_counts(self):
+        ok = self.make(self.p_open, created_by=self.dev)
+        not_mine = self.make(self.p_open, created_by=self.owner)
+        hidden = self.make(self.p_hidden, created_by=self.dev)
+        foreign = self.make(self.p_foreign)
+        self.login("dev")
+        ids = [ok.pk, not_mine.pk, hidden.pk, foreign.pk, 99999, "x"]
+        r = self.post_json("/ui-api/v1/tickets/bulk-delete/", {"ids": ids})
+        self.assertEqual(r.json(), {"deleted": 1, "skipped": 5})
+        self.assertEqual(Ticket.objects.filter(pk__in=[not_mine.pk, hidden.pk, foreign.pk]).count(), 3)
+
+    def test_bulk_delete_needs_ids(self):
+        self.login("owner")
+        self.assertEqual(self.post_json("/ui-api/v1/tickets/bulk-delete/", {"ids": []}).status_code, 400)
+        self.assertEqual(self.post_json("/ui-api/v1/tickets/bulk-delete/", {}).status_code, 400)

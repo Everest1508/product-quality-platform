@@ -2,12 +2,21 @@ from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from apps.products.access import accessible_products, accessible_tickets, product_users, require_product_access
+from apps.products.access import (
+    accessible_products,
+    accessible_tickets,
+    product_users,
+    require_product_access,
+    require_ticket_access,
+    user_has_product_access,
+)
 from apps.products.models import Product
 from apps.tickets.filters import OPEN_EXCLUDED, apply_ticket_filters, sort_tickets
 from apps.tickets.models import Ticket
+from apps.tickets import service as ticket_service
 from apps.tickets.service import can_delete_ticket
 from apps.uiapi.views import CompanyAPIView
 
@@ -125,3 +134,49 @@ class TicketMetaAPIView(CompanyAPIView):
             "products": products,
             "members": [{"id": u.pk, "name": _name(u)} for u in members],
         })
+
+
+def _ticket(request, pk):
+    """A ticket in this company that the user may open, else 404."""
+    ticket = get_object_or_404(Ticket.objects.select_related("product"), pk=pk, company=request.company)
+    require_ticket_access(request._request, ticket)
+    return ticket
+
+
+class TicketStatusAPIView(CompanyAPIView):
+    def post(self, request, pk):
+        ticket = _ticket(request, pk)
+        error = ticket_service.change_status(ticket, request.data.get("status"), request.user, request.company)
+        if error:
+            return Response({"detail": error}, status=400)
+        return Response({"ok": True, "status": ticket.status})
+
+
+class TicketDeleteAPIView(CompanyAPIView):
+    def delete(self, request, pk):
+        ticket = _ticket(request, pk)
+        if not ticket_service.can_delete_ticket(request.user, request.company_role, ticket):
+            raise PermissionDenied("You can only delete tickets you created.")
+        return Response({"deleted": ticket_service.delete_ticket(ticket, request.user, request.company)})
+
+
+class TicketBulkDeleteAPIView(CompanyAPIView):
+    """Delete what the user may; skip (and count) the rest instead of failing the batch."""
+
+    def post(self, request):
+        ids = request.data.get("ids")
+        if not isinstance(ids, list) or not ids:
+            return Response({"detail": "No tickets selected."}, status=400)
+        deleted = 0
+        for raw in ids:
+            try:
+                ticket = Ticket.objects.select_related("product").get(pk=int(raw), company=request.company)
+            except (Ticket.DoesNotExist, ValueError, TypeError):
+                continue
+            if ticket.product_id and not user_has_product_access(request.user, request.company, ticket.product):
+                continue
+            if not ticket_service.can_delete_ticket(request.user, request.company_role, ticket):
+                continue
+            ticket_service.delete_ticket(ticket, request.user, request.company)
+            deleted += 1
+        return Response({"deleted": deleted, "skipped": len(ids) - deleted})
