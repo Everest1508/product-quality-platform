@@ -24,7 +24,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
           </ul>
         </aside>
         <section className="p-8">
-          <h1 className="text-xl font-semibold">{title}</h1>
+          <h1 className="text-2xl font-semibold">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           <div className="mt-6">{children}</div>
           {footer && <p className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">{footer}</p>}

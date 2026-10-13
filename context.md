@@ -935,3 +935,8 @@ decided what and strike the item** rather than deleting it.
 ### 2026-10-13 Last HTML leftovers
 - `django.contrib.admin` removed from `INSTALLED_APPS`; `design-system.md` deleted; the `form-input` CSS classes stripped from every `forms.py` (the forms only validate API data now).
 - `handler400/403/404/500` (`apps/core/errors.py`): JSON for `/api/`, `/ui-api/` and `/oauth/`, the React shell with the real status code for pages (React shows "Page not found."). The only HTML Django still produces is the shell host page and the offline page.
+
+### 2026-10-13 Layout polish with befui (1.25.0)
+- Dark theme: tokens under `:root.dark` in `frontend/src/index.css`, `lib/theme.ts` (light/dark/system, `pqTheme` in localStorage, class on `<html>` because dialogs render in portals), a pre-paint script in `shell.html`, and `shell/ThemeSwitch.tsx` in the account menu.
+- Shared page pieces in `components/ui`: `page-header`, `empty-state`, `stat`; payroll and leave pages use them. Page tables are styled once by `main table` rules in `index.css`, so a page only declares columns. h1s are `text-2xl`; the main column is `max-w-7xl` with a `page-in` fade keyed on the path.
+- Not yet converted to the shared pieces: the older pages (tickets, errors, products, etc.) still use their own headers and empty states; they pick up the table and title styling through the global rules.

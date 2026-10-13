@@ -49,7 +49,7 @@ export function AttendancePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">{d.focus_user ? `${d.focus_user.name}’s attendance` : 'My attendance'}</h1>
+          <h1 className="text-2xl font-semibold">{d.focus_user ? `${d.focus_user.name}’s attendance` : 'My attendance'}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{d.focus_user ? 'Read-only view of a colleague’s days.' : 'Punch the clock and review your own days.'}</p>
         </div>
         {!d.focus_user && <Button asChild variant="outline" size="sm"><Link to="/attendance/corrections/request/">Ask for a correction</Link></Button>}

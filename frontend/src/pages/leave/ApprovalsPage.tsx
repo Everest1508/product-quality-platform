@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -75,7 +76,7 @@ export function ApprovalsPage() {
   const d = q.data;
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Leave approvals</h1>
+      <PageHeader title="Leave approvals" sub="Review, adjust the dates and the paid/unpaid split, then decide." />
       {!d ? <Skeleton className="h-40 w-full" data-testid="queue-loading" /> : (
         <>
           <div className="flex flex-wrap gap-2" role="tablist">

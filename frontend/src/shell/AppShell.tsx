@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar collapsed={collapsed} onToggle={toggle} open={open} onClose={() => setOpen(false)} onOpenChangelog={() => setChangelog(true)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenNav={() => setOpen(true)} onOpenPalette={() => setPalette(true)} />
-        <main className="mx-auto w-full max-w-6xl flex-1 p-6 max-md:p-4">{children}</main>
+        <main key={pathname} className="page-in mx-auto w-full max-w-7xl flex-1 p-6 max-md:p-4 lg:p-8">{children}</main>
       </div>
       <Palette open={palette} onOpenChange={setPalette} />
       <ShortcutsHelp open={help} onOpenChange={setHelp} />

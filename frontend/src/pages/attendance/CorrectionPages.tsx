@@ -27,7 +27,7 @@ export function CorrectionQueuePage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Attendance corrections {d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.pending.length} waiting</span>}</h1>
+        <h1 className="text-2xl font-semibold">Attendance corrections {d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.pending.length} waiting</span>}</h1>
         <p className="mt-1 text-sm text-muted-foreground">Approving changes the person’s record and is logged. Rejecting leaves it as it is.</p>
       </div>
       {!d ? <Skeleton className="h-40 w-full" data-testid="corr-loading" /> : (
@@ -112,7 +112,7 @@ export function CorrectionRequestPage() {
   if (!d) return <Skeleton className="h-64 w-full" data-testid="corr-form-loading" />;
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
-      <div className="flex items-center justify-between"><h1 className="text-xl font-semibold">Ask for a correction</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/">Cancel</Link></Button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Ask for a correction</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/">Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         <p className="text-sm text-muted-foreground">Tell us what the day should say. Nothing changes until an owner or admin approves it. You can ask for a day in the last {d.max_age_days} days.</p>
         {d.record && <p className="rounded-md bg-secondary p-3 text-sm">Recorded for {d.date_label}: in {d.record.check_in || 'none'}, out {d.record.check_out || 'none'}.</p>}
@@ -174,7 +174,7 @@ export function RecordEditPage() {
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-xl space-y-4" noValidate>
-      <div className="flex items-center justify-between"><h1 className="text-xl font-semibold">Edit attendance</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/team/">Cancel</Link></Button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Edit attendance</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/team/">Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         <p className="text-sm"><b>{d.user.name}</b> · {d.date_label}</p>
         {d.status === 'stale' && <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">This day was never checked out. Until it is closed it counts for at most one working day ({d.worked_hours_per_day}), currently {d.effective}.</p>}

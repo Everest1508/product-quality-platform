@@ -23,7 +23,7 @@ export function CsHubPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Customer Success Hub</h1>
+          <h1 className="text-2xl font-semibold">Customer Success Hub</h1>
           <p className="mt-1 text-sm text-muted-foreground">Track customer satisfaction ratings, survey responses, and sentiment insights across products.</p>
         </div>
         <div className="flex gap-2">

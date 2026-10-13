@@ -1,5 +1,6 @@
 import { ChevronDown, LogOut, Settings } from 'lucide-react';
 import { useBootstrapData } from '@/lib/bootstrap';
+import { ThemeSwitch } from './ThemeSwitch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export function AccountMenu() {
@@ -14,7 +15,8 @@ export function AccountMenu() {
         </span>
         <ChevronDown className="size-3.5 text-muted-foreground max-md:hidden" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-52">
+        <div className="px-2 pb-2 pt-1"><ThemeSwitch /></div>
         <DropdownMenuItem asChild><a href={urls.profile}><Settings /> Settings</a></DropdownMenuItem>
         {/* A real form post, so signing out works without JavaScript. */}
         <form method="post" action={urls.logout}>

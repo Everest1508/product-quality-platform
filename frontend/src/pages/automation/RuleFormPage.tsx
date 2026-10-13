@@ -87,7 +87,7 @@ function RuleForm({ rule, meta, productId }: { rule?: Rule; meta: RuleMeta; prod
   return (
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-xl font-semibold">{rule ? 'Edit Rule' : 'New Automation Rule'}</h1><p className="text-sm text-muted-foreground">Configure trigger conditions and automated actions.</p></div>
+        <div><h1 className="text-2xl font-semibold">{rule ? 'Edit Rule' : 'New Automation Rule'}</h1><p className="text-sm text-muted-foreground">Configure trigger conditions and automated actions.</p></div>
         <Button asChild variant="outline" size="sm"><Link to={base}>Cancel</Link></Button>
       </div>
       <Card className="space-y-4 p-5">

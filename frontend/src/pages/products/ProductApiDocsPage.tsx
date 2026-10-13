@@ -62,7 +62,7 @@ export function ProductApiDocsPage() {
       </nav>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Send data to {d.product.name}</h1>
+          <h1 className="text-2xl font-semibold">Send data to {d.product.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Report errors, collect feedback and open tickets from your own app with one key and a few lines of code.</p>
         </div>
         <Button asChild size="sm" variant="outline"><Link to={`/products/${d.product.id}/#api-key-list`}>Manage keys</Link></Button>

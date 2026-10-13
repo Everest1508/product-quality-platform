@@ -3,6 +3,7 @@ import { api, ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -79,7 +80,7 @@ export function PoliciesPage() {
   if (!d) return <Skeleton className="h-48 w-full" data-testid="policies-loading" />;
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between"><h1 className="text-xl font-semibold">Leave policy</h1><Button size="sm" onClick={() => setEditing('new')}>Add leave type</Button></div>
+      <PageHeader title="Leave policy" sub="Allowances, per-spell caps and whether each type is paid." actions={<Button size="sm" onClick={() => setEditing('new')}>Add leave type</Button>} />
       <Card className="overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Type</th><th className="p-3 font-medium">Per year</th><th className="p-3 font-medium">Per spell</th><th className="p-3" /></tr></thead>

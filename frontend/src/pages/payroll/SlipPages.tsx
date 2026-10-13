@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LockBadge, Note, Num, PayHeader, Th } from './parts';
 import { day, money, reason, usePayQuery } from './usePayroll';
@@ -92,7 +93,7 @@ export function MyPayslipsPage() {
           {!d.on_payroll && <Card className="border-warning/40 bg-warning/10 p-4 text-sm"><b>You are not on payroll.</b> An admin has to switch you on in Payroll setup before you get a payslip.</Card>}
           <Card className="overflow-x-auto p-0">
             <div className="border-b p-4 font-semibold">Payslips</div>
-            {d.payslips.length === 0 ? <div className="p-10 text-center"><h3 className="font-medium">No payslips yet</h3><p className="text-sm text-muted-foreground">Payslips appear once your admin generates the cycle.</p></div> : (
+            {d.payslips.length === 0 ? <EmptyState title="No payslips yet">Payslips appear once your admin generates the cycle.</EmptyState> : (
               <table className="w-full text-sm">
                 <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Cycle</Th><Th num>Day rate</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Deduction</Th><Th num>Net pay</Th><Th /></tr></thead>
                 <tbody>{d.payslips.map((p) => (

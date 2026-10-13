@@ -36,7 +36,7 @@ export function TeamAttendancePage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-xl font-semibold">Team attendance</h1><p className="mt-1 text-sm text-muted-foreground">Who is on the clock, and how the team’s days look.</p></div>
+        <div><h1 className="text-2xl font-semibold">Team attendance</h1><p className="mt-1 text-sm text-muted-foreground">Who is on the clock, and how the team’s days look.</p></div>
         <div className="flex gap-2">
           <div className="flex rounded-lg bg-secondary p-0.5">
             <button type="button" aria-pressed={!week} onClick={() => set({ view: null, week: null })} className={cn('rounded-md px-3 py-1 text-sm', !week ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground')}>Today</button>

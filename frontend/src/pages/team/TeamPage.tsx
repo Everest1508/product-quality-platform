@@ -59,7 +59,7 @@ export function TeamPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Team {d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.page.count} member{d.page.count === 1 ? '' : 's'}</span>}</h1>
+        <h1 className="text-2xl font-semibold">Team {d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.page.count} member{d.page.count === 1 ? '' : 's'}</span>}</h1>
         {d?.can_manage && <Button size="sm" onClick={() => setAdding(true)}><Plus /> Add member</Button>}
       </div>
 

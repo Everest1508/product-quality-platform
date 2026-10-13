@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Stat } from '@/components/ui/stat';
 import { Note, PayHeader, Who } from './parts';
 import { day, reason, usePayQuery, usePayWrite } from './usePayroll';
 import type { Holiday, ProfileRow, Profiles } from './types';
@@ -54,7 +56,7 @@ export function HolidaysPage() {
         </Card>
         <Card className="p-0">
           <div className="border-b p-4 font-semibold">Holidays {d && <span className="font-normal text-muted-foreground">({d.holidays.length})</span>}</div>
-          {!d ? <Skeleton className="h-32 w-full" data-testid="holidays-loading" /> : d.holidays.length === 0 ? <div className="p-10 text-center"><h3 className="font-medium">No holidays yet</h3><p className="text-sm text-muted-foreground">Add festival dates so they are not counted as payable days.</p></div> : (
+          {!d ? <Skeleton className="h-32 w-full" data-testid="holidays-loading" /> : d.holidays.length === 0 ? <EmptyState title="No holidays yet">Add festival dates so they are not counted as payable days.</EmptyState> : (
             <ul className="divide-y text-sm">{d.holidays.map((h) => <li key={h.id} className="flex items-center justify-between gap-3 p-3"><span><span className="text-muted-foreground">{h.label}</span> · {h.name}</span><Button variant="outline" size="sm" aria-label={`Remove ${h.name}`} onClick={() => remove(h)}>Remove</Button></li>)}</ul>
           )}
         </Card>
@@ -107,12 +109,12 @@ export function ProfilesPage() {
         <>
           <div className="grid gap-3 sm:grid-cols-4">
             {[[d.on_payroll, 'On payroll'], [d.off_payroll, 'Not on payroll'], [d.working_days, `Working days ${d.cycle.label}`], [Math.round(Number(d.cycle_gross)), 'Projected this cycle']].map(([v, l]) => (
-              <Card key={String(l)} className="p-4"><div className="text-2xl font-semibold">{v}</div><div className="text-xs text-muted-foreground">{l}</div></Card>
+              <Stat key={String(l)} value={v} label={l} />
             ))}
           </div>
           <Card className="p-0">
             <div className="hidden grid-cols-[minmax(11rem,2fr)_7rem_11rem_10rem_10rem_4rem] gap-3 border-b p-3 text-xs font-medium uppercase text-muted-foreground md:grid"><div>Employee</div><div>On payroll</div><div>Monthly salary</div><div>Effective from</div><div>This cycle</div><div /></div>
-            {d.rows.length === 0 && <div className="p-10 text-center"><h3 className="font-medium">No team members yet</h3></div>}
+            {d.rows.length === 0 && <EmptyState title="No team members yet" />}
             {d.rows.map((r) => <SetupRow key={`${r.person.id}-${r.effective_from}-${r.monthly_salary}-${r.is_on_payroll}`} row={r} workingDays={d.working_days} />)}
           </Card>
           <Note><span><b>On payroll</b> is the only thing that puts someone in a run — the switch decides, not their role.</span><br /><span>Changing <b>effective from</b> starts a new rate from that day; saving the same date edits the current one.</span><br /><span>Generated and locked runs are never rewritten, so past payslips keep the rate that applied then. Only unpaid leave reduces pay.</span></Note>

@@ -63,7 +63,7 @@ export function PublicSurveyPage() {
 
   return shell(
     <Card className="p-6 text-center">
-      <h1 className="text-xl font-semibold">{s.name}</h1>
+      <h1 className="text-2xl font-semibold">{s.name}</h1>
       <p className="mb-5 text-sm text-muted-foreground">{s.product}</p>
       {s.description && <p className="mb-6 text-sm">{s.description}</p>}
       <form onSubmit={submit} className="space-y-4" noValidate>

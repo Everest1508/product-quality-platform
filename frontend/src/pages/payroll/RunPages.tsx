@@ -4,7 +4,9 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Stat } from '@/components/ui/stat';
 import { LockBadge, Note, Num, PayHeader, Th, Who } from './parts';
 import { day, money, reason, usePayQuery, usePayWrite } from './usePayroll';
 import type { Preview, RunDetail, RunList } from './types';
@@ -25,7 +27,7 @@ export function RunListPage() {
       {!d ? <Skeleton className="h-40 w-full" data-testid="runs-loading" /> : (
         <Card className="overflow-x-auto p-0">
           <div className="border-b p-4 font-semibold">Runs</div>
-          {d.runs.length === 0 ? <div className="p-10 text-center"><h3 className="font-medium">No payroll runs yet</h3><p className="text-sm text-muted-foreground">Set a monthly salary in <Link className="underline" to="/payroll/profiles/">Payroll setup</Link>, then preview the current cycle.</p></div> : (
+          {d.runs.length === 0 ? <EmptyState title="No payroll runs yet">Set a monthly salary in <Link className="underline" to="/payroll/profiles/">Payroll setup</Link>, then preview the current cycle.</EmptyState> : (
             <table className="w-full text-sm">
               <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Cycle</Th><Th num>Working days</Th><Th num>Payslips</Th><Th num>Total deduction</Th><Th num>Total gross</Th><Th>Status</Th><Th /></tr></thead>
               <tbody>{d.runs.map((r) => (
@@ -71,7 +73,7 @@ export function PreviewPage() {
       {!d ? <Skeleton className="h-40 w-full" data-testid="preview-loading" /> : (
         <>
           <Card className="overflow-x-auto p-0">
-            {d.rows.length === 0 ? <div className="p-10 text-center"><h3 className="font-medium">Nobody is on payroll</h3><p className="text-sm text-muted-foreground">Switch someone on in <Link className="underline" to="/payroll/profiles/">Salaries</Link> first.</p></div> : (
+            {d.rows.length === 0 ? <EmptyState title="Nobody is on payroll">Switch someone on in <Link className="underline" to="/payroll/profiles/">Salaries</Link> first.</EmptyState> : (
               <table className="w-full text-sm">
                 <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Employee</Th><Th num>Monthly</Th><Th num>Day rate</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Payable days</Th><Th num>Deduction</Th><Th num>Gross</Th></tr></thead>
                 <tbody>{d.rows.map((r) => (
@@ -115,12 +117,12 @@ export function RunDetailPage() {
         <Button variant="outline" size="sm" disabled={busy} onClick={lock}>{d.is_locked ? 'Unlock' : 'Lock'}</Button>
       </>} />
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4"><div className="text-2xl font-semibold">{d.total_payable}</div><div className="text-xs text-muted-foreground">Total payable days</div></Card>
-        <Card className="p-4"><div className="text-2xl font-semibold text-destructive">{d.total_deduction}</div><div className="text-xs text-muted-foreground">Total deduction</div></Card>
-        <Card className="p-4"><div className="text-2xl font-semibold text-success">{d.total_gross}</div><div className="text-xs text-muted-foreground">Total gross</div></Card>
+        <Stat value={d.total_payable} label="Total payable days" />
+        <Stat value={d.total_deduction} label="Total deduction" tone="danger" />
+        <Stat value={d.total_gross} label="Total gross" tone="success" />
       </div>
       <Card className="overflow-x-auto p-0">
-        {d.slips.length === 0 ? <div className="p-10 text-center"><h3 className="font-medium">No payslips in this run</h3><p className="text-sm text-muted-foreground">Re-preview and generate, or check that someone is switched on in <Link className="underline" to="/payroll/profiles/">Salaries</Link>.</p></div> : (
+        {d.slips.length === 0 ? <EmptyState title="No payslips in this run">Re-preview and generate, or check that someone is switched on in <Link className="underline" to="/payroll/profiles/">Salaries</Link>.</EmptyState> : (
           <table className="w-full text-sm">
             <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Employee</Th><Th num>Day rate</Th><Th num>Working days</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Payable days</Th><Th num>Deduction</Th><Th num>Gross</Th><Th /></tr></thead>
             <tbody>{d.slips.map((p) => (

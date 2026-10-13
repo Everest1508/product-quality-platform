@@ -57,7 +57,7 @@ export function ReportsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-2xl font-semibold">
           Reports{d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.scope === 'mine' ? 'My Activity' : 'Company-Wide'} · {fmt(d.start_date)} – {fmt(d.end_date)}</span>}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">Audit logs, resolution metrics, and activity breakdowns over time.</p>

@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.25.0] — 2026-10-13 · dark mode and a tidier layout
+
+> In short: the app has a dark theme, a wider page area, and tables, page titles and empty screens that look the same everywhere.
+
+### New
+
+- **Dark mode.** Pick Light, Dark or System from your account menu; the choice is remembered and System follows your device.
+
+### Better
+
+- **Every table looks the same.** Column headings are small capitals, rows highlight under the pointer and numbers line up.
+- **Page titles and empty screens match across the app.** Titles are one size and empty lists say what to do next.
+- **A wider page area on big screens, and a gentle fade between pages.**
+
 ## [1.24.1] — 2026-10-13 · sturdier forms
 
 > In short: odd or broken input no longer ends in an error page, and leave approvals follow two stricter rules.

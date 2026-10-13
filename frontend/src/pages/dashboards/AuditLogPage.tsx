@@ -47,7 +47,7 @@ export function AuditLogPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Audit Log{d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.page.count} event{d.page.count === 1 ? '' : 's'}</span>}</h1>
+        <h1 className="text-2xl font-semibold">Audit Log{d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.page.count} event{d.page.count === 1 ? '' : 's'}</span>}</h1>
         <p className="mt-1 text-sm text-muted-foreground">Chronological system activity feed, security actions, and team audit logs.</p>
       </div>
       <div className="flex flex-wrap items-end gap-2">

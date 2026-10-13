@@ -98,7 +98,7 @@ export function ProductsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-2xl font-semibold">
           Products {data && <span className="ml-2 text-sm font-normal text-muted-foreground">{data.page.count} total</span>}
         </h1>
         {data?.can_create && <Button asChild size="sm"><Link to="/products/create/"><Plus /> New product</Link></Button>}

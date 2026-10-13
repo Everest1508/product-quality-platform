@@ -85,7 +85,7 @@ export function ErrorFormPage() {
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Report Error</h1>
+        <h1 className="text-2xl font-semibold">Report Error</h1>
         <Button asChild variant="outline" size="sm"><Link to={cancelUrl}>Cancel</Link></Button>
       </div>
       <Card className="space-y-4 p-5">

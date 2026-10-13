@@ -87,7 +87,7 @@ export function ProfilePage() {
   const p = q.data;
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div><h1 className="text-xl font-semibold">Settings</h1><p className="mt-1 text-sm text-muted-foreground">Manage your profile details, email address, and notification preferences.</p></div>
+      <div><h1 className="text-2xl font-semibold">Settings</h1><p className="mt-1 text-sm text-muted-foreground">Manage your profile details, email address, and notification preferences.</p></div>
       {q.isError && !p ? (
         <Card className="p-6 text-center"><p className="text-sm">Couldn’t load your settings.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
       ) : !p ? (

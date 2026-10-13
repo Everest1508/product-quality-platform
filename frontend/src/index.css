@@ -4,6 +4,8 @@
    outside #root, so the variables must live on :root, not on a wrapper. */
 @import 'tailwindcss' source('.');
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
@@ -27,6 +29,30 @@
   --warning: #d97706;
   --info: #2563eb;
   --radius: 0.5rem;
+}
+
+:root.dark {
+  --background: #0b1220;
+  --foreground: #e6edf6;
+  --card: #111a2b;
+  --card-foreground: #e6edf6;
+  --popover: #111a2b;
+  --popover-foreground: #e6edf6;
+  --primary: #3b94dc;
+  --primary-foreground: #06121f;
+  --secondary: #1a2538;
+  --secondary-foreground: #e6edf6;
+  --muted: #0e1626;
+  --muted-foreground: #8d9bb0;
+  --accent: #14253d;
+  --accent-foreground: #8cc4f0;
+  --border: #223049;
+  --input: #2a3a56;
+  --ring: #3b94dc;
+  --destructive: #f4607f;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --info: #60a5fa;
 }
 
 @theme inline {
@@ -70,8 +96,21 @@
   * { border-color: var(--border); }
   html { -webkit-font-smoothing: antialiased; }
   body { background: var(--muted); color: var(--foreground); font-family: ui-sans-serif, system-ui, sans-serif; }
+  ::selection { background: color-mix(in srgb, var(--primary) 25%, transparent); }
+  h1 { letter-spacing: -0.02em; text-wrap: balance; }
+  /* Page tables: one look everywhere. Pages only say what the columns are. */
+  main table { border-collapse: separate; border-spacing: 0; }
+  main thead th { background: color-mix(in srgb, var(--muted) 70%, transparent); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+  main tbody tr { transition: background-color 0.12s; }
+  main tbody tr:hover { background: color-mix(in srgb, var(--secondary) 55%, transparent); }
+  main tbody td { vertical-align: middle; }
+  main td.tabular-nums, main th.text-right { font-variant-numeric: tabular-nums; }
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted-foreground) 35%, transparent) transparent; }
   button:not(:disabled), [role='button']:not([aria-disabled='true']) { cursor: pointer; }
 }
+
+@keyframes page-in { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+.page-in { animation: page-in 0.22s ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

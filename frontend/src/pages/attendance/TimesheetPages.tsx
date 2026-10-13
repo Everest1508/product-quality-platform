@@ -32,7 +32,7 @@ export function TimesheetPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-xl font-semibold">Timesheet</h1><p className="mt-1 text-sm text-muted-foreground">Per-month totals for every employee.</p></div>
+        <div><h1 className="text-2xl font-semibold">Timesheet</h1><p className="mt-1 text-sm text-muted-foreground">Per-month totals for every employee.</p></div>
         {d && <MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} />}
       </div>
       {q.isError && !d ? <Card className="p-6 text-center"><p className="text-sm">Couldn’t load the timesheet.</p><Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></Card>
@@ -74,7 +74,7 @@ export function TimesheetDetailPage() {
   return (
     <div className="space-y-4">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground"><Link to="/attendance/timesheet/" className="hover:text-foreground">Timesheet</Link><span>/</span><span className="font-medium text-foreground">{d.user.name}</span></nav>
-      <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-xl font-semibold">{d.user.name}</h1><MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} /></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">{d.user.name}</h1><MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} /></div>
       <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
         {([['Total', d.totals.total], ['Present', d.totals.present], ['Absent', d.totals.absent], ['Leave', d.totals.leave], ['Late', d.totals.late], ['Unclosed', d.totals.open]] as [string, string | number][]).map(([l, v]) => <Card key={l} className="p-3"><div className="text-xl font-semibold">{v}</div><div className="text-xs text-muted-foreground">{l}</div></Card>)}
       </div>

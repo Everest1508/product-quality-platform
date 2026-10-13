@@ -92,7 +92,7 @@ function TicketForm({ mode, ticketId, productId, initial, heading, members, prod
   return (
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">{heading}</h1>
+        <h1 className="text-2xl font-semibold">{heading}</h1>
         <Button asChild variant="outline" size="sm"><Link to={cancelUrl}>Cancel</Link></Button>
       </div>
 

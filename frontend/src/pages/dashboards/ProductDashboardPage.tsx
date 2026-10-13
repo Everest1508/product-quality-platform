@@ -56,7 +56,7 @@ export function ProductDashboardPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">{d.product.name} <span className="ml-2 text-sm font-normal text-muted-foreground">Dashboard</span></h1>
+        <h1 className="text-2xl font-semibold">{d.product.name} <span className="ml-2 text-sm font-normal text-muted-foreground">Dashboard</span></h1>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="sm"><Link to={`/products/${d.product.id}/`}>Product page</Link></Button>
           <Button asChild variant="outline" size="sm"><Link to="/dashboards/">Overview</Link></Button>

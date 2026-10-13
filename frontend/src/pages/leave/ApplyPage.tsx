@@ -64,7 +64,7 @@ export function ApplyPage() {
   const err = (f: string) => errors[f]?.length ? <span className="text-xs text-destructive" role="alert">{errors[f].join(' ')}</span> : null;
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
-      <div className="flex items-center justify-between"><h1 className="text-xl font-semibold">Apply for leave</h1><Button asChild variant="outline" size="sm"><Link to="/leave/">Cancel</Link></Button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Apply for leave</h1><Button asChild variant="outline" size="sm"><Link to="/leave/">Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         {errors.__all__ && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{errors.__all__.join(' ')}</div>}
         <label className="grid gap-1.5 text-sm font-medium">Leave type

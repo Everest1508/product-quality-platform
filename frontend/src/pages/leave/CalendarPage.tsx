@@ -20,7 +20,7 @@ export function CalendarPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Leave calendar</h1>
+        <h1 className="text-2xl font-semibold">Leave calendar</h1>
         <div className="flex items-center gap-1">
           <Button variant="outline" size="sm" aria-label="Previous month" onClick={() => setMonth(d.prev)}>‹</Button>
           <h2 className="min-w-36 text-center font-semibold">{d.label}</h2>

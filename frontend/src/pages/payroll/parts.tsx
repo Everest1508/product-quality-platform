@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/ui/page-header';
 import type { Person } from './types';
 
 const TABS: [string, string, boolean][] = [['/payroll/', 'Runs', true], ['/payroll/profiles/', 'Salaries', true], ['/payroll/holidays/', 'Holidays', true], ['/payroll/me/', 'My payslips', false]];
@@ -11,10 +12,7 @@ export function PayHeader({ title, sub, actions, admin = true }: { title: string
   const active = (to: string) => (to === '/payroll/' ? pathname === to || pathname.startsWith('/payroll/runs/') || pathname.startsWith('/payroll/preview') || pathname.startsWith('/payroll/payslips/') : pathname.startsWith(to));
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><h1 className="text-xl font-semibold">{title}</h1>{sub && <p className="mt-1 text-sm text-muted-foreground">{sub}</p>}</div>
-        {actions && <div className="flex gap-2">{actions}</div>}
-      </div>
+      <PageHeader title={title} sub={sub} actions={actions} />
       <nav aria-label="Payroll sections" className="flex gap-1 border-b">
         {TABS.filter(([, , adminOnly]) => admin || !adminOnly).map(([to, label]) => (
           <Link key={to} to={to} aria-current={active(to) ? 'page' : undefined} className={`-mb-px border-b-2 px-3 py-2 text-sm ${active(to) ? 'border-primary font-medium' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{label}</Link>
