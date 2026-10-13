@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.15.0] — 2026-10-13 · a new ticket page
+
+> In short: the ticket page and the new-ticket and edit forms have a new look, with comments, mentions and every control on one screen that saves as you go.
+
+### New
+
+- **A new ticket page.** Status, priority, assignees, deadline and follow are all on the side, and each change saves straight away and tells you it did.
+- **Comments with @mentions that are easier to write.** Type @ and pick a person with the arrow keys and Enter; the people you mention are highlighted and get a notification.
+- **A new form for creating and editing tickets.** Mistakes are shown next to the field they belong to, and what you typed is kept.
+
+### Better
+
+- **Assigning several people is one step.** Tick everyone you want and the ticket is updated once, a moment after you stop.
+- **You can see who else has the ticket open.** The ticket page tells you when a teammate is looking at it too.
+- **Deadlines stay exactly as you typed them.** It no longer matters which time zone your computer is set to.
+
 ## [1.14.0] — 2026-10-13 · tickets, redone
 
 > In short: the ticket board and the ticket list have a new look and feel quicker, and each product now shows its own menu in the sidebar.

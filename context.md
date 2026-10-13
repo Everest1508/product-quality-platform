@@ -23,6 +23,7 @@ entry here is unfinished.
 | Area | Where it lives | The one thing to know |
 |---|---|---|
 | App shell / nav | `templates/core/base.html`, `templates/core/_sidebar.html` | One `<style>` block, htmx + Alpine from CDN, **no build step** |
+| React ticket detail/forms | `frontend/src/pages/ticket/`, `apps/uiapi/tickets.py`, `apps/tickets/service.py` | Deadlines are wall-clock strings; `ticket_status`/`ticket_assign` kept for the dashboard; see the 2026-10-13 (React ticket detail/forms) entry |
 | React tickets (list/board) | `frontend/src/pages/tickets/`, `apps/uiapi/{tickets,products}.py`, `apps/tickets/{filters,service}.py` | `scope=product` vs `product=` filter; see the 2026-10-13 entry |
 | React shell | `frontend/src/shell/`, `apps/uiapi/{views,shell}.py`, `templates/uiapi/shell.html` | Owns sidebar/topbar/bell/presence/search/toasts; see the 2026-10-12 (React shell) entry |
 | React UI (migrating) | `frontend/`, `apps/uiapi/`, `apps/core/ui_assets.py` | See the 2026-10-12 (React shell) entry; `REACT_PAGES` and the scoped theme from the pilot were removed |
@@ -70,6 +71,16 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-10-13 (React ticket detail/forms) — the whole tickets area is React; detail, create and edit and their legacy code are gone
+
+- **What moved.** `/tickets/<pk>/`, `/products/<pk>/tickets/<ticket_pk>/` (detail), `/tickets/create/`, `/products/<pk>/tickets/create/` (create) and `/tickets/<pk>/edit/` (edit). The Django views keep the access checks (member, `require_ticket_access`, `require_product_access`, and "the ticket must belong to that product" on the product URL) and return `render_shell`; React renders `frontend/src/pages/ticket/` (`TicketDetailPage`, `TicketFormPage`, `MentionTextarea`, `AssigneePicker`, `DeadlineField`, `CommentList`).
+- **API** (all `CompanyAPIView`, 404 without access): `GET/PATCH/DELETE /ui-api/v1/tickets/<pk>/` (detail with comments, members, mention candidates, statuses, priorities; PATCH is the edit form, 400 body `{errors: {field: [..]}, detail}`), `POST /ui-api/v1/tickets/` (create; `warnings` lists assignees skipped for lack of product access), `POST .../<pk>/priority|assign|deadline|follow|comments/`, plus the existing `.../status/`. Each action returns the fresh detail so the page replaces its cache entry.
+- **Service layer.** `apps/tickets/service.py` now holds `set_priority`, `assign`, `set_deadline`, `toggle_follow`, `add_comment` (mentions + the mention/comment notification split), `create_ticket`, `update_ticket` alongside `change_status`/`delete_ticket`. Behaviour and activity-event names are unchanged.
+- **Deadlines** travel as the company wall clock `YYYY-MM-DDTHH:MM` (`deadline_local`), never an ISO string with offset, so a browser in another timezone cannot shift them. `DeadlineField` saves on blur/Enter and ignores a half-typed date (`validity.badInput`).
+- **Kept on purpose.** `tickets:ticket_status` and `tickets:ticket_assign` (and the partials `_ticket_status`, `_ticket_assignee`, `_assignee_multiselect` they render) because the legacy home dashboard `hx-post`s to them; they go when the dashboard moves.
+- **Deleted.** `ticket_detail/ticket_form` templates (global and product), seven partials, routes `ticket_priority|deadline|follow|comment|delete` and their views, the `ticket_tags` template tag and `mentions.render_comment` (React renders mentions as parts, never HTML). Old-HTML tests were converted to API checks or removed where `apps/uiapi/test_ticket_detail.py` covers the behaviour. htmx now 194 attributes in 27 templates (was 212 in 31).
+- **UI notes.** Assignees auto-save 600 ms after the last change (one request); comments post once on double click and keep the text on failure; `e` on a ticket opens the edit form; "also viewing" uses presence `ticket_id`; success and delete navigate with the router.
 
 ### 2026-10-13 (React tickets list/board) — the six ticket list and board pages moved to React; their legacy templates, views and htmx are gone
 
