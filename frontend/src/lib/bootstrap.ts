@@ -9,6 +9,7 @@ export type Bootstrap = {
   counts: { open_tickets: number; open_errors: number; pending_corrections: number };
   is_admin: boolean;
   version: string;
+  version_name: string;
   csrf: string;
   vapid_key: string;
   messages: FlashMessage[];

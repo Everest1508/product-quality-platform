@@ -63,3 +63,10 @@ it('says so when the changelog cannot load', async () => {
   );
   expect(await screen.findByText(/couldn.t load/i)).toBeInTheDocument();
 });
+
+it('shows a release name beside its version', async () => {
+  vi.spyOn(bootstrap, 'useBootstrapData').mockReturnValue(sampleBootstrap());
+  vi.spyOn(api, 'get').mockResolvedValue({ releases: [{ tag: '1.12.0', name: 'Heron', date: '2026-10-12', title: 'newest', released: true, summary: '', sections: [] }] } as never);
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><Changelog open onOpenChange={() => {}} /></QueryClientProvider>);
+  expect(await screen.findByText(/v1\.12\.0 “Heron” · newest/)).toBeInTheDocument();
+});

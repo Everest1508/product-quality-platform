@@ -997,3 +997,6 @@ decided what and strike the item** rather than deleting it.
 ### 2026-10-13 Reminders, add-all DSR, board polish (1.37.0)
 - `apps/attendance/reminders.send(company, now, dry_run)` + `manage.py send_attendance_reminders`: needs cron every 5-10 min (not wired to a scheduler here). Kinds `attendance_checkin` / `attendance_checkout` (mutable in Profile → Notifications). Only people with a punch in the last 30 days; skips weekends, holidays, approved leave; one per kind per day.
 - `POST dsr/suggestions/add-all/` (`service.add_all_suggested`) backs the DSR banner. Board: compact density (`usePref`), hover peek (Tooltip), `card-drop` animation and a lift on drag (local kanban patch). Forms use `stickyBar`; `components/skeletons.tsx` has page-shaped loaders.
+
+### 2026-10-13 Release names (1.37.1)
+- Every numbered release in `CHANGELOG.md` now has a unique bird name in its heading (`## [1.37.1] "Hoopoe" — date · title`), oldest 1.0.1 "Albatross" … newest 1.37.1 "Hoopoe"; next unused names: Cormorant, then pick more. `parse_changelog` returns `name`; `get_version_info()["name"]`, bootstrap `version_name` and the What's new dialog show it. `ReleaseNameTest` enforces unique names. The three old `[Unreleased]` blocks are unnamed on purpose.

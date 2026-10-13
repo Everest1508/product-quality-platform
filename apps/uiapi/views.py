@@ -1,4 +1,5 @@
 from django.conf import settings
+from apps.core.changelog import get_version_info
 from django.contrib import messages as dj_messages
 from django.middleware.csrf import get_token
 from django.urls import reverse
@@ -95,6 +96,7 @@ class BootstrapView(CompanyAPIView):
             "counts": nav_counts(user, company, role),
             "is_admin": role in ("owner", "admin"),
             "version": getattr(settings, "APP_VERSION", "0.0.0"),
+            "version_name": get_version_info()["name"],
             "vapid_key": getattr(settings, "WEBPUSH_VAPID_PUBLIC_KEY", ""),
             "csrf": get_token(request._request),
             "messages": flash,

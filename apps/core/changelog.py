@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # The separator is an em dash with a middot title in this file, but plain
 # hyphens are accepted so the file can be reformatted without breaking this.
 _RELEASE_RE = re.compile(
-    r"^##\s+\[(?P<tag>[^\]]+)\]\s*[—–-]\s*(?P<date>[\d-]+)"
+    r"^##\s+\[(?P<tag>[^\]]+)\]\s*(?:\"(?P<name>[^\"]+)\")?\s*[—–-]\s*(?P<date>[\d-]+)"
     r"(?:\s*[·–—-]\s*(?P<title>.+?))?\s*$"
 )
 _SECTION_RE = re.compile(r"^###\s+(?P<name>.+?)\s*$")
@@ -149,6 +149,7 @@ def parse_changelog(text):
             _flush(section["items"] if section else None, buffer, sub_buffer, subs)
             release = {
                 "tag": match.group("tag"),
+                "name": (match.group("name") or "").strip(),
                 "date": match.group("date"),
                 "title": (match.group("title") or "").strip(),
                 "released": match.group("tag").strip().lower() != "unreleased",
@@ -300,6 +301,7 @@ def get_version_info():
     return {
         "version": version,
         "latest_release": latest.get("tag"),
+        "name": (releases[0].get("name") if releases and releases[0]["tag"] == version else "") or "",
         "latest_release_date": latest.get("date"),
         "has_unreleased": any(not r["released"] for r in releases),
         "release_count": len(releases),

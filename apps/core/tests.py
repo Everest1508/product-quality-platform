@@ -542,3 +542,19 @@ class ShippedChangelogTest(TestCase):
                     lead = re.match(r"<strong>([^<]*)</strong>", item)
                     if lead:
                         self.assertRegex(lead.group(1), r"[.!?]$", item[:80])
+
+
+class ReleaseNameTest(TestCase):
+    def test_a_release_can_carry_a_name_and_the_name_is_optional(self):
+        text = '# Changelog\n\n## [1.2.0] "Heron" — 2026-10-04 · first\n\n### New\n- **A.** x\n\n## [1.1.0] — 2026-10-03 · second\n\n### New\n- **B.** y\n'
+        named, plain = parse_changelog(text)
+        self.assertEqual((named["tag"], named["name"], named["title"]), ("1.2.0", "Heron", "first"))
+        self.assertEqual((plain["tag"], plain["name"]), ("1.1.0", ""))
+
+    def test_every_numbered_release_in_the_shipped_file_has_a_unique_name(self):
+        changelog_module._cache.clear()
+        named = [r for r in changelog_module.get_changelog() if r["released"]]
+        self.assertTrue(all(r["name"] for r in named), [r["tag"] for r in named if not r["name"]])
+        names = [r["name"] for r in named]
+        self.assertEqual(len(names), len(set(names)), "two releases share a name")
+        self.assertEqual(changelog_module.get_version_info()["name"], named[0]["name"])

@@ -9,14 +9,14 @@ import { Chip } from '@/components/ui/chip';
 import { HistoryIcon } from '@/components/ui/icons';
 
 type Section = { name: string; label: string; slug: string; count: number; items: string[] };
-type Release = { tag: string; date: string; title?: string; released: boolean; summary?: string; sections: Section[] };
+type Release = { tag: string; name?: string; date: string; title?: string; released: boolean; summary?: string; sections: Section[] };
 
 function ReleaseView({ r, filter }: { r: Release; filter: string | null }) {
   const sections = r.sections.filter((s) => !filter || s.slug === filter);
   return (
     <section className="grid gap-3">
       <div>
-        <h3 className="text-sm font-semibold">v{r.tag}{r.title ? ` · ${r.title}` : ''}</h3>
+        <h3 className="text-sm font-semibold">v{r.tag}{r.name ? ` “${r.name}”` : ''}{r.title ? ` · ${r.title}` : ''}</h3>
         <p className="text-xs text-muted-foreground">{r.date}</p>
         {r.summary && <p className="mt-1 text-sm text-muted-foreground">{r.summary}</p>}
       </div>

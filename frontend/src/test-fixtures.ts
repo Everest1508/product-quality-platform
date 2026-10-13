@@ -23,6 +23,7 @@ export const sampleBootstrap = (over: Partial<Bootstrap> = {}): Bootstrap => ({
   counts: { open_tickets: 6, open_errors: 0, pending_corrections: 2 },
   is_admin: false,
   version: '1.12.0',
+  version_name: 'Heron',
   csrf: 'tok',
   vapid_key: '',
   messages: [],
