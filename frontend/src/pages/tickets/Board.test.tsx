@@ -23,11 +23,12 @@ const makeBoard = (over: Partial<BoardResponse> = {}): BoardResponse => ({
   ...over,
 });
 
-function Harness({ board, selecting = false, selected = new Set<number>(), onSelect = () => {}, onDelete = () => {} }: {
-  board: BoardResponse; selecting?: boolean; selected?: Set<number>; onSelect?: (id: number, on: boolean) => void; onDelete?: (t: unknown) => void;
+const fetches = { n: 0 };
+function Harness({ board, selecting = false, selected = new Set<number>(), onSelect = () => {}, onDelete = () => {}, disabled = false }: {
+  board: BoardResponse; selecting?: boolean; selected?: Set<number>; onSelect?: (id: number, on: boolean) => void; onDelete?: (t: unknown) => void; disabled?: boolean;
 }) {
-  const q = useQuery({ queryKey: KEY, queryFn: () => Promise.resolve(board), staleTime: Infinity });
-  return q.data ? <Board data={q.data} queryKey={KEY} selecting={selecting} selected={selected} onSelect={onSelect} onDelete={onDelete as never} /> : null;
+  const q = useQuery({ queryKey: KEY, queryFn: () => { fetches.n += 1; return Promise.resolve(board); }, staleTime: Infinity });
+  return q.data ? <Board data={q.data} queryKey={KEY} selecting={selecting} selected={selected} onSelect={onSelect} onDelete={onDelete as never} disabled={disabled} /> : null;
 }
 
 const dt = () => ({ setData: vi.fn(), getData: () => '1', effectAllowed: '' });
@@ -60,7 +61,7 @@ it('dropping a card moves it at once and calls the API', async () => {
   const toast = vi.spyOn(toasts, 'toast').mockImplementation(() => {});
   await setup();
   dragTo(screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement, column('Testing'));
-  expect(post).toHaveBeenCalledWith('tickets/1/status/', { status: 'testing' });
+  await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/1/status/', { status: 'testing' }));
   // the card is already in the new column while the request is still in flight
   expect(await within(column('Testing')).findByText('Login bug')).toBeInTheDocument();
   expect(within(column('Open')).queryByText('Login bug')).not.toBeInTheDocument();
@@ -73,17 +74,39 @@ it('a refused move puts the card back and toasts the reason', async () => {
   const toast = vi.spyOn(toasts, 'toast').mockImplementation(() => {});
   await setup();
   dragTo(screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement, column('Testing'));
+  await waitFor(() => expect(toast).toHaveBeenCalled());
   await waitFor(() => expect(within(column('Open')).getByText('Login bug')).toBeInTheDocument());
   expect(within(column('Testing')).queryByText('Login bug')).not.toBeInTheDocument();
   expect(toast).toHaveBeenCalledWith("'testing' is not a valid status.", 'error');
 });
 
-it('a second drop on a card with a move in flight sends nothing', async () => {
+it('two drops in the same tick on one card send one request', async () => {
   const post = vi.spyOn(api, 'post').mockReturnValue(new Promise(() => {}));
   await setup();
-  dragTo(screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement, column('Testing'));
-  dragTo(screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement, column('Resolved'));
+  const card = screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement;
+  dragTo(card, column('Testing'));
+  dragTo(card, column('Resolved'));
+  await waitFor(() => expect(post).toHaveBeenCalled());
   expect(post).toHaveBeenCalledTimes(1);
+});
+
+it('a failed move refetches the board instead of restoring an old snapshot', async () => {
+  vi.spyOn(api, 'post').mockRejectedValue(new Error('nope'));
+  vi.spyOn(toasts, 'toast').mockImplementation(() => {});
+  fetches.n = 0;
+  await setup();
+  const before = fetches.n;
+  dragTo(screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement, column('Testing'));
+  await waitFor(() => expect(fetches.n).toBeGreaterThan(before));
+});
+
+it('does nothing while the board is showing stale data for new filters', async () => {
+  const post = vi.spyOn(api, 'post').mockResolvedValue({});
+  await setup({ disabled: true });
+  dragTo(screen.getByText('Login bug').closest('[data-ticket-card]') as HTMLElement, column('Testing'));
+  await userEvent.click(screen.getByRole('button', { name: 'Move AUM-001' }));
+  expect(screen.queryByRole('menuitem', { name: 'Testing' })).not.toBeInTheDocument();
+  expect(post).not.toHaveBeenCalled();
 });
 
 it('dropping on the same column does nothing', async () => {
@@ -99,7 +122,7 @@ it('the Move menu is the touch alternative to dragging', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Move AUM-001' }));
   expect(screen.queryByRole('menuitem', { name: 'Open' })).not.toBeInTheDocument(); // not its own column
   await userEvent.click(await screen.findByRole('menuitem', { name: 'Testing' }));
-  expect(post).toHaveBeenCalledWith('tickets/1/status/', { status: 'testing' });
+  await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/1/status/', { status: 'testing' }));
 });
 
 it('renders a hostile title as text', async () => {

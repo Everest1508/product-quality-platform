@@ -259,3 +259,24 @@ class TicketMutationApiTest(Base):
         self.login("owner")
         self.assertEqual(self.post_json("/ui-api/v1/tickets/bulk-delete/", {"ids": []}).status_code, 400)
         self.assertEqual(self.post_json("/ui-api/v1/tickets/bulk-delete/", {}).status_code, 400)
+
+
+class TicketRobustnessTest(Base):
+    url = "/ui-api/v1/tickets/"
+
+    def test_a_non_numeric_product_or_assignee_filter_is_ignored_not_a_500(self):
+        self.make(self.p_open, "a")
+        self.login("owner")
+        for params in ({"product": "abc"}, {"assigned": "abc"}, {"product": "1; DROP"}):
+            r = self.client.get(self.url, params)
+            self.assertEqual(r.status_code, 200, params)
+            self.assertEqual(r.json()["page"]["count"], 1)
+
+    def test_bulk_delete_counts_each_ticket_once_and_caps_the_batch(self):
+        t = self.make(self.p_open, created_by=self.owner)
+        self.login("owner")
+        r = self.client.post("/ui-api/v1/tickets/bulk-delete/", {"ids": [t.pk, t.pk, str(t.pk)]}, content_type="application/json")
+        self.assertEqual(r.json(), {"deleted": 1, "skipped": 0})
+        r = self.client.post("/ui-api/v1/tickets/bulk-delete/", {"ids": list(range(1, 2001))}, content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["deleted"] + r.json()["skipped"], 500)

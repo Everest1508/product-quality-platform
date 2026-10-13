@@ -152,3 +152,26 @@ it('a delete that the server refuses toasts its reason', async () => {
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
   await waitFor(() => expect(toast).toHaveBeenCalledWith('You can only delete tickets you created.', 'error'));
 });
+
+it('changing a filter clears the selection so hidden tickets are never deleted', async () => {
+  setup('/tickets/list/');
+  await screen.findByText('Login bug');
+  await userEvent.click(screen.getByRole('button', { name: 'Select' }));
+  await userEvent.click(screen.getByRole('checkbox', { name: /select ticket AUM-001/i }));
+  expect(screen.getByRole('button', { name: /delete selected \(1\)/i })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('combobox', { name: 'Filter by priority' }));
+  await userEvent.click(await screen.findByRole('option', { name: 'High' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: /delete selected/i })).not.toBeInTheDocument());
+});
+
+it('a ticket deleted on its own leaves the selection', async () => {
+  setup('/tickets/list/');
+  vi.spyOn(api, 'delete').mockResolvedValue({ deleted: 'AUM-001' });
+  vi.spyOn(toasts, 'toast').mockImplementation(() => {});
+  await screen.findByText('Login bug');
+  await userEvent.click(screen.getByRole('button', { name: 'Select' }));
+  await userEvent.click(screen.getByRole('checkbox', { name: /select ticket AUM-001/i }));
+  await userEvent.click(screen.getAllByRole('button', { name: /^delete AUM-001/i })[0]);
+  await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: /delete selected/i })).not.toBeInTheDocument());
+});

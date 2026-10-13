@@ -36,3 +36,21 @@ it('api.delete sends DELETE with the CSRF token', async () => {
   expect(init.method).toBe('DELETE');
   expect((init.headers as Record<string, string>)['X-CSRFToken']).toBe('tok');
 });
+
+it('a 403 with a business reason does not reload the page and shows the reason', async () => {
+  const lost = vi.fn();
+  hooks.onAuthLost = lost;
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ detail: 'You can only delete tickets you created.' }), { status: 403 }));
+  await expect(api.delete('tickets/1/')).rejects.toThrow('You can only delete tickets you created.');
+  expect(lost).not.toHaveBeenCalled();
+});
+
+it('a 403 that is about the session or CSRF still goes through the auth hook', async () => {
+  for (const detail of ['Authentication credentials were not provided.', 'CSRF Failed: CSRF token missing.', 'No active company.']) {
+    const lost = vi.fn();
+    hooks.onAuthLost = lost;
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ detail }), { status: 403 }));
+    await expect(api.get('bootstrap/')).rejects.toThrow();
+    expect(lost, detail).toHaveBeenCalledTimes(1);
+  }
+});

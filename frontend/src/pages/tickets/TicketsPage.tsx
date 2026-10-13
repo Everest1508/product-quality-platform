@@ -36,6 +36,12 @@ export function TicketsPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [confirm, setConfirm] = useState<Confirm>(null);
 
+  // A selection belongs to what is on screen: a new filter, page or view starts a new one.
+  const scopeKey = `${view}|${productId}|${params.toString()}`;
+  useEffect(() => {
+    setSelected(new Set());
+  }, [scopeKey]);
+
   const base = productId ? `/products/${productId}/tickets/` : '/tickets/';
   const newTicket = productId ? `/products/${productId}/tickets/create/` : urls.ticket_create;
   const title = productId ? `${productNav?.name ?? 'Product'} tickets` : 'All tickets';
@@ -104,7 +110,7 @@ export function TicketsPage() {
         </div>
       </div>
 
-      <FilterBar filters={filters} onChange={setFilters} meta={meta.data} showStatus={view === 'list'} showProduct={!productId} />
+      <FilterBar filters={filters} onChange={setFilters} meta={meta.data} showStatus={view === 'list'} showProduct={!productId} view={view} />
 
       {tickets.isError && !data ? (
         <Card className="p-6 text-center">
@@ -116,7 +122,7 @@ export function TicketsPage() {
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
         </Card>
       ) : data.view === 'board' ? (
-        <Board data={data} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
+        <Board data={data} disabled={tickets.isPlaceholderData} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
       ) : data.items.length === 0 ? (
         <Card className="p-10 text-center">
           <h3 className="font-medium">No tickets found</h3>
@@ -143,7 +149,10 @@ export function TicketsPage() {
         description="This cannot be undone."
         confirmLabel="Delete"
         onConfirm={() => {
-          if (confirm?.kind === 'one') deleteOne.mutate(confirm.item);
+          if (confirm?.kind === 'one') {
+            const item = confirm.item;
+            deleteOne.mutate(item, { onSuccess: () => pick(item.id, false) });
+          }
           else if (confirm?.kind === 'many') deleteMany.mutate([...selected], { onSuccess: stopSelecting });
         }}
       />

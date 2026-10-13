@@ -22,6 +22,7 @@ from apps.uiapi.views import CompanyAPIView
 
 User = get_user_model()
 PER_PAGE = 25
+MAX_BULK = 500
 
 
 def _name(user):
@@ -167,6 +168,7 @@ class TicketBulkDeleteAPIView(CompanyAPIView):
         ids = request.data.get("ids")
         if not isinstance(ids, list) or not ids:
             return Response({"detail": "No tickets selected."}, status=400)
+        ids = list(dict.fromkeys(str(i) for i in ids))[:MAX_BULK]  # each ticket once, bounded batch
         deleted = 0
         for raw in ids:
             try:

@@ -16,7 +16,7 @@ const meta: TicketMeta = {
 
 function setup(props: Partial<Parameters<typeof FilterBar>[0]> = {}) {
   const onChange = vi.fn();
-  render(<FilterBar filters={{}} onChange={onChange} meta={meta} showStatus showProduct {...props} />);
+  render(<FilterBar filters={{}} onChange={onChange} meta={meta} showStatus showProduct view="list" {...props} />);
   return onChange;
 }
 
@@ -28,6 +28,23 @@ it('search is debounced by 400ms and resets the page', () => {
   expect(onChange).not.toHaveBeenCalled();
   vi.advanceTimersByTime(2);
   expect(onChange).toHaveBeenCalledWith({ q: 'login', page: undefined });
+});
+
+it('a dropdown change made while the search is still debouncing is not undone', () => {
+  vi.useFakeTimers();
+  const onChange = vi.fn();
+  const { rerender } = render(<FilterBar filters={{}} onChange={onChange} meta={meta} showStatus showProduct view="list" />);
+  fireEvent.change(screen.getByRole('searchbox', { name: /search tickets/i }), { target: { value: 'foo' } });
+  rerender(<FilterBar filters={{ priority: 'high' }} onChange={onChange} meta={meta} showStatus showProduct view="list" />);
+  vi.advanceTimersByTime(401);
+  expect(onChange).toHaveBeenCalledWith({ priority: 'high', q: 'foo', page: undefined });
+});
+
+it('the sort control shows the real default for each view', () => {
+  const { rerender } = render(<FilterBar filters={{}} onChange={() => {}} meta={meta} showStatus={false} showProduct view="board" />);
+  expect(screen.getByRole('combobox', { name: 'Sort tickets' })).toHaveTextContent('Priority (high first)');
+  rerender(<FilterBar filters={{}} onChange={() => {}} meta={meta} showStatus showProduct view="list" />);
+  expect(screen.getByRole('combobox', { name: 'Sort tickets' })).toHaveTextContent('Newest first');
 });
 
 it('picking a priority calls onChange without a page', async () => {

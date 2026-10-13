@@ -46,6 +46,9 @@ def apply_ticket_filters(request, qs):
     ctx["current_priority"] = priority
 
     product_id = request.GET.get("product")
+    # A hand-edited or old bookmarked value must not crash the query.
+    if product_id and not product_id.isdigit():
+        product_id = None
     if product_id:
         qs = qs.filter(product_id=product_id)
     ctx["current_product"] = product_id
@@ -55,8 +58,10 @@ def apply_ticket_filters(request, qs):
         qs = qs.filter(assignees=request.user)
     elif assigned == "unassigned":
         qs = qs.filter(assignees__isnull=True)
-    elif assigned:
+    elif assigned and assigned.isdigit():
         qs = qs.filter(assignees__id=assigned).distinct()
+    else:
+        assigned = None
     ctx["current_assigned"] = assigned
 
     overdue = request.GET.get("overdue")

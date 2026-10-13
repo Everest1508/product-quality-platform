@@ -74,3 +74,16 @@ it('does nothing and does not throw when there are no tickets', () => {
     press('e');
   }).not.toThrow();
 });
+
+it('Enter and e leave buttons, links and menu items alone', () => {
+  const go = vi.spyOn(nav, 'go').mockImplementation(() => {});
+  press('j');
+  const btn = document.body.appendChild(document.createElement('button'));
+  const link = document.body.appendChild(document.createElement('a'));
+  const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+  btn.dispatchEvent(ev);
+  expect(ev.defaultPrevented).toBe(false);
+  press('Enter', {}, link);
+  press('e', {}, btn);
+  expect(go).not.toHaveBeenCalled();
+});

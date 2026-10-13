@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,6 +21,7 @@ type Props = {
   meta?: TicketMeta;
   showStatus: boolean;
   showProduct: boolean;
+  view: 'list' | 'board';
 };
 
 function Choice({ label, value, allLabel, options, onChange }: {
@@ -45,14 +46,17 @@ function Choice({ label, value, allLabel, options, onChange }: {
   );
 }
 
-export function FilterBar({ filters, onChange, meta, showStatus, showProduct }: Props) {
+export function FilterBar({ filters, onChange, meta, showStatus, showProduct, view }: Props) {
   const [q, setQ] = useState(filters.q ?? '');
+  // The debounce fires later than it was set up; it must see the filters as they are then.
+  const latest = useRef(filters);
+  latest.current = filters;
   // Keep the box in step when the URL changes (Clear, Back).
   useEffect(() => setQ(filters.q ?? ''), [filters.q]);
   // Search as you type, but only once typing pauses.
   useEffect(() => {
     if (q === (filters.q ?? '')) return;
-    const t = setTimeout(() => onChange({ ...filters, q: q || undefined, page: undefined }), 400);
+    const t = setTimeout(() => onChange({ ...latest.current, q: q || undefined, page: undefined }), 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
@@ -90,7 +94,7 @@ export function FilterBar({ filters, onChange, meta, showStatus, showProduct }: 
         Overdue only
       </label>
       <span className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
-        <Choice label="Sort tickets" value={filters.sort ?? '-created'} options={SORTS} onChange={set('sort')} />
+        <Choice label="Sort tickets" value={filters.sort ?? (view === 'board' ? '-priority' : '-created')} options={SORTS} onChange={set('sort')} />
         <Button variant="ghost" size="sm" onClick={() => onChange({})}>Clear</Button>
       </span>
     </div>

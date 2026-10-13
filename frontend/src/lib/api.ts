@@ -31,7 +31,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { Accept: 'application/json', 'X-CSRFToken': config.csrf, ...init?.headers },
   });
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) hooks.onAuthLost();
     // The server explains refusals in {"detail": "..."}; show that when it is there.
     let detail = '';
     try {
@@ -40,6 +39,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* no JSON body */
     }
+    // 401, or a 403 that is about the session / CSRF / workspace: go back through login.
+    // Any other 403 is a business refusal ("you can only delete your own tickets") for the caller to show.
+    const sessionProblem = !detail || /^(Authentication credentials|CSRF|No active company)/.test(detail);
+    if (res.status === 401 || (res.status === 403 && sessionProblem)) hooks.onAuthLost();
     throw new Error(detail || `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;

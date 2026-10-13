@@ -20,35 +20,41 @@ type Props = {
   selected: Set<number>;
   onSelect(id: number, on: boolean): void;
   onDelete(item: TicketItem): void;
+  // True while the data shown belongs to the previous filters: moving then would write the wrong board.
+  disabled?: boolean;
 };
 
-export function Board({ data, queryKey, selecting, selected, onSelect, onDelete }: Props) {
+export function Board({ data, queryKey, selecting, selected, onSelect, onDelete, disabled = false }: Props) {
   const qc = useQueryClient();
   const dragging = useRef<number | null>(null);
   const [over, setOver] = useState<string | null>(null);
   const [pending, setPending] = useState<Set<number>>(new Set());
+  const inflight = useRef<Set<number>>(new Set()); // checked synchronously, so two drops in one tick send one request
   const labelOf = (key: string) => data.columns.find((c) => c.key === key)?.label ?? key;
 
   const move = async (t: TicketItem, to: string) => {
-    if (t.status === to || pending.has(t.id)) return;
-    const before = qc.getQueryData<BoardResponse>(queryKey);
-    qc.setQueryData(queryKey, applyMove(data, t.id, to));
+    if (disabled || t.status === to || inflight.current.has(t.id)) return;
+    inflight.current.add(t.id);
     setPending((s) => new Set(s).add(t.id));
     try {
+      // A refetch already in flight would otherwise snap the card back for a moment.
+      await qc.cancelQueries({ queryKey });
+      qc.setQueryData<BoardResponse>(queryKey, (cur) => (cur ? applyMove(cur, t.id, to) : cur));
       await api.post(`tickets/${t.id}/status/`, { status: to });
       toast(`${t.key}: status ${t.status_label} → ${labelOf(to)}.`, 'success');
-      qc.invalidateQueries({ queryKey: ['tickets'] });
       qc.invalidateQueries({ queryKey: ['bootstrap'] });
       qc.invalidateQueries({ queryKey: ['product-nav'] });
     } catch (e) {
-      qc.setQueryData(queryKey, before);
       toast(e instanceof Error ? e.message : 'Cannot move ticket', 'error');
     } finally {
+      inflight.current.delete(t.id);
       setPending((s) => {
         const next = new Set(s);
         next.delete(t.id);
         return next;
       });
+      // Settle on the server's truth. Restoring an old snapshot would undo other cards' moves.
+      qc.invalidateQueries({ queryKey: ['tickets'] });
     }
   };
 
@@ -89,7 +95,7 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete 
               data-ticket-card
               data-ticket-id={t.id}
               data-url={t.url}
-              draggable
+              draggable={!disabled}
               onDragStart={(e) => {
                 dragging.current = t.id;
                 e.dataTransfer?.setData('text/plain', String(t.id));
@@ -113,7 +119,7 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete 
                       <Button variant="ghost" size="icon-sm" aria-label={`Move ${t.key}`}><ArrowRightLeft /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {data.columns.filter((c) => c.key !== t.status).map((c) => (
+                      {!disabled && data.columns.filter((c) => c.key !== t.status).map((c) => (
                         <DropdownMenuItem key={c.key} onSelect={() => void move(t, c.key)}>{c.label}</DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
