@@ -548,7 +548,8 @@ class PwaTests(TestCase):
         r = self.client.get("/login/")
         self.assertContains(r, 'rel="manifest"')
         self.assertContains(r, "viewport-fit=cover")
-        self.assertContains(r, "serviceWorker.register('/sw.js'")
+        # The worker is registered by the React entry (frontend/src/lib/pwa.ts), which every shell page loads.
+        self.assertContains(r, "/ui/app.js")
 
 
 class TemplateCommentTest(TestCase):
