@@ -22,11 +22,11 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 ### Better
 
 - **Pages open faster and move between each other without a reload.**
-- **Forms refuse odd input with a clear message** instead of an error page, and double clicks no longer send things twice.
+- **Forms refuse odd input with a clear message.** You no longer land on an error page, and double clicks no longer send things twice.
 
 ### Security
 
-- **Leave you ask for can't be approved by you** while another approver is available, and the old admin pages are gone.
+- **You can't approve your own leave while another approver is available.** The old admin pages are gone too.
 
 ## [1.27.0] — 2026-10-13 · pickers, board and charts
 
