@@ -6,6 +6,13 @@ import { ProductApiDocsPage } from '@/pages/products/ProductApiDocsPage';
 import { ProductDetailPage } from '@/pages/products/ProductDetailPage';
 import { ProductFormPage } from '@/pages/products/ProductFormPage';
 import { ProductsPage } from '@/pages/products/ProductsPage';
+import { RuleFormPage } from '@/pages/automation/RuleFormPage';
+import { RulesPage } from '@/pages/automation/RulesPage';
+import { CsHubPage } from '@/pages/feedback/CsHubPage';
+import { PublicSurveyPage } from '@/pages/feedback/PublicSurveyPage';
+import { SurveyDetailPage } from '@/pages/feedback/SurveyDetailPage';
+import { SurveyFormPage } from '@/pages/feedback/SurveyFormPage';
+import { SurveysPage } from '@/pages/feedback/SurveysPage';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -37,4 +44,18 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/', element: <ProductDetailPage /> },
   { path: '/products/:pk/edit/', element: <ProductFormPage /> },
   { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
+  { path: '/feedback/', element: <SurveysPage /> },
+  { path: '/products/:pk/surveys/', element: <SurveysPage /> },
+  { path: '/feedback/create/', element: <SurveyFormPage /> },
+  { path: '/products/:pk/surveys/create/', element: <SurveyFormPage /> },
+  { path: '/feedback/cs-hub/', element: <CsHubPage /> },
+  { path: '/feedback/:id/', element: <SurveyDetailPage /> },
+  { path: '/automation/', element: <RulesPage /> },
+  { path: '/products/:pk/rules/', element: <RulesPage /> },
+  { path: '/automation/create/', element: <RuleFormPage /> },
+  { path: '/products/:pk/rules/create/', element: <RuleFormPage /> },
+  { path: '/automation/:id/edit/', element: <RuleFormPage /> },
 ];
+
+// Pages that need no login: no sidebar, no bootstrap.
+export const publicRoutes: RouteObject[] = [{ path: '/feedback/respond/:id/', element: <PublicSurveyPage /> }];

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import errors, products, tickets, views
+from apps.uiapi import automation, errors, feedback, products, tickets, views
 
 app_name = "uiapi"
 
@@ -35,6 +35,16 @@ urlpatterns = [
     path("errors/<int:pk>/status/", errors.ErrorStatusAPIView.as_view(), name="error_status"),
     path("errors/<int:pk>/convert-to-ticket/", errors.ErrorConvertAPIView.as_view(), name="error_convert"),
     path("errors/<int:pk>/", errors.ErrorDetailAPIView.as_view(), name="error_detail"),
+    path("surveys/", feedback.SurveyListAPIView.as_view(), name="surveys"),
+    path("surveys/meta/", feedback.SurveyMetaAPIView.as_view(), name="survey_meta"),
+    path("surveys/<int:pk>/toggle/", feedback.SurveyToggleAPIView.as_view(), name="survey_toggle"),
+    path("surveys/<int:pk>/", feedback.SurveyDetailAPIView.as_view(), name="survey_detail"),
+    path("cs-hub/", feedback.CsHubAPIView.as_view(), name="cs_hub"),
+    path("public/surveys/<int:pk>/", feedback.PublicSurveyAPIView.as_view(), name="public_survey"),
+    path("rules/", automation.RuleListAPIView.as_view(), name="rules"),
+    path("rules/meta/", automation.RuleMetaAPIView.as_view(), name="rule_meta"),
+    path("rules/<int:pk>/toggle/", automation.RuleToggleAPIView.as_view(), name="rule_toggle"),
+    path("rules/<int:pk>/", automation.RuleDetailAPIView.as_view(), name="rule_detail"),
     path("company/switch/", views.CompanySwitchAPIView.as_view(), name="company_switch"),
     path("bootstrap/", views.BootstrapView.as_view(), name="bootstrap"),
     path("notifications/", views.NotificationListView.as_view(), name="notifications"),

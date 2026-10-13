@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.18.0] — 2026-10-13 · surveys and automation, redone
+
+> In short: surveys, the customer success hub and automation rules have a new look, and people now only see surveys and rules for the products they can open.
+
+### New
+
+- **A new survey list, survey page and form.** Filter by status or type, see the score distribution, copy the public link and activate, close or delete a survey from one page.
+- **A new customer success hub.** Satisfaction by product, the surveys that are live and the latest sentiment in one view.
+- **A new public survey page.** Customers pick a score and leave a comment, and the page works for anyone with the link while the survey is active.
+- **New automation pages.** Rules are listed with what they trigger on, switched on or off with one click, and created or edited in a clearer form.
+
+### Better
+
+- **Product surveys and rules have the same pages as the global ones.** Open them from a product and they are already scoped to it.
+
+### Security
+
+- **Surveys and rules follow product access.** You only see and change the ones on products you can open, and only owners and admins can make a rule for every product.
+
 ## [1.17.0] — 2026-10-13 · products, redone
 
 > In short: the products list, the product page and its forms have a new look, with the roadmap, versions, API keys and team access all on one page that saves as you go.

@@ -1,12 +1,30 @@
 import { useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { matchPath, Route, Routes, useLocation } from 'react-router-dom';
 import { useBootstrap } from '@/lib/bootstrap';
 import { showFlash } from '@/lib/toast';
-import { shellRoutes } from '@/routes';
+import { publicRoutes, shellRoutes } from '@/routes';
 import { AppShell } from '@/shell/AppShell';
 import { Toaster } from '@/shell/Toaster';
 
+// Pages that work without a login (a survey's public link, later the sign-in pages) get no sidebar and no bootstrap.
 export function Gate() {
+  const { pathname } = useLocation();
+  if (publicRoutes.some((r) => matchPath(r.path as string, pathname))) {
+    return (
+      <>
+        <Routes>
+          {publicRoutes.map((r) => (
+            <Route key={r.path} path={r.path} element={r.element} />
+          ))}
+        </Routes>
+        <Toaster />
+      </>
+    );
+  }
+  return <PrivateApp />;
+}
+
+function PrivateApp() {
   const boot = useBootstrap();
   const flash = boot.data?.messages;
   useEffect(() => {

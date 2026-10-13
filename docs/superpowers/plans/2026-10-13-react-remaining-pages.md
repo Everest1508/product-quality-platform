@@ -6,7 +6,7 @@ Done: notifications, tickets, errors, products (list, form, detail, API docs).
 
 Order (tick when merged on the branch):
 - [x] products (list/create/edit/detail/api docs; keys, versions, milestones, access)
-- [ ] product-scoped surveys + rules, global feedback (surveys, CS hub), automation
+- [x] product-scoped surveys + rules, global feedback (surveys, CS hub, public survey page), automation
 - [ ] dashboards (home, product dashboard, reports, audit log) and `/search/`
 - [ ] DSR
 - [ ] accounts (login, company setup/switch, team, profile, Serop OAuth screens)

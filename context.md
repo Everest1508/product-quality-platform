@@ -886,3 +886,8 @@ decided what and strike the item** rather than deleting it.
 - Removed legacy routes: `product_delete`, `product_key_suggest`, `api_key_*`, `version_*`, `product_access_*`, `milestone_*`. Product-scoped surveys and rules pages still use legacy templates until feedback/automation move.
 - `CompanyAPIView` now answers 400 to a write whose body is not a JSON object (an array used to 500). Number parsing in the API uses `isdecimal` (`"²".isdigit()` is true but `int("²")` raises).
 - Master checklist for the rest of the migration: `docs/superpowers/plans/2026-10-13-react-remaining-pages.md`.
+
+### 2026-10-13 React surveys, CS hub, automation
+- `/feedback/`, `/feedback/create/`, `/feedback/<pk>/`, `/feedback/cs-hub/`, `/automation/`, `/automation/create/`, `/automation/<pk>/edit/` and the product-scoped `/products/<pk>/surveys/(create/)` and `/products/<pk>/rules/(create/)` are served by the React shell. The public link `/feedback/respond/<pk>/` is the first **public page**: `publicRoutes` in `routes.tsx`, `Gate` skips bootstrap and the sidebar for them; its API is `GET/POST /ui-api/v1/public/surveys/<pk>/` (no login, active surveys only).
+- Behaviour change (security): surveys and rules were company-wide for every member (the old list/detail/toggle/delete ignored `accessible_products`). They now follow product access; create forms offer only accessible products; rules with no product (company-wide) are visible and editable by owners and admins only.
+- Removed legacy routes: `survey_toggle`, `survey_delete`, `rule_delete`, `rule_toggle`.

@@ -19,8 +19,8 @@ urlpatterns = [
     path("<int:pk>/tickets/list/", views.ProductTicketListView.as_view(), name="product_tickets"),
     path("<int:pk>/tickets/create/", views.ProductTicketCreateView.as_view(), name="product_ticket_create"),
     path("<int:pk>/tickets/<int:ticket_pk>/", views.ProductTicketDetailView.as_view(), name="product_ticket_detail"),
-    path("<int:pk>/surveys/", views.ProductSurveyListView.as_view(), name="product_surveys"),
-    path("<int:pk>/surveys/create/", views.ProductSurveyCreateView.as_view(), name="product_survey_create"),
-    path("<int:pk>/rules/", views.ProductRuleListView.as_view(), name="product_rules"),
-    path("<int:pk>/rules/create/", views.ProductRuleCreateView.as_view(), name="product_rule_create"),
+    path("<int:pk>/surveys/", views.ProductPageView.as_view(), name="product_surveys"),
+    path("<int:pk>/surveys/create/", views.ProductPageView.as_view(), name="product_survey_create"),
+    path("<int:pk>/rules/", views.ProductPageView.as_view(), name="product_rules"),
+    path("<int:pk>/rules/create/", views.ProductPageView.as_view(), name="product_rule_create"),
 ]

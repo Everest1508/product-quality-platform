@@ -15,10 +15,15 @@ class SurveyCreateForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-input"}),
         }
 
-    def __init__(self, *args, company=None, **kwargs):
+    def __init__(self, *args, company=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
-            self.fields["product"].queryset = company.product_set.all()
+            if user is not None:
+                from apps.products.access import accessible_products
+
+                self.fields["product"].queryset = accessible_products(user, company)
+            else:
+                self.fields["product"].queryset = company.product_set.all()
 
 
 class SurveyResponseForm(forms.Form):

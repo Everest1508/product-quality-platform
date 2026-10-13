@@ -99,127 +99,26 @@ class SurveyModelTest(TestCase):
         self.assertEqual(Survey.objects.filter(company=company2).count(), 1)
 
 
-class SurveyViewTest(TestCase):
+class SurveyPagesTest(TestCase):
+    """The pages themselves are the React shell; what the API returns is in apps.uiapi.test_feedback_automation."""
+
     def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user("alice", "alice@test.com", "pass1234")
+        self.user = User.objects.create_user("alice", "a@t.com", "pass1234")
         self.company = Company.objects.create(name="Acme", slug="acme")
         Membership.objects.create(user=self.user, company=self.company, role="owner")
         self.product = Product.objects.create(name="App", slug="app", company=self.company)
+        self.survey = Survey.objects.create(company=self.company, product=self.product, name="NPS", status="active")
+
+    def test_pages_serve_the_shell(self):
         self.client.login(username="alice", password="pass1234")
+        for url in ("/feedback/", "/feedback/create/", "/feedback/cs-hub/", f"/feedback/{self.survey.pk}/", f"/products/{self.product.pk}/surveys/"):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertTemplateUsed(r, "uiapi/shell.html")
 
-    def test_survey_list(self):
-        response = self.client.get(reverse("feedback:survey_list"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_create_survey(self):
-        response = self.client.post(reverse("feedback:survey_create"), {
-            "name": "Q1 NPS",
-            "description": "Quarterly NPS",
-            "survey_type": "nps",
-            "product": self.product.pk,
-            "status": "draft",
-        })
-        self.assertRedirects(response, reverse("feedback:survey_detail", kwargs={"pk": 1}))
-        self.assertEqual(Survey.objects.count(), 1)
-        survey = Survey.objects.first()
-        self.assertEqual(survey.company, self.company)
-        self.assertEqual(survey.created_by, self.user)
-
-    def test_survey_detail(self):
-        survey = Survey.objects.create(
-            company=self.company, product=self.product,
-            name="NPS", survey_type="nps", status="active",
-        )
-        response = self.client.get(reverse("feedback:survey_detail", kwargs={"pk": survey.pk}))
-        self.assertEqual(response.status_code, 200)
-
-    def test_toggle_survey(self):
-        survey = Survey.objects.create(
-            company=self.company, product=self.product,
-            name="NPS", survey_type="nps", status="draft",
-        )
-        response = self.client.post(reverse("feedback:survey_toggle", kwargs={"pk": survey.pk}))
-        survey.refresh_from_db()
-        self.assertEqual(survey.status, "active")
-
-    def test_delete_survey(self):
-        survey = Survey.objects.create(
-            company=self.company, product=self.product,
-            name="Delete me", survey_type="nps", status="draft",
-        )
-        response = self.client.post(reverse("feedback:survey_delete", kwargs={"pk": survey.pk}))
-        self.assertFalse(Survey.objects.filter(pk=survey.pk).exists())
-
-    def test_cannot_see_other_company_survey(self):
-        company2 = Company.objects.create(name="Beta", slug="beta")
-        other_survey = Survey.objects.create(
-            company=company2, product=self.product,
-            name="Other Survey", survey_type="nps", status="active",
-        )
-        response = self.client.get(reverse("feedback:survey_detail", kwargs={"pk": other_survey.pk}))
-        self.assertEqual(response.status_code, 404)
-
-
-class PublicSurveyTest(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.company = Company.objects.create(name="Acme", slug="acme")
-        self.product = Product.objects.create(name="App", slug="app", company=self.company)
-        self.survey = Survey.objects.create(
-            company=self.company, product=self.product,
-            name="NPS", survey_type="nps", status="active",
-        )
-
-    def test_public_survey_view(self):
-        response = self.client.get(reverse("feedback:public_survey", kwargs={"pk": self.survey.pk}))
-        self.assertEqual(response.status_code, 200)
-
-    def test_submit_response(self):
-        response = self.client.post(reverse("feedback:public_survey", kwargs={"pk": self.survey.pk}), {
-            "score": 9,
-            "comment": "Great product!",
-            "contact_name": "Bob",
-            "contact_email": "bob@test.com",
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(SurveyResponse.objects.count(), 1)
-        resp = SurveyResponse.objects.first()
-        self.assertEqual(resp.score, 9)
-        self.assertEqual(resp.contact_name, "Bob")
-
-    def test_closed_survey_not_accessible(self):
+    def test_the_public_link_needs_no_login_and_only_works_while_active(self):
+        self.assertEqual(self.client.get(f"/feedback/respond/{self.survey.pk}/").status_code, 200)
         self.survey.status = "closed"
         self.survey.save()
-        response = self.client.get(reverse("feedback:public_survey", kwargs={"pk": self.survey.pk}))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.client.get(f"/feedback/respond/{self.survey.pk}/").status_code, 404)
 
-
-class CSHubTest(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user("alice", "alice@test.com", "pass1234")
-        self.company = Company.objects.create(name="Acme", slug="acme")
-        Membership.objects.create(user=self.user, company=self.company, role="owner")
-        self.product = Product.objects.create(name="App", slug="app", company=self.company)
-        self.client.login(username="alice", password="pass1234")
-
-    def test_cs_hub_page(self):
-        response = self.client.get(reverse("feedback:cs_hub"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_cs_hub_with_data(self):
-        survey = Survey.objects.create(
-            company=self.company, product=self.product,
-            name="NPS", survey_type="nps", status="active",
-        )
-        for score in [7, 8, 9, 10]:
-            SurveyResponse.objects.create(survey=survey, company=self.company, score=score)
-
-        SentimentRecord.objects.create(
-            company=self.company, product=self.product,
-            source="survey", score=0.75,
-        )
-
-        response = self.client.get(reverse("feedback:cs_hub"))
-        self.assertEqual(response.status_code, 200)

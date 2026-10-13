@@ -24,13 +24,18 @@ class AutoTicketRuleForm(forms.ModelForm):
             "assign_to": forms.Select(attrs={"class": "form-input"}),
         }
 
-    def __init__(self, *args, company=None, **kwargs):
+    def __init__(self, *args, company=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
             from apps.products.models import Product
             from django.contrib.auth import get_user_model
             User = get_user_model()
-            self.fields["product"].queryset = Product.objects.filter(company=company)
+            if user is not None:
+                from apps.products.access import accessible_products
+
+                self.fields["product"].queryset = accessible_products(user, company)
+            else:
+                self.fields["product"].queryset = Product.objects.filter(company=company)
             self.fields["assign_to"].queryset = User.objects.filter(memberships__company=company)
         else:
             self.fields["product"].queryset = AutoTicketRule._meta.get_field("product").remote_field.model.objects.none()

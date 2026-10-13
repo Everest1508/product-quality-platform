@@ -1593,11 +1593,6 @@ class SidebarActiveStateTest(LeaveTestBase):
         """
         for url, expected in [
             ("/leave/apply/", "My leave"),
-            ("/feedback/", "All feedback"),
-            ("/feedback/create/", "All feedback"),
-            ("/feedback/cs-hub/", "CS Hub"),
-            ("/automation/", "All automation"),
-            ("/automation/create/", "All automation"),
             ("/payroll/holidays/", "Payroll"),
             ("/payroll/preview/", "Payroll"),
             ("/payroll/me/", "My payslips"),
