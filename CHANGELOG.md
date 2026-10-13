@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.29.0] — 2026-10-13 · a calmer Home and a DSR you can read
+
+> In short: the DSR is now one table of everything submitted, today and before, Home is much simpler, and switching theme fades smoothly.
+
+### New
+
+- **The DSR is one table.** See today and past days together, grouped by day with a total, then search it, pick Today, Yesterday, Last 7 days or Last 30 days, and fix or delete an entry from the row.
+- **Owners and admins can read everyone's DSR in one list.** Pick Everyone or one person, and the table adds a Person column.
+- **Log work opens in a small window.** It has the form and the suggestions from your own tickets, so the page itself stays clear.
+
+### Better
+
+- **Home shows what matters first.** Your tickets, what is due and your to-dos share one tabbed card, with Today and This week beside it and Pay, Leave and DSR as short summaries.
+- **Switching theme fades smoothly.** The page no longer jumps between light and dark.
+
 ## [1.28.1] — 2026-10-13 · icons on every button
 
 > In short: every button now has an icon next to its words, and the whole app uses one icon set.

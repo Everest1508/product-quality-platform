@@ -22,3 +22,19 @@ export type DsrSheet = {
 };
 
 export type EntryInput = { task_name: string; product: number | null; category: string; hours_spent: string; status: string; notes: string };
+
+export type LogRow = DsrEntry & {
+  date: string; editable: boolean;
+  person: { id: number; name: string; username: string; is_me: boolean };
+};
+export type DsrLog = {
+  range: string; from: string; to: string; today: string; scope: string;
+  target: { id: number; name: string; is_me: boolean };
+  is_privileged: boolean; members: { id: number; name: string }[];
+  rows: LogRow[]; days: { date: string; label: string; hours: string; count: number; completed: number }[];
+  total: string; count: number; completed: number; truncated: boolean; summary_text: string;
+  can_log: boolean; locked_reason: string;
+  products: { id: number; name: string }[];
+  categories: [string, string][]; statuses: [string, string][];
+  work_suggestions: DsrSheet['work_suggestions'];
+};

@@ -178,3 +178,73 @@ class DsrSuggestionAPIView(CompanyAPIView):
         if entry is None:
             return Response({"detail": message}, status=400)
         return Response(sheet_json(request, target, day, message=message), status=201)
+
+
+class DsrLogAPIView(CompanyAPIView):
+    """Submitted work over a date range as one list: today and history in the same table.
+
+    `range` is today, yesterday, 7d (default) or 30d, or pass `from` and `to` (at most 92 days). Owners and admins can
+    pass `user_id=all` for everyone or one member's id; everybody else only ever sees their own rows."""
+
+    MAX_DAYS = 92
+    MAX_ROWS = 500
+
+    def get(self, request):
+        today = timezone.localdate()
+        params = request.query_params
+        rng = params.get("range", "7d")
+        start, end = {"today": (today, today), "yesterday": (today - timedelta(days=1),) * 2, "30d": (today - timedelta(days=29), today)}.get(rng, (today - timedelta(days=6), today))
+        first, last = _day(params.get("from"), None), _day(params.get("to"), None)
+        if first and last:
+            start, end = sorted((first, last))
+            start = max(start, end - timedelta(days=self.MAX_DAYS - 1))
+            rng = "custom"
+        end = min(end, today)
+        privileged = _privileged(request)
+        who = params.get("user_id", "")
+        everyone = privileged and who == "all"
+        target = request.user if everyone else _target(request)
+
+        qs = DSREntry.objects.filter(company=request.company, date__gte=start, date__lte=end).select_related("user", "product", "ticket", "ticket__product")
+        if not everyone:
+            qs = qs.filter(user=target)
+        q = (params.get("q") or "").strip()
+        if q:
+            from django.db.models import Q
+
+            qs = qs.filter(Q(task_name__icontains=q) | Q(notes__icontains=q) | Q(product__name__icontains=q))
+        entries = list(qs.order_by("-date", "user__username", "-created_at")[: self.MAX_ROWS])
+
+        days, rows, lines = {}, [], []
+        for e in entries:
+            editable = (e.user_id == request.user.pk or privileged) and service.submission_window(e.date, privileged)[0]
+            d = days.setdefault(e.date, {"date": e.date.isoformat(), "label": e.date.strftime("%a, %-d %b"), "hours": Decimal("0.00"), "count": 0, "completed": 0})
+            d["hours"] += e.hours_spent
+            d["count"] += 1
+            d["completed"] += e.status == "completed"
+            rows.append({
+                **entry_json(e), "date": e.date.isoformat(), "editable": editable,
+                "person": {"id": e.user_id, "name": _name(e.user), "username": e.user.username, "is_me": e.user_id == request.user.pk},
+            })
+        total = sum((d["hours"] for d in days.values()), Decimal("0.00"))
+        for d in days.values():
+            lines.append(f"📅 {d['label']}: {format_hm(d['hours'])}, {d['count']} task{'s' if d['count'] != 1 else ''}")
+        for e in entries:
+            lines.append(f"- {e.date.strftime('%-d %b')} {_name(e.user) + ': ' if everyone else ''}{e.task_name} ({e.get_category_display()}) - {format_hm(e.hours_spent)} [{e.get_status_display()}]")
+        can_log, locked = service.submission_window(today, privileged)
+        return Response({
+            "range": rng, "from": start.isoformat(), "to": end.isoformat(), "today": today.isoformat(),
+            "scope": "all" if everyone else ("me" if target.pk == request.user.pk else str(target.pk)),
+            "target": {"id": target.pk, "name": _name(target), "is_me": target.pk == request.user.pk},
+            "is_privileged": privileged, "members": [{"id": m.pk, "name": _name(m)} for m in User.objects.filter(memberships__company=request.company).order_by("username")] if privileged else [],
+            "rows": rows, "days": [{**d, "hours": format_hm(d["hours"]) if d["hours"] else "0m"} for d in days.values()],
+            "total": format_hm(total) if total else "0m", "count": len(entries), "completed": sum(d["completed"] for d in days.values()),
+            "truncated": qs.count() > self.MAX_ROWS, "summary_text": "\n".join(lines) if entries else "No tasks recorded for this period.",
+            "can_log": can_log, "locked_reason": locked,
+            "products": [{"id": p.pk, "name": p.name} for p in accessible_products(target, request.company).order_by("name")],
+            "categories": [list(c) for c in DSREntry.Category.choices], "statuses": [list(c) for c in DSREntry.Status.choices],
+            "work_suggestions": [
+                {"number": r["number"], "key": r["key"], "title": r["title"], "product": r["product"], "did": r["did"], "touched": r["touched"], "hours": format_hm(r["hours"]), "hours_value": str(r["hours"])}
+                for r in service.suggestions(request.company, target, today)
+            ] if can_log else [],
+        })

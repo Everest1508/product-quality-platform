@@ -19,6 +19,22 @@ export function applyTheme(t: Theme = getTheme()) {
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
 }
 
+const reduceMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Cross-fades the whole page when the theme changes (View Transitions); other browsers fade the colours with a short CSS transition.
+function animated(change: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  if (reduceMotion()) return change();
+  if (doc.startViewTransition) {
+    doc.startViewTransition(change);
+    return;
+  }
+  const root = document.documentElement;
+  root.classList.add('theme-fade');
+  change();
+  setTimeout(() => root.classList.remove('theme-fade'), 450);
+}
+
 export function setTheme(t: Theme) {
   try {
     if (t === 'system') localStorage.removeItem(KEY);
@@ -26,5 +42,5 @@ export function setTheme(t: Theme) {
   } catch {
     /* private mode: applies for this visit only */
   }
-  applyTheme(t);
+  animated(() => applyTheme(t));
 }

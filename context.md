@@ -957,3 +957,9 @@ decided what and strike the item** rather than deleting it.
 
 ### 2026-10-13 befui icons (1.28.1)
 - `lucide-react` is gone: every icon is befui's (`components/ui/icons.tsx`). Every `Button` with a text label has an icon in front of it (links inside `Button asChild` carry it inside the link); icon-only buttons keep an `aria-label`. When adding a button, pick the icon by meaning (Save, Plus, Trash, X, Check, Edit, Eye, Send, Refresh ...). nav.ts items use `React.ComponentType<IconProps>`.
+
+### 2026-10-13 Calmer Home, DSR log table, theme fade (1.29.0)
+- DSR page now reads `GET /ui-api/v1/dsr/log/` (`DsrLogAPIView`): `range` today|yesterday|7d|30d or `from`/`to` (max 92 days, 500 rows), `user_id` = member id or `all` (owners/admins only; a member's value is ignored), `q`. Rows carry `editable` (today for members, any day for owners/admins, the same `submission_window` rule). Writes still use the per-entry endpoints; the day-sheet endpoint `dsr/` stays for other callers. Add/edit use one dialog (`pages/dsr/Entries.tsx`).
+- Home lost the hero quote, clock, donut, errors card and recent activity (the errors and status charts live in Reports and the product dashboard). The `dashboard/quote/` endpoint is now unused by the page.
+- Theme change cross-fades with the View Transitions API (CSS `::view-transition-*`), with a `theme-fade` class fallback and no animation under reduced motion.
+- Other pages that are still heavy and worth simplifying next: product detail, ticket detail, reports, attendance.

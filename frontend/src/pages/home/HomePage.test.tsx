@@ -27,7 +27,6 @@ function setup(data: Home = home(), list = todos()) {
 it('greets by name from the browser clock and shows the numbers', async () => {
   setup();
   expect(await screen.findByRole('heading', { name: /Olive/ })).toBeInTheDocument();
-  expect(screen.getByText('Clear tickets, clear head.')).toBeInTheDocument();
   expect(screen.getByText('12h 30m')).toBeInTheDocument();
 });
 
@@ -35,7 +34,8 @@ it('not on payroll and empty states say so', async () => {
   setup(home({ my_tickets: [], due_soon: [], activity: [] }));
   expect(await screen.findByText(/not on payroll yet/)).toBeInTheDocument();
   expect(screen.getByText('No open tickets assigned to you. Nice.')).toBeInTheDocument();
-  expect(screen.getByText('Nothing is due in the next 7 days.')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('tab', { name: /Due soon/ }));
+  expect(await screen.findByText('Nothing is due in the next 7 days.')).toBeInTheDocument();
 });
 
 it('a payslip shows net pay with the deduction for unpaid leave', async () => {
@@ -70,15 +70,9 @@ it('banners for leave and an empty DSR', async () => {
   expect(screen.getByText('Your DSR is empty for today.')).toBeInTheDocument();
 });
 
-it('another quote comes from the server', async () => {
-  const { get } = setup();
-  await userEvent.click(await screen.findByRole('button', { name: 'Show another line' }));
-  await waitFor(() => expect(get).toHaveBeenCalledWith(expect.stringContaining('dashboard/quote/?current=')));
-  expect(await screen.findByText('Another line.')).toBeInTheDocument();
-});
-
 it('the to-do list adds, toggles, deletes and clears', async () => {
   const { post, del } = setup();
+  await userEvent.click(await screen.findByRole('tab', { name: /To-do/ }));
   await userEvent.type(await screen.findByLabelText('New task'), 'write tests');
   await userEvent.click(screen.getByRole('button', { name: 'Add' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('todos/', { text: 'write tests', priority: '2', due: '' }));

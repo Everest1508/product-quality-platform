@@ -259,3 +259,60 @@ class DsrShellPageTest(DsrBase):
                 reverse(name)
         with self.assertRaises(TemplateDoesNotExist):
             get_template("dsr/dsr_sheet.html")
+
+
+class LogApiTest(DsrBase):
+    def log(self, **params):
+        return self.client.get("/ui-api/v1/dsr/log/", params)
+
+    def test_today_and_history_come_in_one_list_newest_day_first_with_day_totals(self):
+        self.entry(task_name="Today A", hours_spent=Decimal("1.00"))
+        self.entry(task_name="Yesterday", day=self.past, hours_spent=Decimal("2.50"))
+        self.entry(task_name="Old", day=self.today - timedelta(days=20))
+        self.login("dev")
+        d = self.log().json()  # default: the last 7 days
+        self.assertEqual([r["task_name"] for r in d["rows"]], ["Today A", "Yesterday"])
+        self.assertEqual([(x["date"], x["hours"], x["count"]) for x in d["days"]], [(self.today.isoformat(), "1h", 1), (self.past.isoformat(), "2h 30m", 1)])
+        self.assertEqual((d["total"], d["count"], d["scope"]), ("3h 30m", 2, "me"))
+        self.assertEqual(len(self.log(range="30d").json()["rows"]), 3)
+        self.assertEqual([r["task_name"] for r in self.log(range="yesterday").json()["rows"]], ["Yesterday"])
+
+    def test_only_todays_rows_are_editable_for_a_member_and_all_for_an_admin(self):
+        self.entry(task_name="Today"), self.entry(task_name="Past", day=self.past)
+        self.login("dev")
+        self.assertEqual({r["task_name"]: r["editable"] for r in self.log().json()["rows"]}, {"Today": True, "Past": False})
+        self.login("owner")
+        self.assertEqual({r["task_name"]: r["editable"] for r in self.log(user_id="all").json()["rows"]}, {"Today": True, "Past": True})
+
+    def test_a_member_never_sees_others_but_an_admin_can_pick_everyone_or_one_person(self):
+        self.entry(task_name="Mine"), self.entry(user=self.owner, task_name="Boss")
+        self.login("dev")
+        d = self.log(user_id="all").json()  # ignored for a member
+        self.assertEqual(([r["task_name"] for r in d["rows"]], d["scope"], d["members"]), (["Mine"], "me", []))
+        self.assertEqual(self.log(user_id=self.owner.pk).status_code, 200)
+        self.assertEqual([r["task_name"] for r in self.log(user_id=self.owner.pk).json()["rows"]], ["Mine"])
+        self.login("owner")
+        d = self.log(user_id="all").json()
+        self.assertEqual(sorted(r["task_name"] for r in d["rows"]), ["Boss", "Mine"])
+        self.assertEqual(d["rows"][0]["person"]["username"] in ("dev", "owner"), True)
+        self.assertEqual([r["task_name"] for r in self.log(user_id=self.dev.pk).json()["rows"]], ["Mine"])
+
+    def test_search_custom_range_and_bad_input(self):
+        self.entry(task_name="Invoice export", notes="for finance"), self.entry(task_name="Standup")
+        self.login("dev")
+        self.assertEqual([r["task_name"] for r in self.log(q="finance").json()["rows"]], ["Invoice export"])
+        self.assertEqual(self.log(**{"from": "garbage", "to": "x"}).status_code, 200)
+        wide = self.log(**{"from": "2020-01-01", "to": self.today.isoformat()}).json()
+        self.assertEqual(wide["range"], "custom")
+        self.assertEqual(wide["from"], (self.today - timedelta(days=91)).isoformat())  # capped at 92 days
+        self.login("owner")
+        self.assertEqual(self.log(user_id="²").status_code, 404)  # not a number
+        self.assertIn(Client().get("/ui-api/v1/dsr/log/").status_code, (401, 403))
+
+    def test_the_form_state_and_the_copy_summary(self):
+        self.entry(task_name="Fix it", hours_spent=Decimal("1.50"))
+        self.login("dev")
+        d = self.log().json()
+        self.assertEqual((d["can_log"], [p["name"] for p in d["products"]]), (True, ["Open"]))
+        self.assertIn("Fix it (Ticket Completion) - 1h 30m", d["summary_text"])
+        self.assertIn("No tasks recorded", self.log(range="yesterday").json()["summary_text"])

@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const day = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const PRIORITY: Record<number, 'danger' | 'warning' | 'default'> = { 3: 'danger', 2: 'warning', 1: 'default' };
 
-export function TodoCard() {
+export function TodoCard({ bare = false }: { bare?: boolean }) {
   const q = useTodos();
   const act = useTodoActions();
   const [text, setText] = useState('');
@@ -31,10 +31,12 @@ export function TodoCard() {
     }
   };
   const d = q.data;
+  // Inside the home tabs the list needs no card of its own.
+  const Wrap = bare ? 'div' : Card;
 
   return (
-    <Card className="space-y-3 p-5" id="todo-card">
-      <div className="flex items-baseline justify-between"><h2 className="font-semibold">My to-do</h2><span className="text-xs text-muted-foreground">only you can see this</span></div>
+    <Wrap className="space-y-3 p-5" id="todo-card">
+      {!bare && <div className="flex items-baseline justify-between"><h2 className="font-semibold">My to-do</h2><span className="text-xs text-muted-foreground">only you can see this</span></div>}
       <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
         <Input aria-label="New task" className="min-w-40 flex-1" maxLength={300} autoComplete="off" placeholder="Add a task…" value={text} onChange={(e) => setText(e.target.value)} />
         <Select value={priority} onValueChange={setPriority}>
@@ -72,6 +74,6 @@ export function TodoCard() {
           {d.done > 0 && <p className="text-xs text-muted-foreground">Finished tasks are added to today’s DSR. Add the time you spent there.</p>}
         </>
       )}
-    </Card>
+    </Wrap>
   );
 }

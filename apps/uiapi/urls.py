@@ -65,6 +65,7 @@ urlpatterns = [
     path("reports/", dashboards.ReportAPIView.as_view(), name="reports"),
     path("audit/", dashboards.AuditLogAPIView.as_view(), name="audit"),
     path("dsr/", dsr.DsrSheetAPIView.as_view(), name="dsr"),
+    path("dsr/log/", dsr.DsrLogAPIView.as_view(), name="dsr_log"),
     path("dsr/entries/", dsr.DsrEntriesAPIView.as_view(), name="dsr_entries"),
     path("dsr/entries/<int:pk>/", dsr.DsrEntryAPIView.as_view(), name="dsr_entry"),
     path("dsr/suggestions/add/", dsr.DsrSuggestionAPIView.as_view(), name="dsr_suggestion_add"),
