@@ -122,7 +122,7 @@ export function Kanban<T extends { id: string }>({
                       onDragStart={(e) => { e.dataTransfer.setData('text/plain', it.id); e.dataTransfer.effectAllowed = 'move'; setDragId(it.id); }}
                       onDragEnd={() => { setDragId(null); setOver(null); }}
                       onKeyDown={(e) => onKey(e, it.id, ci, ri)}
-                      className={cn('cursor-grab rounded-lg border bg-card p-3 text-[13px] shadow-sm outline-none transition-[opacity,box-shadow] active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-ring/40', moving && 'opacity-40')}
+                      className={cn('cursor-grab rounded-lg border bg-card p-3 text-[13px] shadow-sm outline-none transition-[opacity,box-shadow,transform] motion-safe:animate-[card-drop_0.35s_ease-out] hover:-translate-y-px hover:shadow-md active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-ring/40', moving && 'rotate-1 scale-[0.97] opacity-50 shadow-lg')}
                     >
                       {renderCard(it)}
                     </div>

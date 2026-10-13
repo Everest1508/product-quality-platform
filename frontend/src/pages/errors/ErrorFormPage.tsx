@@ -1,3 +1,5 @@
+import { FormSkeleton } from '@/components/skeletons';
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '@/lib/api';
@@ -77,10 +79,7 @@ export function ErrorFormPage() {
   if (meta.isError) return <Card className="p-8 text-center text-sm">Couldn’t load the form.</Card>;
   if (!meta.data) {
     return (
-      <div className="mx-auto max-w-2xl space-y-3" data-testid="form-loading">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-40 w-full" />
-      </div>
+      <FormSkeleton className="mx-auto max-w-2xl space-y-4" />
     );
   }
 
@@ -121,7 +120,7 @@ export function ErrorFormPage() {
           <Input id="error-page" value={page} onChange={(e) => setPage(e.target.value)} placeholder="Page URL where error occurred" />
         </Field>
       </Card>
-      <div className="flex justify-end gap-2">
+      <div className={stickyBar}>
         <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
         <Button type="submit" loading={saving}><PlusIcon />Report Error</Button>
       </div>

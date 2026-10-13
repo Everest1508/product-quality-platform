@@ -1,3 +1,4 @@
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '@/lib/api';
@@ -89,7 +90,7 @@ function ProfileForm({ p }: { p: Profile }) {
           <Input id="p-discord" value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="e.g. 123456789012345678" />
         </Field>
       </Card>
-      <div className="flex justify-end"><Button type="submit" loading={saving}><SaveIcon />Save Changes</Button></div>
+      <div className={stickyBar}><Button type="submit" loading={saving}><SaveIcon />Save Changes</Button></div>
     </form>
   );
 }

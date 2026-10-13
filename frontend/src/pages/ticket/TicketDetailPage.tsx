@@ -1,3 +1,4 @@
+import { DetailSkeleton } from '@/components/skeletons';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, BellIcon, EditIcon, EyeIcon, RefreshIcon, SendIcon, TrashIcon } from '@/components/ui/icons';
@@ -212,10 +213,7 @@ export function TicketDetailPage() {
   }
   if (!q.data) {
     return (
-      <div className="space-y-3" data-testid="ticket-loading">
-        <Skeleton className="h-6 w-64" />
-        <Skeleton className="h-40 w-full" />
-      </div>
+      <DetailSkeleton testId="ticket-loading" />
     );
   }
   return <Detail data={q.data} ticketId={ticketId} />;

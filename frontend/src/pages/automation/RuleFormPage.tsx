@@ -1,3 +1,5 @@
+import { FormSkeleton } from '@/components/skeletons';
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '@/lib/api';
@@ -121,7 +123,7 @@ function RuleForm({ rule, meta, productId }: { rule?: Rule; meta: RuleMeta; prod
         </div>
         <Label className="flex items-center gap-2 text-sm font-medium"><Switch checked={active} onCheckedChange={setActive} /> Rule is active</Label>
       </Card>
-      <div className="flex justify-end gap-2">
+      <div className={stickyBar}>
         <Button asChild variant="outline"><Link to={base}><XIcon />Cancel</Link></Button>
         <Button type="submit" loading={saving}><SaveIcon />{rule ? 'Save Changes' : 'Create Rule'}</Button>
       </div>
@@ -135,7 +137,7 @@ export function RuleFormPage() {
   const id = params.id ? Number(params.id) : null;
   const meta = useRuleMeta(productId);
   const rule = useRule(id ?? 0);
-  const loading = <div className="mx-auto max-w-3xl space-y-3" data-testid="form-loading"><Skeleton className="h-8 w-48" /><Skeleton className="h-60 w-full" /></div>;
+  const loading = <FormSkeleton />;
   if (meta.isError || (id !== null && rule.isError)) {
     const missing = rule.error instanceof ApiError && rule.error.status === 404;
     return <Card className="p-8 text-center"><p className="text-sm">{missing ? 'Rule not found.' : 'Couldn’t load the form.'}</p><Button asChild variant="link" className="mt-3"><Link to="/automation/"><ArrowLeftIcon /> Back to rules</Link></Button></Card>;

@@ -2,12 +2,13 @@ import { useRef, useState } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { RepeatIcon, TrashIcon } from '@/components/ui/icons';
 import { api } from '@/lib/api';
-import { shortDate } from '@/lib/time';
+import { ago, shortDate } from '@/lib/time';
 import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { Kanban } from '@/components/ui/kanban';
 import { cn } from '@/lib/utils';
 import { applyMove } from './moveTicket';
@@ -23,9 +24,24 @@ type Props = {
   onDelete(item: TicketItem): void;
   // True while the data shown belongs to the previous filters: moving then would write the wrong board.
   disabled?: boolean;
+  // Compact cards show the key, title and assignees only.
+  compact?: boolean;
 };
 
-export function Board({ data, queryKey, selecting, selected, onSelect, onDelete, disabled = false }: Props) {
+// The hover peek: what you would open the ticket to find out.
+function Peek({ t }: { t: TicketItem }) {
+  return (
+    <div className="w-56 space-y-1 text-xs">
+      <div className="font-semibold">{t.key} · {t.status_label}</div>
+      <div className="text-muted-foreground">{t.type_label} · {t.priority_label} priority</div>
+      <div>{t.assignees.length ? t.assignees.map((a) => a.name).join(', ') : 'Nobody assigned'}</div>
+      {t.deadline && <div className={t.is_overdue ? 'text-destructive' : 'text-muted-foreground'}>{t.is_overdue ? 'Overdue since ' : 'Due '}{shortDate(t.deadline)}</div>}
+      <div className="text-muted-foreground">Updated {ago(t.updated_at)}</div>
+    </div>
+  );
+}
+
+export function Board({ data, queryKey, selecting, selected, onSelect, onDelete, disabled = false, compact = false }: Props) {
   const qc = useQueryClient();
   const [pending, setPending] = useState<Set<number>>(new Set());
   const inflight = useRef<Set<number>>(new Set()); // checked synchronously, so two drops in one tick send one request
@@ -91,14 +107,18 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete,
           {t.can_delete && <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.key}`} onClick={() => onDelete(t)}><TrashIcon /></Button>}
         </span>
       </div>
-      <a href={t.url} className="block break-words font-medium hover:underline">{t.title}</a>
-      <div className="flex items-center gap-2 text-xs">
-        <Badge variant="outline">{t.type_label}</Badge>
-        <span className="inline-flex items-center gap-1.5">
-          <span className={cn('size-2 rounded-full', priorityDot[t.priority])} />
-          {t.priority_label}
-        </span>
-      </div>
+      <Tooltip variant="light" side="right" content={<Peek t={t} />}>
+        <a href={t.url} className="block break-words font-medium hover:underline">{t.title}</a>
+      </Tooltip>
+      {!compact && (
+        <div className="flex items-center gap-2 text-xs">
+          <Badge variant="outline">{t.type_label}</Badge>
+          <span className="inline-flex items-center gap-1.5">
+            <span className={cn('size-2 rounded-full', priorityDot[t.priority])} />
+            {t.priority_label}
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
         <Assignees people={t.assignees} />
         {t.deadline && (
@@ -112,6 +132,7 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete,
   );
 
   return (
+    <TooltipProvider>
     <Kanban
       columns={columns}
       value={value}
@@ -119,5 +140,6 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete,
       renderCard={(it) => card(it.t)}
       className="[&_section]:w-72"
     />
+    </TooltipProvider>
   );
 }

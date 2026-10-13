@@ -156,3 +156,21 @@ it('marking all read also invalidates the bell feed', async () => {
   await userEvent.click(await screen.findByRole('button', { name: /mark all read/i }));
   await waitFor(() => expect(lastClient.getQueryState(['bell'])?.isInvalidated).toBe(true));
 });
+
+it('groups by day and filters by type from the URL', async () => {
+  const old = new Date(Date.now() - 3 * 86_400_000).toISOString();
+  vi.spyOn(api, 'getNotifications').mockResolvedValue({
+    unread: 2,
+    items: [notice({ id: 1 }), notice({ id: 2, kind: 'mention', kind_label: 'Mentioned you', title: 'Bob mentioned you', created_at: old })],
+  });
+  renderPage('/notifications/?kind=mention');
+  expect(await screen.findByRole('link', { name: /Bob mentioned you/ })).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /Ann commented/ })).not.toBeInTheDocument();
+  expect(screen.queryByText('Today')).not.toBeInTheDocument();
+});
+
+it('shows Today as a day heading', async () => {
+  vi.spyOn(api, 'getNotifications').mockResolvedValue({ unread: 1, items: [notice()] });
+  renderPage();
+  expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
+});

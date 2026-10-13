@@ -1,3 +1,5 @@
+import { FormSkeleton } from '@/components/skeletons';
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, PlusIcon, SaveIcon, XIcon } from '@/components/ui/icons';
@@ -166,7 +168,7 @@ function ProductForm({ editing, productId, initial, cancelUrl }: { editing: bool
         <p className="text-xs text-muted-foreground">They render as a visual flowchart roadmap on the product page.</p>
       </Card>
 
-      <div className="flex justify-end gap-2">
+      <div className={stickyBar}>
         <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
         <Button type="submit" loading={saving}><SaveIcon />{editing ? 'Save Changes' : 'Create Product'}</Button>
       </div>
@@ -188,7 +190,7 @@ export function ProductFormPage() {
       </Card>
     );
   }
-  if (!q.data) return <div className="mx-auto max-w-3xl space-y-3" data-testid="form-loading"><Skeleton className="h-8 w-48" /><Skeleton className="h-60 w-full" /></div>;
+  if (!q.data) return <FormSkeleton />;
   const p = q.data.product;
   return (
     <ProductForm

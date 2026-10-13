@@ -1,3 +1,4 @@
+import { HomeSkeleton } from '@/components/skeletons';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarIcon, CoffeeIcon, FlameIcon, MoonIcon, SunIcon, LogInIcon, PlusIcon, RefreshIcon, SendIcon, WalletIcon, FileTextIcon } from '@/components/ui/icons';
@@ -167,7 +168,7 @@ export function HomePage() {
   }, []);
   const h = q.data;
   if (q.isError && !h) return <Card><ErrorState title="Couldn’t load your home page."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>;
-  if (!h) return <div className="space-y-4" data-testid="home-loading"><Skeleton className="h-16 w-full" /><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
+  if (!h) return <HomeSkeleton />;
   const p = h.payroll;
   const slip = p.payslip;
   const na = h.needs_attention;

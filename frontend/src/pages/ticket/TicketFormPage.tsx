@@ -1,3 +1,5 @@
+import { FormSkeleton } from '@/components/skeletons';
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '@/lib/api';
@@ -133,7 +135,7 @@ function TicketForm({ mode, ticketId, productId, initial, heading, members, prod
         </Field>
       </Card>
 
-      <div className="flex justify-end gap-2">
+      <div className={stickyBar}>
         <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
         <Button type="submit" loading={saving}><SaveIcon />{mode === 'edit' ? 'Save Changes' : '+ Create Ticket'}</Button>
       </div>
@@ -152,10 +154,7 @@ export function TicketFormPage() {
 
 function Loading() {
   return (
-    <div className="mx-auto max-w-3xl space-y-3" data-testid="form-loading">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-40 w-full" />
-    </div>
+    <FormSkeleton />
   );
 }
 

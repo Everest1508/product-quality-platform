@@ -1,3 +1,4 @@
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -92,7 +93,7 @@ export function ApplyPage() {
           </div>
         )}
       </Card>
-      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/leave/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SendIcon />Send request</Button></div>
+      <div className={stickyBar}><Button asChild variant="outline"><Link to="/leave/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SendIcon />Send request</Button></div>
     </form>
   );
 }

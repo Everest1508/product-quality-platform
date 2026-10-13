@@ -1,3 +1,4 @@
+import { DetailSkeleton } from '@/components/skeletons';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, BanIcon, CopyIcon, EditIcon, PlusIcon, RotateCwIcon, TrashIcon, UserPlusIcon, XIcon } from '@/components/ui/icons';
@@ -228,7 +229,7 @@ export function ProductDetailPage() {
       </Card>
     );
   }
-  if (!q.data) return <div className="space-y-3" data-testid="product-loading"><Skeleton className="h-8 w-64" /><Skeleton className="h-40 w-full" /></div>;
+  if (!q.data) return <DetailSkeleton testId="product-loading" className="space-y-4" />;
   return <Detail data={q.data} />;
 }
 

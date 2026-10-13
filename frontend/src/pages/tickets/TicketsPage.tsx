@@ -1,12 +1,14 @@
+import { BoardSkeleton, TableSkeleton } from '@/components/skeletons';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckSquareIcon, PlusIcon, RefreshIcon, TrashIcon } from '@/components/ui/icons';
+import { CheckSquareIcon, MenuIcon, PlusIcon, RefreshIcon, TrashIcon } from '@/components/ui/icons';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useProductNav } from '@/lib/useProductNav';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/pagination';
+import { usePref } from '@/lib/usePref';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Board } from './Board';
@@ -36,6 +38,7 @@ export function TicketsPage() {
   const { deleteOne, deleteMany } = useTicketActions();
   useTicketKeys();
 
+  const [density, setDensity] = usePref<'comfortable' | 'compact'>('board-density', 'comfortable');
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [confirm, setConfirm] = useState<Confirm>(null);
@@ -94,6 +97,7 @@ export function TicketsPage() {
               Delete selected ({selected.size})
             </Button>
           )}
+          {view === 'board' && <Button variant={density === 'compact' ? 'secondary' : 'outline'} size="icon-sm" aria-label="Compact cards" aria-pressed={density === 'compact'} onClick={() => setDensity(density === 'compact' ? 'comfortable' : 'compact')}><MenuIcon /></Button>}
           <Segmented value={view === 'board' ? 'kanban' : 'list'} onValueChange={(v) => navigate({ pathname: base + v + '/', search })} options={[{ value: 'kanban', label: 'Kanban' }, { value: 'list', label: 'List' }]} />
           <Button asChild size="sm">
             <a href={newTicket}><PlusIcon /> New ticket</a>
@@ -106,11 +110,9 @@ export function TicketsPage() {
       {tickets.isError && !data ? (
         <Card><ErrorState title="Couldn’t load tickets."><Button size="sm" variant="outline" onClick={() => tickets.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
-        <Card className="space-y-3 p-4" data-testid="tickets-loading">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-        </Card>
+        view === 'board' ? <BoardSkeleton testId="tickets-loading" /> : <TableSkeleton testId="tickets-loading" />
       ) : data.view === 'board' ? (
-        <Board data={data} disabled={tickets.isPlaceholderData} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
+        <Board compact={density === 'compact'} data={data} disabled={tickets.isPlaceholderData} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
       ) : data.items.length === 0 ? (
         <EmptyState title="No tickets found" description={<>{filters.q ? 'Try a different search term.' : 'Create a ticket to start tracking work.'}</>} />
       ) : (

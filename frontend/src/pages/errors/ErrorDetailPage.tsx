@@ -1,3 +1,4 @@
+import { DetailSkeleton } from '@/components/skeletons';
 import { LineChart } from '@/components/ui/line-chart';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -39,10 +40,7 @@ export function ErrorDetailPage() {
   if (q.isError) return <NotFound missing={q.error instanceof ApiError && q.error.status === 404} />;
   if (!q.data) {
     return (
-      <div className="space-y-3" data-testid="error-loading">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full" />
-      </div>
+      <DetailSkeleton testId="error-loading" />
     );
   }
   // /products/<pk>/errors/<id>/ for an error of another product is a 404 on a full page load; same in the app.

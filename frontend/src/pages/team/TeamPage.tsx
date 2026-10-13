@@ -1,3 +1,4 @@
+import { LedgerSkeleton } from '@/components/skeletons';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { EditIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon } from '@/components/ui/icons';
@@ -89,7 +90,7 @@ export function TeamPage() {
       {q.isError && !d ? (
         <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !d ? (
-        <Card className="space-y-3 p-4" data-testid="team-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</Card>
+        <LedgerSkeleton testId="team-loading" />
       ) : d.items.length === 0 ? (
         <EmptyState title="No members found" description={<>Try a different search term or role.</>} />
       ) : (

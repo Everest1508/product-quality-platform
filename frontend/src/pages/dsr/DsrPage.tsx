@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/skeletons';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CopyIcon, EditIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon } from '@/components/ui/icons';
@@ -51,7 +52,7 @@ export function DsrPage() {
   };
 
   if (query.isError && !log) return <Card><ErrorState title="Couldn’t load the DSR."><Button size="sm" variant="outline" onClick={() => query.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>;
-  if (!log) return <div className="space-y-3" data-testid="dsr-loading"><Skeleton className="h-10 w-72" /><Skeleton className="h-64 w-full" /></div>;
+  if (!log) return <div className="space-y-4"><Skeleton className="h-10 w-72" /><TableSkeleton testId="dsr-loading" /></div>;
   const everyone = log.scope === 'all';
   const canLog = log.can_log && (log.target.is_me || log.is_privileged);
 

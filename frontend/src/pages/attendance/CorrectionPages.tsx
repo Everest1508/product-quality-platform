@@ -1,3 +1,4 @@
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '@/lib/api';
@@ -132,7 +133,7 @@ export function CorrectionRequestPage() {
         <Label className="grid gap-1.5 text-sm font-medium">Reason<Input maxLength={500} placeholder="Why does the day need changing?" value={why} onChange={(e) => setWhy(e.target.value)} /></Label>
         <p className="text-xs text-muted-foreground">Only the times you fill in are changed.</p>
       </Card>
-      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SendIcon />Send request</Button></div>
+      <div className={stickyBar}><Button asChild variant="outline"><Link to="/attendance/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SendIcon />Send request</Button></div>
       {d.recent.length > 0 && (
         <Card className="space-y-2 p-5">
           <h2 className="text-sm font-semibold">Your recent requests</h2>
@@ -191,7 +192,7 @@ export function RecordEditPage() {
         <Label className="grid gap-1.5 text-sm font-medium">Notes<Input maxLength={255} value={notes} onChange={(e) => setNotes(e.target.value)} /></Label>
         <p className="text-xs text-muted-foreground">Leave check-out empty to keep the day open. Changes are logged.</p>
       </Card>
-      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/team/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SaveIcon />Save</Button></div>
+      <div className={stickyBar}><Button asChild variant="outline"><Link to="/attendance/team/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SaveIcon />Save</Button></div>
     </form>
   );
 }

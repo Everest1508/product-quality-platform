@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/skeletons';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { EyeIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon, XIcon } from '@/components/ui/icons';
@@ -124,9 +125,7 @@ export function ErrorsPage() {
       {errors.isError && !data ? (
         <Card><ErrorState title="Couldn’t load errors."><Button size="sm" variant="outline" onClick={() => errors.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
-        <Card className="space-y-3 p-4" data-testid="errors-loading">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-        </Card>
+        <TableSkeleton testId="errors-loading" />
       ) : data.items.length === 0 ? (
         <EmptyState title="No errors found" description={<>{filters.q ? 'Try a different search term.' : 'Errors will appear here once your products start reporting.'}</>} />
       ) : (

@@ -1,3 +1,5 @@
+import { FormSkeleton } from '@/components/skeletons';
+import { stickyBar } from '@/components/StickyActions';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '@/lib/api';
@@ -66,7 +68,7 @@ export function SurveyFormPage() {
   };
 
   if (meta.isError) return <Card className="p-8 text-center text-sm">Couldn’t load the form.</Card>;
-  if (!meta.data) return <div className="mx-auto max-w-2xl space-y-3" data-testid="form-loading"><Skeleton className="h-8 w-48" /><Skeleton className="h-40 w-full" /></div>;
+  if (!meta.data) return <FormSkeleton className="mx-auto max-w-2xl space-y-4" />;
   const choose = (label: string, value: string, set: (v: string) => void, options: [string, string][], placeholder?: string) => (
     <Select value={value} onValueChange={set}>
       <SelectTrigger aria-label={label}><SelectValue placeholder={placeholder} /></SelectTrigger>
@@ -97,7 +99,7 @@ export function SurveyFormPage() {
           </Field>
         )}
       </Card>
-      <div className="flex justify-end gap-2">
+      <div className={stickyBar}>
         <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
         <Button type="submit" loading={saving}><PlusIcon />Create Survey</Button>
       </div>

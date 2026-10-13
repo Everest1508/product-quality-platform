@@ -1,3 +1,4 @@
+import { LedgerSkeleton } from '@/components/skeletons';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { EditIcon, EyeIcon, LayoutDashboardIcon, LayoutGridIcon, ListIcon, PlusIcon, RefreshIcon, SearchIcon } from '@/components/ui/icons';
@@ -132,7 +133,7 @@ export function ProductsPage() {
       {list.isError && !data ? (
         <Card><ErrorState title="Couldn’t load products."><Button size="sm" variant="outline" onClick={() => list.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
-        <Card className="space-y-3 p-4" data-testid="products-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</Card>
+        <LedgerSkeleton testId="products-loading" />
       ) : data.items.length === 0 ? (
         <EmptyState title="No products found" description={<>{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</>} />
       ) : view === 'grid' ? (
