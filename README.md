@@ -298,6 +298,13 @@ python manage.py evaluate_rules
 python manage.py evaluate_rules --dry-run
 ```
 
+### `send_attendance_reminders`
+Reminds people to check in (a few minutes after their shift starts) and to check out (after it ends). Only people who punched in the last 30 days are nudged, never on weekends, holidays or approved leave, and each person gets each reminder at most once a day. People can switch either kind off under Profile → Notifications. Run it from cron every 5 to 10 minutes:
+
+```bash
+python manage.py send_attendance_reminders [--dry-run]
+```
+
 ### `seed_data`
 Resets the database and populates high-fidelity sample data across all entities:
 

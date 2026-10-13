@@ -137,3 +137,10 @@ it('an empty period says so, and Copy summary copies the text', async () => {
   expect(writeText).toHaveBeenCalledWith('DSR text');
   await waitFor(() => expect(toast).toHaveBeenCalledWith('DSR copied to the clipboard.', 'success'));
 });
+
+it('a banner offers every suggested ticket in one click', async () => {
+  const { post } = setup();
+  expect(await screen.findByText(/aren’t in your DSR yet|isn’t in your DSR yet/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Add all' }));
+  await waitFor(() => expect(post).toHaveBeenCalledWith(expect.stringContaining('dsr/suggestions/add-all/'), {}));
+});

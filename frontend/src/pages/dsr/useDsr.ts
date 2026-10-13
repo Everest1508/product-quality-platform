@@ -43,6 +43,7 @@ export function useDsrActions(userId: string) {
     add: (input: EntryInput) => run(() => api.post(`dsr/entries/${owner}`, input)),
     update: (id: number, input: Partial<EntryInput>) => run(() => api.patch(`dsr/entries/${id}/`, input).then(() => ({ message: 'Entry updated.' }))),
     remove: (id: number) => run(() => api.delete(`dsr/entries/${id}/`)),
+    addAllSuggested: () => run(() => api.post(`dsr/suggestions/add-all/${owner}`, {})),
     addSuggested: (ticket_id: number, hours: string) => run(() => api.post(`dsr/suggestions/add/${owner}`, { ticket_id, hours })),
   };
 }

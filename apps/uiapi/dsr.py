@@ -190,6 +190,19 @@ class DsrSuggestionAPIView(CompanyAPIView):
         return Response(sheet_json(request, target, day, message=message), status=201)
 
 
+class DsrSuggestionsAddAllAPIView(CompanyAPIView):
+    """One click: log everything the sheet suggests for the day, at the suggested hours."""
+
+    def post(self, request):
+        day = _day(request.query_params.get("date") or request.data.get("date"), timezone.localdate())
+        target = _target(request)
+        _window(request, day)
+        entries, message = service.add_all_suggested(request.company, request.user, target, day)
+        if not entries:
+            return Response({"detail": message}, status=400)
+        return Response(sheet_json(request, target, day, message=message), status=201)
+
+
 from apps.core.csvx import csv_response  # noqa: E402
 
 

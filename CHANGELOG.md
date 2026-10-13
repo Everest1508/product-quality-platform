@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.37.0] — 2026-10-13 · reminders, one-click DSR and a smoother board
+
+> In short: attendance reminders, adding all your worked tickets to the DSR in one click, and a friendlier board, notifications page and loading screens.
+
+### New
+- **Attendance reminders.** You are nudged shortly after your shift starts if you have not checked in, and again after it ends if you have not checked out. Each can be switched off in your profile.
+- **Add everything you worked on to the DSR in one click.** A banner on the DSR lists the tickets you touched today and adds them all at sensible hours.
+- **Compact cards on the board.** One button shrinks the cards to the key, title and people, and your choice is remembered.
+
+### Better
+- **Hover a board card to peek at it.** A small card shows the status, priority, people and due date without opening the ticket.
+- **Cards lift when you drag them and settle in when dropped.** Moving a ticket now feels like moving a thing.
+- **Notifications are grouped by day.** Each one has an icon for its kind, and you can filter by type.
+- **Long forms keep Save in reach.** The Save and Cancel buttons stay at the bottom of the window while you scroll.
+- **Loading screens now look like the page that is coming.** Tickets, boards, forms, details and lists no longer jump when the data arrives.
+
 ## [1.36.0] — 2026-10-13 · exports, team pages, notification settings and tidier pages
 
 > In short: export your data, open a colleague's page, choose what notifies you, and see a ticket's whole story in one column.

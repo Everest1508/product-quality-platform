@@ -187,6 +187,21 @@ def suggestions(company, user, day, limit=8):
     return rows[:limit]
 
 
+def add_all_suggested(company, actor, target_user, day):
+    """Log every suggested ticket at its suggested hours. Returns (entries, message)."""
+    from apps.dsr.duration import format_hm
+
+    entries = []
+    for row in suggestions(company, target_user, day, limit=50):
+        entry, _ = add_suggested(company, actor, target_user, day, row["number"], str(row["hours"]))
+        if entry is not None:
+            entries.append(entry)
+    if not entries:
+        return [], "There is nothing to add."
+    total = sum((e.hours_spent for e in entries), Decimal("0.00"))
+    return entries, f"Added {len(entries)} ticket{'s' if len(entries) != 1 else ''} to your DSR ({format_hm(total)} in all)."
+
+
 # ── Writes, shared by the JSON API. Access and the day's window are checked by the caller. ──
 
 def add_entry(company, actor, target_user, day, data, products):

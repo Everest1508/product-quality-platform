@@ -84,6 +84,15 @@ export function DsrPage() {
         <p className="ml-auto text-sm text-muted-foreground"><b className="text-foreground">{log.total}</b> · {log.count} {log.count === 1 ? 'entry' : 'entries'} · {log.completed} completed</p>
       </div>
 
+      {canLog && log.target.is_me && log.work_suggestions.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <p className="text-sm"><b>{log.work_suggestions.length} ticket{log.work_suggestions.length === 1 ? '' : 's'}</b> you worked on today {log.work_suggestions.length === 1 ? 'isn’t' : 'aren’t'} in your DSR yet: {log.work_suggestions.slice(0, 3).map((s) => s.key).join(', ')}{log.work_suggestions.length > 3 ? '…' : ''}.</p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setDialog({})}>Review</Button>
+            <Button size="sm" loading={act.busy} onClick={() => act.addAllSuggested()}><PlusIcon />Add all</Button>
+          </div>
+        </div>
+      )}
       {!log.can_log && log.range === 'today' && <Alert variant="warning">{log.locked_reason}</Alert>}
 
       <Card className="overflow-hidden p-0 [&>div]:max-h-[70vh]">

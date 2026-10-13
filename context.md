@@ -993,3 +993,7 @@ decided what and strike the item** rather than deleting it.
 - `NotificationMute` (apps/notifications): no row = on; `notify()` returns None for a muted kind; `system` can't be muted. API `profile/notifications/` (GET, PUT {kind, enabled}); `api.put` was added. @mentions already existed (`apps/tickets/mentions.py`).
 - `GET team/<membership id>/` (page `/team/:id/`): streak, milestones, counts and open tickets limited to `accessible_tickets` for the viewer; email only for owners and admins. The PATCH/DELETE handlers (account editing) are untouched.
 - Ticket detail JSON has `events` (ActivityLog rows with target ticket, minus comments); `Timeline` merges them with comments. Palette actions live in `shell/actions.ts`; the DSR opens its dialog on `?log=1`.
+
+### 2026-10-13 Reminders, add-all DSR, board polish (1.37.0)
+- `apps/attendance/reminders.send(company, now, dry_run)` + `manage.py send_attendance_reminders`: needs cron every 5-10 min (not wired to a scheduler here). Kinds `attendance_checkin` / `attendance_checkout` (mutable in Profile → Notifications). Only people with a punch in the last 30 days; skips weekends, holidays, approved leave; one per kind per day.
+- `POST dsr/suggestions/add-all/` (`service.add_all_suggested`) backs the DSR banner. Board: compact density (`usePref`), hover peek (Tooltip), `card-drop` animation and a lift on drag (local kanban patch). Forms use `stickyBar`; `components/skeletons.tsx` has page-shaped loaders.

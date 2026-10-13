@@ -229,6 +229,23 @@ class SuggestionApiTest(DsrBase):
             self.assertEqual(self.add(hours=hours).status_code, 400, hours)
         self.assertFalse(DSREntry.objects.exists())
 
+    def test_add_all_logs_every_suggestion_once_and_then_has_nothing_left(self):
+        second = Ticket.objects.create(company=self.acme, product=self.p_open, title="Fix logout", ticket_type="feature", status="in_progress")
+        second.set_assignees([self.dev])
+        self.login("dev")
+        r = self.post("/ui-api/v1/dsr/suggestions/add-all/", {})
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(DSREntry.objects.count(), 2)
+        self.assertIn("Added 2 tickets", r.json()["message"])
+        self.assertEqual(r.json()["work_suggestions"], [])
+        again = self.post("/ui-api/v1/dsr/suggestions/add-all/", {})
+        self.assertEqual(again.status_code, 400)
+        self.assertEqual(DSREntry.objects.count(), 2)
+
+    def test_add_all_respects_the_day_window(self):
+        self.login("dev")
+        self.assertEqual(self.post(f"/ui-api/v1/dsr/suggestions/add-all/?date={self.past.isoformat()}", {}).status_code, 403)
+
     def test_window_applies(self):
         self.login("dev")
         self.assertEqual(self.post(f"/ui-api/v1/dsr/suggestions/add/?date={self.past.isoformat()}", {"ticket_id": self.t.pk, "hours": "1"}).status_code, 403)

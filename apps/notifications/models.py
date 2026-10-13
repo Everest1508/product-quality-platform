@@ -21,6 +21,8 @@ class Notification(TenantScopedModel):
         CORRECTION_REQUEST = "correction_request", "Attendance correction request"
         CORRECTION_DECISION = "correction_decision", "Attendance correction decision"
         PAYSLIP = "payslip", "Payslip ready"
+        ATTENDANCE_CHECKIN = "attendance_checkin", "Check-in reminder"
+        ATTENDANCE_CHECKOUT = "attendance_checkout", "Check-out reminder"
         REGRESSION = "regression", "Error came back"
         SYSTEM = "system", "System"
 
