@@ -1619,7 +1619,7 @@ class SidebarActiveStateTest(LeaveTestBase):
             "meta", "param", "source", "track", "wbr", "path", "circle", "rect",
             "line", "polyline", "polygon", "ellipse", "use", "stop",
         }
-        for url in ["/", "/leave/", "/attendance/", "/payroll/me/", "/team/"]:
+        for url in ["/dsr/", "/leave/", "/attendance/", "/payroll/me/", "/team/"]:
             with self.subTest(url=url):
                 page = self.client.get(url, follow=True).content.decode()
                 # <script>/<style> hold text, not markup: tokenizing them turns

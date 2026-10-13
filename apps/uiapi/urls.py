@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import automation, errors, feedback, products, tickets, views
+from apps.uiapi import automation, dashboards, errors, feedback, products, tickets, views
 
 app_name = "uiapi"
 
@@ -45,6 +45,16 @@ urlpatterns = [
     path("rules/meta/", automation.RuleMetaAPIView.as_view(), name="rule_meta"),
     path("rules/<int:pk>/toggle/", automation.RuleToggleAPIView.as_view(), name="rule_toggle"),
     path("rules/<int:pk>/", automation.RuleDetailAPIView.as_view(), name="rule_detail"),
+    path("dashboard/", dashboards.HomeAPIView.as_view(), name="home"),
+    path("dashboard/quote/", dashboards.QuoteAPIView.as_view(), name="quote"),
+    path("attendance/punch/", dashboards.PunchAPIView.as_view(), name="punch"),
+    path("todos/", dashboards.TodoListAPIView.as_view(), name="todos"),
+    path("todos/clear-done/", dashboards.TodoClearDoneAPIView.as_view(), name="todo_clear_done"),
+    path("todos/<int:pk>/toggle/", dashboards.TodoToggleAPIView.as_view(), name="todo_toggle"),
+    path("todos/<int:pk>/", dashboards.TodoDeleteAPIView.as_view(), name="todo_delete"),
+    path("dashboards/product/<int:pk>/", dashboards.ProductDashboardAPIView.as_view(), name="product_dashboard"),
+    path("reports/", dashboards.ReportAPIView.as_view(), name="reports"),
+    path("audit/", dashboards.AuditLogAPIView.as_view(), name="audit"),
     path("company/switch/", views.CompanySwitchAPIView.as_view(), name="company_switch"),
     path("bootstrap/", views.BootstrapView.as_view(), name="bootstrap"),
     path("notifications/", views.NotificationListView.as_view(), name="notifications"),

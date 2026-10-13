@@ -86,37 +86,31 @@ class HomeAndReportsTest(TestCase):
         Membership.objects.create(user=self.owner, company=self.company, role="owner")
         self.client.login(username="own", password="pass1234")
 
-    def test_home_has_a_greeting_a_clock_and_a_quote(self):
-        res = self.client.get(reverse("dashboards:index"))
-        self.assertContains(res, 'class="hero"')
-        self.assertContains(res, "Olive")
-        self.assertContains(res, 'id="dash-quote"')
-        self.assertContains(res, "heroClock(")
-
-    def test_quote_endpoint_returns_a_fragment_that_differs_from_the_current_one(self):
+    def test_home_carries_the_name_and_a_quote_and_the_quote_endpoint_changes_it(self):
         from apps.dashboards.quotes import QUOTES
 
-        res = self.client.get(reverse("dashboards:quote"), {"current": QUOTES[0]})
+        data = self.client.get("/ui-api/v1/dashboard/").json()
+        self.assertEqual((data["first_name"], data["company"]), ("Olive", "Acme"))
+        self.assertIn(data["quote"], QUOTES)
+        res = self.client.get("/ui-api/v1/dashboard/quote/", {"current": QUOTES[0]})
         self.assertEqual(res.status_code, 200)
-        self.assertNotContains(res, "<html")
-        self.assertNotContains(res, f">{QUOTES[0]}<")
+        self.assertNotEqual(res.json()["quote"], QUOTES[0])
 
     def test_quote_needs_a_workspace(self):
         from django.test import Client
 
-        res = Client().get(reverse("dashboards:quote"))
-        self.assertEqual(res.status_code, 302)
+        self.assertIn(Client().get("/ui-api/v1/dashboard/quote/").status_code, (401, 403))
 
     def test_reports_shows_tiles_and_charts(self):
         from apps.dashboards.service import log_activity
 
         log_activity(self.company, "ticket_created", "A ticket", actor=self.owner)
-        res = self.client.get(reverse("dashboards:reports"))
+        res = self.client.get("/ui-api/v1/reports/")
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, 'class="rk-row"')
-        self.assertContains(res, "Day by day")
-        self.assertContains(res, "How much got finished")
-        kpis = {k["key"]: k for k in res.context["kpis"]}
+        d = res.json()
+        self.assertEqual(len(d["daily_bars"]), 1)
+        self.assertIn("resolution_rate", d)
+        kpis = {k["key"]: k for k in d["kpis"]}
         self.assertEqual(kpis["tickets_created"]["value"], 1)
         self.assertEqual(kpis["tickets_created"]["dir"], "up")
 
@@ -133,11 +127,11 @@ class HomeAndReportsTest(TestCase):
             log_activity(self.company, "ticket_created", "Earlier", actor=self.owner)
         ActivityLog.objects.update(created_at=timezone.now() - timedelta(days=1))
         log_activity(self.company, "ticket_created", "Now", actor=self.owner)
-        res = self.client.get(reverse("dashboards:reports"), {"start_date": today.isoformat(), "end_date": today.isoformat()})
-        tile = {k["key"]: k for k in res.context["kpis"]}["tickets_created"]
+        res = self.client.get("/ui-api/v1/reports/", {"start_date": today.isoformat(), "end_date": today.isoformat()})
+        tile = {k["key"]: k for k in res.json()["kpis"]}["tickets_created"]
         self.assertEqual((tile["value"], tile["before"], tile["dir"], tile["pct"]), (1, 2, "down", 50))
 
-    def test_report_range_buttons_render(self):
-        res = self.client.get(reverse("dashboards:reports"))
-        self.assertContains(res, "Last 30 days")
-        self.assertContains(res, "This month")
+    def test_report_range_presets(self):
+        labels = [p["label"] for p in self.client.get("/ui-api/v1/reports/").json()["presets"]]
+        self.assertIn("Last 30 days", labels)
+        self.assertIn("This month", labels)

@@ -1,9 +1,0 @@
-{% load dropdown_tags %}<form method="post" action="{% url 'tickets:ticket_status' pk=ticket.pk %}"
-      hx-post="{% url 'tickets:ticket_status' pk=ticket.pk %}"
-      hx-target="#detail-status"
-      hx-swap="innerHTML"
-      hx-trigger="change"
-      >
-  {% csrf_token %}
-  {% dropdown "status" ticket.valid_next_statuses ticket.status placeholder="Status" label="Change status" %}
-</form>

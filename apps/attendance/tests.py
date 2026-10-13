@@ -1370,7 +1370,7 @@ class PunchPanelTest(AttendanceTestBase):
         """The bell row carries a `body`, so a punch notification should use it:
         on check-in the fee (`late_penalty_for`, same call the payslip quotes);
         on check-out the day's tally and a nudge for earlier open days."""
-        from apps.attendance.views import _punch_notification_body
+        from apps.attendance.service import punch_notification_body as _punch_notification_body
         from apps.notifications.models import Notification
 
         # Lateness is deterministic on the helper: a live punch lands at "now",

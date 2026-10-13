@@ -65,7 +65,7 @@ class DSRSystemTest(TestCase):
         self.assertEqual(DSREntry.objects.get(pk=entry.pk).hours_spent, entry.hours_spent)
 
         self.client.login(username="member", password="password")
-        response = self.client.get(reverse("dashboards:index"))
+        response = self.client.get("/ui-api/v1/dashboard/")
         self.assertEqual(response.status_code, 200)
 
     def test_hours_survive_a_wide_round_trip(self):
@@ -80,7 +80,7 @@ class DSRSystemTest(TestCase):
         )
         stored = DSREntry.objects.get(task_name="Long-running migration")
         self.assertEqual(stored.hours_spent, Decimal("99999.99"))
-        response = self.client.get(reverse("dashboards:index"))
+        response = self.client.get("/ui-api/v1/dashboard/")
         self.assertEqual(response.status_code, 200)
 
     def test_quick_edit_leaves_a_wide_entry_editable(self):

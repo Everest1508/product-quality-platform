@@ -52,9 +52,10 @@ class TopbarFeaturesTest(TestCase):
             self.assertIn(reverse("tickets:ticket_detail", args=[want.pk]), urls)
 
     def test_home_has_the_charts(self):
-        page = self.client.get(reverse("dashboards:index")).content.decode()
-        for marker in ("Hours this week", "Tickets by status", "ch-spark"):
-            self.assertIn(marker, page)
+        data = self.client.get("/ui-api/v1/dashboard/").json()
+        self.assertEqual(len(data["week"]), 7)
+        self.assertEqual(len(data["errors"]["items"]), 14)
+        self.assertIn("total", data["status"])
 
     def test_products_page_shows_summary_tiles(self):
         summary = self.client.get("/ui-api/v1/products/").json()["summary"]

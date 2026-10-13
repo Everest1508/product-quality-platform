@@ -13,6 +13,10 @@ import { PublicSurveyPage } from '@/pages/feedback/PublicSurveyPage';
 import { SurveyDetailPage } from '@/pages/feedback/SurveyDetailPage';
 import { SurveyFormPage } from '@/pages/feedback/SurveyFormPage';
 import { SurveysPage } from '@/pages/feedback/SurveysPage';
+import { AuditLogPage } from '@/pages/dashboards/AuditLogPage';
+import { ProductDashboardPage } from '@/pages/dashboards/ProductDashboardPage';
+import { ReportsPage } from '@/pages/dashboards/ReportsPage';
+import { HomePage } from '@/pages/home/HomePage';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -44,6 +48,10 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/', element: <ProductDetailPage /> },
   { path: '/products/:pk/edit/', element: <ProductFormPage /> },
   { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
+  { path: '/dashboards/', element: <HomePage /> },
+  { path: '/dashboards/reports/', element: <ReportsPage /> },
+  { path: '/dashboards/audit/', element: <AuditLogPage /> },
+  { path: '/dashboards/product/:product_pk/', element: <ProductDashboardPage /> },
   { path: '/feedback/', element: <SurveysPage /> },
   { path: '/products/:pk/surveys/', element: <SurveysPage /> },
   { path: '/feedback/create/', element: <SurveyFormPage /> },

@@ -57,12 +57,6 @@ class ErrorShellPagesTest(ErrorsBase):
             with self.assertRaises(TemplateDoesNotExist, msg=name):
                 get_template(name)
         for name, args in [("errors:error_status", [1]), ("errors:error_delete", [1]),
-                           ("errors:error_convert_to_ticket", [1]), ("products:product_error_convert_to_ticket", [1, 1])]:
+                           ("errors:error_convert_to_ticket", [1]), ("errors:error_resolve", [1]), ("errors:error_ignore", [1]), ("products:product_error_convert_to_ticket", [1, 1])]:
             with self.assertRaises(NoReverseMatch, msg=name):
                 reverse(name, args=args)
-
-    def test_the_dashboard_buttons_still_post(self):
-        self.login("owner")
-        self.assertEqual(self.client.post(reverse("errors:error_resolve", args=[self.g.pk])).status_code, 302)
-        self.g.refresh_from_db()
-        self.assertEqual(self.g.status, "resolved")

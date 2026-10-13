@@ -22,7 +22,7 @@ PRIVILEGED_ROLES = ("owner", "admin")
 
 # One symbol map, shared by the punch panel's late-rules and the punch
 # notification's fee line, so the two cannot disagree about the currency.
-CURRENCY_SYMBOLS = {"INR": "₹", "USD": "$", "EUR": "€", "GBP": "£"}
+CURRENCY_SYMBOLS = service.CURRENCY_SYMBOLS
 
 
 def _is_privileged(request):
@@ -71,44 +71,6 @@ def annotate_effective(record, shift):
     record.effective_minutes = service.effective_span_for(record, shift)
     record.effective_formatted = format_minutes(record.effective_minutes)
     return record
-
-
-def _punch_notification_body(record, action, company):
-    """The line under a punch notification's title.
-
-    Everything here is derived from the same calls the punch panel and the
-    payslip use (`late_penalty_for`, work hours, `unclosed_days`), so a
-    notification can never quote a different number from either of them.
-    """
-    shift = service.shift_for(company)
-    if action == "checked_in":
-        penalty = service.late_penalty_for(record, shift)
-        if penalty:
-            if penalty["band"] == "half_day":
-                return (
-                    f"{penalty['late_minutes']} min late — counts as a half day "
-                    f"on this cycle's payslip."
-                )
-            symbol = CURRENCY_SYMBOLS.get(
-                shift.penalty_currency, shift.penalty_currency + " "
-            )
-            return f"{penalty['late_minutes']} min late — {symbol}{penalty['amount']} late fee."
-        return f"On time for the {t12(shift.start_time)} shift."
-
-    # Check-out: the day's tally, and a nudge when earlier days are still open.
-    body = f"{record.worked_formatted} worked today"
-    target = shift.worked_minutes_per_day
-    delta = record.worked_minutes - target
-    if delta:
-        body += (
-            f" · {format_minutes(abs(delta))} "
-            f"{'over' if delta > 0 else 'short of'} a full {format_minutes(target)} day"
-        )
-    open_days = service.unclosed_days(company, record.user)
-    if open_days:
-        plural = "" if len(open_days) == 1 else "s"
-        body += f" · {len(open_days)} earlier day{plural} still unclosed"
-    return body
 
 
 def _punch_context(request, record, message="", person=None):
@@ -343,55 +305,7 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
     """POST to toggle check-in / check-out for the signed-in employee."""
 
     def post(self, request):
-        record, action = punch(
-            company=request.company,
-            user=request.user,
-            notes=request.POST.get("notes", "")[:255],
-        )
-
-        if action == "checked_in":
-            log_activity(
-                request.company,
-                "attendance_checked_in",
-                f"{request.user.get_full_name() or request.user.username} checked in",
-                description=timezone.localtime(record.check_in).strftime("%I:%M %p") if record.check_in else "",
-                actor=request.user,
-                target_content_type="attendance_record",
-                target_object_id=record.pk,
-                metadata={"date": record.date.isoformat()},
-            )
-            message = f"Checked in at {timezone.localtime(record.check_in).strftime('%I:%M %p')}."
-        elif action == "checked_out":
-            log_activity(
-                request.company,
-                "attendance_checked_out",
-                f"{request.user.get_full_name() or request.user.username} checked out",
-                description=f"{record.worked_formatted} worked",
-                actor=request.user,
-                target_content_type="attendance_record",
-                target_object_id=record.pk,
-                metadata={
-                    "date": record.date.isoformat(),
-                    "worked_minutes": record.worked_minutes,
-                },
-            )
-            message = f"Checked out. {record.worked_formatted} logged today."
-        elif action == "too_soon":
-            message = "You just checked in. Give it a minute before checking out."
-        else:
-            message = "You have already checked in and out for today."
-
-        if action in ("checked_in", "checked_out"):
-            # The actor is deliberately None: notify() skips the person who caused
-            # an event, but a punch is exactly what they want a receipt for.
-            notifications.notify(
-                user=request.user,
-                company=request.company,
-                kind=Notification.Kind.SYSTEM,
-                title=message,
-                body=_punch_notification_body(record, action, request.company),
-                url="/attendance/",
-            )
+        record, action, message = service.punch_user(request.company, request.user, request.POST.get("notes", ""))
         (messages.success if action in ("checked_in", "checked_out") else messages.info)(request, message)
 
         if request.headers.get("HX-Request") == "true":

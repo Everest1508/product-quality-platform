@@ -68,70 +68,6 @@ class TicketViewTest(TestCase):
         response = self.client.get(reverse("tickets:ticket_detail", kwargs={"pk": other_ticket.pk}))
         self.assertEqual(response.status_code, 404)
 
-    def test_status_change(self):
-        ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user,
-        )
-        response = self.client.post(
-            reverse("tickets:ticket_status", kwargs={"pk": ticket.pk}),
-            {"status": "assigned"},
-        )
-        ticket.refresh_from_db()
-        self.assertEqual(ticket.status, "assigned")
-
-    def test_invalid_status_change(self):
-        ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user,
-        )
-        response = self.client.post(
-            reverse("tickets:ticket_status", kwargs={"pk": ticket.pk}),
-            {"status": "bogus"},
-        )
-        ticket.refresh_from_db()
-        self.assertEqual(ticket.status, "open")
-
-    def test_assign_ticket(self):
-        ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user,
-        )
-        response = self.client.post(
-            reverse("tickets:ticket_assign", kwargs={"pk": ticket.pk}),
-            {"assignees": [self.user.pk]},
-        )
-        ticket.refresh_from_db()
-        self.assertEqual(list(ticket.assignees.all()), [self.user])
-        self.assertEqual(ticket.assigned_to, self.user)
-        self.assertEqual(ticket.status, "assigned")
-
-    def test_unassign_ticket(self):
-        ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user,
-            assigned_to=self.user, status="assigned",
-        )
-        ticket.assignees.set([self.user])
-        response = self.client.post(
-            reverse("tickets:ticket_assign", kwargs={"pk": ticket.pk}),
-            {"assignees": []},
-        )
-        ticket.refresh_from_db()
-        self.assertEqual(list(ticket.assignees.all()), [])
-        self.assertIsNone(ticket.assigned_to)
-        self.assertEqual(ticket.status, "open")
-
-    def test_multi_assign_ticket(self):
-        other = User.objects.create_user("bob", "bob@test.com", "pass1234")
-        Membership.objects.create(user=other, company=self.company, role="developer")
-        ticket = Ticket.objects.create(
-            company=self.company, title="Test", created_by=self.user,
-        )
-        response = self.client.post(
-            reverse("tickets:ticket_assign", kwargs={"pk": ticket.pk}),
-            {"assignees": [self.user.pk, other.pk]},
-        )
-        ticket.refresh_from_db()
-        self.assertEqual(ticket.assignees.count(), 2)
-        self.assertEqual(ticket.assigned_to, self.user)
-
     def test_overdue_property(self):
         from django.utils import timezone
         from datetime import timedelta
@@ -193,28 +129,3 @@ class TicketProductAccessTest(TestCase):
             reverse("tickets:ticket_detail", kwargs={"pk": self.secret_ticket.pk})
         )
         self.assertEqual(response.status_code, 404)
-
-    def test_cannot_change_status_of_inaccessible_ticket(self):
-        response = self.client.post(
-            reverse("tickets:ticket_status", kwargs={"pk": self.secret_ticket.pk}),
-            {"status": "closed"},
-        )
-        self.assertEqual(response.status_code, 404)
-        self.secret_ticket.refresh_from_db()
-        self.assertEqual(self.secret_ticket.status, "open")
-
-    def test_can_change_status_of_accessible_ticket(self):
-        response = self.client.post(
-            reverse("tickets:ticket_status", kwargs={"pk": self.allowed_ticket.pk}),
-            {"status": "closed"},
-        )
-        self.assertIn(response.status_code, (200, 302))
-        self.allowed_ticket.refresh_from_db()
-        self.assertEqual(self.allowed_ticket.status, "closed")
-
-
-
-
-
-
-

@@ -69,15 +69,15 @@ class TicketPageShellTest(Base):
             with self.assertRaises(NoReverseMatch, msg=name):
                 reverse(f"tickets:{name}", kwargs={"pk": 1})
 
-    def test_the_dashboard_endpoints_still_work(self):
-        t = self.make(self.p_open)
-        self.login("owner")
-        r = self.client.post(f"/tickets/{t.pk}/status/", {"status": "in_progress"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
-        self.assertEqual(r.json(), {"ok": True, "status": "in_progress"})
-        r = self.client.post(f"/tickets/{t.pk}/assign/", {"assignees": [self.dev.pk]})
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(list(t.assignees.all()), [self.dev])
-
     def test_old_form_posts_to_the_page_urls_are_not_accepted_any_more(self):
         self.login("owner")
         self.assertEqual(self.client.post("/tickets/create/", {"title": "x"}).status_code, 405)
+
+
+class LegacyTicketRoutesGoneTest(TicketPageShellTest):
+    def test_the_old_status_and_assign_routes_are_gone(self):
+        from django.urls import NoReverseMatch, reverse
+
+        for name in ("tickets:ticket_status", "tickets:ticket_assign"):
+            with self.assertRaises(NoReverseMatch, msg=name):
+                reverse(name, args=[1])

@@ -10,6 +10,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.19.0] — 2026-10-13 · home, reports and the audit log, redone
+
+> In short: the home page, the reports, the audit log and each product's dashboard have a new look, and the home page now punches you in and out without leaving it.
+
+### New
+
+- **A new home page.** Your tickets, hours, to-dos, pay, leave and DSR in one view, with a clock and greeting that always match your own time.
+- **A to-do list that updates as you tick things off.** Add a task with a priority and a due date, tick it, delete it or clear everything that is done.
+- **New reports.** Pick a date range or a quick range, see how each number moved against the period before, and fold open the tables by product and by day.
+- **A new audit log.** Search it, filter by event, person or date, and click an entry to open what it is about.
+- **A new product dashboard.** Errors, tickets, survey score and uptime with 30-day trends.
+
+### Better
+
+- **Punch in and out from the home page.** It does the same as the attendance page, including the receipt in your notifications.
+- **Cleaner code behind the home page.** Old buttons that no page used any more were removed.
+
 ## [1.18.0] — 2026-10-13 · surveys and automation, redone
 
 > In short: surveys, the customer success hub and automation rules have a new look, and people now only see surveys and rules for the products they can open.
