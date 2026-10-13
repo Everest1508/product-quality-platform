@@ -1,3 +1,4 @@
+import { BarChart } from '@/components/ui/charts';
 import { useEffect, useRef, useState } from 'react';
 import { LogInIcon, LogOutIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
@@ -121,15 +122,7 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
       {!p.readonly && (
         <div role="img" aria-label={`Hours worked this week, ${p.week.total}`}>
           <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>This week</span><b className="text-foreground">{p.week.total}</b></div>
-          <div className="flex h-20 items-end gap-2">
-            {p.week.days.map((d) => (
-              <div key={d.date} className={cn('flex h-full flex-1 flex-col items-center justify-end gap-1', d.state === 'future' && 'opacity-40')} title={`${d.date}: ${d.state === 'leave' ? 'on leave' : d.formatted}`}>
-                <span className="flex w-full flex-1 items-end rounded bg-secondary"><i className={cn('block w-full rounded', d.state === 'leave' ? 'bg-info/50' : 'bg-primary/70')} style={{ height: `${d.state === 'leave' ? 100 : d.pct}%` }} /></span>
-                <span className={cn('text-xs', d.is_today ? 'font-semibold' : 'text-muted-foreground')}>{d.label}</span>
-                <em className="text-[10px] not-italic text-muted-foreground">{d.state === 'leave' ? 'leave' : d.state === 'future' || d.state === 'weekend' ? ' ' : d.short}</em>
-              </div>
-            ))}
-          </div>
+          <BarChart height={96} data={p.week.days.map((d) => ({ label: d.label, value: d.state === 'future' || d.state === 'leave' ? 0 : d.pct }))} />
         </div>
       )}
       <PunchOutDialog open={confirmOut} onOpenChange={setConfirmOut} sinceMs={p.since_ms} onConfirm={punch} />

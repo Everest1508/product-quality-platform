@@ -1,3 +1,4 @@
+import { BarChart } from '@/components/ui/charts';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, CopyIcon, PlayIcon, TrashIcon } from '@/components/ui/icons';
@@ -75,13 +76,8 @@ function Detail({ data }: { data: SurveyDetail }) {
       {s.type === 'nps' && (
         <Card className="space-y-3 p-5">
           <h2 className="text-sm font-medium">NPS distribution</h2>
-          <div className="flex h-28 items-end gap-1" role="img" aria-label="Responses per score">
-            {data.distribution.map((d) => (
-              <div key={d.score} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${d.score}: ${d.count}`}>
-                <div className={cn('w-full rounded-t', d.score <= 6 ? 'bg-destructive' : d.score <= 8 ? 'bg-warning' : 'bg-success')} style={{ height: `${(d.count / max) * 100}%`, minHeight: d.count ? 4 : 0 }} />
-                <span className="text-xs text-muted-foreground">{d.score}</span>
-              </div>
-            ))}
+          <div role="img" aria-label="Responses per score">
+            <BarChart height={130} data={data.distribution.map((d) => ({ label: String(d.score), value: d.count }))} />
           </div>
           <div className="flex justify-between text-xs text-muted-foreground"><span>Detractors (0-6)</span><span>Passives (7-8)</span><span>Promoters (9-10)</span></div>
         </Card>

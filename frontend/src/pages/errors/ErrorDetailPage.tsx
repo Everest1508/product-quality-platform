@@ -1,3 +1,4 @@
+import { LineChart } from '@/components/ui/line-chart';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, CheckIcon, EyeOffIcon, PlusIcon, TrashIcon } from '@/components/ui/icons';
@@ -98,12 +99,8 @@ function Detail({ data }: { data: ErrorDetail }) {
               </p>
             )}
             {e.first_version && <p className="text-sm text-muted-foreground">First seen in release <strong>{e.first_version}</strong>.</p>}
-            <div role="img" aria-label={`Occurrences per day for the last ${trend.days} days`} className="flex h-24 items-end gap-0.5">
-              {trend.bars.map((b) => (
-                <div key={b.date} title={`${shortDate(b.date)}: ${b.count}`} className="flex h-full flex-1 items-end">
-                  <i className="block w-full rounded-sm bg-primary/70" style={{ height: `${Math.max(b.pct, b.count ? 4 : 1)}%` }} />
-                </div>
-              ))}
+            <div role="img" aria-label={`Occurrences per day for the last ${trend.days} days`}>
+              <LineChart area labels={trend.bars.map((b) => shortDate(b.date))} series={[{ name: 'Occurrences', data: trend.bars.map((b) => b.count), color: 'text-primary' }]} />
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{shortDate(trend.bars[0].date)}</span><span>Today</span>

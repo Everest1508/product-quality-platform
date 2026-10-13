@@ -1,3 +1,4 @@
+import { LineChart } from '@/components/ui/line-chart';
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,11 @@ const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace('_',
 const SEV: Record<string, string> = { critical: 'bg-destructive', high: 'bg-destructive/80', medium: 'bg-warning', low: 'bg-info', info: 'bg-muted-foreground' };
 
 function Trend({ title: t, sub, rows, tone, noun }: { title: string; sub: string; rows: { date: string; n: number }[]; tone: string; noun: string }) {
-  const max = Math.max(1, ...rows.map((r) => r.n));
   return (
     <Card className="space-y-3 p-5">
       <div><div className="font-semibold">{t}</div><div className="text-xs text-muted-foreground">{sub}</div></div>
-      <div role="img" aria-label={t} className="flex h-32 items-end gap-0.5">
-        {rows.map((r) => <i key={r.date} title={`${md(r.date)} · ${r.n} ${noun}${r.n === 1 ? '' : 's'}`} className={cn('block flex-1 rounded-t', tone)} style={{ height: `${Math.max((r.n / max) * 100, r.n ? 3 : 1)}%` }} />)}
+      <div role="img" aria-label={t}>
+        <LineChart area labels={rows.map((r) => md(r.date))} series={[{ name: `${noun}s`.replace('ss', 's'), data: rows.map((r) => r.n), color: tone }]} />
       </div>
       <div className="flex justify-between text-xs text-muted-foreground"><span>30d ago</span><span>15d ago</span><span>Today</span></div>
     </Card>
@@ -72,8 +72,8 @@ export function ProductDashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Trend title="Error occurrences" sub="Last 30 days daily capture trend" rows={d.errors_by_day.map((r) => ({ date: r.date, n: r.count }))} tone="bg-destructive/70" noun="occurrence" />
-        <Trend title="Ticket burn-down" sub="Last 30 days open backlog trend" rows={d.ticket_burndown.map((r) => ({ date: r.date, n: r.open }))} tone="bg-primary/70" noun="open ticket" />
+        <Trend title="Error occurrences" sub="Last 30 days daily capture trend" rows={d.errors_by_day.map((r) => ({ date: r.date, n: r.count }))} tone="text-destructive" noun="occurrence" />
+        <Trend title="Ticket burn-down" sub="Last 30 days open backlog trend" rows={d.ticket_burndown.map((r) => ({ date: r.date, n: r.open }))} tone="text-primary" noun="open ticket" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

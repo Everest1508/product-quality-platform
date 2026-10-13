@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ApiError } from '@/lib/api';
 import { ago } from '@/lib/time';
 import { cn } from '@/lib/utils';
+import { CountUp } from '@/components/fun/CountUp';
 import { PunchPanel } from './PunchPanel';
 import { CorrectionStatus } from './parts';
 import { useAttQuery, useAttWrite } from './useAttendance';
@@ -58,15 +59,14 @@ export function AttendancePage() {
 
       <PunchPanel p={d.panel} />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card className="p-4"><div className="text-2xl font-semibold">{m.present_days}</div><div className="text-xs text-muted-foreground">Days present · {m.label}</div></Card>
-        <Card className="p-4"><div className="text-2xl font-semibold">{m.total}</div><div className="text-xs text-muted-foreground">Hours worked</div></Card>
-        <Card className="p-4"><div className="text-2xl font-semibold">{m.average}</div><div className="text-xs text-muted-foreground">Average per day</div></Card>
-        <Card className={cn('p-4', m.unclosed_days > 0 && 'border-destructive/40')}><div className="text-2xl font-semibold">{m.unclosed_days}</div><div className="text-xs text-muted-foreground">Unclosed days</div></Card>
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border md:grid-cols-4">
+        {([['Days present · ' + m.label, m.present_days, false], ['Hours worked', m.total, false], ['Average per day', m.average, false], ['Unclosed days', m.unclosed_days, m.unclosed_days > 0]] as [string, string | number, boolean][]).map(([l, v, bad]) => (
+          <div key={l} className="bg-card p-4"><div className={cn('text-2xl font-semibold tabular-nums', bad && 'text-destructive')}>{typeof v === 'number' ? <CountUp value={v} /> : v}</div><div className="text-xs text-muted-foreground">{l}</div></div>
+        ))}
       </div>
 
-      <Card className="space-y-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => go(m.prev)}><ChevronLeftIcon /></Button>
             <h2 className="min-w-36 text-center font-semibold">{m.label}</h2>
@@ -74,38 +74,41 @@ export function AttendancePage() {
           </div>
           {m.current !== m.today && <Button variant="outline" size="sm" onClick={() => go(m.today)}><CalendarIcon />This month</Button>}
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs" role="grid" aria-label={`${m.label} at a glance`}>
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => <div key={w} className="py-1 text-muted-foreground">{w}</div>)}
-          {Array.from({ length: m.leading_blanks }, (_, i) => <div key={`b${i}`} />)}
-          {m.cells.map((c) => <div key={c.day} title={c.title} className={cn('grid aspect-square place-items-center rounded-md', CELL[c.state] ?? CELL.none, c.is_today && 'ring-2 ring-ring')}>{c.day}</div>)}
+        <div className="grid lg:grid-cols-[19rem_1fr]">
+          <div className="space-y-3 border-b p-4 lg:border-b-0 lg:border-r">
+            <div className="grid grid-cols-7 gap-1 text-center text-xs" role="grid" aria-label={`${m.label} at a glance`}>
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((w, i) => <div key={i} className="py-1 text-muted-foreground">{w}</div>)}
+              {Array.from({ length: m.leading_blanks }, (_, i) => <div key={`b${i}`} />)}
+              {m.cells.map((c) => <div key={c.day} title={c.title} className={cn('grid aspect-square place-items-center rounded-md', CELL[c.state] ?? CELL.none, c.is_today && 'ring-2 ring-ring')}>{c.day}</div>)}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{m.counts.full ?? 0} full</span><span>{m.counts.part ?? 0} part</span><span>{m.counts.none ?? 0} missing</span><span>{m.counts.open ?? 0} open</span><span>{m.counts.stale ?? 0} not checked out</span>
+            </div>
+          </div>
+          <div className="min-w-0 overflow-x-auto">
+            {d.records.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No attendance recorded for {m.label}.</p> : (
+              <Table>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>In</TableHead><TableHead>Out</TableHead><TableHead>Worked</TableHead><TableHead>Status</TableHead><TableHead className="max-md:hidden">Notes</TableHead>{d.can_edit && <TableHead />}</TableRow></TableHeader>
+                <TableBody>
+                  {d.records.map((r) => {
+                    const [variant, label] = STATUS[r.status];
+                    return (
+                      <TableRow key={r.id} className={cn('border-b last:border-0', r.status === 'stale' && 'bg-warning/5')}>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">{r.date_label}</TableCell>
+                        <TableCell>{r.check_in || '—'}</TableCell>
+                        <TableCell>{r.status === 'complete' ? r.check_out : r.status === 'stale' ? <Badge variant="danger">not checked out</Badge> : '—'}</TableCell>
+                        <TableCell>{r.worked || <span className="text-muted-foreground">{r.effective || r.elapsed || '—'}</span>}</TableCell>
+                        <TableCell><Badge variant={variant}>{label}</Badge>{r.is_edited && <Badge className="ml-1" variant="outline">edited</Badge>}</TableCell>
+                        <TableCell className="max-w-48 truncate text-muted-foreground max-md:hidden">{r.notes}</TableCell>
+                        {d.can_edit && <TableCell className="text-right">{(r.status === 'stale' || r.status === 'open') && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${r.id}/edit/`}><SaveIcon />{r.status === 'stale' ? 'Set check-out' : 'Edit'}</Link></Button>}</TableCell>}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-          <span>{m.counts.full ?? 0} full</span><span>{m.counts.part ?? 0} part</span><span>{m.counts.none ?? 0} missing</span><span>{m.counts.open ?? 0} open</span><span>{m.counts.stale ?? 0} not checked out</span>
-        </div>
-      </Card>
-
-      <Card className="overflow-x-auto p-0">
-        {d.records.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No attendance recorded for {m.label}.</p> : (
-          <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Check in</TableHead><TableHead>Check out</TableHead><TableHead>Worked</TableHead><TableHead>Status</TableHead><TableHead>Notes</TableHead>{d.can_edit && <TableHead />}</TableRow></TableHeader>
-            <TableBody>
-              {d.records.map((r) => {
-                const [variant, label] = STATUS[r.status];
-                return (
-                  <TableRow key={r.id} className={cn('border-b last:border-0', r.status === 'stale' && 'bg-warning/5')}>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">{r.date_label}</TableCell>
-                    <TableCell>{r.check_in || '—'}</TableCell>
-                    <TableCell>{r.status === 'complete' ? r.check_out : r.status === 'stale' ? <Badge variant="danger">not checked out</Badge> : '—'}</TableCell>
-                    <TableCell>{r.worked || <span className="text-muted-foreground">{r.effective || r.elapsed || '—'}</span>}</TableCell>
-                    <TableCell><Badge variant={variant}>{label}</Badge>{r.is_edited && <Badge className="ml-1" variant="outline">edited</Badge>}</TableCell>
-                    <TableCell className="max-w-48 truncate text-muted-foreground">{r.notes}</TableCell>
-                    {d.can_edit && <TableCell className="text-right">{(r.status === 'stale' || r.status === 'open') && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${r.id}/edit/`}><SaveIcon />{r.status === 'stale' ? 'Set check-out' : 'Edit'}</Link></Button>}</TableCell>}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
       </Card>
 
       {d.my_corrections.length > 0 && (
