@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { Milestone } from './types';
+import { DateField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 const STATUS = {
   completed: { label: 'Completed', icon: Check, card: 'border-success/30 bg-success/5', btn: 'bg-success/15 text-success' },
@@ -64,20 +66,14 @@ export function MilestoneFlow({ milestones, productName, busy, onAdd, onToggle, 
                 <div className={cn('w-56 shrink-0 rounded-lg border p-3', s.card)}>
                   <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                     Phase {m.order}
-                    <button type="button" aria-label={`Delete milestone ${m.title}`} className="rounded p-0.5 hover:bg-secondary" onClick={() => setConfirm(m)}><X className="size-3" /></button>
+                    <Button variant="ghost" size="icon-sm" aria-label={`Delete milestone ${m.title}`} className="size-6" onClick={() => setConfirm(m)}><X className="size-3" /></Button>
                   </div>
                   <div className="mt-1 line-clamp-2 text-sm font-semibold" title={m.title}>{m.title}</div>
                   <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Calendar className="size-3" /> Target: {day(m.target_date)}</div>
                   <div className="mt-3 flex items-center justify-between">
-                    <button
-                      type="button"
-                      title="Click to advance status"
-                      disabled={busy}
-                      onClick={() => onToggle(m.id)}
-                      className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold', s.btn)}
-                    >
+                    <Button type="button" variant="ghost" size="xs" title="Click to advance status" disabled={busy} onClick={() => onToggle(m.id)} className={cn('h-auto rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold', s.btn)}>
                       <Icon className="size-3" /> {s.label}
-                    </button>
+                    </Button>
                     {m.tickets > 0 && <span className="text-[11px] text-muted-foreground">{m.tickets} tickets</span>}
                   </div>
                 </div>
@@ -92,10 +88,10 @@ export function MilestoneFlow({ milestones, productName, busy, onAdd, onToggle, 
         <DialogContent className="max-w-md">
           <form onSubmit={submit} className="space-y-3">
             <DialogHeader><DialogTitle>Add milestone flow node</DialogTitle></DialogHeader>
-            <label className="grid gap-1 text-sm font-medium">Milestone title<Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Phase 1: MVP Release" /></label>
+            <Label className="grid gap-1 text-sm font-medium">Milestone title<Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Phase 1: MVP Release" /></Label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="grid gap-1 text-sm font-medium">Target date<Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-              <label className="grid gap-1 text-sm font-medium">Phase order<Input type="number" min={1} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></label>
+              <div className="grid gap-1 text-sm font-medium"><span>Target date</span><DateField aria-label="Target date" value={date} onChange={setDate} /></div>
+              <Label className="grid gap-1 text-sm font-medium">Phase order<Input type="number" min={1} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></Label>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

@@ -7,6 +7,7 @@ import { api, ApiError } from '@/lib/api';
 import * as toasts from '@/lib/toast';
 import { productDetail } from './fixtures';
 import { ProductFormPage } from './ProductFormPage';
+import { pickDate, pickTime } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -49,7 +50,7 @@ it('creating posts the form with milestones and goes to the new product', async 
   const { post } = setup('/products/create/');
   await userEvent.type(await screen.findByLabelText('Name'), 'My App');
   await userEvent.type(screen.getByLabelText('Milestone 1 title'), 'MVP');
-  await userEvent.type(screen.getByLabelText('Milestone 1 target date'), '2026-12-01');
+  await pickDate(/Milestone 1 target date/, '2026-12-01');
   await userEvent.click(screen.getByRole('button', { name: 'Create Product' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('products/', expect.objectContaining({ name: 'My App', default_environment: 'production', milestones: [{ title: 'MVP', date: '2026-12-01' }] })));
   await waitFor(() => expect(screen.getByTestId('loc')).toHaveTextContent('/products/9/'));

@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import type { DsrEntry, DsrSheet } from './types';
 import type { useDsrActions } from './useDsr';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Label } from '@/components/ui/label';
 
 type Actions = ReturnType<typeof useDsrActions>;
 const NONE = 'none';
@@ -124,12 +125,12 @@ export function AddForm({ sheet, act }: { sheet: DsrSheet; act: Actions }) {
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-6" noValidate>
-      <div className="grid gap-1 sm:col-span-2"><label htmlFor="dsr-task" className="text-xs font-medium">Task</label><Input id="dsr-task" placeholder="What did you work on?" value={task} onChange={(e) => setTask(e.target.value)} aria-invalid={!!errors.task_name} />{err('task_name')}</div>
+      <div className="grid gap-1 sm:col-span-2"><Label htmlFor="dsr-task" className="text-xs font-medium">Task</Label><Input id="dsr-task" placeholder="What did you work on?" value={task} onChange={(e) => setTask(e.target.value)} aria-invalid={!!errors.task_name} />{err('task_name')}</div>
       <div className="grid gap-1"><span className="text-xs font-medium">Project</span><Choice label="Project" value={product} options={[[NONE, 'No product'], ...sheet.products.map((p): [string, string] => [String(p.id), p.name])]} onChange={setProduct} className="h-9" />{err('product')}</div>
       <div className="grid gap-1"><span className="text-xs font-medium">Category</span><Choice label="Category" value={category} options={sheet.categories} onChange={setCategory} className="h-9" />{err('category')}</div>
-      <div className="grid gap-1"><label htmlFor="dsr-time" className="text-xs font-medium">Time</label><Input id="dsr-time" placeholder="1h 30m" autoComplete="off" value={hours} onChange={(e) => setHours(e.target.value)} />{err('hours')}</div>
+      <div className="grid gap-1"><Label htmlFor="dsr-time" className="text-xs font-medium">Time</Label><Input id="dsr-time" placeholder="1h 30m" autoComplete="off" value={hours} onChange={(e) => setHours(e.target.value)} />{err('hours')}</div>
       <div className="grid gap-1"><span className="text-xs font-medium">Status</span><Choice label="Status" value={status} options={sheet.statuses} onChange={setStatus} className="h-9" />{err('status')}</div>
-      <div className="grid gap-1 sm:col-span-5"><label htmlFor="dsr-notes" className="text-xs font-medium">Note</label><Input id="dsr-notes" placeholder="Optional note" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+      <div className="grid gap-1 sm:col-span-5"><Label htmlFor="dsr-notes" className="text-xs font-medium">Note</Label><Input id="dsr-notes" placeholder="Optional note" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
       <div className="flex items-end"><Button type="submit" className="w-full" loading={act.busy}>Add entry</Button></div>
     </form>
   );

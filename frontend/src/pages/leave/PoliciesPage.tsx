@@ -13,6 +13,7 @@ import { reason, useLeaveQuery, useLeaveWrite } from './useLeave';
 import type { Policies, Policy } from './types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const NONE = 'none'; // Radix Select does not allow an empty value
 
@@ -53,15 +54,15 @@ function PolicyDialog({ policy, meta, onClose }: { policy: Policy | null; meta: 
       <DialogContent>
         <form onSubmit={submit} className="space-y-3" noValidate>
           <DialogHeader><DialogTitle>{policy ? `Edit ${policy.name}` : 'Add a leave type'}</DialogTitle></DialogHeader>
-          <label className="grid gap-1 text-sm font-medium">Name<Input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />{err('name')}</label>
+          <Label className="grid gap-1 text-sm font-medium">Name<Input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />{err('name')}</Label>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm font-medium">Days per year<Input type="number" step="0.5" min="0" placeholder="Unlimited" value={annual} onChange={(e) => setAnnual(e.target.value)} />{err('max_days_per_year')}</label>
-            <label className="grid gap-1 text-sm font-medium">Paid days per spell<Input type="number" step="0.5" min="0" placeholder="No cap" value={spell} onChange={(e) => setSpell(e.target.value)} />{err('max_consecutive_days')}</label>
+            <Label className="grid gap-1 text-sm font-medium">Days per year<Input type="number" step="0.5" min="0" placeholder="Unlimited" value={annual} onChange={(e) => setAnnual(e.target.value)} />{err('max_days_per_year')}</Label>
+            <Label className="grid gap-1 text-sm font-medium">Paid days per spell<Input type="number" step="0.5" min="0" placeholder="No cap" value={spell} onChange={(e) => setSpell(e.target.value)} />{err('max_consecutive_days')}</Label>
           </div>
-          <label className="flex items-center gap-2 text-sm"><Switch checked={paid} onCheckedChange={setPaid} /> Paid leave</label>
+          <Label className="flex items-center gap-2 text-sm"><Switch checked={paid} onCheckedChange={setPaid} /> Paid leave</Label>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm font-medium">Colour{pick('Colour', color, setColor, meta.colors)}{err('color')}</label>
-            <label className="grid gap-1 text-sm font-medium">Icon{pick('Icon', icon, setIcon, meta.icons)}{err('icon')}</label>
+            <Label className="grid gap-1 text-sm font-medium">Colour{pick('Colour', color, setColor, meta.colors)}{err('color')}</Label>
+            <Label className="grid gap-1 text-sm font-medium">Icon{pick('Icon', icon, setIcon, meta.icons)}{err('icon')}</Label>
           </div>
           {errors.__all__ && <p role="alert" className="text-sm text-destructive">{errors.__all__.join(' ')}</p>}
           <DialogFooter><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" loading={busy}>{policy ? 'Save' : 'Add'}</Button></DialogFooter>

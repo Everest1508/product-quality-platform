@@ -946,3 +946,8 @@ decided what and strike the item** rather than deleting it.
 - Components come from befui's registry via `scripts/befui_add.py` (befui is not on npm). Now used: Table (all 27 tables), Tabs, Segmented, Switch, RadioGroup, Avatar, Progress, StatCard, Alert, EmptyState, ErrorState, Breadcrumb, Sidebar (`SidebarProvider` + parts, replaces our own), Command (search palette, cmdk), plus a restyled Toaster. Local patches and suggested new befui components: `docs/befui-suggestions.md`.
 - Dark mode (1.25.0) uses the same tokens. jsdom has no `matchMedia`, so `src/test-setup.ts` stubs it as a desktop screen.
 - Not converted: the ticket Kanban board (server-confirmed moves, selecting mode), date inputs (native), home charts, and a few local `Stat` tiles with footers.
+
+### 2026-10-13 befui, second pass (1.27.0)
+- Dates and times: `components/ui/date-field.tsx` wraps befui's DatePicker/TimePicker so pages keep ISO strings (`DateField`, `DateTimeField`, `TimeField`). Tests drive them with `pickDate` / `pickTime` in `src/test-utils.ts`. A date field must not sit inside a `<label>` (the label re-clicks its first control); pages use a `<div><span>` and an `aria-label`.
+- Ticket board is befui's `Kanban` (one status change per drop; reordering inside a column is not saved). Home donut, report rings and product sparklines use `charts` / `progress-ring`. Raw `<button>`s became `Button`, `Chip`, `Switch` or `Segmented`; payslip lines use `DescriptionList`; labels use `Label`.
+- Still hand-built: the bar clusters with state colours (hours this week, error histogram, survey scores chart), the textarea (befui has none), and the errors-list sparkline, which draws server-computed points.

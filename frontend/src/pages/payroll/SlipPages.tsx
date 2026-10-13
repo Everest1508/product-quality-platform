@@ -10,10 +10,7 @@ import { day, money, reason, usePayQuery } from './usePayroll';
 import type { MySlips, Slip } from './types';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert } from '@/components/ui/alert';
-
-const Row = ({ k, children, strong }: { k: string; children: React.ReactNode; strong?: boolean }) => (
-  <div className="flex justify-between gap-4 border-b py-2 last:border-0"><dt className="text-muted-foreground">{k}</dt><dd className={strong ? 'font-semibold' : ''}>{children}</dd></div>
-);
+import { DescriptionList } from '@/components/ui/description-list';
 
 const LateList = ({ p, title }: { p: Slip; title: string }) => (
   <Card className="max-w-xl space-y-2 p-5">
@@ -29,30 +26,38 @@ function SlipBody({ p, mine }: { p: Slip; mine: boolean }) {
   return (
     <>
       <Card className="max-w-xl p-5">
-        <dl className="text-sm">
-          {!mine && <Row k="Employee"><b>{p.person.name}</b></Row>}
-          <Row k="Cycle">{p.run.label}</Row>
-          {mine && <Row k="Monthly salary">{p.monthly_salary ? money(p.currency, p.monthly_salary) : <span className="text-muted-foreground">paid by day</span>}</Row>}
-          <Row k={mine ? 'Day rate' : 'Daily rate'} strong={mine}>{money(p.currency, p.daily_rate)}</Row>
-          {mine && p.monthly_salary && <Row k="Divided by">{p.divisor_days} working days <small className="text-muted-foreground">weekends and holidays are not working days</small></Row>}
-          {!mine && <Row k="Working days">{p.working_days}</Row>}
-          <Row k="Paid leave">{p.paid_leave_days}{mine && ' days'}</Row>
-          <Row k="Unpaid leave">{Number(p.unpaid_leave_days) ? <span className="text-destructive">{p.unpaid_leave_days}{mine && ' days'}</span> : '0'}</Row>
-          {late > 0 && <Row k="Late arrivals"><span className="text-destructive">{Number(p.late_half_days) ? `${p.late_half_days} half day(s)` : ''}{Number(p.late_half_days) && Number(p.late_penalty) ? ', ' : ''}{Number(p.late_penalty) ? money(p.currency, p.late_penalty) : ''}</span></Row>}
-          <Row k="Deduction"><span className="text-destructive">−{money(p.currency, p.deduction)}</span></Row>
-          <Row k="Payable days" strong>{p.payable_days}</Row>
-          <Row k="Net pay" strong><span className="text-lg text-success">{money(p.currency, p.gross)}</span></Row>
-        </dl>
+        <DescriptionList
+          columns={1}
+          bordered
+          items={[
+            ...(!mine ? [{ label: 'Employee', value: <b>{p.person.name}</b> }] : []),
+            { label: 'Cycle', value: p.run.label },
+            ...(mine ? [{ label: 'Monthly salary', value: p.monthly_salary ? money(p.currency, p.monthly_salary) : <span className="text-muted-foreground">paid by day</span> }] : []),
+            { label: mine ? 'Day rate' : 'Daily rate', value: mine ? <b>{money(p.currency, p.daily_rate)}</b> : money(p.currency, p.daily_rate) },
+            ...(mine && p.monthly_salary ? [{ label: 'Divided by', value: <>{p.divisor_days} working days <small className="text-muted-foreground">weekends and holidays are not working days</small></> }] : []),
+            ...(!mine ? [{ label: 'Working days', value: p.working_days }] : []),
+            { label: 'Paid leave', value: `${p.paid_leave_days}${mine ? ' days' : ''}` },
+            { label: 'Unpaid leave', value: Number(p.unpaid_leave_days) ? <span className="text-destructive">{p.unpaid_leave_days}{mine && ' days'}</span> : '0' },
+            ...(late > 0 ? [{ label: 'Late arrivals', value: <span className="text-destructive">{Number(p.late_half_days) ? `${p.late_half_days} half day(s)` : ''}{Number(p.late_half_days) && Number(p.late_penalty) ? ', ' : ''}{Number(p.late_penalty) ? money(p.currency, p.late_penalty) : ''}</span> }] : []),
+            { label: 'Deduction', value: <span className="text-destructive">−{money(p.currency, p.deduction)}</span> },
+            { label: 'Payable days', value: <b>{p.payable_days}</b> },
+            { label: 'Net pay', value: <b className="text-lg text-success">{money(p.currency, p.gross)}</b> },
+          ]}
+        />
       </Card>
       {!mine && p.monthly_salary && (
         <Card className="max-w-xl space-y-1 p-5">
           <h2 className="text-sm font-semibold">How this was worked out</h2>
-          <dl className="text-sm">
-            <Row k="Monthly salary">{money(p.currency, p.monthly_salary)}</Row>
-            <Row k="Divided by">{p.divisor_days} working days</Row>
-            <Row k="Daily rate" strong>{money(p.currency, p.breakdown_daily_rate ?? p.daily_rate)}</Row>
-            <Row k="Paid" strong>{p.payable_days} days × {p.breakdown_daily_rate} = {money(p.currency, p.gross)}</Row>
-          </dl>
+          <DescriptionList
+            columns={1}
+            bordered
+            items={[
+              { label: 'Monthly salary', value: money(p.currency, p.monthly_salary!) },
+              { label: 'Divided by', value: `${p.divisor_days} working days` },
+              { label: 'Daily rate', value: <b>{money(p.currency, p.breakdown_daily_rate ?? p.daily_rate)}</b> },
+              { label: 'Paid', value: <b>{p.payable_days} days × {p.breakdown_daily_rate} = {money(p.currency, p.gross)}</b> },
+            ]}
+          />
         </Card>
       )}
       {p.late_events.length > 0 && <LateList p={p} title={mine ? 'Your late arrivals' : 'Late arrivals'} />}

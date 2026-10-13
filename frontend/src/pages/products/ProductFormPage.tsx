@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProductDetail, useProductRefresh } from './useProducts';
 import type { ProductDetail, ProductInput } from './types';
+import { DateField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 type FieldErrors = Record<string, string[]>;
 const ENVS: [string, string][] = [['production', 'Production'], ['staging', 'Staging'], ['dev', 'Development']];
@@ -18,7 +20,7 @@ const ENVS: [string, string][] = [['production', 'Production'], ['staging', 'Sta
 function Field({ label, htmlFor, error, hint, children }: { label: string; htmlFor?: string; error?: string[]; hint?: ReactNode; children: ReactNode }) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+      <Label htmlFor={htmlFor} className="text-sm font-medium">{label}</Label>
       {children}
       {error?.map((m) => <p key={m} className="text-xs text-destructive">{m}</p>)}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -158,7 +160,7 @@ function ProductForm({ editing, productId, initial, cancelUrl }: { editing: bool
         {rows.map((r, i) => (
           <div key={i} className="grid gap-2 sm:grid-cols-2">
             <Input aria-label={`Milestone ${i + 1} title`} placeholder={i === 0 ? 'Phase 1: MVP Release' : 'Next phase title'} value={r.title} onChange={(e) => setRow(i, { title: e.target.value })} />
-            <Input aria-label={`Milestone ${i + 1} target date`} type="date" value={r.date} onChange={(e) => setRow(i, { date: e.target.value })} />
+            <DateField aria-label={`Milestone ${i + 1} target date`} value={r.date} onChange={(v) => setRow(i, { date: v })} />
           </div>
         ))}
         <p className="text-xs text-muted-foreground">They render as a visual flowchart roadmap on the product page.</p>

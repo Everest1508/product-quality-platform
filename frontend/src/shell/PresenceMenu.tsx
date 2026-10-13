@@ -2,6 +2,7 @@ import { usePresence } from '@/lib/usePresence';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 const clock = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
@@ -27,7 +28,7 @@ export function PresenceMenu() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" aria-label="Who is online" className="flex h-9 items-center gap-2 rounded-md border bg-card px-2.5 text-sm hover:bg-secondary">
+        <Button variant="outline" aria-label="Who is online" className="gap-2 px-2.5">
           <span className="flex -space-x-1.5" aria-hidden>
             {users.slice(0, 3).map((u) => (
               <Avatar key={u.user_id} name={u.name || '?'} size="xs" className="ring-2 ring-card" />
@@ -38,7 +39,7 @@ export function PresenceMenu() {
           </span>
           <span className="font-medium">{online.length}</span>
           <span className="text-muted-foreground max-sm:hidden">online</span>
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] p-0">
         <h2 className="border-b px-4 py-3 text-sm font-semibold">Who is online</h2>

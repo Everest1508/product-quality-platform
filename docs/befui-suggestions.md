@@ -23,3 +23,10 @@ befui is not on npm; components are copied from its registry with `scripts/befui
 7. **Kanban** that supports server-confirmed moves (optimistic, roll back on failure) and a selecting mode; our ticket board has both.
 8. **Textarea and Field** (label, hint, error, required) as one component; forms here repeat `label > Input + error` dozens of times.
 9. **Toaster with a `toast(text, tag)` function form**, matching how API hooks call it.
+
+## Added in the second pass
+
+- `date-picker.tsx` takes `aria-label` (the trigger needs a name when no label points at it).
+- App glue, not patches: `date-field.tsx` converts ISO strings to the pickers' `Date`. An ISO-string `value`/`onChange` variant of DatePicker, and a DateTimePicker (date + time in one value), would remove it. befui has no `date-time-picker`.
+- BarChart has one colour and no per-bar tone; our hours-this-week and score charts need per-bar colours.
+- Sparkline needs `data: number[]`; a server that already draws the polyline cannot use it.

@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.27.0] — 2026-10-13 · pickers, board and charts
+
+> In short: dates and times are chosen from a calendar and a clock, the ticket board and charts use the same library as everything else, and buttons look the same everywhere.
+
+### New
+
+- **Calendar and clock pickers.** Every date, date and time, and time field opens a calendar or a clock, with days that can't be chosen greyed out.
+
+### Better
+
+- **The ticket board has a new look.** Drag cards between columns, or move one with Alt and the arrow keys.
+- **Charts are drawn by the same library.** The ticket status ring on Home, the report rings and the product sparklines.
+- **Payslips read as a clean list of lines.** Buttons, links that act like buttons, filter chips and the automation on/off switch match the rest of the app.
+
 ## [1.26.0] — 2026-10-13 · one component set everywhere
 
 > In short: tables, tabs, switches, alerts, avatars, progress bars, the sidebar, the search box and breadcrumbs now all come from the same component library, so they look and behave the same on every page.

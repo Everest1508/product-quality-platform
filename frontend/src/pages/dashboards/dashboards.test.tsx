@@ -8,6 +8,7 @@ import { AuditLogPage } from './AuditLogPage';
 import { ProductDashboardPage } from './ProductDashboardPage';
 import { ReportsPage } from './ReportsPage';
 import type { AuditResponse, ProductDashboard, Report } from './types';
+import { pickDate, pickTime } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -63,7 +64,7 @@ it('the audit log lists events with links and filters through the URL', async ()
   expect(await screen.findByRole('link', { name: 'Ticket #1 created' })).toHaveAttribute('href', '/tickets/1/');
   expect(screen.getByText('Err captured')).toBeInTheDocument();
   expect(screen.getByText('2 events')).toBeInTheDocument();
-  await userEvent.type(screen.getByLabelText('From'), '2026-10-01');
+  await pickDate(/^From/, '2026-10-01');
   expect(screen.getByTestId('loc')).toHaveTextContent('from=2026-10-01');
   expect(await screen.findByRole('button', { name: 'Clear' })).toBeInTheDocument();
 });

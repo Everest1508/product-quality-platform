@@ -21,6 +21,8 @@ interface PickerProps<V> {
   locale?: string;
   className?: string;
   id?: string;
+  /** Name for the trigger button when no visible label points at it. */
+  'aria-label'?: string;
 }
 
 function Shell({
@@ -30,6 +32,7 @@ function Shell({
   disabled,
   className,
   id,
+  ariaLabel,
   children,
   open,
   setOpen,
@@ -40,6 +43,7 @@ function Shell({
   disabled?: boolean;
   className?: string;
   id?: string;
+  ariaLabel?: string;
   children: React.ReactNode;
   open: boolean;
   setOpen: (o: boolean) => void;
@@ -48,7 +52,7 @@ function Shell({
     <Popover open={open} onOpenChange={setOpen}>
       <div className="relative">
         <PopoverTrigger asChild>
-          <button id={id} type="button" disabled={disabled} className={cn(trigger, onClear && !empty && 'pe-9', className)}>
+          <button id={id} aria-label={ariaLabel ? `${ariaLabel}: ${label}` : undefined} type="button" disabled={disabled} className={cn(trigger, onClear && !empty && 'pe-9', className)}>
             <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className={cn('flex-1 truncate', empty && 'text-muted-foreground/70')}>{label}</span>
           </button>
@@ -71,13 +75,14 @@ function Shell({
   );
 }
 
-export function DatePicker({ value, onChange, placeholder = 'Pick a date', disabled, disabledDays, clearable, locale, className, id }: PickerProps<Date>) {
+export function DatePicker({ value, onChange, placeholder = 'Pick a date', disabled, disabledDays, clearable, locale, className, id, 'aria-label': ariaLabel }: PickerProps<Date>) {
   const [open, setOpen] = React.useState(false);
   return (
     <Shell
       open={open}
       setOpen={setOpen}
       id={id}
+      ariaLabel={ariaLabel}
       disabled={disabled}
       className={className}
       empty={!value}

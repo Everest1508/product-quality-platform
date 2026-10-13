@@ -4,6 +4,7 @@ import { useBootstrapData } from '@/lib/bootstrap';
 import { useBell, usePush } from '@/lib/notifications';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const ago = (iso: string) => {
   const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -21,22 +22,22 @@ export function Bell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" aria-label="Notifications" className="relative grid size-9 place-items-center rounded-md border bg-card hover:bg-secondary">
+        <Button variant="outline" size="icon" aria-label="Notifications" className="relative">
           <BellIcon className="size-4" />
           {unread > 0 && (
             <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground">
               {unread > 99 ? '99+' : unread}
             </span>
           )}
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] p-0">
         <header className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-sm font-semibold">Notifications</h2>
           {unread > 0 && (
-            <button type="button" onClick={markAllRead} className="text-xs text-primary hover:underline">
+            <Button variant="link" size="xs" className="h-auto p-0" onClick={markAllRead}>
               Mark all read
-            </button>
+            </Button>
           )}
         </header>
         {items.length > 0 ? (
@@ -60,7 +61,7 @@ export function Bell() {
         <footer className="flex items-center justify-between border-t px-4 py-2 text-xs">
           <Link to={urls.notifications} className="text-primary hover:underline">See all</Link>
           {push.supported && !push.on && (
-            <button type="button" onClick={push.enable} className="text-primary hover:underline">Turn on alerts</button>
+            <Button variant="link" size="xs" className="h-auto p-0" onClick={push.enable}>Turn on alerts</Button>
           )}
         </footer>
       </PopoverContent>

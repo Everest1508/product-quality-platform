@@ -12,6 +12,7 @@ import { useAudit } from './useDashboards';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DateField } from '@/components/ui/date-field';
 
 const KEYS = ['q', 'type', 'actor', 'from', 'to', 'page'] as const;
 
@@ -63,8 +64,8 @@ export function AuditLogPage() {
           <SelectTrigger aria-label="Filter by member" className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">Any member</SelectItem>{d?.members.map((m) => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}</SelectContent>
         </Select>
-        <label className="grid gap-1 text-xs">From<Input type="date" className="w-36" value={params.get('from') ?? ''} onChange={(e) => set('from', e.target.value || null)} /></label>
-        <label className="grid gap-1 text-xs">To<Input type="date" className="w-36" value={params.get('to') ?? ''} onChange={(e) => set('to', e.target.value || null)} /></label>
+        <div className="grid gap-1 text-xs"><span>From</span><DateField aria-label="From" className="w-36" value={params.get('from') ?? ''} onChange={(v) => set('from', v || null)} /></div>
+        <div className="grid gap-1 text-xs"><span>To</span><DateField aria-label="To" className="w-36" value={params.get('to') ?? ''} onChange={(v) => set('to', v || null)} /></div>
         {filtered && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setParams({})}>Clear</Button>}
       </div>
 

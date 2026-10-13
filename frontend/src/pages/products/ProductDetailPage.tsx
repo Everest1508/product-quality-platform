@@ -16,6 +16,8 @@ import { useProductActions, useProductDetail } from './useProducts';
 import type { ApiKeyRow, ProductDetail } from './types';
 import { Avatar } from '@/components/ui/avatar';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
+import { Label } from '@/components/ui/label';
+import { StatCard } from '@/components/ui/stat-card';
 
 const GRACE: [string, string][] = [['1d', 'Old key works 24 more hours'], ['7d', 'Old key works 7 more days'], ['now', 'Stop the old key now']];
 
@@ -27,13 +29,7 @@ export function KeyState({ k }: { k: ApiKeyRow }) {
 }
 
 function Stat({ label, value, tone, foot }: { label: string; value: number; tone: string; foot: React.ReactNode }) {
-  return (
-    <Card className="p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-semibold ${tone}`}>{value}</div>
-      <div className="mt-1 text-xs">{foot}</div>
-    </Card>
-  );
+  return <StatCard label={label} value={<span className={tone}>{value}</span>} chart={<div className="text-xs">{foot}</div>} />;
 }
 
 function NewKeyBanner({ raw, rotated, onDismiss }: { raw: string; rotated: boolean; onDismiss(): void }) {
@@ -176,7 +172,7 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
       {adding && (
         <form onSubmit={submit} className="flex flex-wrap items-center gap-2 border-t pt-3">
           <Input aria-label="Version" className="min-w-32 flex-1" autoFocus placeholder="e.g. 1.2.0" value={text} onChange={(e) => setText(e.target.value)} />
-          <label className="flex items-center gap-1.5 text-xs"><Checkbox checked={current} onCheckedChange={(c) => setCurrent(c === true)} /> Current</label>
+          <Label className="flex items-center gap-1.5 text-xs"><Checkbox checked={current} onCheckedChange={(c) => setCurrent(c === true)} /> Current</Label>
           <Button type="submit" loading={act.busy === 'version'}>Add</Button>
           <Button type="button" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
         </form>

@@ -13,6 +13,8 @@ import { TONE, useLeaveQuery, useLeaveWrite } from './useLeave';
 import type { Queue, QueueItem } from './types';
 import { Segmented } from '@/components/ui/segmented';
 import { RadioGroup } from '@/components/ui/radio-group';
+import { DateField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void }) {
   const write = useLeaveWrite();
@@ -40,10 +42,10 @@ function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void })
       <DialogContent>
         <DialogHeader><DialogTitle>{item.person.name} · {item.policy.name}</DialogTitle><DialogDescription>{item.span} · {item.days_label}{item.reason && <> · “{item.reason}”</>}</DialogDescription></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-medium">From<Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></label>
-          <label className="grid gap-1 text-sm font-medium">To<Input type="date" value={end} min={start} disabled={half} onChange={(e) => setEnd(e.target.value)} /></label>
+          <div className="grid gap-1 text-sm font-medium"><span>From</span><DateField aria-label="From" value={start} onChange={setStart} /></div>
+          <div className="grid gap-1 text-sm font-medium"><span>To</span><DateField aria-label="To" value={end} min={start} disabled={half} onChange={setEnd} /></div>
         </div>
-        <label className="flex items-center gap-2 text-sm"><Checkbox checked={half} onCheckedChange={(c) => setHalf(c === true)} /> Half day</label>
+        <Label className="flex items-center gap-2 text-sm"><Checkbox checked={half} onCheckedChange={(c) => setHalf(c === true)} /> Half day</Label>
         <fieldset className="space-y-2 text-sm">
           <legend className="font-medium">Paid or unpaid</legend>
           <RadioGroup
@@ -57,14 +59,14 @@ function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void })
           />
           {mode === 'manual' && (
             <div className="grid grid-cols-2 gap-3">
-              <label className="grid gap-1 text-xs font-medium">Paid days<Input type="number" step="0.5" min="0" value={paid} onChange={(e) => setPaid(e.target.value)} /></label>
-              <label className="grid gap-1 text-xs font-medium">Unpaid days<Input type="number" step="0.5" min="0" value={unpaid} onChange={(e) => setUnpaid(e.target.value)} /></label>
+              <Label className="grid gap-1 text-xs font-medium">Paid days<Input type="number" step="0.5" min="0" value={paid} onChange={(e) => setPaid(e.target.value)} /></Label>
+              <Label className="grid gap-1 text-xs font-medium">Unpaid days<Input type="number" step="0.5" min="0" value={unpaid} onChange={(e) => setUnpaid(e.target.value)} /></Label>
             </div>
           )}
           {item.reasons?.map((r) => <p key={r} className="text-xs text-muted-foreground">{r}</p>)}
         </fieldset>
         {item.clash_text && <p className="text-xs text-warning">{item.clash_text}</p>}
-        <label className="grid gap-1 text-sm font-medium">Note to {item.person.name}<Input maxLength={255} placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} /></label>
+        <Label className="grid gap-1 text-sm font-medium">Note to {item.person.name}<Input maxLength={255} placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} /></Label>
         <DialogFooter>
           <Button variant="outline" disabled={busy} onClick={() => decide('reject')}>Reject</Button>
           <Button loading={busy} onClick={() => decide('approve')}>Approve</Button>

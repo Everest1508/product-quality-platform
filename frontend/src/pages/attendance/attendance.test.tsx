@@ -10,6 +10,7 @@ import { CorrectionQueuePage, CorrectionRequestPage, RecordEditPage } from './Co
 import { TeamAttendancePage } from './TeamPage';
 import { TimesheetDetailPage, TimesheetPage } from './TimesheetPages';
 import type { Correction, MyAttendance } from './types';
+import { pickDate, pickTime } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -185,7 +186,8 @@ it('the request form prefills the day, sends the times, and shows the server mes
     date: '2026-10-09', date_label: 'Friday, October 09', min_date: '2026-08-14', max_date: '2026-10-13', max_age_days: 60, record: { check_in: '9:00 AM', check_out: '' }, recent: [],
   });
   expect(await screen.findByText(/Recorded for Friday, October 09: in 9:00 AM, out none/)).toBeInTheDocument();
-  await userEvent.type(screen.getByLabelText('Check out'), '18:00');
+  await userEvent.click(screen.getByRole('button', { name: /Check out/ }));
+  await pickTime(18, 0);
   await userEvent.type(screen.getByLabelText('Reason'), 'forgot');
   post.mockRejectedValueOnce(new ApiError('Give a reason.', 400, { detail: 'Give a reason.' }));
   await userEvent.click(screen.getByRole('button', { name: 'Send request' }));
@@ -201,7 +203,7 @@ it('editing a forgotten day offers the end of the shift and saves', async () => 
     effective: '8h', worked_hours_per_day: '8h', suggested_check_out: '2026-10-09T18:00',
   });
   expect(await screen.findByText(/never checked out/)).toBeInTheDocument();
-  await waitFor(() => expect(screen.getByLabelText('Check out')).toHaveValue('2026-10-09T18:00'));
+  await waitFor(() => expect(screen.getByRole('button', { name: /^Check out/ })).toHaveTextContent('09 Oct 2026'));
   await userEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(patch).toHaveBeenCalledWith('attendance/records/9/', { check_in: '2026-10-09T09:00', check_out: '2026-10-09T18:00', notes: '' }));
 });

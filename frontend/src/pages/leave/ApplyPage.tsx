@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { reason, useLeaveQuery } from './useLeave';
 import type { ApplyMeta, Preview } from './types';
 import { Alert } from '@/components/ui/alert';
+import { DateField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 export function ApplyPage() {
   const meta = useLeaveQuery<ApplyMeta>('apply', 'leave/apply/');
@@ -68,19 +70,19 @@ export function ApplyPage() {
       <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Apply for leave</h1><Button asChild variant="outline" size="sm"><Link to="/leave/">Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         {errors.__all__ && <Alert variant="danger">{errors.__all__.join(' ')}</Alert>}
-        <label className="grid gap-1.5 text-sm font-medium">Leave type
+        <Label className="grid gap-1.5 text-sm font-medium">Leave type
           <Select value={policy} onValueChange={setPolicy}>
             <SelectTrigger aria-label="Leave type"><SelectValue placeholder="Choose a type" /></SelectTrigger>
             <SelectContent>{d.policies.map((x) => <SelectItem key={x.id} value={String(x.id)}>{x.name}</SelectItem>)}</SelectContent>
           </Select>
           {err('policy_id') ?? err('policy')}
-        </label>
+        </Label>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-medium">From<Input type="date" min={d.today} value={start} onChange={(e) => { setStart(e.target.value); if (!end || end < e.target.value) setEnd(e.target.value); }} />{err('start_date')}</label>
-          <label className="grid gap-1.5 text-sm font-medium">To<Input type="date" min={start || d.today} value={end} disabled={half} onChange={(e) => setEnd(e.target.value)} />{err('end_date')}</label>
+          <div className="grid gap-1.5 text-sm font-medium"><span>From</span><DateField aria-label="From" min={d.today} value={start} onChange={(v) => { setStart(v); if (!end || end < v) setEnd(v); }} />{err('start_date')}</div>
+          <div className="grid gap-1.5 text-sm font-medium"><span>To</span><DateField aria-label="To" min={start || d.today} value={end} disabled={half} onChange={setEnd} />{err('end_date')}</div>
         </div>
-        <label className="flex items-center gap-2 text-sm"><Checkbox checked={half} onCheckedChange={(c) => setHalf(c === true)} /> Half day</label>
-        <label className="grid gap-1.5 text-sm font-medium">Reason<Input maxLength={500} placeholder="Optional" value={why} onChange={(e) => setWhy(e.target.value)} />{err('reason')}</label>
+        <Label className="flex items-center gap-2 text-sm"><Checkbox checked={half} onCheckedChange={(c) => setHalf(c === true)} /> Half day</Label>
+        <Label className="grid gap-1.5 text-sm font-medium">Reason<Input maxLength={500} placeholder="Optional" value={why} onChange={(e) => setWhy(e.target.value)} />{err('reason')}</Label>
         {p && (
           <div className="space-y-1 rounded-md bg-secondary p-3 text-sm" data-testid="split-preview">
             <div><b>{p.days_label}</b>: {p.paid_label} paid{Number(p.unpaid) > 0 && <>, <b>{p.unpaid_label} unpaid</b></>}</div>

@@ -60,7 +60,7 @@ it('a product page scopes the request', async () => {
 it('clicking the status toggles the rule; delete asks first', async () => {
   const { post, del } = mount('/automation/');
   await screen.findByText('Wide');
-  await userEvent.click(screen.getByRole('button', { name: 'Disable Spike' }));
+  await userEvent.click(screen.getByRole('switch', { name: 'Disable Spike' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('rules/8/toggle/'));
   await userEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0]);
   expect(del).not.toHaveBeenCalled();

@@ -11,6 +11,8 @@ import { useTicketMeta } from '@/pages/tickets/useTicketQuery';
 import { AssigneePicker } from './AssigneePicker';
 import { saveTicket, useTicketDetail } from './useTicket';
 import type { FieldErrors, Person, TicketInput } from './types';
+import { DateTimeField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 const TYPES: [string, string][] = [['bug', 'Bug'], ['feature', 'Feature'], ['question', 'Question']];
 const NO_PRODUCT = 'none'; // Radix Select does not allow an empty value
@@ -31,7 +33,7 @@ type FormProps = {
 function Field({ label, htmlFor, error, children }: { label: string; htmlFor?: string; error?: string[]; children: ReactNode }) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+      <Label htmlFor={htmlFor} className="text-sm font-medium">{label}</Label>
       {children}
       {error?.map((e) => <p key={e} className="text-xs text-destructive">{e}</p>)}
     </div>
@@ -126,7 +128,7 @@ function TicketForm({ mode, ticketId, productId, initial, heading, members, prod
           )}
         </Field>
         <Field label="Deadline" htmlFor="ticket-deadline" error={errors.deadline}>
-          <Input id="ticket-deadline" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          <DateTimeField id="ticket-deadline" value={deadline} onChange={setDeadline} />
         </Field>
       </Card>
 

@@ -14,6 +14,8 @@ import type { Correction, CorrectionForm, RecordEdit } from './types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar } from '@/components/ui/avatar';
 import { Alert } from '@/components/ui/alert';
+import { DateField, DateTimeField, TimeField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 const when = (c: Correction['original'] | Correction['requested']) => (c.check_in || c.check_out ? `${c.check_in || 'none'} → ${c.check_out || 'none'}` : 'none');
 
@@ -121,12 +123,12 @@ export function CorrectionRequestPage() {
         {d.record && <p className="rounded-md bg-secondary p-3 text-sm">Recorded for {d.date_label}: in {d.record.check_in || 'none'}, out {d.record.check_out || 'none'}.</p>}
         {error && <Alert variant="danger">{error}</Alert>}
         <div className="grid gap-4 sm:grid-cols-3">
-          <label className="grid gap-1.5 text-sm font-medium">Day<Input type="date" min={d.min_date} max={d.max_date} value={day} onChange={(e) => setDay(e.target.value)} /></label>
-          <label className="grid gap-1.5 text-sm font-medium">Check in<Input type="time" value={inn} onChange={(e) => setInn(e.target.value)} /></label>
-          <label className="grid gap-1.5 text-sm font-medium">Check out<Input type="time" value={out} onChange={(e) => setOut(e.target.value)} /></label>
+          <div className="grid gap-1.5 text-sm font-medium"><span>Day</span><DateField aria-label="Day" min={d.min_date} max={d.max_date} value={day} onChange={setDay} /></div>
+          <div className="grid gap-1.5 text-sm font-medium"><span>Check in</span><TimeField aria-label="Check in" value={inn} onChange={setInn} /></div>
+          <div className="grid gap-1.5 text-sm font-medium"><span>Check out</span><TimeField aria-label="Check out" value={out} onChange={setOut} /></div>
         </div>
-        <label className="flex items-center gap-2 text-sm"><Checkbox checked={nextDay} onCheckedChange={(c) => setNextDay(c === true)} /> The check-out was after midnight (the next day)</label>
-        <label className="grid gap-1.5 text-sm font-medium">Reason<Input maxLength={500} placeholder="Why does the day need changing?" value={why} onChange={(e) => setWhy(e.target.value)} /></label>
+        <Label className="flex items-center gap-2 text-sm"><Checkbox checked={nextDay} onCheckedChange={(c) => setNextDay(c === true)} /> The check-out was after midnight (the next day)</Label>
+        <Label className="grid gap-1.5 text-sm font-medium">Reason<Input maxLength={500} placeholder="Why does the day need changing?" value={why} onChange={(e) => setWhy(e.target.value)} /></Label>
         <p className="text-xs text-muted-foreground">Only the times you fill in are changed.</p>
       </Card>
       <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/">Cancel</Link></Button><Button type="submit" loading={busy}>Send request</Button></div>
@@ -182,10 +184,10 @@ export function RecordEditPage() {
         <p className="text-sm"><b>{d.user.name}</b> · {d.date_label}</p>
         {d.status === 'stale' && <Alert variant="warning">This day was never checked out. Until it is closed it counts for at most one working day ({d.worked_hours_per_day}), currently {d.effective}.</Alert>}
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-medium">Check in<Input type="datetime-local" value={inn} onChange={(e) => setInn(e.target.value)} /></label>
-          <label className="grid gap-1.5 text-sm font-medium">Check out<Input type="datetime-local" value={out} onChange={(e) => setOut(e.target.value)} /></label>
+          <div className="grid gap-1.5 text-sm font-medium"><span>Check in</span><DateTimeField aria-label="Check in" value={inn} onChange={setInn} /></div>
+          <div className="grid gap-1.5 text-sm font-medium"><span>Check out</span><DateTimeField aria-label="Check out" value={out} onChange={setOut} /></div>
         </div>
-        <label className="grid gap-1.5 text-sm font-medium">Notes<Input maxLength={255} value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
+        <Label className="grid gap-1.5 text-sm font-medium">Notes<Input maxLength={255} value={notes} onChange={(e) => setNotes(e.target.value)} /></Label>
         <p className="text-xs text-muted-foreground">Leave check-out empty to keep the day open. Changes are logged.</p>
       </Card>
       <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/team/">Cancel</Link></Button><Button type="submit" loading={busy}>Save</Button></div>

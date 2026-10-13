@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
+import { Sparkline } from '@/components/ui/charts';
 
 const SORTS: [string, string][] = [
   ['name', 'Name A-Z'], ['-name', 'Name Z-A'], ['-created', 'Newest first'], ['created', 'Oldest first'], ['-versions', 'Most versions'],
@@ -50,9 +51,7 @@ function ProductCard({ p, canEdit }: { p: ProductItem; canEdit: boolean }) {
         ))}
       </div>
       <div className="flex items-center gap-2" title={`Error occurrences, last 7 days: ${p.week_errors}`}>
-        <span className="flex h-6 flex-1 items-end gap-0.5" aria-hidden>
-          {p.spark.map((h, i) => <i key={i} className="block flex-1 rounded-sm bg-primary/60" style={{ height: `${h}%` }} />)}
-        </span>
+        <span className="block h-6 flex-1" aria-hidden><Sparkline data={p.spark} /></span>
         <span className="text-xs text-muted-foreground">{p.week_errors} errors this week</span>
       </div>
       <div className="mt-auto flex items-center gap-2">

@@ -7,6 +7,8 @@ import { Input, Textarea } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { usePublicSurvey } from './useFeedback';
+import { Label } from '@/components/ui/label';
+import { Segmented } from '@/components/ui/segmented';
 
 const QUESTION: Record<string, string> = {
   nps: 'How likely are you to recommend us to a friend?',
@@ -69,31 +71,20 @@ export function PublicSurveyPage() {
       <form onSubmit={submit} className="space-y-4" noValidate>
         <fieldset>
           <legend className="mb-4 w-full text-sm font-medium">{QUESTION[s.type] ?? QUESTION.nps}</legend>
-          <div className="flex flex-wrap justify-center gap-1.5" role="radiogroup" aria-label="Score">
-            {s.scores.map((n) => (
-              <button
-                key={n}
-                type="button"
-                role="radio"
-                aria-checked={score === n}
-                onClick={() => setScore(n)}
-                className={cn('grid size-10 place-items-center rounded-md border-2 font-medium transition-colors', score === n ? 'border-foreground bg-foreground text-background' : 'hover:border-foreground')}
-              >
-                {n}
-              </button>
-            ))}
+          <div aria-label="Score" role="radiogroup" className="flex justify-center">
+            <Segmented className="flex-wrap justify-center" value={score === null || score === undefined ? '' : String(score)} onValueChange={(v) => setScore(Number(v))} options={s.scores.map((n) => ({ value: String(n), label: n }))} />
           </div>
           <div className="mt-2 flex justify-between text-xs text-muted-foreground"><span>{low}</span><span>{high}</span></div>
           {errors.score?.map((m) => <p key={m} className="mt-2 text-xs text-destructive">{m}</p>)}
         </fieldset>
         <div className="grid gap-1.5 text-left">
-          <label htmlFor="comment" className="text-sm font-medium">Comments (optional)</label>
+          <Label htmlFor="comment" className="text-sm font-medium">Comments (optional)</Label>
           <Textarea id="comment" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Tell us more..." />
         </div>
         <div className="grid gap-3 text-left sm:grid-cols-2">
-          <div className="grid gap-1.5"><label htmlFor="contact_name" className="text-sm font-medium">Name (optional)</label><Input id="contact_name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" /></div>
+          <div className="grid gap-1.5"><Label htmlFor="contact_name" className="text-sm font-medium">Name (optional)</Label><Input id="contact_name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" /></div>
           <div className="grid gap-1.5">
-            <label htmlFor="contact_email" className="text-sm font-medium">Email (optional)</label>
+            <Label htmlFor="contact_email" className="text-sm font-medium">Email (optional)</Label>
             <Input id="contact_email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" aria-invalid={!!errors.contact_email} />
             {errors.contact_email?.map((m) => <p key={m} className="text-xs text-destructive">{m}</p>)}
           </div>

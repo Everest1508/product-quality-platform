@@ -11,6 +11,7 @@ import { sampleBootstrap } from '@/test-fixtures';
 import { detail } from './fixtures';
 import { TicketDetailPage } from './TicketDetailPage';
 import type { TicketDetail } from './types';
+import { pickDate, pickTime } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -114,12 +115,9 @@ it('Follow toggles with the watcher count', async () => {
 it('the deadline posts the typed local value, and null when cleared', async () => {
   const { post } = setup('/tickets/5/', detail({ id: 5, deadline_local: '2026-10-20T10:00' }));
   await screen.findByRole('heading', { name: /AUM-001/ });
-  const box = screen.getByLabelText('Deadline');
-  fireEvent.change(box, { target: { value: '2026-11-01T09:30' } });
-  fireEvent.blur(box);
-  await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/5/deadline/', { deadline: '2026-11-01T09:30' }));
-  fireEvent.change(box, { target: { value: '' } });
-  fireEvent.blur(box);
+  await pickDate(/^Deadline/, '2026-11-01');
+  await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/5/deadline/', { deadline: '2026-11-01T10:00' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Clear date' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/5/deadline/', { deadline: null }));
 });
 

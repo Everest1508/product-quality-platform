@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
 import { Avatar } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 
 type Profile = {
   user: { username: string; name: string; initial: string; first_name: string; last_name: string; email: string; discord_id: string };
@@ -23,7 +24,7 @@ type FieldErrors = Record<string, string[]>;
 function Field({ label, htmlFor, error, hint, children }: { label: string; htmlFor: string; error?: string[]; hint?: ReactNode; children: ReactNode }) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+      <Label htmlFor={htmlFor} className="text-sm font-medium">{label}</Label>
       {children}
       {error?.map((m) => <p key={m} className="text-xs text-destructive">{m}</p>)}
       {hint && <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>}

@@ -11,6 +11,7 @@ import { day, money, reason, usePayQuery, usePayWrite } from './usePayroll';
 import type { Preview, RunDetail, RunList } from './types';
 import { Table, TableBody, TableCell, TableFooter, TableHeader, TableRow } from '@/components/ui/table';
 import { StatCard } from '@/components/ui/stat-card';
+import { DateField } from '@/components/ui/date-field';
 
 const useTitle = (t: string) => useEffect(() => { document.title = `${t} — PQ Platform`; }, [t]);
 
@@ -68,7 +69,7 @@ export function PreviewPage() {
     <div className="space-y-4">
       <PayHeader title="Cycle preview" sub={d && <>{day(d.start)} → {day(d.end)} · {d.working_days} working days after weekends and holidays. Nothing is saved until you generate.</>} />
       <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); setParams(pick ? { anchor: pick } : {}); }}>
-        <label className="grid gap-1 text-sm text-muted-foreground">Any date in the cycle<Input type="date" value={pick} onChange={(e) => setPick(e.target.value)} /></label>
+        <div className="grid gap-1 text-sm text-muted-foreground"><span>Any date in the cycle</span><DateField aria-label="Any date in the cycle" value={pick} onChange={setPick} /></div>
         <Button type="submit" variant="outline">Show cycle</Button>
       </form>
       {!d ? <Skeleton className="h-40 w-full" data-testid="preview-loading" /> : (

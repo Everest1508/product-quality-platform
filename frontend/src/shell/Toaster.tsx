@@ -2,6 +2,7 @@ import type * as React from 'react';
 import { useEffect } from 'react';
 import { AlertCircleIcon, AlertIcon, CheckCircleIcon, InfoIcon, XIcon } from '@/components/ui/icons';
 import { dismiss, toast, useToasts, type Tags } from '@/lib/toast';
+import { Button } from '@/components/ui/button';
 
 // Same look as befui's Toaster (icon, title, dismiss); the store stays ours because every API write toasts through `toast(text, tag)`.
 const icons: Record<Tags, React.ReactElement> = {
@@ -29,9 +30,9 @@ export function Toaster() {
         <div key={t.id} className="pointer-events-auto flex items-start gap-3 rounded-lg border bg-popover p-3.5 shadow-lg animate-toast">
           <span className="mt-0.5">{icons[t.tags]}</span>
           <p className="flex-1 text-[13px] font-medium">{t.text}</p>
-          <button type="button" aria-label="Dismiss" onClick={() => dismiss(t.id)} className="text-muted-foreground transition-colors hover:text-foreground">
+          <Button variant="ghost" size="icon-sm" aria-label="Dismiss" className="size-6 text-muted-foreground" onClick={() => dismiss(t.id)}>
             <XIcon className="size-3.5" />
-          </button>
+          </Button>
         </div>
       ))}
     </div>

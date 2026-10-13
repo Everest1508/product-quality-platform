@@ -13,6 +13,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
+import { DateField } from '@/components/ui/date-field';
 
 const long = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -50,7 +51,7 @@ export function DsrPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => go({ date: sheet.prev })}><ChevronLeft /></Button>
-          <Input type="date" aria-label="Day" className="w-40" max={sheet.today} value={sheet.date} onChange={(e) => e.target.value && go({ date: e.target.value })} />
+          <DateField aria-label="Day" className="w-40" max={sheet.today} value={sheet.date} onChange={(v) => v && go({ date: v })} />
           <Button variant="outline" size="icon" aria-label="Next day" disabled={isToday} onClick={() => go({ date: sheet.next })}><ChevronRight /></Button>
           <Button variant={isToday ? 'primary' : 'outline'} size="sm" onClick={() => go({ date: null })}>Today</Button>
           <Button variant="outline" size="sm" onClick={() => go({ date: sheet.yesterday })}>Yesterday</Button>
@@ -96,7 +97,7 @@ export function DsrPage() {
               <TableBody>
                 {sheet.team_overview.map((m) => (
                   <TableRow key={m.id}>
-                    <TableCell className="py-2"><button type="button" className="font-medium hover:underline" onClick={() => go({ user_id: String(m.id) })}>{m.name}</button></TableCell>
+                    <TableCell className="py-2"><Button variant="link" size="sm" className="h-auto p-0 font-medium" onClick={() => go({ user_id: String(m.id) })}>{m.name}</Button></TableCell>
                     <TableCell>{m.hours}</TableCell>
                     <TableCell><Progress value={m.progress} /></TableCell>
                     <TableCell>{m.completed}</TableCell><TableCell>{m.entries}</TableCell>

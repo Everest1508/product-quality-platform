@@ -10,6 +10,7 @@ import { meta } from '@/pages/tickets/fixtures';
 import { sampleBootstrap } from '@/test-fixtures';
 import { detail } from './fixtures';
 import { TicketFormPage } from './TicketFormPage';
+import { pickDate, pickTime } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -66,9 +67,9 @@ it('picking a product, people and a deadline sends them', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Assignees' }));
   await userEvent.click(screen.getByRole('checkbox', { name: 'Ann Lee' }));
   await userEvent.keyboard('{Escape}');
-  fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '2026-10-20T10:00' } });
+  await pickDate(/Deadline/, '2026-10-20');
   await submit();
-  await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/', expect.objectContaining({ description: 'details', product: 3, assignees: [5], deadline: '2026-10-20T10:00' })));
+  await waitFor(() => expect(post).toHaveBeenCalledWith('tickets/', expect.objectContaining({ description: 'details', product: 3, assignees: [5], deadline: '2026-10-20T09:00' })));
 });
 
 it('on a product page the product is fixed and sent, and not shown as a field', async () => {

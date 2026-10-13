@@ -52,7 +52,7 @@ async function setup(props: Partial<Parameters<typeof Harness>[0]> = {}) {
 it('shows a column per status with counts and an empty state', async () => {
   await setup();
   expect(within(column('Open')).getByText('2')).toBeInTheDocument();
-  expect(within(column('Testing')).getByText('No tickets')).toBeInTheDocument();
+  expect(within(column('Testing')).getByText('Drop cards here')).toBeInTheDocument();
 });
 
 it('dropping a card moves it at once and calls the API', async () => {

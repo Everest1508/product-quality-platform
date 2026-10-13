@@ -11,6 +11,7 @@ import { CalendarPage } from './CalendarPage';
 import { MyLeavePage } from './MyLeavePage';
 import { PoliciesPage } from './PoliciesPage';
 import type { Policies, Queue, QueueItem } from './types';
+import { pickDate, pickTime } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -56,8 +57,8 @@ it('apply prices the dates live and sends the request', async () => {
   post.mockImplementation((async (p: string) => (p === 'leave/preview/'
     ? { preview: { days: '5.0', days_label: '5 days', paid: '3.0', unpaid: '2.0', paid_label: '3 days', unpaid_label: '2 days', reasons: ['Over the cap'], clash_people: [], clash_text: 'Dev is also off', policy: 'Casual' } }
     : { message: 'Leave request submitted for approval.', id: 1 })) as never);
-  const from = await screen.findByLabelText('From');
-  await userEvent.type(from, '2026-10-19');
+  await screen.findByRole('button', { name: /^From/ });
+  await pickDate(/^From/, '2026-10-19');
   expect(await screen.findByTestId('split-preview')).toHaveTextContent('3 days paid');
   expect(screen.getByText('Dev is also off')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Send request' }));
@@ -72,7 +73,8 @@ it('apply shows field errors from the server and stays put', async () => {
     if (p === 'leave/preview/') return { preview: null };
     throw new ApiError('Fix it', 400, { errors: { start_date: ['Pick a day that is not in the past.'] } });
   }) as never);
-  await userEvent.type(await screen.findByLabelText('From'), '2026-10-19');
+  await screen.findByRole('button', { name: /^From/ });
+  await pickDate(/^From/, '2026-10-19');
   await userEvent.click(screen.getByRole('button', { name: 'Send request' }));
   expect(await screen.findByText('Pick a day that is not in the past.')).toBeInTheDocument();
 });

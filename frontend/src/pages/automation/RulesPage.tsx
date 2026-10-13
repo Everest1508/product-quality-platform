@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
+import { Switch } from '@/components/ui/switch';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-fired', 'Most triggered']];
 const TABS: [string, string][] = [['', 'All'], ['1', 'Active'], ['0', 'Inactive']];
@@ -87,9 +88,10 @@ export function RulesPage() {
                   <TableCell>{r.threshold_count} errors in {r.window_minutes}m{r.severity ? ` (${r.severity})` : ''}</TableCell>
                   <TableCell>{r.action_label}</TableCell>
                   <TableCell>
-                    <button type="button" aria-label={`${r.is_active ? 'Disable' : 'Enable'} ${r.name}`} onClick={() => actions.toggle(r.id)}>
+                    <span className="inline-flex items-center gap-2">
+                      <Switch aria-label={`${r.is_active ? 'Disable' : 'Enable'} ${r.name}`} checked={r.is_active} onCheckedChange={() => actions.toggle(r.id)} />
                       {r.is_active ? <Badge variant="success">Active</Badge> : <Badge>Disabled</Badge>}
-                    </button>
+                    </span>
                   </TableCell>
                   <TableCell>{r.trigger_count}</TableCell>
                   <TableCell><div className="flex justify-end gap-1.5"><Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}>Edit</Link></Button><Button size="sm" variant="destructive" onClick={() => setConfirm(r)}>Delete</Button></div></TableCell>

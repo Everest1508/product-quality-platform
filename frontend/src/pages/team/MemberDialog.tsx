@@ -8,13 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTeamRefresh } from './useTeam';
 import type { Member } from './types';
+import { Label } from '@/components/ui/label';
 
 type FieldErrors = Record<string, string[]>;
 
 function Field({ label, htmlFor, error, hint, children }: { label: string; htmlFor?: string; error?: string[]; hint?: string; children: ReactNode }) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+      <Label htmlFor={htmlFor} className="text-sm font-medium">{label}</Label>
       {children}
       {error?.map((m) => <p key={m} className="text-xs text-destructive">{m}</p>)}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -77,7 +78,7 @@ export function MemberDialog({ open, onOpenChange, member, roles }: { open: bool
                 <SelectContent>{roles.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
-            {member && <label className="flex items-center gap-2 self-end pb-2 text-sm"><Checkbox checked={approver} onCheckedChange={(c) => setApprover(c === true)} /> Can approve leave</label>}
+            {member && <Label className="flex items-center gap-2 self-end pb-2 text-sm"><Checkbox checked={approver} onCheckedChange={(c) => setApprover(c === true)} /> Can approve leave</Label>}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

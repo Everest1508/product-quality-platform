@@ -8,6 +8,7 @@ import { AccountMenu } from './AccountMenu';
 import { Bell } from './Bell';
 import { NewMenu } from './NewMenu';
 import { PresenceMenu } from './PresenceMenu';
+import { Button } from '@/components/ui/button';
 
 type Props = { onOpenPalette(): void };
 
@@ -18,16 +19,11 @@ export function Topbar({ onOpenPalette }: Props) {
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card px-4">
       <SidebarTrigger />
       <span className="truncate text-sm font-semibold">{productNav?.name ?? b.company.name}</span>
-      <button
-        type="button"
-        onClick={onOpenPalette}
-        aria-label="Search"
-        className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border bg-muted px-3 text-left text-sm text-muted-foreground hover:bg-secondary md:max-w-md"
-      >
+      <Button variant="outline" onClick={onOpenPalette} aria-label="Search" className="min-w-0 flex-1 justify-start gap-2 bg-muted px-3 font-normal text-muted-foreground md:max-w-md">
         <Search className="size-4 shrink-0" />
-        <span className="min-w-0 flex-1 truncate max-sm:hidden">Search tickets, errors, products</span>
+        <span className="min-w-0 flex-1 truncate text-left max-sm:hidden">Search tickets, errors, products</span>
         <Kbd className="max-sm:hidden">Ctrl K</Kbd>
-      </button>
+      </Button>
       <div className="ml-auto flex items-center gap-2">
         <NewMenu />
         <PresenceMenu />

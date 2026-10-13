@@ -12,6 +12,8 @@ import { day, reason, usePayQuery, usePayWrite } from './usePayroll';
 import type { Holiday, ProfileRow, Profiles } from './types';
 import { Switch } from '@/components/ui/switch';
 import { StatCard } from '@/components/ui/stat-card';
+import { DateField } from '@/components/ui/date-field';
+import { Label } from '@/components/ui/label';
 
 const useTitle = (t: string) => useEffect(() => { document.title = `${t} — PQ Platform`; }, [t]);
 
@@ -50,8 +52,8 @@ export function HolidaysPage() {
         <Card className="p-5">
           <form onSubmit={add} className="space-y-3" noValidate>
             <h2 className="font-semibold">Add a holiday</h2>
-            <label className="grid gap-1 text-sm font-medium">Date<Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />{err('date')}</label>
-            <label className="grid gap-1 text-sm font-medium">Name<Input placeholder="Diwali, Christmas…" value={name} onChange={(e) => setName(e.target.value)} />{err('name')}</label>
+            <div className="grid gap-1 text-sm font-medium"><span>Date</span><DateField aria-label="Date" value={date} onChange={setDate} />{err('date')}</div>
+            <Label className="grid gap-1 text-sm font-medium">Name<Input placeholder="Diwali, Christmas…" value={name} onChange={(e) => setName(e.target.value)} />{err('name')}</Label>
             <Button type="submit" loading={busy}>Add holiday</Button>
           </form>
         </Card>
@@ -86,12 +88,12 @@ function SetupRow({ row, workingDays }: { row: ProfileRow; workingDays: number }
   return (
     <div className={`grid grid-cols-1 items-center gap-3 border-b p-3 last:border-0 md:grid-cols-[minmax(11rem,2fr)_7rem_11rem_10rem_10rem_4rem] ${on ? '' : 'opacity-80'}`}>
       <div><Who p={row.person} /><span className="text-[11px] text-muted-foreground">{row.role}</span></div>
-      <label className="flex items-center gap-2 text-sm"><Switch aria-label={`${who} on payroll`} checked={on} onCheckedChange={setOn} /> {on ? 'On' : 'Off'}</label>
+      <Label className="flex items-center gap-2 text-sm"><Switch aria-label={`${who} on payroll`} checked={on} onCheckedChange={setOn} /> {on ? 'On' : 'Off'}</Label>
       <div>
         <div className="flex items-center gap-1"><Input type="number" step="0.01" min="0" className="w-28 text-right" placeholder="24000" aria-label={`${who} monthly salary`} value={salary} onChange={(e) => setSalary(e.target.value)} /><span className="text-xs text-muted-foreground">/mo {row.currency}</span></div>
         <div className="mt-1 text-xs text-muted-foreground">{daily ? <><b>{daily}</b>/day · {salary} ÷ {workingDays} days</> : 'Not set'}</div>
       </div>
-      <div><Input type="date" aria-label={`${who} rate effective from`} value={from} onChange={(e) => setFrom(e.target.value)} /><div className="mt-1 text-xs text-muted-foreground">{row.rates > 1 ? `${row.rates} rates on record` : row.has_profile ? `Since ${row.since}` : 'Not set yet'}</div></div>
+      <div><DateField aria-label={`${who} rate effective from`} value={from} onChange={setFrom} /><div className="mt-1 text-xs text-muted-foreground">{row.rates > 1 ? `${row.rates} rates on record` : row.has_profile ? `Since ${row.since}` : 'Not set yet'}</div></div>
       <div className="text-sm">{row.estimate ? <><b>{row.estimate.gross}</b> <span className="text-muted-foreground">· {row.estimate.payable_days} days</span>{Number(row.estimate.unpaid_leave_days) > 0 && <div className="text-xs text-destructive">−{row.estimate.unpaid_leave_days} unpaid</div>}</> : <span className="text-muted-foreground">—<div className="text-xs">{row.has_profile ? `From ${day(row.effective_from)}` : 'Not on payroll'}</div></span>}</div>
       <Button size="sm" loading={busy} aria-label={`Save ${who}`} onClick={save}>Save</Button>
     </div>

@@ -9,6 +9,7 @@ import { PreviewPage, RunDetailPage, RunListPage } from './RunPages';
 import { MyPayslipsPage, PayslipPage } from './SlipPages';
 import { HolidaysPage, ProfilesPage } from './SetupPages';
 import type { Profiles, Slip } from './types';
+import { pickDate } from '@/test-utils';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -62,9 +63,7 @@ it('Show cycle asks for the picked date; nobody on payroll hides Generate', asyn
   const { get } = mount('/payroll/preview/', <PreviewPage />, '/payroll/preview/', () => ({ start: '2026-10-27', end: '2026-11-26', working_days: 23, rows: [], total_gross: '0.00', total_deduction: '0.00' }));
   expect(await screen.findByText('Nobody is on payroll')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Generate/ })).not.toBeInTheDocument();
-  const input = screen.getByLabelText('Any date in the cycle');
-  await userEvent.clear(input);
-  await userEvent.type(input, '2026-09-30');
+  await pickDate(/Any date in the cycle/, '2026-09-30');
   await userEvent.click(screen.getByRole('button', { name: 'Show cycle' }));
   await waitFor(() => expect(get).toHaveBeenCalledWith('payroll/preview/?anchor=2026-09-30'));
 });
@@ -103,7 +102,7 @@ it('holidays: add posts the date and name; a duplicate shows under the field', a
   const { post } = mount('/payroll/holidays/', <HolidaysPage />, '/payroll/holidays/', () => ({ holidays: [{ id: 3, date: '2026-11-02', label: 'Mon, 2 Nov 2026', name: 'Diwali' }] }));
   expect(await screen.findByText(/Diwali/)).toBeInTheDocument();
   post.mockRejectedValue(new ApiError('x', 400, { errors: { date: ['That date is already a holiday.'] } }));
-  await userEvent.type(screen.getByLabelText('Date'), '2026-11-02');
+  await pickDate(/^Date/, '2026-11-02');
   await userEvent.type(screen.getByLabelText('Name'), 'Again');
   await userEvent.click(screen.getByRole('button', { name: 'Add holiday' }));
   expect(await screen.findByText('That date is already a holiday.')).toBeInTheDocument();

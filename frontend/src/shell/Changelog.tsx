@@ -4,6 +4,8 @@ import { api } from '@/lib/api';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Chip } from '@/components/ui/chip';
 
 type Section = { name: string; label: string; slug: string; count: number; items: string[] };
 type Release = { tag: string; date: string; title?: string; released: boolean; summary?: string; sections: Section[] };
@@ -49,21 +51,14 @@ export function Changelog({ open, onOpenChange }: { open: boolean; onOpenChange(
           <>
             <div role="group" aria-label="Filter changes by type" className="flex flex-wrap gap-1.5">
               {[{ slug: null, label: 'All' }, ...newest.sections.map((s) => ({ slug: s.slug, label: s.label }))].map((c) => (
-                <button
-                  key={c.label}
-                  type="button"
-                  onClick={() => setFilter(c.slug)}
-                  className={cn('rounded-full border px-2.5 py-0.5 text-xs', filter === c.slug ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}
-                >
-                  {c.label}
-                </button>
+                <Chip key={c.label} selected={filter === c.slug} onClick={() => setFilter(c.slug)}>{c.label}</Chip>
               ))}
             </div>
             <ReleaseView r={newest} filter={filter} />
             {rest.length > 0 && !older && (
-              <button type="button" onClick={() => setOlder(true)} className="text-left text-sm text-primary hover:underline">
+              <Button variant="link" size="sm" className="justify-start px-0" onClick={() => setOlder(true)}>
                 Older releases
-              </button>
+              </Button>
             )}
             {older && rest.map((r) => <ReleaseView key={r.tag} r={r} filter={null} />)}
           </>

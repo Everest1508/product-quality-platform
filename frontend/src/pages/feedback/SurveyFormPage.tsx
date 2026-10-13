@@ -8,13 +8,14 @@ import { Input, Textarea } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSurveyMeta, useSurveyRefresh, useSurveyScope } from './useFeedback';
+import { Label } from '@/components/ui/label';
 
 type FieldErrors = Record<string, string[]>;
 
 function Field({ label, htmlFor, error, children }: { label: string; htmlFor?: string; error?: string[]; children: ReactNode }) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+      <Label htmlFor={htmlFor} className="text-sm font-medium">{label}</Label>
       {children}
       {error?.map((m) => <p key={m} className="text-xs text-destructive">{m}</p>)}
     </div>

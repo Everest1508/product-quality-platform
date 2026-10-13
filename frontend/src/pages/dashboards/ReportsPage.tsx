@@ -11,17 +11,15 @@ import { useReport } from './useDashboards';
 import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Segmented } from '@/components/ui/segmented';
+import { DateField } from '@/components/ui/date-field';
+import { ProgressRing } from '@/components/ui/progress-ring';
 
 const fmt = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const md = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const TONE: Record<string, string> = { blue: 'text-info', green: 'text-success', red: 'text-destructive', gray: 'text-foreground' };
 
 function Ring({ pct }: { pct: number | null }) {
-  return (
-    <div className="grid size-16 shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(var(--primary) ${pct ?? 0}%, var(--secondary) 0)` }} role="img" aria-label={pct === null ? 'No data' : `${pct}%`}>
-      <b className="grid size-12 place-items-center rounded-full bg-card text-sm">{pct === null ? '–' : `${pct}%`}</b>
-    </div>
-  );
+  return <ProgressRing size={64} stroke={6} value={pct ?? 0} aria-label={pct === null ? 'No data' : `${pct}%`}>{pct === null ? '–' : `${pct}%`}</ProgressRing>;
 }
 
 function Bars({ rows, tone }: { rows: { name: string; n: number; pct: number }[]; tone: string }) {
@@ -68,8 +66,8 @@ export function ReportsPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); if (from && to) go(from, to); }}>
-          <label className="grid gap-1 text-xs font-medium">From<Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-          <label className="grid gap-1 text-xs font-medium">To<Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+          <div className="grid gap-1 text-xs font-medium"><span>From</span><DateField aria-label="From" className="w-40" value={from} onChange={setFrom} /></div>
+          <div className="grid gap-1 text-xs font-medium"><span>To</span><DateField aria-label="To" className="w-40" value={to} onChange={setTo} /></div>
           <Button type="submit" size="sm">Generate report</Button>
         </form>
         <Segmented

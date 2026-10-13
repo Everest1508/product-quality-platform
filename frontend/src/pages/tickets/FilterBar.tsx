@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TicketFilters, TicketMeta } from './types';
+import { Label } from '@/components/ui/label';
 
 const SORTS: [string, string][] = [
   ['-created', 'Newest first'],
@@ -89,10 +90,10 @@ export function FilterBar({ filters, onChange, meta, showStatus, showProduct, vi
         options={[['me', 'Assigned to me'], ['unassigned', 'Unassigned'], ...pairs(meta?.members ?? [], (m) => String(m.id), (m) => m.name)]}
         onChange={set('assigned')}
       />
-      <label className="flex items-center gap-2 text-sm">
+      <Label className="flex items-center gap-2 text-sm">
         <Checkbox checked={filters.overdue === '1'} onCheckedChange={(c) => set('overdue')(c === true ? '1' : undefined)} />
         Overdue only
-      </label>
+      </Label>
       <span className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
         <Choice label="Sort tickets" value={filters.sort ?? (view === 'board' ? '-priority' : '-created')} options={SORTS} onChange={set('sort')} />
         <Button variant="ghost" size="sm" onClick={() => onChange({})}>Clear</Button>

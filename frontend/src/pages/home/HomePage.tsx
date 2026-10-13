@@ -14,6 +14,7 @@ import type { Home } from './types';
 import { ErrorState } from '@/components/ui/error-state';
 import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
+import { DonutChart } from '@/components/ui/charts';
 
 const clock = (d: Date) => ({
   greeting: d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening',
@@ -46,7 +47,7 @@ function Hero({ h }: { h: Home }) {
         <h1 className="text-2xl font-semibold">{c.greeting}{h.first_name ? `, ${h.first_name}` : ''}</h1>
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <span>{quote}</span>
-          <button type="button" aria-label="Show another line" className="mt-0.5 shrink-0 hover:text-foreground" onClick={another}><RefreshCw className="size-3.5" /></button>
+          <Button variant="ghost" size="icon-sm" aria-label="Show another line" className="size-6 shrink-0" onClick={another}><RefreshCw className="size-3.5" /></Button>
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild size="sm"><Link to="/tickets/create/">New ticket</Link></Button>
@@ -99,21 +100,14 @@ function TodayCard({ h }: { h: Home }) {
 }
 
 function Donut({ items, total }: { items: Home['status']['items']; total: number }) {
-  let at = 0;
-  const stops = items.map((i) => {
-    const pct = (i.n * 100) / total;
-    const s = `${i.color} ${at.toFixed(2)}% ${(at + pct).toFixed(2)}%`;
-    at += pct;
-    return s;
-  });
   return (
-    <div className="flex items-center gap-4">
-      <div role="img" aria-label="Tickets by status" className="grid size-24 shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(${stops.join(', ')})` }}>
-        <span className="grid size-16 place-items-center rounded-full bg-card text-lg font-semibold">{total}</span>
-      </div>
-      <ul className="space-y-1 text-sm">
-        {items.map((i) => <li key={i.label} className="flex items-center gap-2"><i className="size-2.5 rounded-full" style={{ background: i.color }} />{i.label}<b className="ml-auto pl-3">{i.n}</b></li>)}
-      </ul>
+    <div role="img" aria-label="Tickets by status">
+      <DonutChart
+        size={112}
+        thickness={14}
+        data={items.map((i) => ({ label: `${i.label} ${i.n}`, value: i.n, color: i.color }))}
+        centerLabel={<span className="text-lg font-semibold">{total}</span>}
+      />
     </div>
   );
 }

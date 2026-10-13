@@ -14,16 +14,12 @@ import { useErrorActions, useErrorDetail } from './useErrors';
 import type { ErrorDetail } from './types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
+import { StatCard } from '@/components/ui/stat-card';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 function Stat({ value, label, title }: { value: string | number; label: string; title?: string }) {
-  return (
-    <div className="rounded-lg bg-secondary/60 p-3 text-center">
-      <div className="text-lg font-semibold" title={title}>{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-    </div>
-  );
+  return <StatCard label={label} value={<span title={title}>{value}</span>} />;
 }
 
 function NotFound({ missing }: { missing: boolean }) {
