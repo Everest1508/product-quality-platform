@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.uiapi import products, tickets, views
+from apps.uiapi import errors, products, tickets, views
 
 app_name = "uiapi"
 
@@ -16,6 +16,11 @@ urlpatterns = [
     path("tickets/<int:pk>/follow/", tickets.TicketFollowAPIView.as_view(), name="ticket_follow"),
     path("tickets/<int:pk>/comments/", tickets.TicketCommentAPIView.as_view(), name="ticket_comments"),
     path("tickets/<int:pk>/", tickets.TicketDetailAPIView.as_view(), name="ticket_detail"),
+    path("errors/", errors.ErrorListAPIView.as_view(), name="errors"),
+    path("errors/meta/", errors.ErrorMetaAPIView.as_view(), name="error_meta"),
+    path("errors/<int:pk>/status/", errors.ErrorStatusAPIView.as_view(), name="error_status"),
+    path("errors/<int:pk>/convert-to-ticket/", errors.ErrorConvertAPIView.as_view(), name="error_convert"),
+    path("errors/<int:pk>/", errors.ErrorDetailAPIView.as_view(), name="error_detail"),
     path("company/switch/", views.CompanySwitchAPIView.as_view(), name="company_switch"),
     path("bootstrap/", views.BootstrapView.as_view(), name="bootstrap"),
     path("notifications/", views.NotificationListView.as_view(), name="notifications"),
