@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeftIcon, BellIcon, EditIcon, EyeIcon, RefreshIcon, SendIcon, TrashIcon } from '@/components/ui/icons';
 import { ApiError } from '@/lib/api';
 import { ago } from '@/lib/time';
 import { usePresence } from '@/lib/usePresence';
@@ -111,15 +111,15 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
           </h1>
           <p aria-live="polite" className="mt-1 min-h-5 text-xs text-muted-foreground">
             {viewers.length > 0 && (
-              <span className="inline-flex items-center gap-1"><Eye className="size-3.5" /> {viewers.join(', ')} also viewing</span>
+              <span className="inline-flex items-center gap-1"><EyeIcon className="size-3.5" /> {viewers.join(', ')} also viewing</span>
             )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm"><Link to={boardUrl}>← {t.product ? `${t.product.name} tickets` : 'Tickets'}</Link></Button>
-          <Button asChild variant="outline" size="sm"><Link to={editUrl}><Pencil /> Edit Ticket</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to={boardUrl}><ArrowLeftIcon /> {t.product ? `${t.product.name} tickets` : 'Tickets'}</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to={editUrl}><EditIcon /> Edit Ticket</Link></Button>
           {t.can_delete && (
-            <Button variant="destructive" size="sm" aria-label="Delete ticket" onClick={() => setConfirmDelete(true)}><Trash2 /> Delete</Button>
+            <Button variant="destructive" size="sm" aria-label="Delete ticket" onClick={() => setConfirmDelete(true)}><TrashIcon /> Delete</Button>
           )}
         </div>
       </div>
@@ -159,7 +159,7 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
                 placeholder="Add a comment… type @ to mention someone"
               />
               <div className="text-right">
-                <Button type="submit" size="sm" loading={act.busy === 'comment'}>Comment</Button>
+                <Button type="submit" size="sm" loading={act.busy === 'comment'}><SendIcon />Comment</Button>
               </div>
             </form>
           </Card>
@@ -191,7 +191,7 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
               loading={act.busy === 'follow'}
               onClick={() => void act.toggleFollow()}
               title={data.following ? 'Stop getting comment and status notices' : 'Get comment and status notices without being assigned'}
-            >
+            ><BellIcon />
               {data.following ? 'Following' : 'Follow'}
               {data.watcher_count > 0 && ` · ${data.watcher_count}`}
             </Button>
@@ -229,9 +229,9 @@ export function TicketDetailPage() {
       <Card className="p-8 text-center">
         <p className="text-sm">{missing ? 'Ticket not found.' : 'Couldn’t load this ticket.'}</p>
         {missing ? (
-          <Link to="/tickets/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to tickets</Link>
+          <Button asChild variant="link" className="mt-3"><Link to="/tickets/"><ArrowLeftIcon /> Back to tickets</Link></Button>
         ) : (
-          <Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button>
+          <Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button>
         )}
       </Card>
     );

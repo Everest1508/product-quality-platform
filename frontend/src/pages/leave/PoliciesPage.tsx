@@ -14,6 +14,7 @@ import type { Policies, Policy } from './types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { EditIcon, PlusIcon, SaveIcon, XIcon } from '@/components/ui/icons';
 
 const NONE = 'none'; // Radix Select does not allow an empty value
 
@@ -65,7 +66,7 @@ function PolicyDialog({ policy, meta, onClose }: { policy: Policy | null; meta: 
             <Label className="grid gap-1 text-sm font-medium">Icon{pick('Icon', icon, setIcon, meta.icons)}{err('icon')}</Label>
           </div>
           {errors.__all__ && <p role="alert" className="text-sm text-destructive">{errors.__all__.join(' ')}</p>}
-          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" loading={busy}>{policy ? 'Save' : 'Add'}</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}><XIcon />Cancel</Button><Button type="submit" loading={busy}><SaveIcon />{policy ? 'Save' : 'Add'}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -83,7 +84,7 @@ export function PoliciesPage() {
   if (!d) return <Skeleton className="h-48 w-full" data-testid="policies-loading" />;
   return (
     <div className="space-y-4">
-      <PageHeader title="Leave policy" sub="Allowances, per-spell caps and whether each type is paid." actions={<Button size="sm" onClick={() => setEditing('new')}>Add leave type</Button>} />
+      <PageHeader title="Leave policy" sub="Allowances, per-spell caps and whether each type is paid." actions={<Button size="sm" onClick={() => setEditing('new')}><PlusIcon />Add leave type</Button>} />
       <Card className="overflow-x-auto p-0">
         <Table>
           <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Per year</TableHead><TableHead>Per spell</TableHead><TableHead /></TableRow></TableHeader>
@@ -92,7 +93,7 @@ export function PoliciesPage() {
               <TableRow key={p.id}>
                 <TableCell>{p.name} {!p.is_paid && <Badge>Unpaid</Badge>}</TableCell>
                 <TableCell>{p.annual_label}</TableCell><TableCell>{p.spell_label}</TableCell>
-                <TableCell className="text-right"><Button variant="outline" size="sm" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}>Edit</Button></TableCell>
+                <TableCell className="text-right"><Button variant="outline" size="sm" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}><EditIcon />Edit</Button></TableCell>
               </TableRow>
             ))}
           </TableBody>

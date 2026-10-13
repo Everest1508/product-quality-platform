@@ -14,6 +14,7 @@ import type { ApplyMeta, Preview } from './types';
 import { Alert } from '@/components/ui/alert';
 import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
+import { SendIcon, XIcon } from '@/components/ui/icons';
 
 export function ApplyPage() {
   const meta = useLeaveQuery<ApplyMeta>('apply', 'leave/apply/');
@@ -67,7 +68,7 @@ export function ApplyPage() {
   const err = (f: string) => errors[f]?.length ? <span className="text-xs text-destructive" role="alert">{errors[f].join(' ')}</span> : null;
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
-      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Apply for leave</h1><Button asChild variant="outline" size="sm"><Link to="/leave/">Cancel</Link></Button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Apply for leave</h1><Button asChild variant="outline" size="sm"><Link to="/leave/"><XIcon />Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         {errors.__all__ && <Alert variant="danger">{errors.__all__.join(' ')}</Alert>}
         <Label className="grid gap-1.5 text-sm font-medium">Leave type
@@ -91,7 +92,7 @@ export function ApplyPage() {
           </div>
         )}
       </Card>
-      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/leave/">Cancel</Link></Button><Button type="submit" loading={busy}>Send request</Button></div>
+      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/leave/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SendIcon />Send request</Button></div>
     </form>
   );
 }

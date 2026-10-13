@@ -1,4 +1,4 @@
-import { TriangleAlert as AlertIcon } from 'lucide-react';
+import { TriangleAlertIcon } from './icons';
 import { Button } from './button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './dialog';
 
@@ -27,7 +27,7 @@ export function AlertDialog({
       <DialogContent className="max-w-sm" aria-describedby={description ? undefined : undefined}>
         <DialogHeader>
           <span className={`mb-1 grid size-10 place-items-center rounded-full ${destructive ? 'bg-destructive/10 text-destructive' : 'bg-accent text-accent-foreground'}`}>
-            <AlertIcon className="size-5" />
+            <TriangleAlertIcon className="size-5" />
           </span>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

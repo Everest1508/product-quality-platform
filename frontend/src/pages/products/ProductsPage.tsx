@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutGrid, List, Pencil, Plus, Search } from 'lucide-react';
+import { EditIcon, EyeIcon, LayoutDashboardIcon, LayoutGridIcon, ListIcon, PlusIcon, RefreshIcon, SearchIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -55,9 +55,9 @@ function ProductCard({ p, canEdit }: { p: ProductItem; canEdit: boolean }) {
         <span className="text-xs text-muted-foreground">{p.week_errors} errors this week</span>
       </div>
       <div className="mt-auto flex items-center gap-2">
-        <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}>Dashboard</a></Button>
-        <Button asChild size="sm"><Link to={p.url}>Open</Link></Button>
-        {canEdit && <Button asChild variant="ghost" size="icon-sm" className="ml-auto" aria-label={`Edit ${p.name}`}><Link to={`${p.url}edit/`}><Pencil /></Link></Button>}
+        <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}><LayoutDashboardIcon />Dashboard</a></Button>
+        <Button asChild size="sm"><Link to={p.url}><EyeIcon />Open</Link></Button>
+        {canEdit && <Button asChild variant="ghost" size="icon-sm" className="ml-auto" aria-label={`Edit ${p.name}`}><Link to={`${p.url}edit/`}><EditIcon /></Link></Button>}
       </div>
     </Card>
   );
@@ -104,7 +104,7 @@ export function ProductsPage() {
         <h1 className="text-2xl font-semibold">
           Products {data && <span className="ml-2 text-sm font-normal text-muted-foreground">{data.page.count} total</span>}
         </h1>
-        {data?.can_create && <Button asChild size="sm"><Link to="/products/create/"><Plus /> New product</Link></Button>}
+        {data?.can_create && <Button asChild size="sm"><Link to="/products/create/"><PlusIcon /> New product</Link></Button>}
       </div>
 
       {data && (
@@ -118,17 +118,17 @@ export function ProductsPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-72 max-sm:max-w-none">
-          <Input type="search" aria-label="Search products" placeholder="Search products…" leftIcon={<Search />} value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input type="search" aria-label="Search products" placeholder="Search products…" leftIcon={<SearchIcon />} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <Select value={sort} onValueChange={(v) => set('sort', v === 'name' ? null : v)}>
           <SelectTrigger aria-label="Sort" className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>{SORTS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
-        <Segmented className="ml-auto" value={view === 'table' ? 'table' : 'grid'} onValueChange={(v) => set('view', v === 'table' ? 'table' : null)} options={[{ value: 'grid', label: <LayoutGrid />, ariaLabel: 'Grid view' }, { value: 'table', label: <List />, ariaLabel: 'Table view' }]} />
+        <Segmented className="ml-auto" value={view === 'table' ? 'table' : 'grid'} onValueChange={(v) => set('view', v === 'table' ? 'table' : null)} options={[{ value: 'grid', label: <LayoutGridIcon />, ariaLabel: 'Grid view' }, { value: 'table', label: <ListIcon />, ariaLabel: 'Table view' }]} />
       </div>
 
       {list.isError && !data ? (
-        <Card><ErrorState title="Couldn’t load products."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load products."><Button size="sm" variant="outline" onClick={() => list.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="products-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
@@ -156,7 +156,7 @@ export function ProductsPage() {
                   <TableCell>{p.version_count}</TableCell>
                   <TableCell>{p.api_key_count}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}>Dashboard</a></Button>
+                    <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}><LayoutDashboardIcon />Dashboard</a></Button>
                   </TableCell>
                 </TableRow>
               ))}

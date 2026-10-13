@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useErrorMeta, useErrorRefresh } from './useErrors';
 import type { ErrorInput } from './types';
 import { Label } from '@/components/ui/label';
+import { PlusIcon, XIcon } from '@/components/ui/icons';
 
 type FieldErrors = Record<string, string[]>;
 
@@ -87,7 +88,7 @@ export function ErrorFormPage() {
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Report Error</h1>
-        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}>Cancel</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
       </div>
       <Card className="space-y-4 p-5">
         {!fixedProduct && (
@@ -121,8 +122,8 @@ export function ErrorFormPage() {
         </Field>
       </Card>
       <div className="flex justify-end gap-2">
-        <Button asChild variant="outline"><Link to={cancelUrl}>Cancel</Link></Button>
-        <Button type="submit" loading={saving}>Report Error</Button>
+        <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
+        <Button type="submit" loading={saving}><PlusIcon />Report Error</Button>
       </div>
     </form>
   );

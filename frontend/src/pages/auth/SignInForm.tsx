@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, LogInIcon } from '@/components/ui/icons';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,11 +48,11 @@ export function SignInForm({ path, extra, submitLabel = 'Sign in' }: { path: str
         <div className="relative">
           <Input id="password" type={show ? 'text' : 'password'} autoComplete="current-password" placeholder="Password" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!error} />
           <Button type="button" variant="ghost" size="icon-sm" aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-0.5 top-0.5 text-muted-foreground" onClick={() => setShow((s) => !s)}>
-            {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {show ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </Button>
         </div>
       </div>
-      <Button type="submit" className="w-full" loading={busy}>{submitLabel}</Button>
+      <Button type="submit" className="w-full" loading={busy}><LogInIcon />{submitLabel}</Button>
     </form>
   );
 }

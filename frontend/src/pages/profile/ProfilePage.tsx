@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
 import { Avatar } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
+import { RefreshIcon, SaveIcon } from '@/components/ui/icons';
 
 type Profile = {
   user: { username: string; name: string; initial: string; first_name: string; last_name: string; email: string; discord_id: string };
@@ -78,7 +79,7 @@ function ProfileForm({ p }: { p: Profile }) {
           <Input id="p-discord" value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="e.g. 123456789012345678" />
         </Field>
       </Card>
-      <div className="flex justify-end"><Button type="submit" loading={saving}>Save Changes</Button></div>
+      <div className="flex justify-end"><Button type="submit" loading={saving}><SaveIcon />Save Changes</Button></div>
     </form>
   );
 }
@@ -93,7 +94,7 @@ export function ProfilePage() {
     <div className="mx-auto max-w-3xl space-y-4">
       <PageHeader title="Settings" sub="Manage your profile details, email address, and notification preferences." />
       {q.isError && !p ? (
-        <Card><ErrorState title="Couldn’t load your settings."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load your settings."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !p ? (
         <div className="space-y-3" data-testid="profile-loading"><Skeleton className="h-20 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (

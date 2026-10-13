@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
+import { ArrowLeftIcon, CheckIcon, EyeOffIcon, PlusIcon, TrashIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ function NotFound({ missing }: { missing: boolean }) {
   return (
     <Card className="p-8 text-center">
       <p className="text-sm">{missing ? 'Error not found.' : 'Couldn’t load this error.'}</p>
-      <Link to="/errors/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to errors</Link>
+      <Button asChild variant="link" className="mt-3"><Link to="/errors/"><ArrowLeftIcon /> Back to errors</Link></Button>
     </Card>
   );
 }
@@ -157,10 +157,10 @@ function Detail({ data }: { data: ErrorDetail }) {
             </Select>
             <div className="flex gap-2">
               {e.status !== 'resolved' && (
-                <Button variant="outline" className="flex-1 text-success" disabled={act.busy === 'status'} onClick={() => act.setStatus('resolved')}>Resolve</Button>
+                <Button variant="outline" className="flex-1 text-success" disabled={act.busy === 'status'} onClick={() => act.setStatus('resolved')}><CheckIcon />Resolve</Button>
               )}
               {e.status !== 'ignored' && (
-                <Button variant="outline" className="flex-1 text-destructive" disabled={act.busy === 'status'} onClick={() => act.setStatus('ignored')}>Ignore</Button>
+                <Button variant="outline" className="flex-1 text-destructive" disabled={act.busy === 'status'} onClick={() => act.setStatus('ignored')}><EyeOffIcon />Ignore</Button>
               )}
             </div>
           </Card>
@@ -186,10 +186,10 @@ function Detail({ data }: { data: ErrorDetail }) {
 
           <Card className="space-y-2 p-5">
             <h2 className="text-sm font-medium">Actions</h2>
-            <Button className="w-full" loading={act.busy === 'convert'} onClick={() => act.convert()}>Create Ticket from Error</Button>
+            <Button className="w-full" loading={act.busy === 'convert'} onClick={() => act.convert()}><PlusIcon />Create Ticket from Error</Button>
             {e.can_delete && (
               <Button variant="destructive" className="w-full" loading={act.busy === 'delete'} onClick={() => setConfirmDelete(true)}>
-                <Trash2 /> Delete Error
+                <TrashIcon /> Delete Error
               </Button>
             )}
           </Card>

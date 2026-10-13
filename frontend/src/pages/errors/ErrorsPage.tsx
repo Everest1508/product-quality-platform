@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { EyeIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon, XIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -97,7 +97,7 @@ export function ErrorsPage() {
             {productId ? 'Error groups for this product.' : 'Error groups from every product you can access. Use the product filter to narrow to one.'}
           </p>
         </div>
-        <Button asChild size="sm"><Link to={createUrl}><Plus /> Report error</Link></Button>
+        <Button asChild size="sm"><Link to={createUrl}><PlusIcon /> Report error</Link></Button>
       </div>
 
       <Segmented
@@ -109,7 +109,7 @@ export function ErrorsPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-60 max-sm:max-w-none">
-          <Input type="search" aria-label="Search errors" placeholder="Search errors…" leftIcon={<Search />} value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input type="search" aria-label="Search errors" placeholder="Search errors…" leftIcon={<SearchIcon />} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         {!productId && (
           <Choice label="Filter by product" value={filters.product} allLabel="All products" options={(meta.data?.products ?? []).map((p) => [String(p.id), p.name])} onChange={set('product')} />
@@ -117,12 +117,12 @@ export function ErrorsPage() {
         <Choice label="Filter by severity" value={filters.severity} allLabel="All severities" options={meta.data?.severities ?? []} onChange={set('severity')} />
         <span className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
           <Choice label="Sort errors" value={filters.sort ?? '-last_seen'} options={SORTS} onChange={set('sort')} />
-          <Button variant="ghost" size="sm" onClick={() => setFilters({})}>Clear</Button>
+          <Button variant="ghost" size="sm" onClick={() => setFilters({})}><XIcon />Clear</Button>
         </span>
       </div>
 
       {errors.isError && !data ? (
-        <Card><ErrorState title="Couldn’t load errors."><Button size="sm" variant="outline" onClick={() => errors.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load errors."><Button size="sm" variant="outline" onClick={() => errors.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="errors-loading">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -165,9 +165,9 @@ export function ErrorsPage() {
                   <TableCell className="whitespace-nowrap text-muted-foreground" title={new Date(e.last_seen).toLocaleString()}>{ago(e.last_seen)}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1" onClick={(ev) => ev.stopPropagation()}>
-                      <Button asChild variant="ghost" size="icon-sm" aria-label={`View ${e.title}`}><Link to={e.url}><Eye /></Link></Button>
+                      <Button asChild variant="ghost" size="icon-sm" aria-label={`View ${e.title}`}><Link to={e.url}><EyeIcon /></Link></Button>
                       {e.can_delete && (
-                        <Button variant="ghost" size="icon-sm" aria-label={`Delete error #${e.id}`} onClick={() => setConfirm(e)}><Trash2 /></Button>
+                        <Button variant="ghost" size="icon-sm" aria-label={`Delete error #${e.id}`} onClick={() => setConfirm(e)}><TrashIcon /></Button>
                       )}
                     </div>
                   </TableCell>

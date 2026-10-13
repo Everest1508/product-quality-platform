@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { TrashIcon } from '@/components/ui/icons';
 import { go } from '@/lib/go';
 import { ago } from '@/lib/time';
 import { Badge } from '@/components/ui/badge';
@@ -86,7 +86,7 @@ export function TicketTable({ items, selecting, selected, onSelect, onDelete }: 
             <TableCell className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
               {t.can_delete && (
                 <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.key}`} onClick={() => onDelete(t)}>
-                  <Trash2 />
+                  <TrashIcon />
                 </Button>
               )}
             </TableCell>

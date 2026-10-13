@@ -9,6 +9,7 @@ import { TONE, useLeaveQuery, useLeaveWrite } from './useLeave';
 import type { MyLeave } from './types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon } from '@/components/ui/icons';
 
 export function MyLeavePage() {
   const [year, setYear] = useState<number | null>(null);
@@ -33,12 +34,12 @@ export function MyLeavePage() {
         <div className="flex items-center gap-2">
           {d && (
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" aria-label="Previous year" onClick={() => setYear(d.year - 1)}>‹</Button>
+              <Button variant="outline" size="sm" aria-label="Previous year" onClick={() => setYear(d.year - 1)}><ChevronLeftIcon /></Button>
               <span className="min-w-12 text-center text-sm font-medium">{d.year}</span>
-              <Button variant="outline" size="sm" aria-label="Next year" onClick={() => setYear(d.year + 1)}>›</Button>
+              <Button variant="outline" size="sm" aria-label="Next year" onClick={() => setYear(d.year + 1)}><ChevronRightIcon /></Button>
             </div>
           )}
-          <Button asChild size="sm"><Link to="/leave/apply/">Apply for leave</Link></Button>
+          <Button asChild size="sm"><Link to="/leave/apply/"><CheckIcon />Apply for leave</Link></Button>
         </div>
       </div>
       {!d ? <Skeleton className="h-48 w-full" data-testid="leave-loading" /> : (
@@ -70,7 +71,7 @@ export function MyLeavePage() {
                       <TableCell>{r.days_label}{r.status === 'approved' && <small className="block text-muted-foreground">{r.split_label}</small>}</TableCell>
                       <TableCell><Badge variant={TONE[r.status] ?? 'default'}>{r.status_label}</Badge></TableCell>
                       <TableCell className="text-muted-foreground">{r.decision_note || r.reason}</TableCell>
-                      <TableCell className="text-right">{r.can_cancel && <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}>Withdraw</Button>}</TableCell>
+                      <TableCell className="text-right">{r.can_cancel && <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}><TrashIcon />Withdraw</Button>}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

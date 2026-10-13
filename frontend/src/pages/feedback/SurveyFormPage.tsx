@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSurveyMeta, useSurveyRefresh, useSurveyScope } from './useFeedback';
 import { Label } from '@/components/ui/label';
+import { PlusIcon, XIcon } from '@/components/ui/icons';
 
 type FieldErrors = Record<string, string[]>;
 
@@ -77,7 +78,7 @@ export function SurveyFormPage() {
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">New Survey</h1>
-        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}>Cancel</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
       </div>
       <Card className="space-y-4 p-5">
         <Field label="Name" htmlFor="survey-name" error={errors.name}>
@@ -97,8 +98,8 @@ export function SurveyFormPage() {
         )}
       </Card>
       <div className="flex justify-end gap-2">
-        <Button asChild variant="outline"><Link to={cancelUrl}>Cancel</Link></Button>
-        <Button type="submit" loading={saving}>Create Survey</Button>
+        <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
+        <Button type="submit" loading={saving}><PlusIcon />Create Survey</Button>
       </div>
     </form>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Copy } from 'lucide-react';
+import { ArrowLeftIcon, CopyIcon, PlayIcon, TrashIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export function SurveyDetailPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-sm">{missing ? 'Survey not found.' : 'Couldn’t load this survey.'}</p>
-        <Link to="/feedback/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to surveys</Link>
+        <Button asChild variant="link" className="mt-3"><Link to="/feedback/"><ArrowLeftIcon /> Back to surveys</Link></Button>
       </Card>
     );
   }
@@ -48,7 +48,7 @@ function Detail({ data }: { data: SurveyDetail }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{s.name} <span className="ml-2 text-sm font-normal text-muted-foreground">{s.response_count} response{s.response_count === 1 ? '' : 's'}</span></h1>
-        <Button asChild variant="outline" size="sm"><Link to="/feedback/">Back to surveys</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to="/feedback/"><ArrowLeftIcon />Back to surveys</Link></Button>
       </div>
       <p className="text-sm text-muted-foreground">{s.product.name}{s.description ? ` · ${s.description}` : ''}</p>
 
@@ -64,12 +64,12 @@ function Detail({ data }: { data: SurveyDetail }) {
           <div className="text-sm font-medium">Public link</div>
           <div className="flex gap-2">
             <Input readOnly aria-label="Public link" value={link} onFocus={(e) => e.currentTarget.select()} className="text-xs" />
-            <Button variant="outline" onClick={() => navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}><Copy /> {copied ? 'Copied!' : 'Copy'}</Button>
+            <Button variant="outline" onClick={() => navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}><CopyIcon /> {copied ? 'Copied!' : 'Copy'}</Button>
           </div>
           {s.status !== 'active' && <p className="text-xs text-muted-foreground">The link only works while the survey is active.</p>}
         </Card>
-        <Button variant="outline" loading={act.busy === 'toggle'} onClick={() => act.toggle()}>{NEXT[s.status]}</Button>
-        <Button variant="destructive" onClick={() => setConfirm(true)}>Delete</Button>
+        <Button variant="outline" loading={act.busy === 'toggle'} onClick={() => act.toggle()}><PlayIcon />{NEXT[s.status]}</Button>
+        <Button variant="destructive" onClick={() => setConfirm(true)}><TrashIcon />Delete</Button>
       </div>
 
       {s.type === 'nps' && (

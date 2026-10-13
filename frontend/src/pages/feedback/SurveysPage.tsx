@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { PlusIcon, RefreshIcon, SearchIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -60,14 +60,14 @@ export function SurveysPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{title} {data && <span className="ml-2 text-sm font-normal text-muted-foreground">{data.page.count} total</span>}</h1>
-        <Button asChild size="sm"><Link to={createUrl}><Plus /> New survey</Link></Button>
+        <Button asChild size="sm"><Link to={createUrl}><PlusIcon /> New survey</Link></Button>
       </div>
 
       <Segmented className="flex-wrap" value={current} onValueChange={pickTab} options={[...STATUS_TABS.map(([v, l]) => ({ value: `status:${v}`, label: l })), ...TYPE_TABS.map(([v, l]) => ({ value: `type:${v}`, label: l }))]} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-60 max-sm:max-w-none">
-          <Input type="search" aria-label="Search surveys" placeholder="Search surveys…" leftIcon={<Search />} value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input type="search" aria-label="Search surveys" placeholder="Search surveys…" leftIcon={<SearchIcon />} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <Select value={filters.sort ?? '-created'} onValueChange={(v) => setFilters({ ...filters, sort: v === '-created' ? undefined : v, page: undefined })}>
           <SelectTrigger aria-label="Sort" className="w-44"><SelectValue /></SelectTrigger>
@@ -76,7 +76,7 @@ export function SurveysPage() {
       </div>
 
       {list.isError && !data ? (
-        <Card><ErrorState title="Couldn’t load surveys."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load surveys."><Button size="sm" variant="outline" onClick={() => list.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="surveys-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : data.items.length === 0 ? (

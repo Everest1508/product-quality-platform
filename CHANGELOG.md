@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.28.1] — 2026-10-13 · icons on every button
+
+> In short: every button now has an icon next to its words, and the whole app uses one icon set.
+
+### Better
+
+- **Buttons show an icon and a label.** Save, Add, Delete, Approve, Sign in, Print and the rest tell you what they do at a glance.
+- **One icon set across the app.** Menus, tables, the sidebar and forms all draw from the same icons, so weights and sizes match.
+
 ## [1.28.0] — 2026-10-13 · the whole app, in one design
 
 > In short: every page now uses the same design and components, with a dark theme, calendar and clock pickers, and a faster, steadier experience from sign-in to payroll.

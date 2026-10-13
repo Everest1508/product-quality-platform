@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon } from '@/components/ui/icons';
 import type { ProductNav } from '@/lib/useProductNav';
 import { useSidebar } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -17,7 +17,7 @@ export function ProductSwitcher({ nav }: { nav: ProductNav }) {
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1 truncate">{nav.name}</span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDownIcon className="size-3.5 text-muted-foreground" />
           </>
         )}
       </DropdownMenuTrigger>
@@ -26,7 +26,7 @@ export function ProductSwitcher({ nav }: { nav: ProductNav }) {
           <DropdownMenuItem key={p.id} asChild>
             <a href={p.url}>
               <span className="min-w-0 flex-1 truncate">{p.name}</span>
-              {p.id === nav.id && <Check />}
+              {p.id === nav.id && <CheckIcon />}
             </a>
           </DropdownMenuItem>
         ))}

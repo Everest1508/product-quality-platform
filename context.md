@@ -954,3 +954,6 @@ decided what and strike the item** rather than deleting it.
 
 ### 2026-10-13 Release 1.28.0
 - README rewritten for the React front end (badges, features incl. attendance/leave/payroll, quickstart with the npm build, tech stack, structure). 1.28.0 is a summary release of the migration and polish work (1.16.0 to 1.27.0); no code change beyond the version.
+
+### 2026-10-13 befui icons (1.28.1)
+- `lucide-react` is gone: every icon is befui's (`components/ui/icons.tsx`). Every `Button` with a text label has an icon in front of it (links inside `Button asChild` carry it inside the link); icon-only buttons keep an `aria-label`. When adding a button, pick the icon by meaning (Save, Plus, Trash, X, Check, Edit, Eye, Send, Refresh ...). nav.ts items use `React.ComponentType<IconProps>`.

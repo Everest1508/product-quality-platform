@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { ArrowRightLeft, Trash2 } from 'lucide-react';
+import { RepeatIcon, TrashIcon } from '@/components/ui/icons';
 import { api } from '@/lib/api';
 import { shortDate } from '@/lib/time';
 import { toast } from '@/lib/toast';
@@ -80,7 +80,7 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete,
         <span className="flex shrink-0 items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={`Move ${t.key}`}><ArrowRightLeft /></Button>
+              <Button variant="ghost" size="icon-sm" aria-label={`Move ${t.key}`}><RepeatIcon /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {!disabled && data.columns.filter((c) => c.key !== t.status).map((c) => (
@@ -88,7 +88,7 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete,
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          {t.can_delete && <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.key}`} onClick={() => onDelete(t)}><Trash2 /></Button>}
+          {t.can_delete && <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.key}`} onClick={() => onDelete(t)}><TrashIcon /></Button>}
         </span>
       </div>
       <a href={t.url} className="block break-words font-medium hover:underline">{t.title}</a>

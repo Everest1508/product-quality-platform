@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogIn, LogOut } from 'lucide-react';
+import { LogInIcon, LogOutIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { api } from '@/lib/api';
@@ -81,7 +81,7 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
                 </div>
               </div>
             </div>
-            <Button variant="outline" loading={busy} onClick={punch}><LogOut /> Check out</Button>
+            <Button variant="outline" loading={busy} onClick={punch}><LogOutIcon /> Check out</Button>
           </div>
           <Progress value={pct} aria-hidden />
         </div>
@@ -97,7 +97,7 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
               <p className={cn('text-sm', note.cls)}>{note.text}</p>
             </div>
           </div>
-          <Button loading={busy} onClick={punch}><LogIn /> Check in</Button>
+          <Button loading={busy} onClick={punch}><LogInIcon /> Check in</Button>
         </div>
       )}
 

@@ -16,6 +16,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Alert } from '@/components/ui/alert';
 import { DateField, DateTimeField, TimeField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
+import { CheckIcon, SaveIcon, SendIcon, XIcon } from '@/components/ui/icons';
 
 const when = (c: Correction['original'] | Correction['requested']) => (c.check_in || c.check_out ? `${c.check_in || 'none'} → ${c.check_out || 'none'}` : 'none');
 
@@ -52,8 +53,8 @@ export function CorrectionQueuePage() {
               {c.can_decide ? (
                 <div className="flex flex-wrap gap-2">
                   <Input aria-label={`Note to ${c.person.name}`} className="min-w-48 flex-1" maxLength={255} placeholder={`Note to ${c.person.name} (optional)`} value={notes[c.id] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [c.id]: e.target.value }))} />
-                  <Button variant="outline" onClick={() => decide(c, 'reject')}>Reject</Button>
-                  <Button onClick={() => decide(c, 'approve')}>Approve</Button>
+                  <Button variant="outline" onClick={() => decide(c, 'reject')}><XIcon />Reject</Button>
+                  <Button onClick={() => decide(c, 'approve')}><CheckIcon />Approve</Button>
                 </div>
               ) : <p className="text-sm text-muted-foreground">This is your own request, so another owner or admin has to decide it.</p>}
             </Card>
@@ -117,7 +118,7 @@ export function CorrectionRequestPage() {
   if (!d) return <Skeleton className="h-64 w-full" data-testid="corr-form-loading" />;
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
-      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Ask for a correction</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/">Cancel</Link></Button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Ask for a correction</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/"><XIcon />Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         <p className="text-sm text-muted-foreground">Tell us what the day should say. Nothing changes until an owner or admin approves it. You can ask for a day in the last {d.max_age_days} days.</p>
         {d.record && <p className="rounded-md bg-secondary p-3 text-sm">Recorded for {d.date_label}: in {d.record.check_in || 'none'}, out {d.record.check_out || 'none'}.</p>}
@@ -131,7 +132,7 @@ export function CorrectionRequestPage() {
         <Label className="grid gap-1.5 text-sm font-medium">Reason<Input maxLength={500} placeholder="Why does the day need changing?" value={why} onChange={(e) => setWhy(e.target.value)} /></Label>
         <p className="text-xs text-muted-foreground">Only the times you fill in are changed.</p>
       </Card>
-      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/">Cancel</Link></Button><Button type="submit" loading={busy}>Send request</Button></div>
+      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SendIcon />Send request</Button></div>
       {d.recent.length > 0 && (
         <Card className="space-y-2 p-5">
           <h2 className="text-sm font-semibold">Your recent requests</h2>
@@ -179,7 +180,7 @@ export function RecordEditPage() {
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-xl space-y-4" noValidate>
-      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Edit attendance</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/team/">Cancel</Link></Button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Edit attendance</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/team/"><XIcon />Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         <p className="text-sm"><b>{d.user.name}</b> · {d.date_label}</p>
         {d.status === 'stale' && <Alert variant="warning">This day was never checked out. Until it is closed it counts for at most one working day ({d.worked_hours_per_day}), currently {d.effective}.</Alert>}
@@ -190,7 +191,7 @@ export function RecordEditPage() {
         <Label className="grid gap-1.5 text-sm font-medium">Notes<Input maxLength={255} value={notes} onChange={(e) => setNotes(e.target.value)} /></Label>
         <p className="text-xs text-muted-foreground">Leave check-out empty to keep the day open. Changes are logged.</p>
       </Card>
-      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/team/">Cancel</Link></Button><Button type="submit" loading={busy}>Save</Button></div>
+      <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link to="/attendance/team/"><XIcon />Cancel</Link></Button><Button type="submit" loading={busy}><SaveIcon />Save</Button></div>
     </form>
   );
 }

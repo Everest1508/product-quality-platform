@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Plus } from 'lucide-react';
+import { ExternalLinkIcon, EyeIcon, FileTextIcon, LayoutDashboardIcon, PlusIcon, RefreshIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -29,13 +29,13 @@ export function CsHubPage() {
           <p className="mt-1 text-sm text-muted-foreground">Track customer satisfaction ratings, survey responses, and sentiment insights across products.</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm"><Link to="/feedback/">Manage Surveys</Link></Button>
-          <Button asChild size="sm"><Link to="/feedback/create/"><Plus /> New survey</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to="/feedback/"><FileTextIcon />Manage Surveys</Link></Button>
+          <Button asChild size="sm"><Link to="/feedback/create/"><PlusIcon /> New survey</Link></Button>
         </div>
       </div>
 
       {q.isError && !d ? (
-        <Card><ErrorState title="Couldn’t load the hub."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load the hub."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !d ? (
         <div className="space-y-3" data-testid="hub-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (
@@ -72,7 +72,7 @@ export function CsHubPage() {
                         <TableCell className="text-center">{s.response_count}</TableCell>
                         <TableCell className={cn('text-center font-medium', tone(s.avg_score))}>{s.avg_score ?? '—'}{s.avg_score !== null && <small className="text-xs text-muted-foreground"> / 5.0</small>}</TableCell>
                         <TableCell>{s.avg_score === null ? <span className="text-xs italic text-muted-foreground">No responses</span> : <div className="h-2 rounded bg-secondary"><div className={cn('h-2 rounded', bar(s.avg_score))} style={{ width: `${(s.avg_score / 5) * 100}%` }} /></div>}</TableCell>
-                        <TableCell className="text-right"><Button asChild size="sm" variant="outline"><a href={s.dashboard_url}>Dashboard</a></Button></TableCell>
+                        <TableCell className="text-right"><Button asChild size="sm" variant="outline"><a href={s.dashboard_url}><LayoutDashboardIcon />Dashboard</a></Button></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -85,7 +85,7 @@ export function CsHubPage() {
             <Card className="p-5">
               <div className="mb-3 flex items-center justify-between"><div><h2 className="font-semibold">Active feedback surveys</h2><p className="text-sm text-muted-foreground">Surveys currently open for customer responses</p></div></div>
               {d.active_surveys.length === 0 ? (
-                <div className="py-8 text-center"><p className="mb-3 text-sm text-muted-foreground">No active surveys currently running.</p><Button asChild size="sm"><Link to="/feedback/create/">Create Your First Survey</Link></Button></div>
+                <div className="py-8 text-center"><p className="mb-3 text-sm text-muted-foreground">No active surveys currently running.</p><Button asChild size="sm"><Link to="/feedback/create/"><PlusIcon />Create Your First Survey</Link></Button></div>
               ) : (
                 <ul className="divide-y">
                   {d.active_surveys.map((s) => (
@@ -95,8 +95,8 @@ export function CsHubPage() {
                         <div className="text-xs text-muted-foreground">Product: <b>{s.product.name}</b> · {s.response_count} response{s.response_count === 1 ? '' : 's'}</div>
                       </div>
                       <div className="flex gap-1">
-                        <Button asChild size="sm" variant="outline"><Link to={s.url}>View</Link></Button>
-                        <Button asChild size="icon-sm" variant="ghost" aria-label={`Open public link for ${s.name}`}><a href={`/feedback/respond/${s.id}/`} target="_blank" rel="noopener noreferrer"><ExternalLink /></a></Button>
+                        <Button asChild size="sm" variant="outline"><Link to={s.url}><EyeIcon />View</Link></Button>
+                        <Button asChild size="icon-sm" variant="ghost" aria-label={`Open public link for ${s.name}`}><a href={`/feedback/respond/${s.id}/`} target="_blank" rel="noopener noreferrer"><ExternalLinkIcon /></a></Button>
                       </div>
                     </li>
                   ))}

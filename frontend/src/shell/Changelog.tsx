@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
+import { HistoryIcon } from '@/components/ui/icons';
 
 type Section = { name: string; label: string; slug: string; count: number; items: string[] };
 type Release = { tag: string; date: string; title?: string; released: boolean; summary?: string; sections: Section[] };
@@ -56,7 +57,7 @@ export function Changelog({ open, onOpenChange }: { open: boolean; onOpenChange(
             </div>
             <ReleaseView r={newest} filter={filter} />
             {rest.length > 0 && !older && (
-              <Button variant="link" size="sm" className="justify-start px-0" onClick={() => setOlder(true)}>
+              <Button variant="link" size="sm" className="justify-start px-0" onClick={() => setOlder(true)}><HistoryIcon />
                 Older releases
               </Button>
             )}

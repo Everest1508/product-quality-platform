@@ -12,6 +12,7 @@ import { useRule, useRuleMeta, useRuleRefresh, useRuleScope } from './useRules';
 import type { Rule, RuleInput, RuleMeta } from './types';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ArrowLeftIcon, SaveIcon, XIcon } from '@/components/ui/icons';
 
 type FieldErrors = Record<string, string[]>;
 const NONE = 'none'; // Radix Select does not allow an empty value
@@ -90,7 +91,7 @@ function RuleForm({ rule, meta, productId }: { rule?: Rule; meta: RuleMeta; prod
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-2xl font-semibold">{rule ? 'Edit Rule' : 'New Automation Rule'}</h1><p className="text-sm text-muted-foreground">Configure trigger conditions and automated actions.</p></div>
-        <Button asChild variant="outline" size="sm"><Link to={base}>Cancel</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to={base}><XIcon />Cancel</Link></Button>
       </div>
       <Card className="space-y-4 p-5">
         <h2 className="text-sm font-medium text-muted-foreground">Rule basics</h2>
@@ -121,8 +122,8 @@ function RuleForm({ rule, meta, productId }: { rule?: Rule; meta: RuleMeta; prod
         <Label className="flex items-center gap-2 text-sm font-medium"><Switch checked={active} onCheckedChange={setActive} /> Rule is active</Label>
       </Card>
       <div className="flex justify-end gap-2">
-        <Button asChild variant="outline"><Link to={base}>Cancel</Link></Button>
-        <Button type="submit" loading={saving}>{rule ? 'Save Changes' : 'Create Rule'}</Button>
+        <Button asChild variant="outline"><Link to={base}><XIcon />Cancel</Link></Button>
+        <Button type="submit" loading={saving}><SaveIcon />{rule ? 'Save Changes' : 'Create Rule'}</Button>
       </div>
     </form>
   );
@@ -137,7 +138,7 @@ export function RuleFormPage() {
   const loading = <div className="mx-auto max-w-3xl space-y-3" data-testid="form-loading"><Skeleton className="h-8 w-48" /><Skeleton className="h-60 w-full" /></div>;
   if (meta.isError || (id !== null && rule.isError)) {
     const missing = rule.error instanceof ApiError && rule.error.status === 404;
-    return <Card className="p-8 text-center"><p className="text-sm">{missing ? 'Rule not found.' : 'Couldn’t load the form.'}</p><Link to="/automation/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to rules</Link></Card>;
+    return <Card className="p-8 text-center"><p className="text-sm">{missing ? 'Rule not found.' : 'Couldn’t load the form.'}</p><Button asChild variant="link" className="mt-3"><Link to="/automation/"><ArrowLeftIcon /> Back to rules</Link></Button></Card>;
   }
   if (!meta.data || (id !== null && !rule.data)) return loading;
   return <RuleForm key={id ?? 'new'} rule={id === null ? undefined : rule.data?.rule} meta={meta.data} productId={productId ?? (id === null ? null : rule.data?.rule.product?.id ?? null)} />;

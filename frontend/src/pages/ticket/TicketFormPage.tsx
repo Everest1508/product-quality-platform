@@ -13,6 +13,7 @@ import { saveTicket, useTicketDetail } from './useTicket';
 import type { FieldErrors, Person, TicketInput } from './types';
 import { DateTimeField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
+import { ArrowLeftIcon, SaveIcon, XIcon } from '@/components/ui/icons';
 
 const TYPES: [string, string][] = [['bug', 'Bug'], ['feature', 'Feature'], ['question', 'Question']];
 const NO_PRODUCT = 'none'; // Radix Select does not allow an empty value
@@ -95,7 +96,7 @@ function TicketForm({ mode, ticketId, productId, initial, heading, members, prod
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{heading}</h1>
-        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}>Cancel</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
       </div>
 
       <Card className="space-y-4 p-5">
@@ -133,8 +134,8 @@ function TicketForm({ mode, ticketId, productId, initial, heading, members, prod
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button asChild variant="outline"><Link to={cancelUrl}>Cancel</Link></Button>
-        <Button type="submit" loading={saving}>{mode === 'edit' ? 'Save Changes' : '+ Create Ticket'}</Button>
+        <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
+        <Button type="submit" loading={saving}><SaveIcon />{mode === 'edit' ? 'Save Changes' : '+ Create Ticket'}</Button>
       </div>
     </form>
   );
@@ -184,7 +185,7 @@ function EditTicket({ id }: { id: number }) {
     return (
       <Card className="p-8 text-center">
         <p className="text-sm">{missing ? 'Ticket not found.' : 'Couldn’t load this ticket.'}</p>
-        <Link to="/tickets/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to tickets</Link>
+        <Button asChild variant="link" className="mt-3"><Link to="/tickets/"><ArrowLeftIcon /> Back to tickets</Link></Button>
       </Card>
     );
   }

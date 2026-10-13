@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { RefreshIcon, SearchIcon, XIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -55,7 +55,7 @@ export function AuditLogPage() {
         <p className="mt-1 text-sm text-muted-foreground">Chronological system activity feed, security actions, and team audit logs.</p>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <div className="w-full max-w-64 max-sm:max-w-none"><Input type="search" aria-label="Search event titles" placeholder="Search event titles…" leftIcon={<Search />} value={text} onChange={(e) => setText(e.target.value)} /></div>
+        <div className="w-full max-w-64 max-sm:max-w-none"><Input type="search" aria-label="Search event titles" placeholder="Search event titles…" leftIcon={<SearchIcon />} value={text} onChange={(e) => setText(e.target.value)} /></div>
         <Select value={params.get('type') ?? 'all'} onValueChange={(v) => set('type', v === 'all' ? null : v)}>
           <SelectTrigger aria-label="Filter by type" className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All event types</SelectItem>{d?.event_types.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
@@ -66,11 +66,11 @@ export function AuditLogPage() {
         </Select>
         <div className="grid gap-1 text-xs"><span>From</span><DateField aria-label="From" className="w-36" value={params.get('from') ?? ''} onChange={(v) => set('from', v || null)} /></div>
         <div className="grid gap-1 text-xs"><span>To</span><DateField aria-label="To" className="w-36" value={params.get('to') ?? ''} onChange={(v) => set('to', v || null)} /></div>
-        {filtered && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setParams({})}>Clear</Button>}
+        {filtered && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setParams({})}><XIcon />Clear</Button>}
       </div>
 
       {q.isError && !d ? (
-        <Card><ErrorState title="Couldn’t load the audit log."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load the audit log."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !d ? (
         <Card className="space-y-3 p-4" data-testid="audit-loading">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : d.items.length === 0 ? (

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, RefreshIcon, SaveIcon, XIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -41,7 +41,7 @@ export function AttendancePage() {
 
   if (q.isError && !d) {
     const forbidden = q.error instanceof ApiError && q.error.status === 403;
-    return <Card className="p-6 text-center"><p className="text-sm">{forbidden ? 'You can only view your own attendance.' : 'Couldn’t load attendance.'}</p>{!forbidden && <Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button>}</Card>;
+    return <Card className="p-6 text-center"><p className="text-sm">{forbidden ? 'You can only view your own attendance.' : 'Couldn’t load attendance.'}</p>{!forbidden && <Button className="mt-3" size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button>}</Card>;
   }
   if (!d) return <div className="space-y-3" data-testid="att-loading"><Skeleton className="h-40 w-full" /><Skeleton className="h-48 w-full" /></div>;
   const m = d.month;
@@ -53,7 +53,7 @@ export function AttendancePage() {
           <h1 className="text-2xl font-semibold">{d.focus_user ? `${d.focus_user.name}’s attendance` : 'My attendance'}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{d.focus_user ? 'Read-only view of a colleague’s days.' : 'Punch the clock and review your own days.'}</p>
         </div>
-        {!d.focus_user && <Button asChild variant="outline" size="sm"><Link to="/attendance/corrections/request/">Ask for a correction</Link></Button>}
+        {!d.focus_user && <Button asChild variant="outline" size="sm"><Link to="/attendance/corrections/request/"><EditIcon />Ask for a correction</Link></Button>}
       </div>
 
       <PunchPanel p={d.panel} />
@@ -68,11 +68,11 @@ export function AttendancePage() {
       <Card className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => go(m.prev)}><ChevronLeft /></Button>
+            <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => go(m.prev)}><ChevronLeftIcon /></Button>
             <h2 className="min-w-36 text-center font-semibold">{m.label}</h2>
-            <Button variant="outline" size="icon-sm" aria-label="Next month" onClick={() => go(m.next)}><ChevronRight /></Button>
+            <Button variant="outline" size="icon-sm" aria-label="Next month" onClick={() => go(m.next)}><ChevronRightIcon /></Button>
           </div>
-          {m.current !== m.today && <Button variant="outline" size="sm" onClick={() => go(m.today)}>This month</Button>}
+          {m.current !== m.today && <Button variant="outline" size="sm" onClick={() => go(m.today)}><CalendarIcon />This month</Button>}
         </div>
         <div className="grid grid-cols-7 gap-1 text-center text-xs" role="grid" aria-label={`${m.label} at a glance`}>
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => <div key={w} className="py-1 text-muted-foreground">{w}</div>)}
@@ -99,7 +99,7 @@ export function AttendancePage() {
                     <TableCell>{r.worked || <span className="text-muted-foreground">{r.effective || r.elapsed || '—'}</span>}</TableCell>
                     <TableCell><Badge variant={variant}>{label}</Badge>{r.is_edited && <Badge className="ml-1" variant="outline">edited</Badge>}</TableCell>
                     <TableCell className="max-w-48 truncate text-muted-foreground">{r.notes}</TableCell>
-                    {d.can_edit && <TableCell className="text-right">{(r.status === 'stale' || r.status === 'open') && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${r.id}/edit/`}>{r.status === 'stale' ? 'Set check-out' : 'Edit'}</Link></Button>}</TableCell>}
+                    {d.can_edit && <TableCell className="text-right">{(r.status === 'stale' || r.status === 'open') && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${r.id}/edit/`}><SaveIcon />{r.status === 'stale' ? 'Set check-out' : 'Edit'}</Link></Button>}</TableCell>}
                   </TableRow>
                 );
               })}
@@ -117,7 +117,7 @@ export function AttendancePage() {
                 <span>{c.date_label} · <span className="text-muted-foreground">“{c.reason}”</span> · {ago(c.created_at)}</span>
                 <span className="flex items-center gap-2">
                   <CorrectionStatus c={c} />
-                  {c.status === 'pending' && <Button size="sm" variant="outline" onClick={() => write(() => api.post<{ message: string }>(`attendance/corrections/${c.id}/cancel/`))}>Cancel</Button>}
+                  {c.status === 'pending' && <Button size="sm" variant="outline" onClick={() => write(() => api.post<{ message: string }>(`attendance/corrections/${c.id}/cancel/`))}><XIcon />Cancel</Button>}
                 </span>
               </li>
             ))}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { EditIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,14 +56,14 @@ export function RulesPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{title} {data && <span className="ml-2 text-sm font-normal text-muted-foreground">{data.page.count} total</span>}</h1>
-        <Button asChild size="sm"><Link to={`${base}create/`}><Plus /> New rule</Link></Button>
+        <Button asChild size="sm"><Link to={`${base}create/`}><PlusIcon /> New rule</Link></Button>
       </div>
 
       <Segmented value={filters.active ?? ''} onValueChange={(v) => setFilters({ ...filters, active: v || undefined, page: undefined })} options={TABS.map(([v, l]) => ({ value: v, label: l }))} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-60 max-sm:max-w-none">
-          <Input type="search" aria-label="Search rules" placeholder="Search rules…" leftIcon={<Search />} value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input type="search" aria-label="Search rules" placeholder="Search rules…" leftIcon={<SearchIcon />} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <Select value={filters.sort ?? '-created'} onValueChange={(v) => setFilters({ ...filters, sort: v === '-created' ? undefined : v, page: undefined })}>
           <SelectTrigger aria-label="Sort" className="w-44"><SelectValue /></SelectTrigger>
@@ -72,7 +72,7 @@ export function RulesPage() {
       </div>
 
       {list.isError && !data ? (
-        <Card><ErrorState title="Couldn’t load rules."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load rules."><Button size="sm" variant="outline" onClick={() => list.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="rules-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
@@ -94,7 +94,7 @@ export function RulesPage() {
                     </span>
                   </TableCell>
                   <TableCell>{r.trigger_count}</TableCell>
-                  <TableCell><div className="flex justify-end gap-1.5"><Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}>Edit</Link></Button><Button size="sm" variant="destructive" onClick={() => setConfirm(r)}>Delete</Button></div></TableCell>
+                  <TableCell><div className="flex justify-end gap-1.5"><Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}><EditIcon />Edit</Link></Button><Button size="sm" variant="destructive" onClick={() => setConfirm(r)}><TrashIcon />Delete</Button></div></TableCell>
                 </TableRow>
               ))}
             </TableBody>

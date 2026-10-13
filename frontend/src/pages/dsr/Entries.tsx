@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { X } from 'lucide-react';
+import { PlusIcon, XIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,7 @@ function Row({ e, sheet, act, onDelete }: { e: DsrEntry; sheet: DsrSheet; act: A
       <TableCell className="p-2">
         {edit ? <Choice label="Status" value={e.status} options={sheet.statuses} onChange={(v) => save({ status: v })} className="h-8 w-32 text-xs" /> : <Badge variant={e.status === 'completed' ? 'success' : e.status === 'in_progress' ? 'info' : 'danger'}>{e.status_label}</Badge>}
       </TableCell>
-      <TableCell className="p-2 text-right">{edit && <Button variant="ghost" size="icon-sm" aria-label="Delete entry" onClick={() => onDelete(e)}><X /></Button>}</TableCell>
+      <TableCell className="p-2 text-right">{edit && <Button variant="ghost" size="icon-sm" aria-label="Delete entry" onClick={() => onDelete(e)}><XIcon /></Button>}</TableCell>
     </TableRow>
   );
 }
@@ -131,7 +131,7 @@ export function AddForm({ sheet, act }: { sheet: DsrSheet; act: Actions }) {
       <div className="grid gap-1"><Label htmlFor="dsr-time" className="text-xs font-medium">Time</Label><Input id="dsr-time" placeholder="1h 30m" autoComplete="off" value={hours} onChange={(e) => setHours(e.target.value)} />{err('hours')}</div>
       <div className="grid gap-1"><span className="text-xs font-medium">Status</span><Choice label="Status" value={status} options={sheet.statuses} onChange={setStatus} className="h-9" />{err('status')}</div>
       <div className="grid gap-1 sm:col-span-5"><Label htmlFor="dsr-notes" className="text-xs font-medium">Note</Label><Input id="dsr-notes" placeholder="Optional note" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
-      <div className="flex items-end"><Button type="submit" className="w-full" loading={act.busy}>Add entry</Button></div>
+      <div className="flex items-end"><Button type="submit" className="w-full" loading={act.busy}><PlusIcon />Add entry</Button></div>
     </form>
   );
 }
@@ -147,7 +147,7 @@ export function Suggestions({ sheet, act }: { sheet: DsrSheet; act: Actions }) {
           <li key={s.number} className="flex flex-wrap items-center gap-3 py-2">
             <div className="min-w-48 flex-1"><div className="text-sm font-medium">{s.key} {s.title}</div><div className="text-xs text-muted-foreground">{s.did}{s.product ? ` · ${s.product}` : ''}</div></div>
             <Input aria-label={`Time for ${s.key}`} className="h-8 w-24" value={hours[s.number] ?? s.hours} onChange={(e) => setHours((h) => ({ ...h, [s.number]: e.target.value }))} />
-            <Button size="sm" disabled={act.busy} onClick={() => act.addSuggested(s.number, hours[s.number] ?? s.hours)}>Add</Button>
+            <Button size="sm" disabled={act.busy} onClick={() => act.addSuggested(s.number, hours[s.number] ?? s.hours)}><PlusIcon />Add</Button>
           </li>
         ))}
       </ul>

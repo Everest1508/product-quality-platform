@@ -1,4 +1,4 @@
-import { Bell as BellIcon } from 'lucide-react';
+import { BellIcon, CheckIcon } from '@/components/ui/icons';
 import { Link } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useBell, usePush } from '@/lib/notifications';
@@ -35,7 +35,7 @@ export function Bell() {
         <header className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-sm font-semibold">Notifications</h2>
           {unread > 0 && (
-            <Button variant="link" size="xs" className="h-auto p-0" onClick={markAllRead}>
+            <Button variant="link" size="xs" className="h-auto p-0" onClick={markAllRead}><CheckIcon />
               Mark all read
             </Button>
           )}
@@ -61,7 +61,7 @@ export function Bell() {
         <footer className="flex items-center justify-between border-t px-4 py-2 text-xs">
           <Link to={urls.notifications} className="text-primary hover:underline">See all</Link>
           {push.supported && !push.on && (
-            <Button variant="link" size="xs" className="h-auto p-0" onClick={push.enable}>Turn on alerts</Button>
+            <Button variant="link" size="xs" className="h-auto p-0" onClick={push.enable}><BellIcon />Turn on alerts</Button>
           )}
         </footer>
       </PopoverContent>

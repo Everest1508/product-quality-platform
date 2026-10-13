@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Copy, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeftIcon, BanIcon, CopyIcon, EditIcon, PlusIcon, RotateCwIcon, TrashIcon, UserPlusIcon, XIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,9 +44,9 @@ function NewKeyBanner({ raw, rotated, onDismiss }: { raw: string; rotated: boole
           variant="outline"
           onClick={() => navigator.clipboard.writeText(raw).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}
         >
-          <Copy /> {copied ? 'Copied!' : 'Copy'}
+          <CopyIcon /> {copied ? 'Copied!' : 'Copy'}
         </Button>
-        <Button size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={onDismiss}><X /></Button>
+        <Button size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={onDismiss}><XIcon /></Button>
       </div>
     </div>
   );
@@ -96,8 +96,8 @@ function KeysCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof u
                   <SelectTrigger aria-label={`What happens to the old key ${k.name}`} className="h-8 w-60 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>{GRACE.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button size="sm" variant="outline" disabled={act.busy === 'key'} onClick={() => setRotate(k)}>Rotate</Button>
-                <Button size="sm" variant="destructive" disabled={act.busy === 'key'} onClick={() => setRevoke(k)}>Revoke</Button>
+                <Button size="sm" variant="outline" disabled={act.busy === 'key'} onClick={() => setRotate(k)}><RotateCwIcon />Rotate</Button>
+                <Button size="sm" variant="destructive" disabled={act.busy === 'key'} onClick={() => setRevoke(k)}><BanIcon />Revoke</Button>
               </div>
             )}
           </li>
@@ -107,7 +107,7 @@ function KeysCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof u
       {data.can_manage_keys ? (
         <form onSubmit={create} className="flex gap-2 border-t pt-3">
           <Input aria-label="Key name" placeholder="Key name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Button type="submit" loading={act.busy === 'key'}>Generate</Button>
+          <Button type="submit" loading={act.busy === 'key'}><PlusIcon />Generate</Button>
         </form>
       ) : (
         <p className="border-t pt-3 text-sm text-muted-foreground">Owners, admins and developers can create and rotate keys.</p>
@@ -155,7 +155,7 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
     <Card className="space-y-3 p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Versions</h2>
-        <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus /> Add</Button>
+        <Button size="sm" variant="outline" onClick={() => setAdding(true)}><PlusIcon /> Add</Button>
       </div>
       {data.versions.length === 0 && <p className="py-3 text-center text-sm text-muted-foreground">No versions yet.</p>}
       <ul className="divide-y">
@@ -164,7 +164,7 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
             <span className="flex items-center gap-2 text-sm font-medium">{v.version_string}{v.is_current && <Badge variant="success">Current</Badge>}</span>
             <span className="flex items-center gap-2">
               {v.released_at && <span className="text-xs text-muted-foreground">{shortDate(v.released_at)}</span>}
-              <Button size="icon-sm" variant="ghost" aria-label={`Delete version ${v.version_string}`} onClick={() => act.deleteVersion(v.id)}><X /></Button>
+              <Button size="icon-sm" variant="ghost" aria-label={`Delete version ${v.version_string}`} onClick={() => act.deleteVersion(v.id)}><XIcon /></Button>
             </span>
           </li>
         ))}
@@ -173,8 +173,8 @@ function VersionsCard({ data, act }: { data: ProductDetail; act: ReturnType<type
         <form onSubmit={submit} className="flex flex-wrap items-center gap-2 border-t pt-3">
           <Input aria-label="Version" className="min-w-32 flex-1" autoFocus placeholder="e.g. 1.2.0" value={text} onChange={(e) => setText(e.target.value)} />
           <Label className="flex items-center gap-1.5 text-xs"><Checkbox checked={current} onCheckedChange={(c) => setCurrent(c === true)} /> Current</Label>
-          <Button type="submit" loading={act.busy === 'version'}>Add</Button>
-          <Button type="button" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+          <Button type="submit" loading={act.busy === 'version'}><PlusIcon />Add</Button>
+          <Button type="button" variant="outline" onClick={() => setAdding(false)}><XIcon />Cancel</Button>
         </form>
       )}
     </Card>
@@ -198,9 +198,9 @@ function AccessCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof
               <div className="min-w-0"><div className="truncate text-sm font-medium">{m.name}</div><div className="truncate text-xs text-muted-foreground">{m.email}</div></div>
             </div>
             {m.allocated ? (
-              m.is_you ? <Badge variant="success">You</Badge> : <Button size="sm" variant="ghost" className="text-destructive" disabled={act.busy === 'access'} onClick={() => act.unallocate(m.id)}>Remove</Button>
+              m.is_you ? <Badge variant="success">You</Badge> : <Button size="sm" variant="ghost" className="text-destructive" disabled={act.busy === 'access'} onClick={() => act.unallocate(m.id)}><TrashIcon />Remove</Button>
             ) : (
-              <Button size="sm" variant="outline" disabled={act.busy === 'access'} onClick={() => act.allocate(m.id)}>Allocate</Button>
+              <Button size="sm" variant="outline" disabled={act.busy === 'access'} onClick={() => act.allocate(m.id)}><UserPlusIcon />Allocate</Button>
             )}
           </li>
         ))}
@@ -218,7 +218,7 @@ export function ProductDetailPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-sm">{missing ? 'Product not found.' : 'Couldn’t load this product.'}</p>
-        <Link to="/products/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to products</Link>
+        <Button asChild variant="link" className="mt-3"><Link to="/products/"><ArrowLeftIcon /> Back to products</Link></Button>
       </Card>
     );
   }
@@ -252,8 +252,8 @@ function Detail({ data }: { data: ProductDetail }) {
           </div>
           {data.is_admin && (
             <div className="flex gap-1">
-              <Button asChild variant="ghost" size="icon" aria-label="Edit"><Link to={`/products/${p.id}/edit/`}><Pencil /></Link></Button>
-              <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive" onClick={() => setConfirmDelete(true)}><Trash2 /></Button>
+              <Button asChild variant="ghost" size="icon" aria-label="Edit"><Link to={`/products/${p.id}/edit/`}><EditIcon /></Link></Button>
+              <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive" onClick={() => setConfirmDelete(true)}><TrashIcon /></Button>
             </div>
           )}
         </div>
@@ -281,7 +281,7 @@ function Detail({ data }: { data: ProductDetail }) {
         <Card className="space-y-3 p-5">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Discord webhook</h3>
-            {data.is_admin && <Button asChild size="sm" variant="outline"><Link to={`/products/${p.id}/edit/`}>{p.webhook_configured ? 'Edit' : 'Add'}</Link></Button>}
+            {data.is_admin && <Button asChild size="sm" variant="outline"><Link to={`/products/${p.id}/edit/`}><PlusIcon />{p.webhook_configured ? 'Edit' : 'Add'}</Link></Button>}
           </div>
           {p.webhook_configured ? (
             <>

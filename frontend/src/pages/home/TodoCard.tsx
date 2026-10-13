@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { X } from 'lucide-react';
+import { PlusIcon, XIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -42,7 +42,7 @@ export function TodoCard() {
           <SelectContent>{(d?.priorities ?? [['1', 'Low'], ['2', 'Medium'], ['3', 'High']]).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
         <DateField aria-label="Due date (optional)" className="w-40" value={due} onChange={setDue} />
-        <Button type="submit" disabled={act.busy}>Add</Button>
+        <Button type="submit" disabled={act.busy}><PlusIcon />Add</Button>
       </form>
       {!d ? (
         <Skeleton className="h-20 w-full" />
@@ -53,7 +53,7 @@ export function TodoCard() {
               <Progress value={(d.done / d.total) * 100} tone="success" />
               <p className="text-xs text-muted-foreground">
                 {d.done} of {d.total} done
-                {d.done > 0 && <> · <Button variant="link" size="xs" className="h-auto p-0" onClick={() => act.clearDone()}>Clear done</Button></>}
+                {d.done > 0 && <> · <Button variant="link" size="xs" className="h-auto p-0" onClick={() => act.clearDone()}><XIcon />Clear done</Button></>}
               </p>
             </div>
           )}
@@ -64,7 +64,7 @@ export function TodoCard() {
                 <span className="min-w-0 flex-1 break-words">{t.text}</span>
                 <Badge variant={PRIORITY[t.priority] ?? 'default'}>{t.priority_label}</Badge>
                 {t.due && <Badge variant={t.late ? 'danger' : t.today ? 'warning' : 'outline'}>{t.late ? `Overdue · ${day(t.due)}` : t.today ? 'Today' : day(t.due)}</Badge>}
-                <Button variant="ghost" size="icon-sm" aria-label="Delete task" className="size-6 text-muted-foreground hover:text-destructive" onClick={() => act.remove(t.id)}><X className="size-3.5" /></Button>
+                <Button variant="ghost" size="icon-sm" aria-label="Delete task" className="size-6 text-muted-foreground hover:text-destructive" onClick={() => act.remove(t.id)}><XIcon className="size-3.5" /></Button>
               </li>
             ))}
             {d.todos.length === 0 && <li className="py-2 text-sm text-muted-foreground">Nothing here yet. Add the first thing you want to get done today.</li>}

@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
+import { RefreshIcon } from '@/components/ui/icons';
 
 function useMonthParam() {
   const [params, setParams] = useSearchParams();
@@ -39,7 +40,7 @@ export function TimesheetPage() {
         <PageHeader title="Timesheet" sub="Per-month totals for every employee." />
         {d && <MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} />}
       </div>
-      {q.isError && !d ? <Card><ErrorState title="Couldn’t load the timesheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+      {q.isError && !d ? <Card><ErrorState title="Couldn’t load the timesheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
         : !d ? <Skeleton className="h-64 w-full" data-testid="ts-loading" />
         : (
           <Card className="overflow-x-auto p-0">

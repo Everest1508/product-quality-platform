@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeaveQuery } from './useLeave';
 import type { CalEntry, Calendar } from './types';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/ui/icons';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const chip = (e: CalEntry) => `${e.name}${e.half ? ' (half day)' : ''}${e.policy ? ` · ${e.policy}` : ''}${e.status === 'pending' ? ' · waiting' : ''}`;
@@ -22,10 +23,10 @@ export function CalendarPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Leave calendar</h1>
         <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" aria-label="Previous month" onClick={() => setMonth(d.prev)}>‹</Button>
+          <Button variant="outline" size="sm" aria-label="Previous month" onClick={() => setMonth(d.prev)}><ChevronLeftIcon /></Button>
           <h2 className="min-w-36 text-center font-semibold">{d.label}</h2>
-          <Button variant="outline" size="sm" aria-label="Next month" onClick={() => setMonth(d.next)}>›</Button>
-          {!d.is_current && <Button variant="outline" size="sm" className="ml-2" onClick={() => setMonth('')}>This month</Button>}
+          <Button variant="outline" size="sm" aria-label="Next month" onClick={() => setMonth(d.next)}><ChevronRightIcon /></Button>
+          {!d.is_current && <Button variant="outline" size="sm" className="ml-2" onClick={() => setMonth('')}><CalendarIcon />This month</Button>}
         </div>
       </div>
       <Card className="hidden overflow-x-auto p-0 md:block">

@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon } from '@/components/ui/icons';
 import { api } from '@/lib/api';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { toast } from '@/lib/toast';
@@ -28,7 +28,7 @@ export function CompanySwitcher() {
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1 truncate">{b.company.name}</span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDownIcon className="size-3.5 text-muted-foreground" />
           </>
         )}
       </DropdownMenuTrigger>
@@ -37,7 +37,7 @@ export function CompanySwitcher() {
           <DropdownMenuItem key={w.company_id} disabled={w.current} onSelect={() => !w.current && switchTo(w.company_id)}>
             <span className="min-w-0 flex-1 truncate">{w.name}</span>
             <span className="text-xs text-muted-foreground">{w.role_label}</span>
-            {w.current && <Check className="size-4" />}
+            {w.current && <CheckIcon className="size-4" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

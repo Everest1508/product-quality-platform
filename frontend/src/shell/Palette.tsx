@@ -4,6 +4,7 @@ import { clearRecent, highlight, loadRecent, rememberSearch, useSearch, type Sea
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { Button } from '@/components/ui/button';
+import { XIcon } from '@/components/ui/icons';
 
 function Marked({ text, query }: { text: string; query: string }) {
   return (
@@ -42,7 +43,7 @@ export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange(op
         {!trimmed && recent.length > 0 && (
           <CommandGroup heading="Recent searches">
             {recent.map((r) => <CommandItem key={r} value={`recent:${r}`} onSelect={() => setQuery(r)}>{r}</CommandItem>)}
-            <Button variant="link" size="xs" className="text-muted-foreground" onClick={() => (clearRecent(), setRecent([]))}>Clear</Button>
+            <Button variant="link" size="xs" className="text-muted-foreground" onClick={() => (clearRecent(), setRecent([]))}><XIcon />Clear</Button>
           </CommandGroup>
         )}
         {groups.map((g) => (

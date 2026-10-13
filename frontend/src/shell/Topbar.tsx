@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { SearchIcon } from '@/components/ui/icons';
 import { useLocation } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useProductNav } from '@/lib/useProductNav';
@@ -20,7 +20,7 @@ export function Topbar({ onOpenPalette }: Props) {
       <SidebarTrigger />
       <span className="truncate text-sm font-semibold">{productNav?.name ?? b.company.name}</span>
       <Button variant="outline" onClick={onOpenPalette} aria-label="Search" className="min-w-0 flex-1 justify-start gap-2 bg-muted px-3 font-normal text-muted-foreground md:max-w-md">
-        <Search className="size-4 shrink-0" />
+        <SearchIcon className="size-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate text-left max-sm:hidden">Search tickets, errors, products</span>
         <Kbd className="max-sm:hidden">Ctrl K</Kbd>
       </Button>

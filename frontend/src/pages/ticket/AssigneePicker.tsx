@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDownIcon, XIcon } from '@/components/ui/icons';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -29,7 +29,7 @@ export function AssigneePicker({ people, value, onChange, disabled }: Props) {
               <Badge key={p.id} variant="info">{p.name}</Badge>
             ))}
           </span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+          <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-2">
@@ -49,7 +49,7 @@ export function AssigneePicker({ people, value, onChange, disabled }: Props) {
           {shown.length === 0 && <li className="px-2 py-3 text-center text-sm text-muted-foreground">Nobody found.</li>}
         </ul>
         <div className="mt-1 flex justify-end border-t pt-2">
-          <Button type="button" variant="link" size="xs" className="h-auto p-0" onClick={() => onChange([])}>Clear</Button>
+          <Button type="button" variant="link" size="xs" className="h-auto p-0" onClick={() => onChange([])}><XIcon />Clear</Button>
         </div>
       </PopoverContent>
     </Popover>

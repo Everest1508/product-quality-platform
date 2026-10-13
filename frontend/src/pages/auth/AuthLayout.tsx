@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { Activity, Clock, Search, Ticket } from 'lucide-react';
+import { ActivityIcon, ClockIcon, SearchIcon, TicketIcon } from '@/components/ui/icons';
 
 const POINTS = [
-  { icon: Search, title: 'Errors', text: 'Grouped by fingerprint, ranked by volume.' },
-  { icon: Ticket, title: 'Tickets', text: 'Raised by hand or by rule, tied to the product.' },
-  { icon: Clock, title: 'Time', text: 'Attendance, leave and payroll from the same records.' },
+  { icon: SearchIcon, title: 'Errors', text: 'Grouped by fingerprint, ranked by volume.' },
+  { icon: TicketIcon, title: 'Tickets', text: 'Raised by hand or by rule, tied to the product.' },
+  { icon: ClockIcon, title: 'Time', text: 'Attendance, leave and payroll from the same records.' },
 ];
 
 // The pages a person sees before there is a workspace to show: sign-in, first-run setup, the desktop app's sign-in.
@@ -14,7 +14,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
       <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border bg-card shadow-lg md:grid-cols-2">
         <aside className="hidden flex-col justify-between bg-neutral-900 p-8 text-neutral-100 md:flex">
           <div>
-            <div className="flex items-center gap-2 font-semibold"><Activity className="size-5" /> PQ Platform</div>
+            <div className="flex items-center gap-2 font-semibold"><ActivityIcon className="size-5" /> PQ Platform</div>
             <p className="mt-6 text-lg font-medium leading-snug">Errors, tickets, feedback, attendance and payroll — kept per product.</p>
           </div>
           <ul className="space-y-4 text-sm">

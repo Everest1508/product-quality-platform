@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { EditIcon, PlusIcon, RefreshIcon, SearchIcon, TrashIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ export function TeamPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Team {d && <span className="ml-2 text-sm font-normal text-muted-foreground">{d.page.count} member{d.page.count === 1 ? '' : 's'}</span>}</h1>
-        {d?.can_manage && <Button size="sm" onClick={() => setAdding(true)}><Plus /> Add member</Button>}
+        {d?.can_manage && <Button size="sm" onClick={() => setAdding(true)}><PlusIcon /> Add member</Button>}
       </div>
 
       {d && (
@@ -77,7 +77,7 @@ export function TeamPage() {
       <Segmented className="flex-wrap" value={role ?? ''} onValueChange={(v) => set('role', v || null)} options={[['', 'All'], ...(d?.roles ?? [])].map(([v, l]) => ({ value: v, label: l }))} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="w-full max-w-64 max-sm:max-w-none"><Input type="search" aria-label="Search members" placeholder="Search members…" leftIcon={<Search />} value={text} onChange={(e) => setText(e.target.value)} /></div>
+        <div className="w-full max-w-64 max-sm:max-w-none"><Input type="search" aria-label="Search members" placeholder="Search members…" leftIcon={<SearchIcon />} value={text} onChange={(e) => setText(e.target.value)} /></div>
         <Select value={params.get('sort') ?? '-role'} onValueChange={(v) => set('sort', v === '-role' ? null : v)}>
           <SelectTrigger aria-label="Sort" className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>{SORTS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
@@ -85,7 +85,7 @@ export function TeamPage() {
       </div>
 
       {q.isError && !d ? (
-        <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !d ? (
         <Card className="space-y-3 p-4" data-testid="team-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</Card>
       ) : d.items.length === 0 ? (
@@ -110,8 +110,8 @@ export function TeamPage() {
                   <TableCell className="whitespace-nowrap text-muted-foreground">{shortDate(m.joined)}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1.5">
-                      {m.can_edit && <Button size="sm" variant="outline" onClick={() => setEditing(m)}>Edit</Button>}
-                      {m.can_remove && <Button size="sm" variant="destructive" onClick={() => setRemoving(m)}>Remove</Button>}
+                      {m.can_edit && <Button size="sm" variant="outline" onClick={() => setEditing(m)}><EditIcon />Edit</Button>}
+                      {m.can_remove && <Button size="sm" variant="destructive" onClick={() => setRemoving(m)}><TrashIcon />Remove</Button>}
                     </div>
                   </TableCell>
                 </TableRow>

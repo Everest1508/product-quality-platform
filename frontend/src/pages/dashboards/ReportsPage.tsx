@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, MinusIcon, PlusIcon, RefreshIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -68,7 +68,7 @@ export function ReportsPage() {
         <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); if (from && to) go(from, to); }}>
           <div className="grid gap-1 text-xs font-medium"><span>From</span><DateField aria-label="From" className="w-40" value={from} onChange={setFrom} /></div>
           <div className="grid gap-1 text-xs font-medium"><span>To</span><DateField aria-label="To" className="w-40" value={to} onChange={setTo} /></div>
-          <Button type="submit" size="sm">Generate report</Button>
+          <Button type="submit" size="sm"><PlusIcon />Generate report</Button>
         </form>
         <Segmented
           className="flex-wrap"
@@ -79,7 +79,7 @@ export function ReportsPage() {
       </div>
 
       {q.isError && !d ? (
-        <Card><ErrorState title="Couldn’t load the report."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load the report."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !d ? (
         <div className="space-y-3" data-testid="report-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-56 w-full" /></div>
       ) : (
@@ -91,7 +91,7 @@ export function ReportsPage() {
                 <div className="text-xs text-muted-foreground">{k.label}</div>
                 <div className={cn('text-2xl font-semibold', TONE[k.tone])}>{k.value}</div>
                 <div className={cn('flex items-center gap-1 text-xs', k.dir === 'up' ? 'text-success' : k.dir === 'down' ? 'text-destructive' : 'text-muted-foreground')}>
-                  {k.dir === 'up' ? <ArrowUp className="size-3" /> : k.dir === 'down' ? <ArrowDown className="size-3" /> : <Minus className="size-3" />}
+                  {k.dir === 'up' ? <ArrowUpIcon className="size-3" /> : k.dir === 'down' ? <ArrowDownIcon className="size-3" /> : <MinusIcon className="size-3" />}
                   {k.pct !== null ? `${k.pct}%` : k.dir === 'up' ? 'new' : 'no change'}
                   <small className="text-muted-foreground">vs {k.before} before</small>
                 </div>

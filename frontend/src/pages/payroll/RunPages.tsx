@@ -12,6 +12,7 @@ import type { Preview, RunDetail, RunList } from './types';
 import { Table, TableBody, TableCell, TableFooter, TableHeader, TableRow } from '@/components/ui/table';
 import { StatCard } from '@/components/ui/stat-card';
 import { DateField } from '@/components/ui/date-field';
+import { EyeIcon, PlusIcon, RefreshIcon, UnlockIcon, WalletIcon } from '@/components/ui/icons';
 
 const useTitle = (t: string) => useEffect(() => { document.title = `${t} — PQ Platform`; }, [t]);
 
@@ -23,8 +24,8 @@ export function RunListPage() {
   return (
     <div className="space-y-4">
       <PayHeader title="Payroll" sub="A pay cycle runs from the 27th of each month to the 26th of the next." actions={<>
-        <Button asChild variant="outline" size="sm"><Link to="/payroll/profiles/">Salaries</Link></Button>
-        <Button asChild size="sm"><Link to="/payroll/preview/">{d?.has_current_run ? 'Current cycle' : 'Preview current cycle'}</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to="/payroll/profiles/"><WalletIcon />Salaries</Link></Button>
+        <Button asChild size="sm"><Link to="/payroll/preview/"><EyeIcon />{d?.has_current_run ? 'Current cycle' : 'Preview current cycle'}</Link></Button>
       </>} />
       {!d ? <Skeleton className="h-40 w-full" data-testid="runs-loading" /> : (
         <Card className="overflow-x-auto p-0">
@@ -36,7 +37,7 @@ export function RunListPage() {
                 <TableRow key={r.id}>
                   <TableCell>{r.label}</TableCell><Num>{r.working_days}</Num><Num>{r.payslips}</Num><Num>{r.total_deduction}</Num><Num strong>{r.total_gross}</Num>
                   <TableCell><LockBadge locked={r.is_locked} /></TableCell>
-                  <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/runs/${r.id}/`}>View</Link></Button></TableCell>
+                  <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/runs/${r.id}/`}><EyeIcon />View</Link></Button></TableCell>
                 </TableRow>
               ))}</TableBody>
             </Table>
@@ -70,7 +71,7 @@ export function PreviewPage() {
       <PayHeader title="Cycle preview" sub={d && <>{day(d.start)} → {day(d.end)} · {d.working_days} working days after weekends and holidays. Nothing is saved until you generate.</>} />
       <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); setParams(pick ? { anchor: pick } : {}); }}>
         <div className="grid gap-1 text-sm text-muted-foreground"><span>Any date in the cycle</span><DateField aria-label="Any date in the cycle" value={pick} onChange={setPick} /></div>
-        <Button type="submit" variant="outline">Show cycle</Button>
+        <Button type="submit" variant="outline"><EyeIcon />Show cycle</Button>
       </form>
       {!d ? <Skeleton className="h-40 w-full" data-testid="preview-loading" /> : (
         <>
@@ -90,7 +91,7 @@ export function PreviewPage() {
               </Table>
             )}
           </Card>
-          {d.rows.length > 0 && <div className="flex items-center gap-3"><Button onClick={generate} loading={busy}>Generate payslips for this cycle</Button><span className="text-sm text-muted-foreground">This snapshots the numbers above.</span></div>}
+          {d.rows.length > 0 && <div className="flex items-center gap-3"><Button onClick={generate} loading={busy}><PlusIcon />Generate payslips for this cycle</Button><span className="text-sm text-muted-foreground">This snapshots the numbers above.</span></div>}
         </>
       )}
     </div>
@@ -115,8 +116,8 @@ export function RunDetailPage() {
   return (
     <div className="space-y-4">
       <PayHeader title={d.label} sub={<>{d.working_days} working days <LockBadge locked={d.is_locked} /></>} actions={<>
-        <Button asChild variant="outline" size="sm"><Link to={`/payroll/preview/?anchor=${d.start}`}>Re-preview</Link></Button>
-        <Button variant="outline" size="sm" disabled={busy} onClick={lock}>{d.is_locked ? 'Unlock' : 'Lock'}</Button>
+        <Button asChild variant="outline" size="sm"><Link to={`/payroll/preview/?anchor=${d.start}`}><RefreshIcon />Re-preview</Link></Button>
+        <Button variant="outline" size="sm" disabled={busy} onClick={lock}><UnlockIcon />{d.is_locked ? 'Unlock' : 'Lock'}</Button>
       </>} />
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard value={d.total_payable} label="Total payable days" />
@@ -131,7 +132,7 @@ export function RunDetailPage() {
               <TableRow key={p.id}>
                 <TableCell><Who p={p.person} /></TableCell><Num>{money(p.currency, p.daily_rate)}</Num><Num>{p.working_days}</Num><Num>{p.paid_leave_days}</Num><Num>{p.unpaid_leave_days}</Num><Num strong>{p.payable_days}</Num>
                 <Num>{Number(p.deduction) ? `−${p.deduction}` : '—'}</Num><Num strong>{money(p.currency, p.gross)}</Num>
-                <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/payslips/${p.id}/`}>Payslip</Link></Button></TableCell>
+                <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/payslips/${p.id}/`}><WalletIcon />Payslip</Link></Button></TableCell>
               </TableRow>
             ))}</TableBody>
           </Table>

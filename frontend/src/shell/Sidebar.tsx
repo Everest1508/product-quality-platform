@@ -1,4 +1,4 @@
-import { Download, Sparkles } from 'lucide-react';
+import { DownloadIcon, SparkleIcon } from '@/components/ui/icons';
 import { useLocation } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useInstallPrompt } from '@/lib/pwa';
@@ -58,8 +58,8 @@ export function Sidebar({ onOpenChangelog }: Props) {
       </SidebarContent>
       <SidebarFooter>
         <div className="grid gap-0.5">
-          <SidebarItem icon={<Sparkles />} label={`What's new`} badge={`v${b.version}`} onClick={onOpenChangelog} />
-          {pwa.available && <SidebarItem icon={<Download />} label="Install app" onClick={pwa.install} />}
+          <SidebarItem icon={<SparkleIcon />} label={`What's new`} badge={`v${b.version}`} onClick={onOpenChangelog} />
+          {pwa.available && <SidebarItem icon={<DownloadIcon />} label="Install app" onClick={pwa.install} />}
         </div>
       </SidebarFooter>
     </FrameSidebar>

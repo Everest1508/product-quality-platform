@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as M from '@radix-ui/react-dropdown-menu';
-import { Check as CheckIcon } from 'lucide-react';
+import { CheckIcon } from './icons';
 import { cn } from '@/lib/utils';
 
 export const DropdownMenu = M.Root;

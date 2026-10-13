@@ -1,4 +1,4 @@
-import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { cn } from '@/lib/utils';
 
 function pages(page: number, total: number): (number | '…')[] {

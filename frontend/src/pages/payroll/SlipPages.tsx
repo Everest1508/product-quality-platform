@@ -11,6 +11,7 @@ import type { MySlips, Slip } from './types';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert } from '@/components/ui/alert';
 import { DescriptionList } from '@/components/ui/description-list';
+import { ArrowLeftIcon, EyeIcon, PrinterIcon } from '@/components/ui/icons';
 
 const LateList = ({ p, title }: { p: Slip; title: string }) => (
   <Card className="max-w-xl space-y-2 p-5">
@@ -77,8 +78,8 @@ export function PayslipPage({ mine = false }: { mine?: boolean }) {
   return (
     <div className="space-y-4">
       <PayHeader admin={!mine} title={mine ? `Payslip — ${p.run.label}` : `Payslip — ${p.person.name}`} sub={<>{day(p.run.start)} → {day(p.run.end)} {p.run.is_locked && <LockBadge locked />}</>} actions={<>
-        <Button asChild variant="outline" size="sm"><Link to={mine ? '/payroll/me/' : `/payroll/runs/${p.run.id}/`}>{mine ? 'All my payslips' : 'Back to run'}</Link></Button>
-        <Button variant="outline" size="sm" onClick={() => window.print()}>Print</Button>
+        <Button asChild variant="outline" size="sm"><Link to={mine ? '/payroll/me/' : `/payroll/runs/${p.run.id}/`}><ArrowLeftIcon />{mine ? 'All my payslips' : 'Back to run'}</Link></Button>
+        <Button variant="outline" size="sm" onClick={() => window.print()}><PrinterIcon />Print</Button>
       </>} />
       <SlipBody p={p} mine={mine} />
       {mine && <Note><span>Net pay is your <b>payable days × day rate</b>, less any late-arrival penalties. Unpaid leave and a half day lost to lateness each reduce your payable days.</span><br /><span>If this looks wrong, ask an admin — a payslip is a snapshot, so fixing the underlying record and regenerating an <b>open</b> run is what changes it.</span></Note>}
@@ -107,7 +108,7 @@ export function MyPayslipsPage() {
                   <TableRow key={p.id}>
                     <TableCell><b>{p.run.label}</b> {p.run.is_locked && <Badge>locked</Badge>}</TableCell><Num>{p.daily_rate}</Num><Num>{p.paid_leave_days}</Num>
                     <Num>{Number(p.unpaid_leave_days) ? <Badge variant="danger">{p.unpaid_leave_days}</Badge> : '0'}</Num><Num>{Number(p.deduction) ? `−${p.deduction}` : '—'}</Num><Num strong>{money(p.currency, p.gross)}</Num>
-                    <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/me/${p.id}/`}>View</Link></Button></TableCell>
+                    <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/me/${p.id}/`}><EyeIcon />View</Link></Button></TableCell>
                   </TableRow>
                 ))}</TableBody>
               </Table>

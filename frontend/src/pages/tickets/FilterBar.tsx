@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Search } from 'lucide-react';
+import { SearchIcon, XIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -72,7 +72,7 @@ export function FilterBar({ filters, onChange, meta, showStatus, showProduct, vi
           type="search"
           aria-label="Search tickets"
           placeholder="Search tickets…"
-          leftIcon={<Search />}
+          leftIcon={<SearchIcon />}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -96,7 +96,7 @@ export function FilterBar({ filters, onChange, meta, showStatus, showProduct, vi
       </Label>
       <span className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
         <Choice label="Sort tickets" value={filters.sort ?? (view === 'board' ? '-priority' : '-created')} options={SORTS} onChange={set('sort')} />
-        <Button variant="ghost" size="sm" onClick={() => onChange({})}>Clear</Button>
+        <Button variant="ghost" size="sm" onClick={() => onChange({})}><XIcon />Clear</Button>
       </span>
     </div>
   );

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { usePublicSurvey } from './useFeedback';
 import { Label } from '@/components/ui/label';
 import { Segmented } from '@/components/ui/segmented';
+import { SendIcon } from '@/components/ui/icons';
 
 const QUESTION: Record<string, string> = {
   nps: 'How likely are you to recommend us to a friend?',
@@ -90,7 +91,7 @@ export function PublicSurveyPage() {
           </div>
         </div>
         {errors.form?.map((m) => <p key={m} className="text-sm text-destructive">{m}</p>)}
-        <Button type="submit" className="w-full" loading={saving}>Submit Response</Button>
+        <Button type="submit" className="w-full" loading={saving}><SendIcon />Submit Response</Button>
       </form>
     </Card>,
   );

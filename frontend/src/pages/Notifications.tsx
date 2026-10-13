@@ -11,6 +11,7 @@ import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { BellIcon, CheckIcon, InboxIcon, RefreshIcon } from '@/components/ui/icons';
 
 function Row({ n }: { n: Notice }) {
   return (
@@ -72,11 +73,12 @@ export function Notifications() {
         <div className="flex items-center gap-2">
           {(['all', 'unread'] as const).map((f) => (
             <Button key={f} size="sm" variant={filter === f ? 'primary' : 'outline'} onClick={() => setFilter(f)}>
+              {f === 'all' ? <InboxIcon /> : <BellIcon />}
               {f === 'all' ? 'All' : 'Unread'}
             </Button>
           ))}
           {unread > 0 && (
-            <Button size="sm" variant="outline" loading={readAll.isPending} onClick={() => readAll.mutate()}>
+            <Button size="sm" variant="outline" loading={readAll.isPending} onClick={() => readAll.mutate()}><CheckIcon />
               Mark all read
             </Button>
           )}
@@ -92,7 +94,7 @@ export function Notifications() {
           </div>
         )}
         {list.isError && !list.data && (
-          <Card><ErrorState title="Couldn’t load notifications."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
+          <Card><ErrorState title="Couldn’t load notifications."><Button size="sm" variant="outline" onClick={() => list.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
         )}
         {list.data && list.data.items.length === 0 && (
           <EmptyState className="rounded-none border-0" title={filter === 'unread' ? 'Nothing unread' : 'No notifications yet'} description={<>You will see assignments, mentions and decisions here.</>} />

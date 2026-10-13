@@ -1,11 +1,9 @@
-import {
-  Banknote, CalendarDays, ChartColumn, CircleCheck, ClipboardList, Clock, FileText, Headset, History, House,
-  LayoutDashboard, Package, Percent, SlidersHorizontal, Sparkles, Ticket, TriangleAlert, User, Users, Wallet, type LucideIcon,
-} from 'lucide-react';
+import type * as React from 'react';
+import { BanknoteIcon, BarChartIcon, CalendarIcon, CheckCircleIcon, ClipboardListIcon, ClockIcon, FileTextIcon, HeadphonesIcon, HistoryIcon, HomeIcon, LayoutDashboardIcon, PackageIcon, PercentIcon, SlidersIcon, SparkleIcon, TicketIcon, TriangleAlertIcon, UserIcon, UsersIcon, WalletIcon, type IconProps } from '@/components/ui/icons';
 import type { Bootstrap } from '@/lib/bootstrap';
 import type { ProductNav } from '@/lib/useProductNav';
 
-export type NavItem = { key: string; label: string; href: string; icon: LucideIcon; badge?: number; react: boolean };
+export type NavItem = { key: string; label: string; href: string; icon: React.ComponentType<IconProps>; badge?: number; react: boolean };
 export type NavSection = { label?: string; items: NavItem[]; product?: ProductNav };
 
 // Paths the React router owns. Everything else is a normal link to a legacy page.
@@ -35,7 +33,7 @@ export const productIdFromPath = (path: string): number | null => {
   return m ? Number(m[1]) : null;
 };
 
-const item = (b: Bootstrap, key: string, label: string, icon: LucideIcon, badge?: number): NavItem => ({
+const item = (b: Bootstrap, key: string, label: string, icon: React.ComponentType<IconProps>, badge?: number): NavItem => ({
   key,
   label,
   icon,
@@ -48,24 +46,24 @@ export function navSections(b: Bootstrap): NavSection[] {
   const sections: NavSection[] = [
     {
       items: [
-        item(b, 'home', 'Home', House),
-        item(b, 'products', 'Products', Package),
-        item(b, 'tickets', 'All tickets', Ticket, b.counts.open_tickets),
-        item(b, 'errors', 'All errors', TriangleAlert, b.counts.open_errors),
-        item(b, 'reports', 'Reports', ChartColumn),
-        item(b, 'automation', 'All automation', Sparkles),
+        item(b, 'home', 'Home', HomeIcon),
+        item(b, 'products', 'Products', PackageIcon),
+        item(b, 'tickets', 'All tickets', TicketIcon, b.counts.open_tickets),
+        item(b, 'errors', 'All errors', TriangleAlertIcon, b.counts.open_errors),
+        item(b, 'reports', 'Reports', BarChartIcon),
+        item(b, 'automation', 'All automation', SparkleIcon),
       ],
     },
     {
       label: 'Operations',
       items: [
-        item(b, 'cs_hub', 'CS Hub', Headset),
-        item(b, 'feedback', 'All feedback', FileText),
-        item(b, 'attendance', 'My attendance', Clock),
-        item(b, 'leave', 'My leave', CalendarDays),
-        item(b, 'leave_calendar', 'Leave calendar', CalendarDays),
-        item(b, 'dsr', 'DSR Sheet', ClipboardList),
-        item(b, 'payslips', 'My payslips', Banknote),
+        item(b, 'cs_hub', 'CS Hub', HeadphonesIcon),
+        item(b, 'feedback', 'All feedback', FileTextIcon),
+        item(b, 'attendance', 'My attendance', ClockIcon),
+        item(b, 'leave', 'My leave', CalendarIcon),
+        item(b, 'leave_calendar', 'Leave calendar', CalendarIcon),
+        item(b, 'dsr', 'DSR Sheet', ClipboardListIcon),
+        item(b, 'payslips', 'My payslips', BanknoteIcon),
       ],
     },
   ];
@@ -73,15 +71,15 @@ export function navSections(b: Bootstrap): NavSection[] {
     sections.push({
       label: 'Admin',
       items: [
-        item(b, 'team_attendance', 'Team attendance', Users),
-        item(b, 'timesheet', 'Timesheet', CalendarDays),
-        item(b, 'corrections', 'Corrections', Clock, b.counts.pending_corrections),
-        item(b, 'leave_approvals', 'Leave approvals', CircleCheck),
-        item(b, 'payroll', 'Payroll', Wallet),
-        item(b, 'payroll_setup', 'Payroll setup', Percent),
-        item(b, 'leave_policies', 'Leave Policy', SlidersHorizontal),
-        item(b, 'team', 'Team', User),
-        item(b, 'audit_log', 'Audit log', History),
+        item(b, 'team_attendance', 'Team attendance', UsersIcon),
+        item(b, 'timesheet', 'Timesheet', CalendarIcon),
+        item(b, 'corrections', 'Corrections', ClockIcon, b.counts.pending_corrections),
+        item(b, 'leave_approvals', 'Leave approvals', CheckCircleIcon),
+        item(b, 'payroll', 'Payroll', WalletIcon),
+        item(b, 'payroll_setup', 'Payroll setup', PercentIcon),
+        item(b, 'leave_policies', 'Leave Policy', SlidersIcon),
+        item(b, 'team', 'Team', UserIcon),
+        item(b, 'audit_log', 'Audit log', HistoryIcon),
       ],
     });
   }
@@ -100,17 +98,17 @@ export function activeKey(pathname: string, sections: NavSection[]): string | nu
 
 // The sidebar's product section, shown while the URL is under /products/<id>/.
 export function productSection(nav: ProductNav): NavSection {
-  const it = (key: string, label: string, icon: LucideIcon, href: string, badge?: number): NavItem => ({
+  const it = (key: string, label: string, icon: React.ComponentType<IconProps>, href: string, badge?: number): NavItem => ({
     key, label, icon, href, badge: badge || undefined, react: isReactPath(href),
   });
   return {
     product: nav,
     items: [
-      it('p_overview', 'Overview', LayoutDashboard, nav.urls.overview),
-      it('p_errors', 'Errors', TriangleAlert, nav.urls.errors, nav.counts.errors),
-      it('p_tickets', 'Tickets', Ticket, nav.urls.tickets, nav.counts.tickets),
-      it('p_surveys', 'Feedback', FileText, nav.urls.surveys, nav.counts.surveys),
-      it('p_rules', 'Automation', Sparkles, nav.urls.rules, nav.counts.rules),
+      it('p_overview', 'Overview', LayoutDashboardIcon, nav.urls.overview),
+      it('p_errors', 'Errors', TriangleAlertIcon, nav.urls.errors, nav.counts.errors),
+      it('p_tickets', 'Tickets', TicketIcon, nav.urls.tickets, nav.counts.tickets),
+      it('p_surveys', 'Feedback', FileTextIcon, nav.urls.surveys, nav.counts.surveys),
+      it('p_rules', 'Automation', SparkleIcon, nav.urls.rules, nav.counts.rules),
     ],
   };
 }

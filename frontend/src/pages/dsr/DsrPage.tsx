@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, RefreshIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,7 @@ export function DsrPage() {
     setParams(next);
   };
 
-  if (q.isError && !sheet) return <Card><ErrorState title="Couldn’t load the DSR sheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>;
+  if (q.isError && !sheet) return <Card><ErrorState title="Couldn’t load the DSR sheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>;
   if (!sheet) return <div className="space-y-3" data-testid="dsr-loading"><Skeleton className="h-10 w-72" /><Skeleton className="h-48 w-full" /></div>;
   const isToday = sheet.date === sheet.today;
 
@@ -50,11 +50,11 @@ export function DsrPage() {
           <p className="mt-1 text-sm text-muted-foreground">{sheet.target.is_me ? 'Your' : `${sheet.target.name}’s`} work for {long(sheet.date)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => go({ date: sheet.prev })}><ChevronLeft /></Button>
+          <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => go({ date: sheet.prev })}><ChevronLeftIcon /></Button>
           <DateField aria-label="Day" className="w-40" max={sheet.today} value={sheet.date} onChange={(v) => v && go({ date: v })} />
-          <Button variant="outline" size="icon" aria-label="Next day" disabled={isToday} onClick={() => go({ date: sheet.next })}><ChevronRight /></Button>
-          <Button variant={isToday ? 'primary' : 'outline'} size="sm" onClick={() => go({ date: null })}>Today</Button>
-          <Button variant="outline" size="sm" onClick={() => go({ date: sheet.yesterday })}>Yesterday</Button>
+          <Button variant="outline" size="icon" aria-label="Next day" disabled={isToday} onClick={() => go({ date: sheet.next })}><ChevronRightIcon /></Button>
+          <Button variant={isToday ? 'primary' : 'outline'} size="sm" onClick={() => go({ date: null })}><CalendarIcon />Today</Button>
+          <Button variant="outline" size="sm" onClick={() => go({ date: sheet.yesterday })}><CalendarIcon />Yesterday</Button>
           {sheet.is_privileged && (
             <Select value={userId || String(sheet.target.id)} onValueChange={(v) => go({ user_id: v })}>
               <SelectTrigger aria-label="Whose sheet" className="w-44"><SelectValue /></SelectTrigger>
@@ -83,7 +83,7 @@ export function DsrPage() {
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Entries</h2>
-          <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(sheet.summary_text).then(() => { setCopied(true); toast('DSR copied to the clipboard.', 'success'); setTimeout(() => setCopied(false), 2000); })}><Copy /> {copied ? 'Copied!' : 'Copy summary'}</Button>
+          <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(sheet.summary_text).then(() => { setCopied(true); toast('DSR copied to the clipboard.', 'success'); setTimeout(() => setCopied(false), 2000); })}><CopyIcon /> {copied ? 'Copied!' : 'Copy summary'}</Button>
         </div>
         <EntryTable sheet={sheet} act={act} />
       </Card>

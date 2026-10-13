@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { CheckSquareIcon, PlusIcon, RefreshIcon, TrashIcon } from '@/components/ui/icons';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useProductNav } from '@/lib/useProductNav';
 import { AlertDialog } from '@/components/ui/alert-dialog';
@@ -85,18 +85,18 @@ export function TicketsPage() {
         </div>
         <div className="flex items-center gap-2">
           {(
-            <Button variant="outline" size="sm" aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
+            <Button variant="outline" size="sm" aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}><CheckSquareIcon />
               Select
             </Button>
           )}
           {selecting && selected.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => setConfirm({ kind: 'many' })}>
+            <Button variant="destructive" size="sm" onClick={() => setConfirm({ kind: 'many' })}><TrashIcon />
               Delete selected ({selected.size})
             </Button>
           )}
           <Segmented value={view === 'board' ? 'kanban' : 'list'} onValueChange={(v) => navigate({ pathname: base + v + '/', search })} options={[{ value: 'kanban', label: 'Kanban' }, { value: 'list', label: 'List' }]} />
           <Button asChild size="sm">
-            <a href={newTicket}><Plus /> New ticket</a>
+            <a href={newTicket}><PlusIcon /> New ticket</a>
           </Button>
         </div>
       </div>
@@ -104,7 +104,7 @@ export function TicketsPage() {
       <FilterBar filters={filters} onChange={setFilters} meta={meta.data} showStatus={view === 'list'} showProduct={!productId} view={view} />
 
       {tickets.isError && !data ? (
-        <Card><ErrorState title="Couldn’t load tickets."><Button size="sm" variant="outline" onClick={() => tickets.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load tickets."><Button size="sm" variant="outline" onClick={() => tickets.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="tickets-loading">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}

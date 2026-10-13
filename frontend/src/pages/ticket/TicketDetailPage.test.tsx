@@ -178,7 +178,7 @@ it('a ticket without a product goes back to the global board', async () => {
   setup('/tickets/5/', detail({ id: 5, product: null }));
   vi.spyOn(api, 'delete').mockResolvedValue({ deleted: 'x' });
   await screen.findByRole('heading', { name: /AUM-001/ });
-  expect(screen.getByRole('link', { name: /← Tickets/ })).toHaveAttribute('href', '/tickets/');
+  expect(screen.getAllByRole('link', { name: /^Tickets$/ })[1]).toHaveAttribute('href', '/tickets/');
 });
 
 it('shows who else is viewing this ticket, never me', async () => {

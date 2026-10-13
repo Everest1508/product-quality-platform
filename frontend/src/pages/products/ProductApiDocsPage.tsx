@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Copy } from 'lucide-react';
+import { ArrowLeftIcon, CopyIcon, KeyIcon } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,7 +49,7 @@ export function ProductApiDocsPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-sm">{missing ? 'Product not found.' : 'Couldn’t load the API docs.'}</p>
-        <Link to="/products/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to products</Link>
+        <Button asChild variant="link" className="mt-3"><Link to="/products/"><ArrowLeftIcon /> Back to products</Link></Button>
       </Card>
     );
   }
@@ -64,7 +64,7 @@ export function ProductApiDocsPage() {
           <h1 className="text-2xl font-semibold">Send data to {d.product.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Report errors, collect feedback and open tickets from your own app with one key and a few lines of code.</p>
         </div>
-        <Button asChild size="sm" variant="outline"><Link to={`/products/${d.product.id}/#api-key-list`}>Manage keys</Link></Button>
+        <Button asChild size="sm" variant="outline"><Link to={`/products/${d.product.id}/#api-key-list`}><KeyIcon />Manage keys</Link></Button>
       </div>
 
       <Card className="space-y-3 p-5">
@@ -111,7 +111,7 @@ export function ProductApiDocsPage() {
               </div>
             )}
             <div className="relative">
-              <Button size="sm" variant="outline" className="absolute right-2 top-2" onClick={() => copy(cid, code)}><Copy /> {copied === cid ? 'Copied' : 'Copy'}</Button>
+              <Button size="sm" variant="outline" className="absolute right-2 top-2" onClick={() => copy(cid, code)}><CopyIcon /> {copied === cid ? 'Copied' : 'Copy'}</Button>
               <pre className="overflow-x-auto rounded-md bg-neutral-900 p-4 pt-12 text-xs text-neutral-100"><code>{code}</code></pre>
             </div>
             <div><div className="mb-1 text-xs font-medium text-muted-foreground">Response</div><pre className="overflow-x-auto rounded-md bg-secondary p-3 text-xs"><code>{e.response}</code></pre></div>

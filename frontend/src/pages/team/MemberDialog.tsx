@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTeamRefresh } from './useTeam';
 import type { Member } from './types';
 import { Label } from '@/components/ui/label';
+import { SaveIcon, XIcon } from '@/components/ui/icons';
 
 type FieldErrors = Record<string, string[]>;
 
@@ -81,8 +82,8 @@ export function MemberDialog({ open, onOpenChange, member, roles }: { open: bool
             {member && <Label className="flex items-center gap-2 self-end pb-2 text-sm"><Checkbox checked={approver} onCheckedChange={(c) => setApprover(c === true)} /> Can approve leave</Label>}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" loading={busy}>{member ? 'Save' : 'Add Member'}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}><XIcon />Cancel</Button>
+            <Button type="submit" loading={busy}><SaveIcon />{member ? 'Save' : 'Add Member'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

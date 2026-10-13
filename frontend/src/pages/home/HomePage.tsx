@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
+import { ClockIcon, LogInIcon, PlusIcon, RefreshIcon, SendIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -47,12 +47,12 @@ function Hero({ h }: { h: Home }) {
         <h1 className="text-2xl font-semibold">{c.greeting}{h.first_name ? `, ${h.first_name}` : ''}</h1>
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <span>{quote}</span>
-          <Button variant="ghost" size="icon-sm" aria-label="Show another line" className="size-6 shrink-0" onClick={another}><RefreshCw className="size-3.5" /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Show another line" className="size-6 shrink-0" onClick={another}><RefreshIcon className="size-3.5" /></Button>
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button asChild size="sm"><Link to="/tickets/create/">New ticket</Link></Button>
-          <Button asChild size="sm" variant="outline"><a href="/attendance/">Attendance</a></Button>
-          <Button asChild size="sm" variant="outline"><a href="/leave/apply/">Request leave</a></Button>
+          <Button asChild size="sm"><Link to="/tickets/create/"><PlusIcon />New ticket</Link></Button>
+          <Button asChild size="sm" variant="outline"><a href="/attendance/"><ClockIcon />Attendance</a></Button>
+          <Button asChild size="sm" variant="outline"><a href="/leave/apply/"><SendIcon />Request leave</a></Button>
         </div>
       </div>
       <div className="text-right" aria-live="off">
@@ -88,7 +88,7 @@ function TodayCard({ h }: { h: Home }) {
         {a.state === 'done' && <div><div className="font-medium">{a.worked_hours}h today</div><div className="text-xs text-muted-foreground">{hm(a.check_in)} → {hm(a.check_out)}</div></div>}
         {a.state === 'weekend' && <div className="font-medium">Weekend</div>}
         {a.state === 'todo' && <div className="font-medium">Not punched in</div>}
-        {(a.state === 'open' || a.state === 'todo') && <Button loading={punch.busy} onClick={punch.punch}>{a.state === 'open' ? 'Punch out' : 'Punch in'}</Button>}
+        {(a.state === 'open' || a.state === 'todo') && <Button loading={punch.busy} onClick={punch.punch}><LogInIcon />{a.state === 'open' ? 'Punch out' : 'Punch in'}</Button>}
       </div>
       <div className="grid grid-cols-2 gap-3 text-center">
         <div><div className="text-xl font-semibold">{a.present_days}</div><div className="text-xs">Days present</div><div className="text-xs text-muted-foreground">{a.month_label}</div></div>
@@ -129,7 +129,7 @@ export function HomePage() {
     document.title = 'Home — PQ Platform';
   }, []);
   const h = q.data;
-  if (q.isError && !h) return <Card><ErrorState title="Couldn’t load your home page."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>;
+  if (q.isError && !h) return <Card><ErrorState title="Couldn’t load your home page."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>;
   if (!h) return <div className="space-y-4" data-testid="home-loading"><Skeleton className="h-36 w-full" /><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
   const p = h.payroll;
   const slip = p.payslip;

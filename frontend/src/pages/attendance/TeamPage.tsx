@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, HistoryIcon, RefreshIcon, SaveIcon } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -44,12 +44,12 @@ export function TeamAttendancePage() {
         <PageHeader title="Team attendance" sub="Who is on the clock, and how the team’s days look." />
         <div className="flex gap-2">
           <Segmented value={week ? 'week' : 'today'} onValueChange={(v) => set(v === 'week' ? { view: 'week' } : { view: null, week: null })} options={[{ value: 'today', label: 'Today' }, { value: 'week', label: 'Week' }]} />
-          <Button asChild variant="outline" size="sm"><Link to="/attendance/timesheet/">Timesheet</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to="/attendance/timesheet/"><CalendarIcon />Timesheet</Link></Button>
         </div>
       </div>
 
       {q.isError && !d ? (
-        <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
+        <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>
       ) : !d ? (
         <div className="space-y-3" data-testid="team-att-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>
       ) : d.view === 'today' ? (
@@ -67,7 +67,7 @@ export function TeamAttendancePage() {
                 {d.on_clock.map((o) => (
                   <li key={o.record_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <span><b>{o.user.name}</b> · since {o.check_in}{o.is_stale ? ` on ${o.date_label}` : ''} {o.is_stale && <Badge variant="danger">forgot to check out</Badge>}</span>
-                    {o.is_stale && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${o.record_id}/edit/`}>Set check-out</Link></Button>}
+                    {o.is_stale && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${o.record_id}/edit/`}><SaveIcon />Set check-out</Link></Button>}
                   </li>
                 ))}
               </ul>
@@ -86,7 +86,7 @@ export function TeamAttendancePage() {
                       <TableCell><Badge variant={variant}>{label}</Badge><div className="mt-1 text-xs text-muted-foreground">{r.check_in ? `${r.check_in} → ${r.check_out || '…'}` : ''}</div></TableCell>
                       <TableCell><div>{r.net || '—'}</div>{r.progress > 0 && <Progress value={r.progress} className="mt-1 h-1 w-20" />}</TableCell>
                       <TableCell><div className="flex gap-1">{r.week.map((x) => <i key={x.date} title={`${md(x.date)}: ${x.state}${x.formatted ? ` · ${x.formatted}` : ''}`} className={cn('size-2.5 rounded-full', DOT[x.state] ?? 'bg-secondary')} />)}</div></TableCell>
-                      <TableCell className="text-right"><Button asChild size="sm" variant="outline"><Link to={`/attendance/?user_id=${r.user.id}`}>History</Link></Button></TableCell>
+                      <TableCell className="text-right"><Button asChild size="sm" variant="outline"><Link to={`/attendance/?user_id=${r.user.id}`}><HistoryIcon />History</Link></Button></TableCell>
                     </TableRow>
                   );
                 })}
@@ -97,10 +97,10 @@ export function TeamAttendancePage() {
       ) : (
         <>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon-sm" aria-label="Previous week" onClick={() => set({ week: d.prev })}><ChevronLeft /></Button>
+            <Button variant="outline" size="icon-sm" aria-label="Previous week" onClick={() => set({ week: d.prev })}><ChevronLeftIcon /></Button>
             <h2 className="font-semibold">{md(d.monday)} – {md(d.sunday)}</h2>
-            <Button variant="outline" size="icon-sm" aria-label="Next week" onClick={() => set({ week: d.next })}><ChevronRight /></Button>
-            {!d.is_this_week && <Button variant="outline" size="sm" onClick={() => set({ week: null })}>This week</Button>}
+            <Button variant="outline" size="icon-sm" aria-label="Next week" onClick={() => set({ week: d.next })}><ChevronRightIcon /></Button>
+            {!d.is_this_week && <Button variant="outline" size="sm" onClick={() => set({ week: null })}><CalendarIcon />This week</Button>}
             <span className="ml-auto text-xs text-muted-foreground">Shift {d.shift.label}</span>
           </div>
           <Card className="overflow-x-auto p-0">

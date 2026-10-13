@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Calendar, Check, CircleAlert, Clock, Plus, X } from 'lucide-react';
+import { AlertCircleIcon, ArrowRightIcon, CalendarIcon, CheckIcon, ClockIcon, PlusIcon, XIcon } from '@/components/ui/icons';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,10 +11,10 @@ import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
 
 const STATUS = {
-  completed: { label: 'Completed', icon: Check, card: 'border-success/30 bg-success/5', btn: 'bg-success/15 text-success' },
-  in_progress: { label: 'In Progress', icon: Clock, card: 'border-primary/30 bg-accent', btn: 'bg-primary/15 text-primary' },
-  overdue: { label: 'Overdue', icon: CircleAlert, card: 'border-destructive/30 bg-destructive/5', btn: 'bg-destructive/15 text-destructive' },
-  upcoming: { label: 'Upcoming', icon: Clock, card: 'bg-card', btn: 'border bg-secondary text-muted-foreground' },
+  completed: { label: 'Completed', icon: CheckIcon, card: 'border-success/30 bg-success/5', btn: 'bg-success/15 text-success' },
+  in_progress: { label: 'In Progress', icon: ClockIcon, card: 'border-primary/30 bg-accent', btn: 'bg-primary/15 text-primary' },
+  overdue: { label: 'Overdue', icon: AlertCircleIcon, card: 'border-destructive/30 bg-destructive/5', btn: 'bg-destructive/15 text-destructive' },
+  upcoming: { label: 'Upcoming', icon: ClockIcon, card: 'bg-card', btn: 'border bg-secondary text-muted-foreground' },
 } as const;
 
 const day = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -45,8 +45,8 @@ export function MilestoneFlow({ milestones, productName, busy, onAdd, onToggle, 
   return (
     <Card className="space-y-4 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold"><Clock className="size-4" /> Project milestone roadmap</h2>
-        <Button size="sm" onClick={() => { setOrder(milestones.length + 1); setOpen(true); }}><Plus /> Add flow node</Button>
+        <h2 className="flex items-center gap-2 text-sm font-semibold"><ClockIcon className="size-4" /> Project milestone roadmap</h2>
+        <Button size="sm" onClick={() => { setOrder(milestones.length + 1); setOpen(true); }}><PlusIcon /> Add flow node</Button>
       </div>
 
       {milestones.length === 0 ? (
@@ -62,14 +62,14 @@ export function MilestoneFlow({ milestones, productName, busy, onAdd, onToggle, 
             const Icon = s.icon;
             return (
               <li key={m.id} className="flex items-center gap-2">
-                <ArrowRight className={cn('size-4 shrink-0', m.status === 'completed' ? 'text-success' : 'text-muted-foreground')} aria-hidden />
+                <ArrowRightIcon className={cn('size-4 shrink-0', m.status === 'completed' ? 'text-success' : 'text-muted-foreground')} aria-hidden />
                 <div className={cn('w-56 shrink-0 rounded-lg border p-3', s.card)}>
                   <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                     Phase {m.order}
-                    <Button variant="ghost" size="icon-sm" aria-label={`Delete milestone ${m.title}`} className="size-6" onClick={() => setConfirm(m)}><X className="size-3" /></Button>
+                    <Button variant="ghost" size="icon-sm" aria-label={`Delete milestone ${m.title}`} className="size-6" onClick={() => setConfirm(m)}><XIcon className="size-3" /></Button>
                   </div>
                   <div className="mt-1 line-clamp-2 text-sm font-semibold" title={m.title}>{m.title}</div>
-                  <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Calendar className="size-3" /> Target: {day(m.target_date)}</div>
+                  <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><CalendarIcon className="size-3" /> Target: {day(m.target_date)}</div>
                   <div className="mt-3 flex items-center justify-between">
                     <Button type="button" variant="ghost" size="xs" title="Click to advance status" disabled={busy} onClick={() => onToggle(m.id)} className={cn('h-auto rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold', s.btn)}>
                       <Icon className="size-3" /> {s.label}
@@ -80,7 +80,7 @@ export function MilestoneFlow({ milestones, productName, busy, onAdd, onToggle, 
               </li>
             );
           })}
-          <li className="flex items-center gap-2"><ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden /><span className="whitespace-nowrap rounded-full border border-dashed px-3 py-2 text-xs font-semibold text-muted-foreground">🏁 Final Release</span></li>
+          <li className="flex items-center gap-2"><ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden /><span className="whitespace-nowrap rounded-full border border-dashed px-3 py-2 text-xs font-semibold text-muted-foreground">🏁 Final Release</span></li>
         </ol>
       )}
 
@@ -94,8 +94,8 @@ export function MilestoneFlow({ milestones, productName, busy, onAdd, onToggle, 
               <Label className="grid gap-1 text-sm font-medium">Phase order<Input type="number" min={1} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></Label>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" loading={busy}>Add node</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}><XIcon />Cancel</Button>
+              <Button type="submit" loading={busy}><PlusIcon />Add node</Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useProductDashboard } from './useDashboards';
+import { ArrowLeftIcon, ExternalLinkIcon, EyeIcon } from '@/components/ui/icons';
 
 const md = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ');
@@ -48,7 +49,7 @@ export function ProductDashboardPage() {
   }, [d?.product.name]);
   if (q.isError) {
     const missing = q.error instanceof ApiError && q.error.status === 404;
-    return <Card className="p-8 text-center"><p className="text-sm">{missing ? 'Product not found.' : 'Couldn’t load this dashboard.'}</p><Link to="/products/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to products</Link></Card>;
+    return <Card className="p-8 text-center"><p className="text-sm">{missing ? 'Product not found.' : 'Couldn’t load this dashboard.'}</p><Button asChild variant="link" className="mt-3"><Link to="/products/"><ArrowLeftIcon /> Back to products</Link></Button></Card>;
   }
   if (!d) return <div className="space-y-3" data-testid="pd-loading"><Skeleton className="h-8 w-64" /><Skeleton className="h-28 w-full" /></div>;
   const up = d.uptime;
@@ -58,8 +59,8 @@ export function ProductDashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{d.product.name} <span className="ml-2 text-sm font-normal text-muted-foreground">Dashboard</span></h1>
         <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm"><Link to={`/products/${d.product.id}/`}>Product page</Link></Button>
-          <Button asChild variant="outline" size="sm"><Link to="/dashboards/">Overview</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to={`/products/${d.product.id}/`}><ExternalLinkIcon />Product page</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to="/dashboards/"><EyeIcon />Overview</Link></Button>
         </div>
       </div>
 

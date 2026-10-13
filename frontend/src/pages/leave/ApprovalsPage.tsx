@@ -15,6 +15,7 @@ import { Segmented } from '@/components/ui/segmented';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
+import { CheckIcon, EyeIcon, XIcon } from '@/components/ui/icons';
 
 function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void }) {
   const write = useLeaveWrite();
@@ -68,8 +69,8 @@ function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void })
         {item.clash_text && <p className="text-xs text-warning">{item.clash_text}</p>}
         <Label className="grid gap-1 text-sm font-medium">Note to {item.person.name}<Input maxLength={255} placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} /></Label>
         <DialogFooter>
-          <Button variant="outline" disabled={busy} onClick={() => decide('reject')}>Reject</Button>
-          <Button loading={busy} onClick={() => decide('approve')}>Approve</Button>
+          <Button variant="outline" disabled={busy} onClick={() => decide('reject')}><XIcon />Reject</Button>
+          <Button loading={busy} onClick={() => decide('approve')}><CheckIcon />Approve</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -101,7 +102,7 @@ export function ApprovalsPage() {
                 {r.clash_text && <div className="text-xs text-warning">{r.clash_text}</div>}
                 {r.status !== 'pending' && <div className="text-xs text-muted-foreground">{r.status === 'approved' && `${r.split_label} · `}{r.decided_by && `by ${r.decided_by}`}{r.decision_note && ` · ${r.decision_note}`}</div>}
               </div>
-              {r.status === 'pending' ? <Button size="sm" onClick={() => setOpen(r)}>Review</Button> : <Badge variant={TONE[r.status] ?? 'default'}>{r.status_label}</Badge>}
+              {r.status === 'pending' ? <Button size="sm" onClick={() => setOpen(r)}><EyeIcon />Review</Button> : <Badge variant={TONE[r.status] ?? 'default'}>{r.status_label}</Badge>}
             </Card>
           ))}
         </>

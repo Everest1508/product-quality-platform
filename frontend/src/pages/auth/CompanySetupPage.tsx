@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthLayout } from './AuthLayout';
 import { Label } from '@/components/ui/label';
+import { LogOutIcon, PlusIcon } from '@/components/ui/icons';
 
 export function CompanySetupPage() {
   const [name, setName] = useState('');
@@ -40,9 +41,9 @@ export function CompanySetupPage() {
           <Input id="company-name" autoFocus placeholder="Acme Corp" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={errors.length > 0} />
           {errors.map((m) => <p key={m} className="text-xs text-destructive">{m}</p>)}
         </div>
-        <Button type="submit" className="w-full" loading={busy}>Create company</Button>
+        <Button type="submit" className="w-full" loading={busy}><PlusIcon />Create company</Button>
       </form>
-      <form method="post" action="/logout/" className="mt-3 text-center"><Button type="submit" variant="link" size="xs" className="text-muted-foreground">Sign out</Button></form>
+      <form method="post" action="/logout/" className="mt-3 text-center"><Button type="submit" variant="link" size="xs" className="text-muted-foreground"><LogOutIcon />Sign out</Button></form>
     </AuthLayout>
   );
 }

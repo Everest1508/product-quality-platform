@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { ArrowLeftIcon, PlusIcon, SaveIcon, XIcon } from '@/components/ui/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -105,7 +105,7 @@ function ProductForm({ editing, productId, initial, cancelUrl }: { editing: bool
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-4" noValidate>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{editing ? 'Edit Product' : 'New Product'}</h1>
-        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}>Cancel</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
       </div>
 
       <Card className="space-y-4 p-5">
@@ -155,7 +155,7 @@ function ProductForm({ editing, productId, initial, cancelUrl }: { editing: bool
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-muted-foreground">Project milestones (completion dates)</h2>
-          <Button type="button" variant="outline" size="sm" onClick={() => setRows((r) => [...r, { title: '', date: '' }])}><Plus /> Add flow node</Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setRows((r) => [...r, { title: '', date: '' }])}><PlusIcon /> Add flow node</Button>
         </div>
         {rows.map((r, i) => (
           <div key={i} className="grid gap-2 sm:grid-cols-2">
@@ -167,8 +167,8 @@ function ProductForm({ editing, productId, initial, cancelUrl }: { editing: bool
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button asChild variant="outline"><Link to={cancelUrl}>Cancel</Link></Button>
-        <Button type="submit" loading={saving}>{editing ? 'Save Changes' : 'Create Product'}</Button>
+        <Button asChild variant="outline"><Link to={cancelUrl}><XIcon />Cancel</Link></Button>
+        <Button type="submit" loading={saving}><SaveIcon />{editing ? 'Save Changes' : 'Create Product'}</Button>
       </div>
     </form>
   );
@@ -184,7 +184,7 @@ export function ProductFormPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-sm">{missing ? 'Product not found.' : 'Couldn’t load this product.'}</p>
-        <Link to="/products/" className="mt-3 inline-block text-sm text-primary hover:underline">← Back to products</Link>
+        <Button asChild variant="link" className="mt-3"><Link to="/products/"><ArrowLeftIcon /> Back to products</Link></Button>
       </Card>
     );
   }

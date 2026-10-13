@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { StatCard } from '@/components/ui/stat-card';
 import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
+import { EyeIcon, PlusIcon, SaveIcon, TrashIcon } from '@/components/ui/icons';
 
 const useTitle = (t: string) => useEffect(() => { document.title = `${t} — PQ Platform`; }, [t]);
 
@@ -54,13 +55,13 @@ export function HolidaysPage() {
             <h2 className="font-semibold">Add a holiday</h2>
             <div className="grid gap-1 text-sm font-medium"><span>Date</span><DateField aria-label="Date" value={date} onChange={setDate} />{err('date')}</div>
             <Label className="grid gap-1 text-sm font-medium">Name<Input placeholder="Diwali, Christmas…" value={name} onChange={(e) => setName(e.target.value)} />{err('name')}</Label>
-            <Button type="submit" loading={busy}>Add holiday</Button>
+            <Button type="submit" loading={busy}><PlusIcon />Add holiday</Button>
           </form>
         </Card>
         <Card className="p-0">
           <div className="border-b p-4 font-semibold">Holidays {d && <span className="font-normal text-muted-foreground">({d.holidays.length})</span>}</div>
           {!d ? <Skeleton className="h-32 w-full" data-testid="holidays-loading" /> : d.holidays.length === 0 ? <EmptyState className="rounded-none border-0" title="No holidays yet" description={<>Add festival dates so they are not counted as payable days.</>} /> : (
-            <ul className="divide-y text-sm">{d.holidays.map((h) => <li key={h.id} className="flex items-center justify-between gap-3 p-3"><span><span className="text-muted-foreground">{h.label}</span> · {h.name}</span><Button variant="outline" size="sm" aria-label={`Remove ${h.name}`} onClick={() => remove(h)}>Remove</Button></li>)}</ul>
+            <ul className="divide-y text-sm">{d.holidays.map((h) => <li key={h.id} className="flex items-center justify-between gap-3 p-3"><span><span className="text-muted-foreground">{h.label}</span> · {h.name}</span><Button variant="outline" size="sm" aria-label={`Remove ${h.name}`} onClick={() => remove(h)}><TrashIcon />Remove</Button></li>)}</ul>
           )}
         </Card>
       </div>
@@ -95,7 +96,7 @@ function SetupRow({ row, workingDays }: { row: ProfileRow; workingDays: number }
       </div>
       <div><DateField aria-label={`${who} rate effective from`} value={from} onChange={setFrom} /><div className="mt-1 text-xs text-muted-foreground">{row.rates > 1 ? `${row.rates} rates on record` : row.has_profile ? `Since ${row.since}` : 'Not set yet'}</div></div>
       <div className="text-sm">{row.estimate ? <><b>{row.estimate.gross}</b> <span className="text-muted-foreground">· {row.estimate.payable_days} days</span>{Number(row.estimate.unpaid_leave_days) > 0 && <div className="text-xs text-destructive">−{row.estimate.unpaid_leave_days} unpaid</div>}</> : <span className="text-muted-foreground">—<div className="text-xs">{row.has_profile ? `From ${day(row.effective_from)}` : 'Not on payroll'}</div></span>}</div>
-      <Button size="sm" loading={busy} aria-label={`Save ${who}`} onClick={save}>Save</Button>
+      <Button size="sm" loading={busy} aria-label={`Save ${who}`} onClick={save}><SaveIcon />Save</Button>
     </div>
   );
 }
@@ -107,7 +108,7 @@ export function ProfilesPage() {
   if (q.error) return <p role="alert" className="text-sm text-destructive">{reason(q.error)}</p>;
   return (
     <div className="space-y-4">
-      <PayHeader title="Payroll setup" sub="Enter a monthly salary per person. Payroll divides it by the cycle’s working days, so weekends and holidays are already excluded. Tick only real staff." actions={<Button asChild size="sm"><Link to="/payroll/preview/">Preview cycle</Link></Button>} />
+      <PayHeader title="Payroll setup" sub="Enter a monthly salary per person. Payroll divides it by the cycle’s working days, so weekends and holidays are already excluded. Tick only real staff." actions={<Button asChild size="sm"><Link to="/payroll/preview/"><EyeIcon />Preview cycle</Link></Button>} />
       {!d ? <Skeleton className="h-64 w-full" data-testid="profiles-loading" /> : (
         <>
           <div className="grid gap-3 sm:grid-cols-4">
