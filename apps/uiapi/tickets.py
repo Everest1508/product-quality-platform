@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from apps.dashboards.models import ActivityLog
 from apps.products.access import (
     accessible_products,
     accessible_tickets,
@@ -110,6 +111,11 @@ def ticket_detail_json(ticket, user, role, company):
                 "mentions": [u.username for u in c.mentions.all()],
             }
             for c in ticket.comments.select_related("author").prefetch_related("mentions").all()
+        ],
+        "events": [
+            {"id": a.pk, "title": a.title, "description": a.description, "actor": _name(a.actor) if a.actor_id else "", "created_at": a.created_at.isoformat()}
+            for a in ActivityLog.objects.filter(company=company, target_content_type="ticket", target_object_id=ticket.pk)
+            .exclude(event_type="ticket_commented").select_related("actor").order_by("created_at", "id")[:100]
         ],
         "following": ticket.watchers.filter(pk=user.pk).exists(),
         "watcher_count": ticket.watchers.count(),

@@ -280,3 +280,18 @@ class TicketDeleteApiTest(Base):
         self.login("owner")
         self.assertEqual(self.client.delete(f"/ui-api/v1/tickets/{t.pk}/").status_code, 404)
         self.assertTrue(Ticket.objects.filter(pk=t.pk).exists())
+
+
+class DetailEventsTest(Base):
+    def test_the_detail_lists_the_ticket_history_without_comment_events(self):
+        from apps.dashboards.service import log_activity
+
+        t = self.make(self.p_open, "History", created_by=self.owner)
+        kw = dict(actor=self.owner, target_content_type="ticket")
+        log_activity(self.acme, "ticket_status_changed", f"Ticket {t.key} status changed", description="Open → Assigned", target_object_id=t.pk, **kw)
+        log_activity(self.acme, "ticket_commented", "Comment", target_object_id=t.pk, **kw)
+        log_activity(self.acme, "ticket_status_changed", "Other ticket", target_object_id=t.pk + 999, **kw)
+        self.login("owner")
+        d = self.client.get(f"/ui-api/v1/tickets/{t.pk}/").json()
+        self.assertEqual([e["description"] for e in d["events"]], ["Open → Assigned"])
+        self.assertEqual(d["events"][0]["actor"], "owner")

@@ -2,6 +2,8 @@ import type { TicketItem } from '@/pages/tickets/types';
 
 export type Person = { id: number; name: string; username: string };
 
+export type TicketEvent = { id: number; title: string; description: string; actor: string; created_at: string };
+
 export type Comment = {
   id: number;
   author: { id: number; name: string; initial: string } | null;
@@ -24,6 +26,7 @@ export type TicketFull = Omit<TicketItem, 'linked_error'> & {
 export type TicketDetail = {
   ticket: TicketFull;
   comments: Comment[];
+  events?: TicketEvent[];
   following: boolean;
   watcher_count: number;
   members: Person[];

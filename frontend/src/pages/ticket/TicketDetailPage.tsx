@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { isTypingTarget } from '@/shell/keys';
 import { AssigneePicker } from './AssigneePicker';
-import { CommentList } from './CommentList';
+import { Timeline } from './Timeline';
 import { DeadlineField } from './DeadlineField';
 import { MentionTextarea } from './MentionTextarea';
 import { useTicketActions, useTicketDetail } from './useTicket';
@@ -160,9 +160,9 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
         )}
       </Card>
 
-      <h2 className="text-sm font-semibold">Comments <span className="font-normal text-muted-foreground">({data.comments.length})</span></h2>
+      <h2 className="text-sm font-semibold">Activity <span className="font-normal text-muted-foreground">({data.comments.length} comment{data.comments.length === 1 ? '' : 's'})</span></h2>
       <Card className="p-5">
-        <CommentList comments={data.comments} people={data.mention_candidates} />
+        <Timeline events={data.events ?? []} comments={data.comments} people={data.mention_candidates} />
         <form onSubmit={submit} className="mt-4 space-y-2 border-t pt-4 first:mt-0 first:border-0 first:pt-0">
           <MentionTextarea
             aria-label="Comment"
