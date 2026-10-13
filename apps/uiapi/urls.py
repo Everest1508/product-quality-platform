@@ -1,10 +1,11 @@
 from django.urls import path
 
-from apps.uiapi import tickets, views
+from apps.uiapi import products, tickets, views
 
 app_name = "uiapi"
 
 urlpatterns = [
+    path("products/<int:pk>/nav/", products.ProductNavAPIView.as_view(), name="product_nav"),
     path("tickets/", tickets.TicketListAPIView.as_view(), name="tickets"),
     path("tickets/meta/", tickets.TicketMetaAPIView.as_view(), name="ticket_meta"),
     path("tickets/bulk-delete/", tickets.TicketBulkDeleteAPIView.as_view(), name="ticket_bulk_delete"),
