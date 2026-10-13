@@ -901,3 +901,11 @@ decided what and strike the item** rather than deleting it.
 - `/dsr/` is served by the React shell; endpoints in `apps/uiapi/dsr.py` (`dsr/`, `dsr/entries/`, `dsr/entries/<pk>/`, `dsr/suggestions/add/`), each write answering with the fresh sheet. Add/update/delete/suggestion rules moved to `apps/dsr/service.py` (`add_entry`, `update_entry`, `delete_entry`, `add_suggested`, `is_privileged`); the DSR MCP API (`apps/dsr/api.py`) is unchanged apart from importing `is_privileged` from the service.
 - Day window unchanged (`submission_window`): only today is writable for employees, owners and admins may fix a past day, nobody may write a future day. A closed-day write is 403 with the reason.
 - Removed legacy routes `dsr_add`, `dsr_update`, `dsr_delete`, `dsr_suggestion_add` and the `templates/dsr` folder. Tests that only needed some legacy page now use `/attendance/`.
+
+### 2026-10-13 React accounts
+- `/login/`, `/company/setup/` and `/oauth/authorize/` are **public routes** (`publicRoutes`): they render without the shell or bootstrap (a person with no workspace has nothing to bootstrap). `/team/` and `/profile/` are normal shell pages. Endpoints: `auth/login/` (GET page state + flash messages, POST sign in), `auth/oauth/authorize/`, `auth/company/`, `team/`, `team/<pk>/`, `profile/` in `apps/uiapi/accounts.py`; rules in `apps/accounts/service.py` (`sign_in` keeps the throttle and the single "incorrect username or password" message).
+- DRF's `UNAUTHENTICATED_USER` is None here, so `request.user` is None for anonymous requests on public endpoints.
+- Sign-in and OAuth sign-in enforce CSRF by hand (DRF only checks signed-in sessions); the shell page sets the token. A failed CSRF check on those pages reloads once through the 403 handler.
+- Behaviour fix: editing the owner's membership through the team API is 403 (the old form let an admin demote the owner by posting it by hand). Removing yourself or the owner is 400.
+- Kept: `accounts:logout` (POST, redirect with "Signed out."), `accounts:company_switch` (legacy sidebar form, goes at the final cleanup), the OAuth `token`/`me` JSON endpoints, and the OAuth GET that sends a signed-in person straight back with a code.
+- Removed: `team_invite`, `team_edit`, `team_remove`, the whole `templates/accounts` folder and the legacy login/throttle/team tests (ported to `apps/uiapi/test_accounts.py`).

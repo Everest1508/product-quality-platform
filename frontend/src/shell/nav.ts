@@ -17,6 +17,7 @@ const REACT_PATH_RES = [
   /^\/products\/\d+\/tickets\/(create\/|\d+\/)$/,
   /^\/products\/(create\/|\d+\/(edit\/|api\/)?)?$/,
   /^\/dsr\/$/,
+  /^\/(team|profile)\/$/,
   /^\/dashboards\/(reports\/|audit\/|product\/\d+\/)?$/,
   /^\/feedback\/(create\/|cs-hub\/|\d+\/)?$/,
   /^\/products\/\d+\/(surveys|rules)\/(create\/)?$/,

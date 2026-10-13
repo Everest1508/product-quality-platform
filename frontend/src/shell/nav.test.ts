@@ -35,7 +35,7 @@ it('knows which paths React owns', () => {
     '/errors/', '/errors/create/', '/errors/5/', '/products/3/errors/', '/products/3/errors/create/', '/products/3/errors/5/', '/products/', '/products/create/', '/products/3/', '/products/3/edit/', '/products/3/api/',
     '/feedback/', '/feedback/create/', '/feedback/cs-hub/', '/feedback/4/', '/products/3/surveys/', '/products/3/surveys/create/', '/products/3/rules/', '/products/3/rules/create/',
     '/automation/', '/automation/create/', '/automation/8/edit/',
-    '/dsr/', '/dashboards/', '/dashboards/reports/', '/dashboards/audit/', '/dashboards/product/3/'])
+    '/dsr/', '/team/', '/profile/', '/dashboards/', '/dashboards/reports/', '/dashboards/audit/', '/dashboards/product/3/'])
     expect(isReactPath(p), p).toBe(true);
   for (const p of ['/tickets/5/status/', '/tickets/5/foo/', '/products/3/delete/', '/products/3/foo/', '/errors/5/resolve/', '/errors/5/x/', '/feedback/respond/4/', '/feedback/4/delete/', '/products/3/tickets/create/x/', '/products/3/tickets/5/edit/', '/leave/'])
     expect(isReactPath(p), p).toBe(false);

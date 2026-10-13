@@ -18,6 +18,11 @@ import { ProductDashboardPage } from '@/pages/dashboards/ProductDashboardPage';
 import { ReportsPage } from '@/pages/dashboards/ReportsPage';
 import { HomePage } from '@/pages/home/HomePage';
 import { DsrPage } from '@/pages/dsr/DsrPage';
+import { CompanySetupPage } from '@/pages/auth/CompanySetupPage';
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { OAuthPage } from '@/pages/auth/OAuthPage';
+import { ProfilePage } from '@/pages/profile/ProfilePage';
+import { TeamPage } from '@/pages/team/TeamPage';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -49,6 +54,8 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/', element: <ProductDetailPage /> },
   { path: '/products/:pk/edit/', element: <ProductFormPage /> },
   { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
+  { path: '/team/', element: <TeamPage /> },
+  { path: '/profile/', element: <ProfilePage /> },
   { path: '/dsr/', element: <DsrPage /> },
   { path: '/dashboards/', element: <HomePage /> },
   { path: '/dashboards/reports/', element: <ReportsPage /> },
@@ -68,4 +75,9 @@ export const shellRoutes: RouteObject[] = [
 ];
 
 // Pages that need no login: no sidebar, no bootstrap.
-export const publicRoutes: RouteObject[] = [{ path: '/feedback/respond/:id/', element: <PublicSurveyPage /> }];
+export const publicRoutes: RouteObject[] = [
+  { path: '/feedback/respond/:id/', element: <PublicSurveyPage /> },
+  { path: '/login/', element: <LoginPage /> },
+  { path: '/company/setup/', element: <CompanySetupPage /> },
+  { path: '/oauth/authorize/', element: <OAuthPage /> },
+];

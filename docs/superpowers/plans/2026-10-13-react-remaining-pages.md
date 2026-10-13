@@ -9,7 +9,7 @@ Order (tick when merged on the branch):
 - [x] product-scoped surveys + rules, global feedback (surveys, CS hub, public survey page), automation
 - [x] dashboards (home, product dashboard, reports, audit log); `/search/` stays a JSON endpoint used by the palette
 - [x] DSR
-- [ ] accounts (login, company setup/switch, team, profile, Serop OAuth screens)
+- [x] accounts (login, company setup, team, profile, Serop OAuth sign-in; `accounts:company_switch` stays for the legacy sidebar until cleanup)
 - [ ] attendance
 - [ ] leave
 - [ ] payroll

@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.21.0] — 2026-10-13 · sign-in, team and settings, redone
+
+> In short: the sign-in page, first-run company setup, the team page and your settings have a new look, and the owner can no longer be demoted by an admin by mistake.
+
+### New
+
+- **A new sign-in page.** Wrong passwords are announced clearly without saying which half was wrong, and after signing in you land where you were heading.
+- **A new team page.** Filter by role, search, sort, add people, edit them in a window and remove them after a confirmation.
+- **New settings.** Your name, email and Discord ID in one place, with mistakes shown next to the field.
+- **A new first-run page.** If you have no workspace yet you can create one and become its owner.
+
+### Fixed
+
+- **The owner can no longer be edited from the team page.** Before, an admin who sent the form by hand could change the owner's role.
+
+### Security
+
+- **Signing in now checks that the request really came from our page.** A form on another site can no longer sign someone in as a different person.
+
 ## [1.20.0] — 2026-10-13 · the DSR sheet, redone
 
 > In short: the daily status report has a new look where every row saves as you edit it, and your work from the day is suggested for you to confirm.
