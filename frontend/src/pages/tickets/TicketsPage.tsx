@@ -14,6 +14,7 @@ import { FilterBar } from './FilterBar';
 import { TicketTable } from './TicketTable';
 import { filtersFromParams, paramsFromFilters, ticketsKey, useTicketMeta, useTicketScope, useTickets } from './useTicketQuery';
 import { useTicketActions } from './useTicketActions';
+import { useTicketKeys } from './useTicketKeys';
 import type { TicketFilters, TicketItem } from './types';
 
 type Confirm = { kind: 'one'; item: TicketItem } | { kind: 'many' } | null;
@@ -29,6 +30,7 @@ export function TicketsPage() {
   const meta = useTicketMeta(productId);
   const tickets = useTickets(view, productId, filters);
   const { deleteOne, deleteMany } = useTicketActions();
+  useTicketKeys();
 
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());

@@ -4,7 +4,7 @@ import { go } from '@/lib/go';
 type Handlers = { onPalette(mode: 'open' | 'toggle'): void; onHelp(): void; newTicketUrl: string };
 
 // Typing in a field, or interacting inside an open menu/dialog/listbox: single keys belong to that widget.
-const typing = (t: EventTarget | null) => {
+export const isTypingTarget = (t: EventTarget | null) => {
   const el = t as HTMLElement | null;
   return (
     !!el &&
@@ -22,7 +22,7 @@ export function useGlobalKeys({ onPalette, onHelp, newTicketUrl }: Handlers) {
         onPalette('toggle');
         return;
       }
-      if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
       if (e.key === '/') (e.preventDefault(), onPalette('open'));
       else if (e.key === '?') (e.preventDefault(), onHelp());
       else if (e.key === 'c') (e.preventDefault(), go(newTicketUrl));

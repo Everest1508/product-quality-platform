@@ -53,7 +53,7 @@ export function TicketTable({ items, selecting, selected, onSelect, onDelete }: 
       </thead>
       <tbody>
         {items.map((t) => (
-          <tr key={t.id} data-ticket-row data-url={t.url} onClick={() => go(t.url)} className="cursor-pointer border-b last:border-b-0 hover:bg-muted">
+          <tr key={t.id} data-ticket-row data-ticket-id={t.id} data-url={t.url} onClick={() => go(t.url)} className="cursor-pointer border-b last:border-b-0 hover:bg-muted">
             {selecting && (
               <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                 <Checkbox aria-label={`Select ticket ${t.key}`} checked={selected.has(t.id)} onCheckedChange={(c) => onSelect(t.id, c === true)} />

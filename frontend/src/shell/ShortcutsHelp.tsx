@@ -4,6 +4,9 @@ import { Kbd } from '@/components/ui/kbd';
 const rows: [string[], string][] = [
   [['Ctrl', 'K'], 'Search everything (or press /)'],
   [['c'], 'New ticket'],
+  [['j', 'k'], 'Next / previous ticket in a list or board'],
+  [['Enter'], 'Open the highlighted ticket'],
+  [['e'], 'Edit the highlighted ticket'],
   [['?'], 'Show this help'],
 ];
 

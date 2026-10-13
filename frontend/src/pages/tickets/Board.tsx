@@ -87,6 +87,7 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete 
             <article
               key={t.id}
               data-ticket-card
+              data-ticket-id={t.id}
               data-url={t.url}
               draggable
               onDragStart={(e) => {
