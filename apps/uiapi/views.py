@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages as dj_messages
 from django.middleware.csrf import get_token
 from django.urls import reverse
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -28,6 +28,9 @@ class CompanyAPIView(APIView):
         super().initial(request, *args, **kwargs)
         if not request.company:
             raise PermissionDenied("No active company.")
+        # Writes take a JSON object (or a form); a bare array or string would crash every view that reads fields.
+        if request.method in ("POST", "PUT", "PATCH") and not hasattr(request.data, "get"):
+            raise ParseError("Send a JSON object.")
 
 
 class NotificationListView(CompanyAPIView):

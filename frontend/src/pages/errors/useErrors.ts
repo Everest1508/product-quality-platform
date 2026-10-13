@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -59,6 +59,7 @@ export function useErrorRefresh() {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: ['errors'] });
+    qc.invalidateQueries({ queryKey: ['tickets'] });
     qc.invalidateQueries({ queryKey: ['bootstrap'] });
     qc.invalidateQueries({ queryKey: ['product-nav'] });
   };
@@ -87,7 +88,10 @@ export function useErrorActions(id: number) {
   const remove = useDeleteError();
   const [busy, setBusy] = useState<string | null>(null);
 
+  const inFlight = useRef(false); // state would only block after the next render; two quick clicks would both go through
   async function apply(name: string, path: string, body?: unknown) {
+    if (inFlight.current) return undefined;
+    inFlight.current = true;
     setBusy(name);
     try {
       const data = await api.post<ErrorDetail>(`errors/${id}/${path}/`, body ?? {});
@@ -99,6 +103,7 @@ export function useErrorActions(id: number) {
       toast(reason(e), 'error');
       return undefined;
     } finally {
+      inFlight.current = false;
       setBusy(null);
     }
   }

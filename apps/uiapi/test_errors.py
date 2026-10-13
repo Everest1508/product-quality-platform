@@ -209,3 +209,15 @@ class ErrorActionsApiTest(ErrorsBase):
         self.login("owner")
         self.assertEqual(self.client.delete(f"/ui-api/v1/errors/{foreign.pk}/").status_code, 404)
         self.assertTrue(ErrorGroup.objects.filter(pk=foreign.pk).exists())
+
+
+class BadInputTest(ErrorsBase):
+    def test_odd_input_is_a_400_or_ignored_never_a_500(self):
+        g = self.err(self.p_open)
+        self.login("owner")
+        self.assertEqual(self.client.get("/ui-api/v1/errors/?product=%C2%B2").status_code, 200)
+        post = lambda url, body: self.client.post(url, body, content_type="application/json")
+        self.assertEqual(post(f"/ui-api/v1/errors/{g.pk}/status/", {"status": ["a"]}).status_code, 400)
+        self.assertEqual(post(f"/ui-api/v1/errors/{g.pk}/status/", [1]).status_code, 400)
+        self.assertEqual(post("/ui-api/v1/errors/", [1]).status_code, 400)
+        self.assertEqual(post("/ui-api/v1/tickets/", [1]).status_code, 400)

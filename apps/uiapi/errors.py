@@ -117,7 +117,7 @@ class ErrorListAPIView(CompanyAPIView):
         qs = product.error_groups.all() if product else accessible_error_groups(request.user, request.company)
         qs = qs.select_related("product", "first_version")
 
-        if not product and q.get("product", "").isdigit():
+        if not product and q.get("product", "").isdecimal():
             qs = qs.filter(product_id=int(q["product"]))
         if q.get("status"):
             qs = qs.filter(status=q["status"])
@@ -181,6 +181,8 @@ class ErrorStatusAPIView(CompanyAPIView):
     def post(self, request, pk):
         group = _group(request, pk)
         new = request.data.get("status")
+        if not isinstance(new, str):
+            return Response({"detail": "Choose a status."}, status=400)
         error = error_service.set_status(group, new, request.user, request.company)
         if error:
             return Response({"detail": error}, status=400)

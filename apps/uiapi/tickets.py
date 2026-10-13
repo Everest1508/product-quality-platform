@@ -302,7 +302,7 @@ class TicketPriorityAPIView(_TicketActionView):
 class TicketAssignAPIView(_TicketActionView):
     def act(self, request, ticket):
         raw = request.data.get("assignees") or []
-        ids = [int(x) for x in raw if str(x).isdigit()] if isinstance(raw, list) else []
+        ids = [int(x) for x in raw if str(x).isdecimal()] if isinstance(raw, list) else []
         message = ticket_service.assign(ticket, ids, request.user, request.company)
         return detail_response(request, ticket, message=message)
 

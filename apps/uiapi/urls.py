@@ -5,7 +5,21 @@ from apps.uiapi import errors, products, tickets, views
 app_name = "uiapi"
 
 urlpatterns = [
+    path("products/", products.ProductListAPIView.as_view(), name="products"),
+    path("products/key-suggestion/", products.ProductKeySuggestAPIView.as_view(), name="product_key_suggest"),
     path("products/<int:pk>/nav/", products.ProductNavAPIView.as_view(), name="product_nav"),
+    path("products/<int:pk>/api-docs/", products.ProductApiDocsAPIView.as_view(), name="product_api_docs"),
+    path("products/<int:pk>/versions/", products.ProductVersionAPIView.as_view(), name="product_versions"),
+    path("products/<int:pk>/versions/<int:version_pk>/", products.ProductVersionAPIView.as_view(), name="product_version"),
+    path("products/<int:pk>/api-keys/", products.ProductKeyCreateAPIView.as_view(), name="product_key_create"),
+    path("products/<int:pk>/access/", products.ProductAccessAPIView.as_view(), name="product_access"),
+    path("products/<int:pk>/access/<int:user_pk>/", products.ProductAccessAPIView.as_view(), name="product_access_user"),
+    path("products/<int:pk>/milestones/", products.ProductMilestoneAddAPIView.as_view(), name="product_milestone_add"),
+    path("products/<int:pk>/", products.ProductDetailAPIView.as_view(), name="product_detail"),
+    path("api-keys/<int:pk>/revoke/", products.ProductKeyRevokeAPIView.as_view(), name="api_key_revoke"),
+    path("api-keys/<int:pk>/rotate/", products.ProductKeyRotateAPIView.as_view(), name="api_key_rotate"),
+    path("milestones/<int:pk>/toggle/", products.ProductMilestoneToggleAPIView.as_view(), name="milestone_toggle"),
+    path("milestones/<int:pk>/", products.ProductMilestoneDeleteAPIView.as_view(), name="milestone_delete"),
     path("tickets/", tickets.TicketListAPIView.as_view(), name="tickets"),
     path("tickets/meta/", tickets.TicketMetaAPIView.as_view(), name="ticket_meta"),
     path("tickets/bulk-delete/", tickets.TicketBulkDeleteAPIView.as_view(), name="ticket_bulk_delete"),
