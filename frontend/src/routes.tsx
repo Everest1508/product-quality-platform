@@ -1,4 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
+import { ErrorDetailPage } from '@/pages/errors/ErrorDetailPage';
+import { ErrorFormPage } from '@/pages/errors/ErrorFormPage';
+import { ErrorsPage } from '@/pages/errors/ErrorsPage';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -19,4 +22,10 @@ export const shellRoutes: RouteObject[] = [
   { path: '/tickets/:id/edit/', element: <TicketFormPage /> },
   { path: '/tickets/:id/', element: <TicketDetailPage /> },
   { path: '/products/:pk/tickets/:id/', element: <TicketDetailPage /> },
+  { path: '/errors/', element: <ErrorsPage /> },
+  { path: '/products/:pk/errors/', element: <ErrorsPage /> },
+  { path: '/errors/create/', element: <ErrorFormPage /> },
+  { path: '/products/:pk/errors/create/', element: <ErrorFormPage /> },
+  { path: '/errors/:id/', element: <ErrorDetailPage /> },
+  { path: '/products/:pk/errors/:error_pk/', element: <ErrorDetailPage /> },
 ];
