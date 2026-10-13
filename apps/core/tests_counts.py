@@ -31,27 +31,33 @@ class OpenCountsTest(TestCase):
     def login(self, user):
         self.client.login(username=user.username, password="pass1234")
 
+    def api(self, **params):
+        return self.client.get("/ui-api/v1/tickets/", params).json()
+
+    def sidebar_open_tickets(self):
+        return self.client.get("/ui-api/v1/bootstrap/").json()["counts"]["open_tickets"]
+
     def test_ticket_list_header_and_sidebar_agree_for_an_owner(self):
         self.login(self.owner)
-        res = self.client.get(reverse("tickets:ticket_list"))
-        self.assertContains(res, "5 tickets · 3 open")
-        self.assertEqual(res.context["nav_open_tickets"], 3)
+        data = self.api()
+        self.assertEqual((data["page"]["count"], data["open_count"]), (5, 3))
+        self.assertEqual(self.sidebar_open_tickets(), 3)
 
     def test_counts_only_cover_products_the_person_can_open(self):
         self.login(self.dev)
-        res = self.client.get(reverse("tickets:ticket_list"))
-        self.assertContains(res, "3 tickets · 2 open")
-        self.assertEqual(res.context["nav_open_tickets"], 2)
+        data = self.api()
+        self.assertEqual((data["page"]["count"], data["open_count"]), (3, 2))
+        self.assertEqual(self.sidebar_open_tickets(), 2)
 
     def test_a_filter_changes_both_numbers_in_the_header(self):
         self.login(self.owner)
-        res = self.client.get(reverse("tickets:ticket_list"), {"status": "resolved"})
-        self.assertContains(res, "1 ticket · 0 open")
+        data = self.api(status="resolved")
+        self.assertEqual((data["page"]["count"], data["open_count"]), (1, 0))
 
     def test_kanban_header_matches_the_list(self):
         self.login(self.owner)
-        res = self.client.get(reverse("tickets:ticket_board"))
-        self.assertContains(res, "5 tickets · 3 open")
+        data = self.api(view="board")
+        self.assertEqual((data["total"], data["open_count"]), (5, 3))
 
     def test_error_list_header_and_sidebar_agree(self):
         self.login(self.owner)
@@ -59,15 +65,11 @@ class OpenCountsTest(TestCase):
         self.assertContains(res, "4 groups · 2 open")
         self.assertEqual(res.context["nav_open_errors"], 2)
 
-    def test_htmx_refresh_carries_the_open_count(self):
-        self.login(self.owner)
-        res = self.client.get(reverse("tickets:ticket_list"), HTTP_HX_REQUEST="true")
-        self.assertContains(res, "5 tickets · 3 open")
 
     def test_product_page_headers_count_open_work(self):
         self.login(self.owner)
-        res = self.client.get(reverse("products:product_tickets", kwargs={"pk": self.p1.pk}))
-        self.assertContains(res, "3 tickets · 2 open")
+        data = self.api(scope="product", product=self.p1.pk)
+        self.assertEqual((data["page"]["count"], data["open_count"]), (3, 2))
         res = self.client.get(reverse("products:product_errors", kwargs={"pk": self.p1.pk}))
         self.assertContains(res, "2 groups · 1 open")
 

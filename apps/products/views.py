@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
+from apps.uiapi.shell import render_shell
 from apps.core.context_processors import _attach_product_counts
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
@@ -499,72 +500,21 @@ class ProductErrorCreateView(CompanyMemberRequiredMixin, View):
 
 
 class ProductTicketListView(CompanyMemberRequiredMixin, View):
-    def get(self, request, pk):
-        from apps.products.access import product_users
-        from apps.tickets.models import Ticket
-        from apps.tickets.filters import apply_ticket_filters, sort_tickets
+    """A product's ticket list, served by the React shell."""
 
+    def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-
-        qs = product.tickets.select_related("assigned_to", "created_by")
-        qs, ctx = apply_ticket_filters(request, qs)
-        status = request.GET.get("status")
-        if status:
-            qs = qs.filter(status=status)
-        qs = sort_tickets(request, qs, default=("-created_at",))
-
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
-        open_count = qs.exclude(status__in=("resolved", "closed")).count()
-
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "products/partials/_product_ticket_list_results.html",
-                          {"page": page, "product": product, "open_count": open_count})
-
-        return render(request, "products/product_ticket_list.html", {
-            **ctx,
-            "page": page, "product": product, "open_count": open_count,
-            "members": product_users(product, request.company),
-            "current_status": status,
-            "status_choices": Ticket.Status.choices,
-        })
+        return render_shell(request)
 
 
 class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
-    def get(self, request, pk):
-        from apps.products.access import product_users
-        from apps.tickets.models import Ticket
-        from apps.tickets.filters import apply_ticket_filters, sort_tickets
+    """A product's ticket board, served by the React shell."""
 
+    def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-
-        qs = product.tickets.select_related("assigned_to", "created_by")
-        qs, ctx = apply_ticket_filters(request, qs)
-        qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
-
-        columns = [
-            {"key": v, "label": label, "tickets": list(qs.filter(status=v))}
-            for v, label in Ticket.Status.choices
-        ]
-        total = sum(len(c["tickets"]) for c in columns)
-        open_count = sum(len(c["tickets"]) for c in columns if c["key"] not in ("resolved", "closed"))
-
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "products/partials/_product_kanban_columns.html",
-                          {"columns": columns, "total": total, "product": product, "open_count": open_count})
-
-        return render(request, "products/product_ticket_kanban.html", {
-            **ctx,
-            "product": product,
-            "columns": columns,
-            "members": product_users(product, request.company),
-            "total": total,
-            "open_count": open_count,
-        })
+        return render_shell(request)
 
 
 class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
@@ -607,37 +557,6 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
 
-class ProductTicketBulkDeleteView(CompanyMemberRequiredMixin, View):
-    def post(self, request, pk):
-        from apps.tickets.models import Ticket
-        product = get_object_or_404(Product, pk=pk, company=request.company)
-        require_product_access(request, product)
-        ticket_ids = request.POST.getlist("ticket_ids[]")
-        if not ticket_ids:
-            return JsonResponse({"error": "No tickets selected."}, status=400)
-        deleted = 0
-        for tid in ticket_ids:
-            try:
-                ticket = Ticket.objects.get(pk=tid, company=request.company, product=product)
-            except (Ticket.DoesNotExist, ValueError):
-                continue
-            if request.company_role not in ("owner", "admin") and ticket.created_by != request.user:
-                continue
-            ticket_id = ticket.pk
-            ticket_key = ticket.key
-            title = ticket.title
-            ticket.delete()
-            log_activity(
-                request.company, "ticket_deleted",
-                f"Ticket {ticket_key} deleted",
-                description=title,
-                actor=request.user,
-                target_content_type="ticket",
-                target_object_id=ticket_id,
-                metadata={"product_id": product.pk},
-            )
-            deleted += 1
-        return JsonResponse({"deleted": deleted})
 
 
 class ProductTicketDetailView(CompanyMemberRequiredMixin, View):

@@ -1,26 +1,18 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views import View
 
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
-from apps.products.access import (
-    accessible_products,
-    accessible_tickets,
-    require_ticket_access,
-    user_has_product_access,
-)
-from apps.products.models import Product
+from apps.products.access import require_ticket_access
 from apps.notifications import service
 from apps.notifications.models import Notification
 from apps.products.webhook import notify_ticket_assigned, notify_ticket_created
 from apps.tickets.forms import error_summary, TicketCommentForm, TicketCreateForm, TicketDeadlineForm, TicketEditForm
 from apps.tickets import mentions
-from apps.tickets.filters import OPEN_EXCLUDED, SORT_MAP, TICKET_FILTER_KEYS, apply_ticket_filters, sort_tickets  # noqa: F401
+from apps.uiapi.shell import render_shell
 from apps.tickets import service as ticket_service
 from apps.tickets.models import Ticket, TicketComment
 from apps.core.timefmt import t12
@@ -36,66 +28,17 @@ def _ticket_redirect(ticket):
 
 
 class TicketListView(CompanyMemberRequiredMixin, View):
+    """The list, served by the React shell (data from /ui-api/v1/tickets/)."""
+
     def get(self, request):
-        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
-        qs, ctx = apply_ticket_filters(request, qs)
-
-        status = request.GET.get("status")
-        if status:
-            qs = qs.filter(status=status)
-
-        qs = sort_tickets(request, qs, default=("-created_at",))
-
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
-        open_count = qs.exclude(status__in=OPEN_EXCLUDED).count()
-
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "tickets/partials/_ticket_list_results.html", {
-                "page": page, "open_count": open_count,
-            })
-
-        members = User.objects.filter(memberships__company=request.company).order_by("username")
-        products = accessible_products(request.user, request.company).order_by("name")
-        return render(request, "tickets/ticket_list.html", {
-            **ctx,
-            "page": page,
-            "open_count": open_count,
-            "members": members,
-            "products": products,
-            "current_status": status,
-            "status_choices": Ticket.Status.choices,
-        })
+        return render_shell(request)
 
 
 class TicketKanbanView(CompanyMemberRequiredMixin, View):
+    """The board, served by the React shell (data from /ui-api/v1/tickets/?view=board)."""
+
     def get(self, request):
-        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
-        qs, ctx = apply_ticket_filters(request, qs)
-        qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
-
-        columns = [
-            {"key": v, "label": label, "tickets": list(qs.filter(status=v))}
-            for v, label in Ticket.Status.choices
-        ]
-        total = sum(len(c["tickets"]) for c in columns)
-        open_count = sum(len(c["tickets"]) for c in columns if c["key"] not in OPEN_EXCLUDED)
-
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "tickets/partials/_kanban_columns.html", {
-                "columns": columns, "total": total, "open_count": open_count,
-            })
-
-        members = User.objects.filter(memberships__company=request.company).order_by("username")
-        products = accessible_products(request.user, request.company).order_by("name")
-        return render(request, "tickets/ticket_kanban.html", {
-            **ctx,
-            "columns": columns,
-            "members": members,
-            "products": products,
-            "total": total,
-            "open_count": open_count,
-        })
+        return render_shell(request)
 
 
 class TicketCreateView(CompanyMemberRequiredMixin, View):
@@ -504,23 +447,3 @@ class TicketDeleteView(CompanyMemberRequiredMixin, View):
         return redirect("tickets:ticket_board")
 
 
-class TicketBulkDeleteView(CompanyMemberRequiredMixin, View):
-    def post(self, request):
-        ticket_ids = request.POST.getlist("ticket_ids[]")
-        if not ticket_ids:
-            return JsonResponse({"error": "No tickets selected."}, status=400)
-        deleted = 0
-        for tid in ticket_ids:
-            try:
-                ticket = Ticket.objects.get(pk=tid, company=request.company)
-            except (Ticket.DoesNotExist, ValueError):
-                continue
-            if ticket.product_id and not user_has_product_access(
-                request.user, request.company, ticket.product
-            ):
-                continue
-            if not ticket_service.can_delete_ticket(request.user, request.company_role, ticket):
-                continue
-            ticket_service.delete_ticket(ticket, request.user, request.company)
-            deleted += 1
-        return JsonResponse({"deleted": deleted})

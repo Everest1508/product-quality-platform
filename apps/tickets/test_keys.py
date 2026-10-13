@@ -119,9 +119,11 @@ class TicketKeyScreensTest(TestCase):
         self.client.login(username="own", password="pass1234")
 
     def test_list_board_and_detail_show_the_key(self):
-        for url in (reverse("tickets:ticket_list"), reverse("tickets:ticket_board"),
-                    reverse("tickets:ticket_detail", args=[self.ticket.pk])):
-            self.assertContains(self.client.get(url), "AUM-001")
+        listing = self.client.get("/ui-api/v1/tickets/").json()
+        self.assertEqual([t["key"] for t in listing["items"]], ["AUM-001"])
+        board = self.client.get("/ui-api/v1/tickets/", {"view": "board"}).json()
+        self.assertEqual([t["key"] for c in board["columns"] for t in c["tickets"]], ["AUM-001"])
+        self.assertContains(self.client.get(reverse("tickets:ticket_detail", args=[self.ticket.pk])), "AUM-001")
 
     def test_creating_a_ticket_reports_its_key(self):
         res = self.client.post(reverse("products:product_ticket_create", args=[self.product.pk]),
@@ -155,7 +157,7 @@ class TicketKeyScreensTest(TestCase):
         self.assertEqual(ok.status_code, 302)
         self.product.refresh_from_db()
         self.assertEqual(self.product.key, "MKT")
-        self.assertContains(self.client.get(reverse("tickets:ticket_list")), "MKT-001")
+        self.assertEqual(self.client.get("/ui-api/v1/tickets/").json()["items"][0]["key"], "MKT-001")
 
 
 class KeySuggestEndpointTest(TestCase):
