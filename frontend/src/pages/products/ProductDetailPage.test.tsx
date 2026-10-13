@@ -38,18 +38,23 @@ function setup(data: ProductDetail = productDetail(), failWith?: Error) {
 it('shows the product, its counts, versions, keys and team access', async () => {
   setup();
   expect(await screen.findByRole('heading', { name: 'Aum' })).toBeInTheDocument();
-  expect(screen.getByText('1.0.0')).toBeInTheDocument();
-  expect(screen.getByText('server')).toBeInTheDocument();
-  expect(screen.getByText('Not configured')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Review errors →' })).toHaveAttribute('href', '/products/3/errors/');
-  expect(screen.getByText('Allocated members')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /open errors/ })).toHaveAttribute('href', '/products/3/errors/');
+  await userEvent.click(screen.getByRole('tab', { name: 'Versions' }));
+  expect(await screen.findByText('1.0.0')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('tab', { name: 'API keys' }));
+  expect(await screen.findByText('server')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('tab', { name: 'Integrations' }));
+  expect(await screen.findByText('Not configured')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('tab', { name: 'Team access' }));
+  expect(await screen.findByText('Allocated members')).toBeInTheDocument();
 });
 
 it('a non-admin sees no edit, delete or team access, and a viewer no key form', async () => {
   setup(productDetail({ is_admin: false, can_manage_keys: false, members: [] }));
   await screen.findByRole('heading', { name: 'Aum' });
   expect(screen.queryByRole('link', { name: 'Edit' })).not.toBeInTheDocument();
-  expect(screen.queryByText('Allocated members')).not.toBeInTheDocument();
+  expect(screen.queryByRole('tab', { name: 'Team access' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('tab', { name: 'API keys' }));
   expect(screen.queryByRole('button', { name: 'Generate' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Rotate' })).not.toBeInTheDocument();
   expect(screen.getByText(/can create and rotate keys/)).toBeInTheDocument();
@@ -59,6 +64,7 @@ it('Generate posts the name and shows the raw key once', async () => {
   const { post, toast } = setup();
   post.mockResolvedValue({ ...productDetail({ api_keys: [keyRow(), keyRow({ id: 8, name: 'billing' })] }), raw_key: 'f'.repeat(64), message: "API key 'billing' created." } as never);
   await screen.findByRole('heading', { name: 'Aum' });
+  await userEvent.click(await screen.findByRole('tab', { name: 'API keys' }));
   await userEvent.type(screen.getByRole('textbox', { name: 'Key name' }), 'billing');
   await userEvent.click(screen.getByRole('button', { name: 'Generate' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('products/3/api-keys/', { name: 'billing' }));
@@ -73,6 +79,7 @@ it('Rotate asks first, sends the chosen grace, and shows the new key', async () 
   const { post } = setup();
   post.mockResolvedValue({ ...productDetail(), raw_key: 'a'.repeat(64), message: 'Key rotated — the old key works until Oct 14.' } as never);
   await screen.findByRole('heading', { name: 'Aum' });
+  await userEvent.click(await screen.findByRole('tab', { name: 'API keys' }));
   await userEvent.click(screen.getByRole('button', { name: 'Rotate' }));
   expect(post).not.toHaveBeenCalled();
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Rotate' }));
@@ -83,6 +90,7 @@ it('Rotate asks first, sends the chosen grace, and shows the new key', async () 
 it('Revoke asks first', async () => {
   const { post } = setup();
   await screen.findByRole('heading', { name: 'Aum' });
+  await userEvent.click(await screen.findByRole('tab', { name: 'API keys' }));
   await userEvent.click(screen.getByRole('button', { name: 'Revoke' }));
   expect(post).not.toHaveBeenCalled();
   const dialog = await screen.findByRole('dialog');
@@ -93,6 +101,7 @@ it('Revoke asks first', async () => {
 it('adds and deletes versions', async () => {
   const { post, del } = setup();
   await screen.findByRole('heading', { name: 'Aum' });
+  await userEvent.click(await screen.findByRole('tab', { name: 'Versions' }));
   await userEvent.click(screen.getByRole('button', { name: /Add$/ }));
   await userEvent.type(screen.getByRole('textbox', { name: 'Version' }), '2.0.0');
   await userEvent.click(screen.getByRole('checkbox'));
@@ -104,6 +113,7 @@ it('adds and deletes versions', async () => {
 
 it('allocates and removes members', async () => {
   const { post } = setup();
+  await userEvent.click(await screen.findByRole('tab', { name: 'Team access' }));
   await screen.findByText('Allocated members');
   await userEvent.click(screen.getByRole('button', { name: 'Allocate' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith('products/3/access/', { user_id: 2 }));

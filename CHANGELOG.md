@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.30.0] — 2026-10-13 · a spreadsheet DSR, and simpler product and ticket pages
+
+> In short: the DSR reads like a spreadsheet, and the product and ticket pages show one thing at a time.
+
+### New
+
+- **The DSR is a spreadsheet-style grid.** Date, employee, task, hours, a "Work details" group (product, category, ticket, source, notes), status and actions each get their own bordered column, with the day's total in the date cell.
+- **Start and end times show in the Hours column** when an entry has them, with the duration underneath.
+
+### Better
+
+- **The product page has tabs.** Roadmap, Versions, API keys, Team access and Integrations each have their own tab instead of one long page, and the open errors, tickets and surveys are quick links under the title.
+- **The ticket page is one clear column.** Status, priority, assignee and deadline sit in a single row under the title, then the description and the comments.
+
 ## [1.29.0] — 2026-10-13 · a calmer Home and a DSR you can read
 
 > In short: the DSR is now one table of everything submitted, today and before, Home is much simpler, and switching theme fades smoothly.

@@ -52,6 +52,8 @@ def entry_json(e):
         "status": e.status, "status_label": e.get_status_display(), "hours": format_hm(e.hours_spent),
         "hours_value": str(e.hours_spent), "notes": e.notes, "auto": e.is_auto_logged,
         "source": e.source, "source_id": e.source_id,
+        "from_time": timezone.localtime(e.created_time).strftime("%H:%M") if e.created_time else "",
+        "to_time": timezone.localtime(e.completed_time).strftime("%H:%M") if e.completed_time else "",
         "product": {"id": e.product_id, "name": e.product.name} if e.product_id else None,
         "ticket": {"id": e.ticket_id, "key": e.ticket.key,
                    "url": f"/products/{e.ticket.product_id}/tickets/{e.ticket_id}/" if e.ticket.product_id else f"/tickets/{e.ticket_id}/"} if e.ticket_id else None,

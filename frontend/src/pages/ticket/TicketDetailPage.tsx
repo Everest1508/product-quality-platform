@@ -18,13 +18,14 @@ import { MentionTextarea } from './MentionTextarea';
 import { useTicketActions, useTicketDetail } from './useTicket';
 import type { TicketDetail } from './types';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const ASSIGN_DEBOUNCE_MS = 600;
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1.5 border-t pt-3 first:border-t-0 first:pt-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className="grid content-start gap-1.5">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
   );
@@ -101,108 +102,81 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
   const viewers = others.filter((u) => u.ticket_id === ticketId).map((u) => u.name);
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-4xl space-y-5">
       <Breadcrumb items={[{ label: 'Tickets', href: '/tickets/' }, ...(t.product ? [{ label: t.product.name, href: `/products/${t.product.id}/` }] : []), { label: t.key }]} />
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="break-words text-xl font-semibold">
-            {t.key} <span className="ml-1 text-base font-normal text-muted-foreground">{t.title}</span>
-          </h1>
-          <p aria-live="polite" className="mt-1 min-h-5 text-xs text-muted-foreground">
-            {viewers.length > 0 && (
-              <span className="inline-flex items-center gap-1"><EyeIcon className="size-3.5" /> {viewers.join(', ')} also viewing</span>
-            )}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm"><Link to={boardUrl}><ArrowLeftIcon /> {t.product ? `${t.product.name} tickets` : 'Tickets'}</Link></Button>
-          <Button asChild variant="outline" size="sm"><Link to={editUrl}><EditIcon /> Edit Ticket</Link></Button>
-          {t.can_delete && (
-            <Button variant="destructive" size="sm" aria-label="Delete ticket" onClick={() => setConfirmDelete(true)}><TrashIcon /> Delete</Button>
-          )}
-        </div>
+      <PageHeader
+        title={<><span className="text-muted-foreground">{t.key}</span> {t.title}</>}
+        sub={<>
+          <Badge variant="outline">{t.type_label}</Badge> <span className="ml-1">Created {ago(t.created_at)} · updated {ago(t.updated_at)} · {t.source_label}</span>
+          {viewers.length > 0 && <span aria-live="polite" className="ml-2 inline-flex items-center gap-1"><EyeIcon className="size-3.5" /> {viewers.join(', ')} also viewing</span>}
+        </>}
+        actions={<>
+          <Button asChild variant="outline"><Link to={editUrl}><EditIcon /> Edit Ticket</Link></Button>
+          {t.can_delete && <Button variant="outline" className="text-destructive" aria-label="Delete ticket" onClick={() => setConfirmDelete(true)}><TrashIcon /> Delete</Button>}
+        </>}
+      />
+
+      <Card className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Row label="Status">
+          <Select value={t.status} onValueChange={(v) => void act.setStatus(v)} disabled={act.busy === 'status'}>
+            <SelectTrigger aria-label="Status"><SelectValue /></SelectTrigger>
+            <SelectContent>{data.statuses.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          </Select>
+        </Row>
+        <Row label="Priority">
+          <Select value={t.priority} onValueChange={(v) => void act.setPriority(v)} disabled={act.busy === 'priority'}>
+            <SelectTrigger aria-label="Priority"><SelectValue /></SelectTrigger>
+            <SelectContent>{data.priorities.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          </Select>
+        </Row>
+        <Row label="Assignee">
+          <AssigneePicker people={data.members} value={ids} onChange={changeAssignees} />
+          {saving && <span className="text-xs text-muted-foreground">Saving…</span>}
+        </Row>
+        <Row label="Deadline">
+          <DeadlineField value={t.deadline_local} overdue={t.is_overdue} disabled={act.busy === 'deadline'} onChange={(v) => void act.setDeadline(v)} />
+        </Row>
+      </Card>
+
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">Description</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-pressed={data.following}
+          loading={act.busy === 'follow'}
+          onClick={() => void act.toggleFollow()}
+          title={data.following ? 'Stop getting comment and status notices' : 'Get comment and status notices without being assigned'}
+        ><BellIcon />
+          {data.following ? 'Following' : 'Follow'}
+          {data.watcher_count > 0 && ` · ${data.watcher_count}`}
+        </Button>
       </div>
+      <Card className="p-5">
+        {t.description ? <div className="whitespace-pre-wrap break-words text-sm">{t.description}</div> : <p className="text-sm text-muted-foreground">No description.</p>}
+        {t.linked_error && (
+          <p className="mt-4 border-t pt-3 text-sm"><span className="text-muted-foreground">Linked error: </span><a href={t.linked_error.url} className="break-words text-primary hover:underline">{t.linked_error.title}</a></p>
+        )}
+      </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
-          <Card className="p-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2">
-                <Badge variant="outline">{t.type_label}</Badge>
-                {t.product && <span className="text-muted-foreground">{t.product.name}</span>}
-              </span>
-              <span className="text-xs text-muted-foreground" title={new Date(t.created_at).toLocaleString()}>Created {ago(t.created_at)}</span>
-            </div>
-            {t.description && <div className="whitespace-pre-wrap break-words text-sm">{t.description}</div>}
-          </Card>
-
-          {t.linked_error && (
-            <Card className="p-5">
-              <div className="mb-2 text-sm font-medium">Linked Error</div>
-              <a href={t.linked_error.url} className="break-words text-sm text-primary hover:underline">{t.linked_error.title}</a>
-            </Card>
-          )}
-
-          <Card className="p-5">
-            <div className="mb-3 text-sm font-medium">
-              Comments <span className="text-muted-foreground">({data.comments.length})</span>
-            </div>
-            <CommentList comments={data.comments} people={data.mention_candidates} />
-            <form onSubmit={submit} className="mt-4 space-y-2 border-t pt-4">
-              <MentionTextarea
-                aria-label="Comment"
-                value={draft}
-                onChange={setDraft}
-                people={data.mention_candidates}
-                rows={3}
-                placeholder="Add a comment… type @ to mention someone"
-              />
-              <div className="text-right">
-                <Button type="submit" size="sm" loading={act.busy === 'comment'}><SendIcon />Comment</Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-
-        <Card className="h-fit space-y-3 p-5">
-          <div className="text-sm font-medium">Details</div>
-          <Row label="Status">
-            <Select value={t.status} onValueChange={(v) => void act.setStatus(v)} disabled={act.busy === 'status'}>
-              <SelectTrigger aria-label="Status"><SelectValue /></SelectTrigger>
-              <SelectContent>{data.statuses.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
-            </Select>
-          </Row>
-          <Row label="Priority">
-            <Select value={t.priority} onValueChange={(v) => void act.setPriority(v)} disabled={act.busy === 'priority'}>
-              <SelectTrigger aria-label="Priority"><SelectValue /></SelectTrigger>
-              <SelectContent>{data.priorities.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
-            </Select>
-          </Row>
-          <Row label="Assignee">
-            <AssigneePicker people={data.members} value={ids} onChange={changeAssignees} />
-            {saving && <span className="text-xs text-muted-foreground">Saving…</span>}
-          </Row>
-          <Row label="Notifications">
-            <Button
-              variant="outline"
-              size="sm"
-              aria-pressed={data.following}
-              loading={act.busy === 'follow'}
-              onClick={() => void act.toggleFollow()}
-              title={data.following ? 'Stop getting comment and status notices' : 'Get comment and status notices without being assigned'}
-            ><BellIcon />
-              {data.following ? 'Following' : 'Follow'}
-              {data.watcher_count > 0 && ` · ${data.watcher_count}`}
-            </Button>
-          </Row>
-          <Row label="Deadline">
-            <DeadlineField value={t.deadline_local} overdue={t.is_overdue} disabled={act.busy === 'deadline'} onChange={(v) => void act.setDeadline(v)} />
-          </Row>
-          <Row label="Source"><span className="text-sm">{t.source_label}</span></Row>
-          <Row label="Updated"><span className="text-sm" title={new Date(t.updated_at).toLocaleString()}>{ago(t.updated_at)}</span></Row>
-        </Card>
-      </div>
+      <h2 className="text-sm font-semibold">Comments <span className="font-normal text-muted-foreground">({data.comments.length})</span></h2>
+      <Card className="p-5">
+        <CommentList comments={data.comments} people={data.mention_candidates} />
+        <form onSubmit={submit} className="mt-4 space-y-2 border-t pt-4 first:mt-0 first:border-0 first:pt-0">
+          <MentionTextarea
+            aria-label="Comment"
+            value={draft}
+            onChange={setDraft}
+            people={data.mention_candidates}
+            rows={3}
+            placeholder="Add a comment… type @ to mention someone"
+          />
+          <div className="text-right">
+            <Button type="submit" loading={act.busy === 'comment'}><SendIcon />Comment</Button>
+          </div>
+        </form>
+      </Card>
 
       <AlertDialog
         open={confirmDelete}

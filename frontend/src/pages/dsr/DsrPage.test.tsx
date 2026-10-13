@@ -121,9 +121,9 @@ it('Delete asks first', async () => {
   await waitFor(() => expect(del).toHaveBeenCalledWith('dsr/entries/1/'));
 });
 
-it('an admin can look at everyone and sees a Person column', async () => {
+it('an admin can look at everyone and sees every employee', async () => {
   setup(log({ is_privileged: true, scope: 'all', members: [{ id: 1, name: 'ann' }, { id: 2, name: 'bob' }], rows: [row(), row({ id: 3, task_name: 'Bob task', person: { id: 2, name: 'bob', username: 'bob', is_me: false } })] }), '/dsr/?user_id=all');
-  expect(await screen.findByRole('columnheader', { name: 'Person' })).toBeInTheDocument();
+  expect(await screen.findByRole('columnheader', { name: 'Employee' })).toBeInTheDocument();
   expect(screen.getByText('Bob task')).toBeInTheDocument();
   expect(screen.getByText('Everyone’s submitted work.')).toBeInTheDocument();
 });

@@ -963,3 +963,7 @@ decided what and strike the item** rather than deleting it.
 - Home lost the hero quote, clock, donut, errors card and recent activity (the errors and status charts live in Reports and the product dashboard). The `dashboard/quote/` endpoint is now unused by the page.
 - Theme change cross-fades with the View Transitions API (CSS `::view-transition-*`), with a `theme-fade` class fallback and no animation under reduced motion.
 - Other pages that are still heavy and worth simplifying next: product detail, ticket detail, reports, attendance.
+
+### 2026-10-13 Spreadsheet DSR, product and ticket pages (1.30.0)
+- DSR table is a bordered grid with a two-row header (`Work details` group over Product, Category, Ticket, Source, Notes) and a merged date cell per day; `from_time` / `to_time` on each entry come from `created_time` / `completed_time` (auto-logged entries have them). There is no approval workflow in DSR, so no Approve/Reject columns.
+- Product detail: header + quick links + `Tabs` (Roadmap, Versions, API keys, Team access for admins, Integrations); `#api-key-list` opens the API keys tab. Ticket detail: single column, properties row, description with the linked error, comments; the "back to board" button was dropped (the breadcrumb does it).

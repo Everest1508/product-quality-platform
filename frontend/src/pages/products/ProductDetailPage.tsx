@@ -18,6 +18,8 @@ import { Avatar } from '@/components/ui/avatar';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { Label } from '@/components/ui/label';
 import { StatCard } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/ui/page-header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const GRACE: [string, string][] = [['1d', 'Old key works 24 more hours'], ['7d', 'Old key works 7 more days'], ['now', 'Stop the old key now']];
 
@@ -240,73 +242,76 @@ function Detail({ data }: { data: ProductDetail }) {
     if (window.location.hash === '#api-key-list') document.getElementById('api-key-list')?.scrollIntoView();
   }, []);
 
+  const hashTab = window.location.hash === '#api-key-list' ? 'keys' : 'roadmap';
+  const links: [string, string, number, boolean][] = [
+    ['Errors', `/products/${p.id}/errors/`, p.counts.errors, true],
+    ['Tickets', `/products/${p.id}/tickets/`, p.counts.tickets, true],
+    ['Surveys', `/products/${p.id}/surveys/`, p.counts.surveys, true],
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Breadcrumb items={[{ label: 'Products', href: '/products/' }, { label: p.name }]} />
 
-      <Card className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold">{p.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{p.slug} · created {shortDate(p.created_at)} · {p.default_environment.charAt(0).toUpperCase() + p.default_environment.slice(1)}</p>
-          </div>
-          {data.is_admin && (
-            <div className="flex gap-1">
-              <Button asChild variant="ghost" size="icon" aria-label="Edit"><Link to={`/products/${p.id}/edit/`}><EditIcon /></Link></Button>
-              <Button variant="ghost" size="icon" aria-label="Delete" className="text-destructive" onClick={() => setConfirmDelete(true)}><TrashIcon /></Button>
-            </div>
-          )}
-        </div>
-        {p.description && <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{p.description}</p>}
-      </Card>
-
-      <MilestoneFlow
-        milestones={data.milestones}
-        productName={p.name}
-        busy={act.busy === 'milestone'}
-        onAdd={act.addMilestone}
-        onToggle={act.toggleMilestone}
-        onDelete={act.deleteMilestone}
+      <PageHeader
+        title={p.name}
+        sub={`${p.slug} · created ${shortDate(p.created_at)} · ${p.default_environment.charAt(0).toUpperCase() + p.default_environment.slice(1)}${p.description ? ` — ${p.description}` : ''}`}
+        actions={data.is_admin && (
+          <>
+            <Button asChild variant="outline"><Link to={`/products/${p.id}/edit/`}><EditIcon />Edit</Link></Button>
+            <Button variant="outline" className="text-destructive" onClick={() => setConfirmDelete(true)}><TrashIcon />Delete</Button>
+          </>
+        )}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Open errors" value={p.counts.errors} tone="text-destructive" foot={<Link to={`/products/${p.id}/errors/`} className="text-primary hover:underline">Review errors →</Link>} />
-        <Stat label="Open tickets" value={p.counts.tickets} tone="text-warning" foot={<Link to={`/products/${p.id}/tickets/`} className="text-primary hover:underline">Open board →</Link>} />
-        <Stat label="Surveys" value={p.counts.surveys} tone="text-success" foot={<a href={`/products/${p.id}/surveys/`} className="text-primary hover:underline">Manage surveys →</a>} />
-        <Stat label="Versions" value={p.counts.versions} tone="text-info" foot={<span className="text-muted-foreground">releases tracked</span>} />
+      <div className="flex flex-wrap gap-2">
+        {links.map(([label, to, n]) => (
+          <Button key={label} asChild variant="outline" size="sm"><Link to={to}><span className="font-semibold">{n}</span> open {label.toLowerCase()}</Link></Button>
+        ))}
+        <Badge variant="outline" className="h-8 px-3">{p.counts.versions} {p.counts.versions === 1 ? 'version' : 'versions'}</Badge>
       </div>
 
-      <h2 className="text-base font-semibold">Configuration</h2>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="space-y-3 p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Discord webhook</h3>
-            {data.is_admin && <Button asChild size="sm" variant="outline"><Link to={`/products/${p.id}/edit/`}><PlusIcon />{p.webhook_configured ? 'Edit' : 'Add'}</Link></Button>}
-          </div>
-          {p.webhook_configured ? (
-            <>
-              <div className="flex items-center justify-between"><Badge variant="success" dot>Connected</Badge><span className="font-mono tracking-widest text-muted-foreground">••••••••••••••••</span></div>
-              <p className="text-xs text-muted-foreground">Events are posted to your Discord channel as they happen.</p>
-            </>
-          ) : (
-            <>
-              <Badge dot>Not configured</Badge>
-              <p className="text-xs text-muted-foreground">Get notified about tickets, errors, and feedback in Discord.</p>
-            </>
-          )}
-        </Card>
-        <VersionsCard data={data} act={act} />
-      </div>
-
-      <h2 className="text-base font-semibold">API keys</h2>
-      <KeysCard data={data} act={act} />
-
-      {data.is_admin && (
-        <>
-          <h2 className="text-base font-semibold">Team access</h2>
-          <AccessCard data={data} act={act} />
-        </>
-      )}
+      <Tabs defaultValue={hashTab}>
+        <TabsList aria-label="Product sections">
+          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+          <TabsTrigger value="versions">Versions</TabsTrigger>
+          <TabsTrigger value="keys">API keys</TabsTrigger>
+          {data.is_admin && <TabsTrigger value="access">Team access</TabsTrigger>}
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
+        </TabsList>
+        <TabsContent value="roadmap" className="mt-4">
+          <MilestoneFlow
+            milestones={data.milestones}
+            productName={p.name}
+            busy={act.busy === 'milestone'}
+            onAdd={act.addMilestone}
+            onToggle={act.toggleMilestone}
+            onDelete={act.deleteMilestone}
+          />
+        </TabsContent>
+        <TabsContent value="versions" className="mt-4"><VersionsCard data={data} act={act} /></TabsContent>
+        <TabsContent value="keys" className="mt-4"><KeysCard data={data} act={act} /></TabsContent>
+        {data.is_admin && <TabsContent value="access" className="mt-4"><AccessCard data={data} act={act} /></TabsContent>}
+        <TabsContent value="integrations" className="mt-4">
+          <Card className="max-w-xl space-y-3 p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Discord webhook</h3>
+              {data.is_admin && <Button asChild size="sm" variant="outline"><Link to={`/products/${p.id}/edit/`}><PlusIcon />{p.webhook_configured ? 'Edit' : 'Add'}</Link></Button>}
+            </div>
+            {p.webhook_configured ? (
+              <>
+                <Badge variant="success" dot>Connected</Badge>
+                <p className="text-xs text-muted-foreground">Events are posted to your Discord channel as they happen.</p>
+              </>
+            ) : (
+              <>
+                <Badge dot>Not configured</Badge>
+                <p className="text-xs text-muted-foreground">Get notified about tickets, errors, and feedback in Discord.</p>
+              </>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog
         open={confirmDelete}

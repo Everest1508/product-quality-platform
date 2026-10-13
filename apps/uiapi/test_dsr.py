@@ -316,3 +316,12 @@ class LogApiTest(DsrBase):
         self.assertEqual((d["can_log"], [p["name"] for p in d["products"]]), (True, ["Open"]))
         self.assertIn("Fix it (Ticket Completion) - 1h 30m", d["summary_text"])
         self.assertIn("No tasks recorded", self.log(range="yesterday").json()["summary_text"])
+
+    def test_an_entry_with_start_and_end_times_carries_them_as_local_clock_times(self):
+        start = timezone.make_aware(datetime.combine(self.today, time(9, 15)))
+        self.entry(task_name="Timed", created_time=start, completed_time=start + timedelta(hours=8, minutes=15))
+        self.entry(task_name="Untimed")
+        self.login("dev")
+        rows = {r["task_name"]: r for r in self.log().json()["rows"]}
+        self.assertEqual((rows["Timed"]["from_time"], rows["Timed"]["to_time"]), ("09:15", "17:30"))
+        self.assertEqual((rows["Untimed"]["from_time"], rows["Untimed"]["to_time"]), ("", ""))
