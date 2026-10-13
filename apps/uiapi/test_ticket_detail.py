@@ -114,3 +114,70 @@ class TicketEditApiTest(Base):
         t = self.make(self.p_open)
         r = strict.patch(f"/ui-api/v1/tickets/{t.pk}/", self.good(), content_type="application/json")
         self.assertEqual(r.status_code, 403)
+
+
+class TicketActionsApiTest(Base):
+    def post(self, t, action, body=None):
+        return self.client.post(f"/ui-api/v1/tickets/{t.pk}/{action}/", body or {}, content_type="application/json")
+
+    def test_priority(self):
+        t = self.make(self.p_open)
+        self.login("owner")
+        r = self.post(t, "priority", {"priority": "critical"})
+        self.assertEqual(r.json()["ticket"]["priority"], "critical")
+        self.assertEqual(self.post(t, "priority", {"priority": "huge"}).status_code, 400)
+
+    def test_assign_sets_status_and_ignores_strangers(self):
+        t = self.make(self.p_open)
+        stranger = member("zed", self.other)
+        self.login("owner")
+        data = self.post(t, "assign", {"assignees": [self.dev.pk, stranger.pk]}).json()
+        self.assertEqual([a["id"] for a in data["ticket"]["assignees"]], [self.dev.pk])
+        self.assertEqual(data["ticket"]["status"], "assigned")
+        self.assertIn("assigned to", data["message"])
+        self.assertEqual(self.post(t, "assign", {"assignees": []}).json()["ticket"]["status"], "open")
+
+    def test_assign_survives_garbage_ids(self):
+        t = self.make(self.p_open)
+        self.login("owner")
+        r = self.post(t, "assign", {"assignees": ["x", None, self.dev.pk]})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([a["id"] for a in r.json()["ticket"]["assignees"]], [self.dev.pk])
+
+    def test_deadline_set_clear_and_garbage(self):
+        t = self.make(self.p_open)
+        self.login("owner")
+        r = self.post(t, "deadline", {"deadline": "2026-10-20T10:00"})
+        self.assertEqual(r.json()["ticket"]["deadline_local"], "2026-10-20T10:00")
+        self.assertEqual(self.post(t, "deadline", {"deadline": None}).json()["ticket"]["deadline_local"], "")
+        self.assertEqual(self.post(t, "deadline", {"deadline": "soon"}).status_code, 400)
+
+    def test_follow_toggles(self):
+        t = self.make(self.p_open)
+        self.login("dev")
+        r = self.post(t, "follow")
+        self.assertEqual((r.json()["following"], r.json()["watcher_count"]), (True, 1))
+        self.assertIn("following", r.json()["message"])
+        self.assertFalse(self.post(t, "follow").json()["following"])
+
+    def test_comment_with_mentions(self):
+        t = self.make(self.p_open)
+        self.login("owner")
+        r = self.post(t, "comments", {"body": "hello @dev"})
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json()["comments"][0]["mentions"], ["dev"])
+
+    def test_empty_comment_is_400(self):
+        t = self.make(self.p_open)
+        self.login("owner")
+        r = self.post(t, "comments", {"body": "   "})
+        self.assertEqual((r.status_code, r.json()["detail"]), (400, "Comment cannot be empty."))
+        self.assertEqual(t.comments.count(), 0)
+
+    def test_every_action_needs_access(self):
+        hidden = self.make(self.p_hidden)
+        self.login("dev")
+        for action, body in [("priority", {"priority": "low"}), ("assign", {"assignees": []}), ("deadline", {"deadline": None}),
+                             ("follow", {}), ("comments", {"body": "x"})]:
+            self.assertEqual(self.post(hidden, action, body).status_code, 404, action)
+        self.assertEqual(hidden.comments.count(), 0)

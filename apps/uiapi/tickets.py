@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
@@ -262,3 +263,60 @@ class TicketBulkDeleteAPIView(CompanyAPIView):
             ticket_service.delete_ticket(ticket, request.user, request.company)
             deleted += 1
         return Response({"deleted": deleted, "skipped": len(ids) - deleted})
+
+
+class _TicketActionView(CompanyAPIView):
+    """Base for the small per-ticket actions: find the ticket (404 without access),
+    do one thing through the service layer, answer with the ticket as the page shows it."""
+
+    def post(self, request, pk):
+        return self.act(request, _ticket(request, pk))
+
+
+class TicketPriorityAPIView(_TicketActionView):
+    def act(self, request, ticket):
+        error = ticket_service.set_priority(ticket, request.data.get("priority"), request.user, request.company)
+        if error:
+            return Response({"detail": error}, status=400)
+        return detail_response(request, ticket)
+
+
+class TicketAssignAPIView(_TicketActionView):
+    def act(self, request, ticket):
+        raw = request.data.get("assignees") or []
+        ids = [int(x) for x in raw if str(x).isdigit()] if isinstance(raw, list) else []
+        message = ticket_service.assign(ticket, ids, request.user, request.company)
+        return detail_response(request, ticket, message=message)
+
+
+class TicketDeadlineAPIView(_TicketActionView):
+    def act(self, request, ticket):
+        raw = request.data.get("deadline")
+        if raw in (None, ""):
+            deadline = None
+        else:
+            parsed = parse_datetime(str(raw))
+            if parsed is None:
+                return Response({"detail": "Enter a valid date and time."}, status=400)
+            deadline = timezone.make_aware(parsed, timezone.get_current_timezone()) if timezone.is_naive(parsed) else parsed
+        ticket_service.set_deadline(ticket, deadline, request.user, request.company)
+        return detail_response(request, ticket)
+
+
+class TicketFollowAPIView(_TicketActionView):
+    def act(self, request, ticket):
+        following = ticket_service.toggle_follow(ticket, request.user, request.company)
+        message = (
+            f"You are following {ticket.key}. You will be told about comments and status changes."
+            if following else f"You unfollowed {ticket.key}."
+        )
+        return detail_response(request, ticket, message=message)
+
+
+class TicketCommentAPIView(_TicketActionView):
+    def act(self, request, ticket):
+        body = str(request.data.get("body") or "").strip()
+        if not body:
+            return Response({"detail": "Comment cannot be empty."}, status=400)
+        ticket_service.add_comment(ticket, body, request.user, request.company)
+        return detail_response(request, ticket, status=201)
