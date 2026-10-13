@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { socket } from '@/lib/presence';
+import * as productNav from '@/lib/useProductNav';
 import { AppShell } from './AppShell';
 import * as bootstrap from '@/lib/bootstrap';
 import { sampleBootstrap } from '@/test-fixtures';
@@ -68,4 +69,20 @@ it('reconnects the socket when the page comes back from the back/forward cache',
   expect(start).not.toHaveBeenCalled();
   window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
   expect(start).toHaveBeenCalledTimes(1);
+});
+
+it('shows the product section and switcher on a product page, with one active item', async () => {
+  vi.spyOn(productNav, 'useProductNav').mockReturnValue({
+    id: 3, name: 'Billing App', counts: { errors: 2, tickets: 5, surveys: 0, rules: 0 },
+    urls: { overview: '/products/3/', errors: '/products/3/errors/', tickets: '/products/3/tickets/', surveys: '/products/3/surveys/', rules: '/products/3/rules/' },
+    products: [{ id: 3, name: 'Billing App', url: '/products/3/tickets/' }, { id: 4, name: 'Mobile', url: '/products/4/tickets/' }],
+    all_url: '/products/',
+  });
+  renderShell('/products/3/tickets/kanban/');
+  expect(screen.getAllByRole('link', { current: 'page' })).toHaveLength(1);
+  expect(screen.getByRole('link', { current: 'page' })).toHaveAccessibleName(/^Tickets/);
+  expect(screen.getByRole('link', { name: /^Overview/ })).toHaveAttribute('href', '/products/3/');
+  await userEvent.click(screen.getByRole('button', { name: /billing app/i }));
+  expect(screen.getByRole('menuitem', { name: 'Mobile' })).toHaveAttribute('href', '/products/4/tickets/');
+  expect(screen.getByRole('menuitem', { name: /view all products/i })).toHaveAttribute('href', '/products/');
 });

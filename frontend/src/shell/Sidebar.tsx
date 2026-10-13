@@ -2,9 +2,11 @@ import { ChevronLeft, ChevronRight, Download, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useInstallPrompt } from '@/lib/pwa';
+import { useProductNav } from '@/lib/useProductNav';
 import { cn } from '@/lib/utils';
 import { CompanySwitcher } from './CompanySwitcher';
-import { activeKey, navSections, type NavItem } from './nav';
+import { ProductSwitcher } from './ProductSwitcher';
+import { activeKey, navSections, productSection, type NavItem } from './nav';
 
 type Props = { collapsed: boolean; onToggle(): void; open: boolean; onClose(): void; onOpenChangelog(): void };
 
@@ -34,7 +36,9 @@ export function Sidebar({ collapsed, onToggle, open, onClose, onOpenChangelog }:
   const b = useBootstrapData();
   const pwa = useInstallPrompt();
   const { pathname } = useLocation();
-  const sections = navSections(b);
+  const productNav = useProductNav(pathname);
+  const base = navSections(b);
+  const sections = productNav ? [base[0], productSection(productNav), ...base.slice(1)] : base;
   const active = activeKey(pathname, sections);
   return (
     <>
@@ -53,7 +57,8 @@ export function Sidebar({ collapsed, onToggle, open, onClose, onOpenChangelog }:
         </a>
         <CompanySwitcher collapsed={collapsed} />
         {sections.map((s, i) => (
-          <nav key={s.label ?? i} aria-label={s.label ?? 'Main'} className="flex flex-col gap-0.5">
+          <nav key={s.label ?? (s.product ? 'product' : i)} aria-label={s.label ?? (s.product ? 'Current product' : 'Main')} className="flex flex-col gap-0.5">
+            {s.product && <div className="pb-1"><ProductSwitcher nav={s.product} collapsed={collapsed} /></div>}
             {s.label && !collapsed && (
               <div className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{s.label}</div>
             )}

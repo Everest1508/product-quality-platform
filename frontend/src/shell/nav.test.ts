@@ -26,3 +26,34 @@ it('exactly one item is active, and the longest prefix wins', () => {
   for (const [path, key] of Object.entries(cases)) expect(activeKey(path, sections), path).toBe(key);
   expect(activeKey('/somewhere/else/', sections)).toBeNull();
 });
+
+import { isReactPath, productIdFromPath, productSection } from './nav';
+
+it('knows which paths React owns', () => {
+  for (const p of ['/notifications/', '/tickets/', '/tickets/kanban/', '/tickets/list/', '/products/3/tickets/', '/products/3/tickets/kanban/', '/products/12/tickets/list/'])
+    expect(isReactPath(p), p).toBe(true);
+  for (const p of ['/tickets/5/', '/tickets/create/', '/products/3/', '/products/3/errors/', '/products/3/tickets/5/', '/leave/'])
+    expect(isReactPath(p), p).toBe(false);
+});
+
+it('reads the product id from the path', () => {
+  expect(productIdFromPath('/products/7/tickets/list/')).toBe(7);
+  expect(productIdFromPath('/products/')).toBeNull();
+  expect(productIdFromPath('/tickets/')).toBeNull();
+});
+
+it('product section: one active item, badges, Tickets is the only React link', () => {
+  const nav = {
+    id: 3, name: 'App', counts: { errors: 2, tickets: 5, surveys: 0, rules: 1 },
+    urls: { overview: '/products/3/', errors: '/products/3/errors/', tickets: '/products/3/tickets/', surveys: '/products/3/surveys/', rules: '/products/3/rules/' },
+    products: [], all_url: '/products/',
+  };
+  const section = productSection(nav);
+  const sections = [...navSections(sampleBootstrap()), section];
+  expect(section.items.find((i) => i.key === 'p_tickets')?.badge).toBe(5);
+  expect(section.items.find((i) => i.key === 'p_surveys')?.badge).toBeUndefined();
+  expect(section.items.filter((i) => i.react).map((i) => i.key)).toEqual(['p_tickets']);
+  expect(activeKey('/products/3/tickets/kanban/', sections)).toBe('p_tickets');
+  expect(activeKey('/products/3/', sections)).toBe('p_overview');
+  expect(activeKey('/products/3/errors/9/', sections)).toBe('p_errors');
+});

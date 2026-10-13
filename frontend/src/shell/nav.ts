@@ -1,14 +1,25 @@
 import {
   Banknote, CalendarDays, ChartColumn, CircleCheck, ClipboardList, Clock, FileText, Headset, History, House,
-  Package, Percent, SlidersHorizontal, Sparkles, Ticket, TriangleAlert, User, Users, Wallet, type LucideIcon,
+  LayoutDashboard, Package, Percent, SlidersHorizontal, Sparkles, Ticket, TriangleAlert, User, Users, Wallet, type LucideIcon,
 } from 'lucide-react';
 import type { Bootstrap } from '@/lib/bootstrap';
+import type { ProductNav } from '@/lib/useProductNav';
 
 export type NavItem = { key: string; label: string; href: string; icon: LucideIcon; badge?: number; react: boolean };
-export type NavSection = { label?: string; items: NavItem[] };
+export type NavSection = { label?: string; items: NavItem[]; product?: ProductNav };
 
 // Paths the React router owns. Everything else is a normal link to a legacy page.
-export const REACT_PATHS = new Set<string>(['/notifications/']);
+const REACT_PATH_RES = [
+  /^\/notifications\/$/,
+  /^\/tickets\/(kanban\/|list\/)?$/,
+  /^\/products\/\d+\/tickets\/(kanban\/|list\/)?$/,
+];
+export const isReactPath = (path: string) => REACT_PATH_RES.some((re) => re.test(path));
+
+export const productIdFromPath = (path: string): number | null => {
+  const m = /^\/products\/(\d+)\//.exec(path);
+  return m ? Number(m[1]) : null;
+};
 
 const item = (b: Bootstrap, key: string, label: string, icon: LucideIcon, badge?: number): NavItem => ({
   key,
@@ -16,7 +27,7 @@ const item = (b: Bootstrap, key: string, label: string, icon: LucideIcon, badge?
   icon,
   href: b.urls[key],
   badge: badge || undefined,
-  react: REACT_PATHS.has(b.urls[key]),
+  react: isReactPath(b.urls[key]),
 });
 
 export function navSections(b: Bootstrap): NavSection[] {
@@ -71,4 +82,21 @@ export function activeKey(pathname: string, sections: NavSection[]): string | nu
     if (pathname.startsWith(it.href) && (!best || it.href.length > best.href.length)) best = it;
   }
   return best?.key ?? null;
+}
+
+// The sidebar's product section, shown while the URL is under /products/<id>/.
+export function productSection(nav: ProductNav): NavSection {
+  const it = (key: string, label: string, icon: LucideIcon, href: string, badge?: number): NavItem => ({
+    key, label, icon, href, badge: badge || undefined, react: isReactPath(href),
+  });
+  return {
+    product: nav,
+    items: [
+      it('p_overview', 'Overview', LayoutDashboard, nav.urls.overview),
+      it('p_errors', 'Errors', TriangleAlert, nav.urls.errors, nav.counts.errors),
+      it('p_tickets', 'Tickets', Ticket, nav.urls.tickets, nav.counts.tickets),
+      it('p_surveys', 'Feedback', FileText, nav.urls.surveys, nav.counts.surveys),
+      it('p_rules', 'Automation', Sparkles, nav.urls.rules, nav.counts.rules),
+    ],
+  };
 }
