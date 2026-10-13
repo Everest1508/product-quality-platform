@@ -5,7 +5,7 @@ square brackets starts a command, and the lines under it are what runs, in order
 
 | File | What is in it |
 |---|---|
-| `deploy.serop` | Full and quick deploys, a health check, restart, stop, status |
+| `deploy.serop` | Full and quick deploys, a health check, reset to latest main, restart, stop, status |
 | `maintenance.serop` | Logs, migrate, database backup, the scheduled commands (each with a dry run), Django check, shell |
 
 ## How a deploy works now
@@ -24,10 +24,28 @@ is just a rebuild: no separate front-end host, no `collectstatic`. `entrypoint.s
 
 ## After the first deploy of a new release
 
-1. `[Dry Run Fix DSR Hours]`, read the list, then `[Fix DSR Hours]` once. It caps old auto-logged
-   DSR rows that show more than a working day of hours.
+1. `[Dry Run Fix DSR Hours]`, read the list, then `[Fix DSR Hours]` once (it takes its own backup).
 2. `[Dry Run Reminders]` during working hours to see how many reminders would go out.
 3. `[Dry Run Automation Rules]` to see which rules would file tickets.
+
+## Reading the DSR fix
+
+`[Dry Run Fix DSR Hours]` prints one line per row, for example
+`65 [Neomed] #9: Delivery Boy Tracking is not working : 1567.38h -> 7.50h`: the row id, the product,
+the ticket and its hours before and after. The last line says how many would be capped. Every row it
+lists was logged automatically when a ticket was resolved and holds more than one working day, so a
+long open ticket no longer counts as weeks of work. Two lines with the same ticket are usually two
+people (one row per assignee), not a duplicate. `[Fix DSR Hours]` backs up the database, applies the
+cap, then runs the dry run again; it should end with nothing left to cap. It never touches hours a
+person typed in. Reports and payslips already made are not recalculated.
+
+## When a pull fails
+
+Run git with `sudo` in this folder, as these commands do: earlier deploys created root-owned files, and a
+plain `git pull` as another user stops halfway and leaves a half-updated folder. `[Reset To Latest Main]`
+repairs that. It saves `docker-compose.yml` to `~/compose.bak`, makes every tracked file match `origin/main`
+(this **discards edits to tracked files made on the server**, but not `db.sqlite3` or `media/`), and
+shows a `diff` of the saved compose file so you can put back any settings of your own. Rebuild after it.
 
 ## Scheduling
 
