@@ -139,6 +139,24 @@ def scoped_product(request):
 
 
 class TicketListAPIView(CompanyAPIView):
+    def post(self, request):
+        """Create a ticket. The product, if any, comes from the body and must be one the user can open."""
+        data = dict(request.data)
+        data["product"] = data.get("product") or None
+        ticket, form, warnings = ticket_service.create_ticket(data, request.user, request.company)
+        if ticket is None:
+            return Response(form_errors(form), status=400)
+        ticket = Ticket.objects.select_related("product").prefetch_related("assignees").get(pk=ticket.pk)
+        return Response(
+            {
+                "ticket": ticket_json(ticket, request.user, request.company_role),
+                "key": ticket.key,
+                "url": ticket_url(ticket),
+                "warnings": warnings,
+            },
+            status=201,
+        )
+
     def get(self, request):
         product = scoped_product(request)
         qs = product.tickets.all() if product else accessible_tickets(request.user, request.company)

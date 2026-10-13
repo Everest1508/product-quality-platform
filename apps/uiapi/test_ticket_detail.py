@@ -181,3 +181,61 @@ class TicketActionsApiTest(Base):
                              ("follow", {}), ("comments", {"body": "x"})]:
             self.assertEqual(self.post(hidden, action, body).status_code, 404, action)
         self.assertEqual(hidden.comments.count(), 0)
+
+
+class TicketCreateApiTest(Base):
+    url = "/ui-api/v1/tickets/"
+
+    def post(self, body):
+        return self.client.post(self.url, body, content_type="application/json")
+
+    def good(self, **over):
+        return {"title": "New bug", "description": "", "ticket_type": "bug", "priority": "high",
+                "product": self.p_open.pk, "assignees": [], "deadline": "", **over}
+
+    def test_create_returns_key_url_and_logs(self):
+        self.login("dev")
+        r = self.post(self.good())
+        self.assertEqual(r.status_code, 201)
+        t = Ticket.objects.get(title="New bug")
+        self.assertEqual((r.json()["key"], r.json()["url"]), (t.key, f"/products/{self.p_open.pk}/tickets/{t.pk}/"))
+        self.assertEqual((t.created_by, t.source, t.company), (self.dev, "manual", self.acme))
+        self.assertTrue(ActivityLog.objects.filter(event_type="ticket_created").exists())
+
+    def test_cannot_create_in_a_product_the_user_cannot_open(self):
+        self.login("dev")
+        r = self.post(self.good(product=self.p_hidden.pk))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("product", r.json()["errors"])
+        self.assertFalse(Ticket.objects.filter(title="New bug").exists())
+
+    def test_cannot_create_in_another_companys_product(self):
+        self.login("owner")
+        self.assertEqual(self.post(self.good(product=self.p_foreign.pk)).status_code, 400)
+        self.assertFalse(Ticket.objects.filter(title="New bug").exists())
+
+    def test_assignees_without_product_access_are_skipped_with_a_warning(self):
+        outsider = member("out", self.acme)  # company member, no access to p_open
+        self.login("owner")
+        r = self.post(self.good(assignees=[self.dev.pk, outsider.pk]))
+        self.assertEqual([a["id"] for a in r.json()["ticket"]["assignees"]], [self.dev.pk])
+        self.assertIn("Not assigned (no access to Open)", r.json()["warnings"][0])
+
+    def test_company_wide_ticket_without_a_product(self):
+        self.login("owner")
+        r = self.post(self.good(product=None))
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json()["url"], f"/tickets/{Ticket.objects.get(title='New bug').pk}/")
+
+    def test_validation_errors(self):
+        self.login("owner")
+        r = self.post(self.good(title="", deadline="nope"))
+        self.assertEqual(r.status_code, 400)
+        self.assertTrue({"title", "deadline"} <= set(r.json()["errors"]))
+        self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_csrf_and_anonymous(self):
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="owner", password="pass1234")
+        self.assertEqual(strict.post(self.url, self.good(), content_type="application/json").status_code, 403)
+        self.assertEqual(Client().post(self.url, self.good(), content_type="application/json").status_code, 403)
