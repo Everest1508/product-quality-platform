@@ -116,13 +116,13 @@ class FeatureRoundTwoTest(TestCase):
     def test_following_a_ticket_notifies_the_follower_on_comments(self):
         ticket = Ticket.objects.create(company=self.company, product=self.product, title="T", created_by=self.user)
         self.client.login(username="bob", password="pass1234")
-        self.client.post(reverse("tickets:ticket_follow", args=[ticket.pk]))
+        self.client.post(f"/ui-api/v1/tickets/{ticket.pk}/follow/", {}, content_type="application/json")
         self.assertTrue(ticket.watchers.filter(pk=self.dev.pk).exists())
         self.client.login(username="alice", password="pass1234")
-        self.client.post(reverse("tickets:ticket_comment", args=[ticket.pk]), {"body": "hello"})
+        self.client.post(f"/ui-api/v1/tickets/{ticket.pk}/comments/", {"body": "hello"}, content_type="application/json")
         self.assertTrue(Notification.objects.filter(user=self.dev, title__contains="commented").exists())
         self.client.login(username="bob", password="pass1234")
-        self.client.post(reverse("tickets:ticket_follow", args=[ticket.pk]))
+        self.client.post(f"/ui-api/v1/tickets/{ticket.pk}/follow/", {}, content_type="application/json")
         self.assertFalse(ticket.watchers.filter(pk=self.dev.pk).exists())
 
     def test_regressed_tab_and_linked_tickets(self):

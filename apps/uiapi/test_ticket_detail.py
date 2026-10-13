@@ -239,3 +239,11 @@ class TicketCreateApiTest(Base):
         strict.login(username="owner", password="pass1234")
         self.assertEqual(strict.post(self.url, self.good(), content_type="application/json").status_code, 403)
         self.assertEqual(Client().post(self.url, self.good(), content_type="application/json").status_code, 403)
+
+
+class TicketDeleteApiTest(Base):
+    def test_delete_another_companys_ticket_is_404(self):
+        t = self.make(self.p_foreign)
+        self.login("owner")
+        self.assertEqual(self.client.delete(f"/ui-api/v1/tickets/{t.pk}/").status_code, 404)
+        self.assertTrue(Ticket.objects.filter(pk=t.pk).exists())

@@ -518,73 +518,24 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
 
 
 class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
+    """A product's new-ticket form, served by the React shell."""
+
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-        from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(company=request.company, product=product, user=request.user, initial={"product": product})
-        return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
-
-    def post(self, request, pk):
-        product = get_object_or_404(Product, pk=pk, company=request.company)
-        require_product_access(request, product)
-        _attach_product_counts(product)
-        from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(request.POST, company=request.company, product=product, user=request.user)
-        if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.company = request.company
-            ticket.created_by = request.user
-            ticket.product = product
-            ticket.source = "manual"
-            ticket.save()
-            ticket.set_assignees(form.cleaned_data["assignees"], actor=request.user)
-            notify_ticket_created(ticket)
-            log_activity(
-                request.company, "ticket_created",
-                f"Ticket {ticket.key} created",
-                description=ticket.title,
-                actor=request.user,
-                target_content_type="ticket",
-                target_object_id=ticket.pk,
-                metadata={"product_id": product.pk},
-            )
-            messages.success(request, f"Ticket {ticket.key} created.")
-            return redirect("products:product_ticket_detail", pk=product.pk, ticket_pk=ticket.pk)
-        from apps.tickets.forms import error_summary
-        messages.error(request, error_summary(form))
-        return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
+        return render_shell(request)
 
 
 
 
 class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
+    """A ticket under its product, served by the React shell. The ticket must belong to that product."""
+
     def get(self, request, pk, ticket_pk):
-        from apps.tickets import mentions
-        from apps.tickets.forms import TicketCommentForm
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-        ticket = get_object_or_404(
-            product.tickets.select_related("assigned_to", "created_by", "linked_error_group"),
-            pk=ticket_pk,
-        )
-        comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
-        members = __import__("django.contrib.auth", fromlist=["get_user_model"]).get_user_model().objects.filter(
-            memberships__company=request.company
-        ).order_by("username")
-        from apps.products.access import product_users
-        members = product_users(product, request.company)
-        return render(request, "products/product_ticket_detail.html", {
-            "product": product, "ticket": ticket, "comments": comments,
-            "comment_form": TicketCommentForm(), "members": members,
-            "mention_candidates": mentions.candidates_json(ticket, request.company),
-            "following": ticket.watchers.filter(pk=request.user.pk).exists(),
-            "watcher_count": ticket.watchers.count(),
-            "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
-            "status_choices": __import__("apps.tickets.models", fromlist=["Ticket"]).Ticket.Status.choices,
-        })
+        get_object_or_404(product.tickets, pk=ticket_pk)
+        return render_shell(request)
 
 
 class ProductSurveyListView(CompanyMemberRequiredMixin, View):

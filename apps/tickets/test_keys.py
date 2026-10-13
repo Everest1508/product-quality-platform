@@ -123,12 +123,14 @@ class TicketKeyScreensTest(TestCase):
         self.assertEqual([t["key"] for t in listing["items"]], ["AUM-001"])
         board = self.client.get("/ui-api/v1/tickets/", {"view": "board"}).json()
         self.assertEqual([t["key"] for c in board["columns"] for t in c["tickets"]], ["AUM-001"])
-        self.assertContains(self.client.get(reverse("tickets:ticket_detail", args=[self.ticket.pk])), "AUM-001")
+        detail = self.client.get(f"/ui-api/v1/tickets/{self.ticket.pk}/").json()
+        self.assertEqual(detail["ticket"]["key"], "AUM-001")
 
     def test_creating_a_ticket_reports_its_key(self):
-        res = self.client.post(reverse("products:product_ticket_create", args=[self.product.pk]),
-                               {"title": "Second", "ticket_type": "bug", "priority": "medium"}, follow=True)
-        self.assertContains(res, "Ticket AUM-002 created")
+        res = self.client.post("/ui-api/v1/tickets/",
+                               {"title": "Second", "ticket_type": "bug", "priority": "medium", "product": self.product.pk},
+                               content_type="application/json")
+        self.assertEqual((res.status_code, res.json()["key"]), (201, "AUM-002"))
 
     def test_search_finds_by_key_in_any_spelling(self):
         for q in ("AUM-001", "aum-1", "AUM001", "aum 1"):

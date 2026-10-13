@@ -101,18 +101,6 @@ class ToastAfterMutationTest(TestCase):
         )
         self.assert_toast_after(response, "Error #")
 
-    def test_creating_a_ticket_says_so(self):
-        response = self.client.post(
-            reverse("products:product_ticket_create", kwargs={"pk": self.product.pk}),
-            {
-                "title": "Login broken",
-                "description": "500 on submit",
-                "ticket_type": "bug",
-                "priority": "high",
-                "product": self.product.pk,
-            },
-        )
-        self.assert_toast_after(response, "created")
 
     def test_adding_a_version_says_so(self):
         response = self.client.post(

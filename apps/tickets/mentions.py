@@ -9,8 +9,6 @@ import re
 
 from django.contrib.auth import get_user_model
 from django.db.models.functions import Lower
-from django.utils.html import escape
-from django.utils.safestring import mark_safe
 
 # `@name` that is not part of an email address or another word. Trailing dots
 # are trimmed afterwards so "thanks @ann." mentions ann.
@@ -54,22 +52,3 @@ def resolve(body, ticket, company):
         .annotate(_lower=Lower("username"))
         .filter(_lower__in=names)
     )
-
-
-def render_comment(comment):
-    """The comment body as safe HTML with each real mention highlighted."""
-    html = escape(comment.body)
-    people = {u.username.lower(): u for u in comment.mentions.all()}
-    if not people:
-        return mark_safe(html)
-    pattern = re.compile(
-        r"(?<![\w@.+-])@(" + "|".join(re.escape(escape(n)) for n in sorted(people, key=len, reverse=True)) + r")(?![\w@+-])",
-        re.I,
-    )
-
-    def wrap(match):
-        user = people.get(match.group(1).lower())
-        name = (user.get_full_name() or user.username) if user else ""
-        return f'<span class="mention" title="{escape(name)}">@{match.group(1)}</span>'
-
-    return mark_safe(pattern.sub(wrap, html))

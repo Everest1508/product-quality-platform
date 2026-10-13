@@ -277,12 +277,13 @@ class AuditWiringTest(TestCase):
         self.client.login(username="owner", password="pass1234")
 
     def test_ticket_creation_is_logged(self):
-        response = self.client.post(reverse("products:product_ticket_create", kwargs={"pk": self.product.pk}), {
+        response = self.client.post("/ui-api/v1/tickets/", {
             "title": "Bug on checkout",
             "ticket_type": "bug",
             "priority": "high",
-        })
-        self.assertEqual(response.status_code, 302)
+            "product": self.product.pk,
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, 201)
         self.assertTrue(
             ActivityLog.objects.filter(
                 company=self.company,

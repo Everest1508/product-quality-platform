@@ -62,9 +62,9 @@ class TicketShellPagesTest(Base):
         with self.assertRaises(NoReverseMatch):
             reverse("products:product_ticket_bulk_delete", kwargs={"pk": self.p_open.pk})
 
-    def test_the_legacy_detail_page_still_works_and_deleting_from_it_lands_on_the_board(self):
+    def test_the_ticket_page_is_served_and_deleting_through_the_api_works(self):
         t = self.make(self.p_open, created_by=self.owner)
         self.login("owner")
         self.assertEqual(self.client.get(f"/products/{self.p_open.pk}/tickets/{t.pk}/").status_code, 200)
-        r = self.client.post(f"/tickets/{t.pk}/delete/")
-        self.assertRedirects(r, f"/products/{self.p_open.pk}/tickets/")
+        self.assertEqual(self.client.delete(f"/ui-api/v1/tickets/{t.pk}/").json(), {"deleted": t.key})
+        self.assertEqual(self.client.get(f"/products/{self.p_open.pk}/tickets/{t.pk}/").status_code, 404)

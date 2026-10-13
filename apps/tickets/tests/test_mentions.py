@@ -50,7 +50,7 @@ class Base(TestCase):
 
     def comment(self, as_user, body):
         self.client.login(username=as_user.username, password="pass1234")
-        return self.client.post(reverse("tickets:ticket_comment", args=[self.ticket.pk]), {"body": body})
+        return self.client.post(f"/ui-api/v1/tickets/{self.ticket.pk}/comments/", {"body": body}, content_type="application/json")
 
 
 class ResolveTest(Base):
@@ -90,46 +90,22 @@ class CommentNotificationTest(Base):
         self.assertFalse(Notification.objects.filter(user=self.cat).exists())
         comment = TicketComment.objects.get()
         self.assertEqual(comment.mentions.count(), 0)
-        self.assertNotContains(self.client.get(reverse("tickets:ticket_detail", args=[self.ticket.pk])), 'class="mention"')
+        shown = self.client.get(f"/ui-api/v1/tickets/{self.ticket.pk}/").json()["comments"][0]
+        self.assertEqual(shown["mentions"], [])
 
     def test_the_notification_points_at_the_ticket(self):
         self.comment(self.owner, "@ann look")
         self.assertEqual(Notification.objects.get(user=self.ann).url, f"/tickets/{self.ticket.pk}/")
 
 
-class RenderTest(Base):
-    def render(self, body):
-        c = TicketComment.objects.create(company=self.company, ticket=self.ticket, author=self.owner, body=body)
-        c.mentions.set(mentions.resolve(body, self.ticket, self.company))
-        return str(mentions.render_comment(TicketComment.objects.prefetch_related("mentions").get(pk=c.pk)))
-
-    def test_a_real_mention_is_highlighted_with_the_full_name(self):
-        html = self.render("hi @ann!")
-        self.assertIn('<span class="mention" title="Ann">@ann</span>', html)
-
-    def test_html_in_the_comment_is_escaped(self):
-        html = self.render('<script>alert(1)</script> @ann <img src=x onerror=alert(2)>')
-        self.assertNotIn("<script>", html)
-        self.assertNotIn("<img", html)
-        self.assertIn("&lt;script&gt;", html)
-        self.assertIn('class="mention"', html)
-
-    def test_a_name_that_only_looks_like_a_mention_is_not_wrapped(self):
-        html = self.render("mail ann@example.com and @nobody")
-        self.assertNotIn('class="mention"', html)
-
-    def test_a_mention_inside_a_longer_word_is_left_alone(self):
-        html = self.render("@ann and @annabel")
-        self.assertEqual(html.count('class="mention"'), 1)
 
 
 class DetailPageTest(Base):
     def test_the_comment_box_offers_only_people_with_access(self):
         self.client.login(username="owner", password="pass1234")
-        page = self.client.get(reverse("tickets:ticket_detail", args=[self.ticket.pk]))
-        self.assertContains(page, 'id="mention-data"')
-        self.assertContains(page, '"username": "ann"')
-        self.assertNotContains(page, '"username": "cat"')
+        offered = [c["username"] for c in self.client.get(f"/ui-api/v1/tickets/{self.ticket.pk}/").json()["mention_candidates"]]
+        self.assertIn("ann", offered)
+        self.assertNotIn("cat", offered)
 
 
 class ViewerMarkerTest(TestCase):
