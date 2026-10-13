@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
@@ -17,7 +16,6 @@ urlpatterns = [
     path("offline/", offline),
     path("brand/<str:name>", brand_file),
     path("ui/<str:name>", ui_file),
-    path("admin/", admin.site.urls),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),

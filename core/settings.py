@@ -161,6 +161,8 @@ ACCOUNT_LOGIN_BY_PASSWORD_ENABLED = True
 
 # Django REST Framework
 REST_FRAMEWORK = {
+    # JSON only: no browsable-API HTML page.
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": [],
     # Ingestion views set their own per-key throttle (apps.ingestion.views).

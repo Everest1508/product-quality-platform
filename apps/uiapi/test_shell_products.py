@@ -52,3 +52,10 @@ class ProductShellPagesTest(P):
                      "products/partials/_milestone_tree.html", "products/partials/_api_key_row.html", "products/partials/_product_list_body.html"]:
             with self.assertRaises(TemplateDoesNotExist, msg=name):
                 get_template(name)
+
+
+class NoAdminNoBrowsableApiTest(P):
+    def test_admin_is_gone_and_api_answers_json_only(self):
+        self.assertEqual(self.client.get("/admin/").status_code, 404)
+        r = self.client.get("/ui-api/v1/bootstrap/", HTTP_ACCEPT="text/html")
+        self.assertNotIn("text/html", r["Content-Type"])
