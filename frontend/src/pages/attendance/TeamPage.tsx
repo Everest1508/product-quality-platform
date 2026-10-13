@@ -10,6 +10,9 @@ import { useAttQuery } from './useAttendance';
 import type { TeamToday, TeamWeek } from './types';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
+import { Progress } from '@/components/ui/progress';
 
 const DOT: Record<string, string> = { worked: 'bg-success', leave: 'bg-info', open: 'bg-warning', none: 'bg-destructive/50', weekend: 'bg-secondary', future: 'bg-secondary' };
 const STATE: Record<string, ['success' | 'warning' | 'danger' | 'info' | 'default', string]> = {
@@ -40,16 +43,13 @@ export function TeamAttendancePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader title="Team attendance" sub="Who is on the clock, and how the team’s days look." />
         <div className="flex gap-2">
-          <div className="flex rounded-lg bg-secondary p-0.5">
-            <button type="button" aria-pressed={!week} onClick={() => set({ view: null, week: null })} className={cn('rounded-md px-3 py-1 text-sm', !week ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground')}>Today</button>
-            <button type="button" aria-pressed={week} onClick={() => set({ view: 'week' })} className={cn('rounded-md px-3 py-1 text-sm', week ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground')}>Week</button>
-          </div>
+          <Segmented value={week ? 'week' : 'today'} onValueChange={(v) => set(v === 'week' ? { view: 'week' } : { view: null, week: null })} options={[{ value: 'today', label: 'Today' }, { value: 'week', label: 'Week' }]} />
           <Button asChild variant="outline" size="sm"><Link to="/attendance/timesheet/">Timesheet</Link></Button>
         </div>
       </div>
 
       {q.isError && !d ? (
-        <ErrorState message="Couldn’t load the team." onRetry={() => q.refetch()} />
+        <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
       ) : !d ? (
         <div className="space-y-3" data-testid="team-att-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>
       ) : d.view === 'today' ? (
@@ -75,23 +75,23 @@ export function TeamAttendancePage() {
           )}
 
           <Card className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Person</th><th className="p-3 font-medium">Today · shift {d.shift.label}</th><th className="p-3 font-medium">Hours</th><th className="p-3 font-medium">Last 7 days</th><th className="p-3" /></tr></thead>
-              <tbody>
+            <Table>
+              <TableHeader><TableRow><TableHead>Person</TableHead><TableHead>Today · shift {d.shift.label}</TableHead><TableHead>Hours</TableHead><TableHead>Last 7 days</TableHead><TableHead /></TableRow></TableHeader>
+              <TableBody>
                 {d.rows.map((r) => {
                   const [variant, label] = STATE[r.state] ?? STATE.absent;
                   return (
-                    <tr key={r.user.id} className="border-b last:border-0">
-                      <td className="p-3"><Link to={`/attendance/timesheet/${r.user.id}/`} className="font-medium hover:underline">{r.user.name}</Link>{r.user.is_me && <Badge className="ml-1" variant="outline">You</Badge>}<div className="text-xs capitalize text-muted-foreground">{r.role}</div></td>
-                      <td className="p-3"><Badge variant={variant}>{label}</Badge><div className="mt-1 text-xs text-muted-foreground">{r.check_in ? `${r.check_in} → ${r.check_out || '…'}` : ''}</div></td>
-                      <td className="p-3"><div>{r.net || '—'}</div>{r.progress > 0 && <div className="mt-1 h-1 w-20 rounded bg-secondary"><div className="h-1 rounded bg-primary" style={{ width: `${r.progress}%` }} /></div>}</td>
-                      <td className="p-3"><div className="flex gap-1">{r.week.map((x) => <i key={x.date} title={`${md(x.date)}: ${x.state}${x.formatted ? ` · ${x.formatted}` : ''}`} className={cn('size-2.5 rounded-full', DOT[x.state] ?? 'bg-secondary')} />)}</div></td>
-                      <td className="p-3 text-right"><Button asChild size="sm" variant="outline"><Link to={`/attendance/?user_id=${r.user.id}`}>History</Link></Button></td>
-                    </tr>
+                    <TableRow key={r.user.id}>
+                      <TableCell><Link to={`/attendance/timesheet/${r.user.id}/`} className="font-medium hover:underline">{r.user.name}</Link>{r.user.is_me && <Badge className="ml-1" variant="outline">You</Badge>}<div className="text-xs capitalize text-muted-foreground">{r.role}</div></TableCell>
+                      <TableCell><Badge variant={variant}>{label}</Badge><div className="mt-1 text-xs text-muted-foreground">{r.check_in ? `${r.check_in} → ${r.check_out || '…'}` : ''}</div></TableCell>
+                      <TableCell><div>{r.net || '—'}</div>{r.progress > 0 && <Progress value={r.progress} className="mt-1 h-1 w-20" />}</TableCell>
+                      <TableCell><div className="flex gap-1">{r.week.map((x) => <i key={x.date} title={`${md(x.date)}: ${x.state}${x.formatted ? ` · ${x.formatted}` : ''}`} className={cn('size-2.5 rounded-full', DOT[x.state] ?? 'bg-secondary')} />)}</div></TableCell>
+                      <TableCell className="text-right"><Button asChild size="sm" variant="outline"><Link to={`/attendance/?user_id=${r.user.id}`}>History</Link></Button></TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </Card>
         </>
       ) : (
@@ -104,27 +104,27 @@ export function TeamAttendancePage() {
             <span className="ml-auto text-xs text-muted-foreground">Shift {d.shift.label}</span>
           </div>
           <Card className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Person</th>{d.days.map((x) => <th key={x.date} className={cn('p-3 text-center font-medium', x.is_today && 'text-foreground')}>{x.label} {x.day}</th>)}<th className="p-3 font-medium">Total</th></tr></thead>
-              <tbody>
+            <Table>
+              <TableHeader><TableRow><TableHead>Person</TableHead>{d.days.map((x) => <TableHead key={x.date} className={cn('p-3 text-center font-medium', x.is_today && 'text-foreground')}>{x.label} {x.day}</TableHead>)}<TableHead>Total</TableHead></TableRow></TableHeader>
+              <TableBody>
                 {d.rows.map((r) => (
-                  <tr key={r.user.id} className="border-b last:border-0">
-                    <td className="p-3 font-medium">{r.user.name}{r.user.is_me && <Badge className="ml-1" variant="outline">You</Badge>}</td>
+                  <TableRow key={r.user.id}>
+                    <TableCell>{r.user.name}{r.user.is_me && <Badge className="ml-1" variant="outline">You</Badge>}</TableCell>
                     {r.days.map((c) => (
-                      <td key={c.date} className="p-2 text-center align-top text-xs">
+                      <TableCell key={c.date} className="p-2 text-center align-top text-xs">
                         {c.state === 'leave' ? <Badge variant="info">Leave</Badge> : c.check_in ? (
                           <div>
                             <div>{c.check_in}</div><div className="text-muted-foreground">{c.check_out || '…'}</div>
                             {c.band && <Badge variant={c.band === 'half_day' ? 'danger' : 'warning'} title={`${c.late_minutes} min late`}>{c.late_minutes}m late</Badge>}
                           </div>
                         ) : <span className="text-muted-foreground">{c.state === 'none' ? '–' : ''}</span>}
-                      </td>
+                      </TableCell>
                     ))}
-                    <td className="p-3 font-medium">{r.total}</td>
-                  </tr>
+                    <TableCell>{r.total}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </Card>
         </>
       )}

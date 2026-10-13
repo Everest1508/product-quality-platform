@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TONE, useLeaveQuery, useLeaveWrite } from './useLeave';
 import type { MyLeave } from './types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 
 export function MyLeavePage() {
   const [year, setYear] = useState<number | null>(null);
@@ -49,7 +51,7 @@ export function MyLeavePage() {
                 <Card key={b.policy.id} className="space-y-2 p-4">
                   <div className="flex items-center justify-between"><h2 className="font-medium">{b.policy.name}</h2>{!b.policy.is_paid && <Badge>Unpaid</Badge>}</div>
                   <div className="text-2xl font-semibold">{b.unlimited ? b.approved_label : b.remaining_label}<span className="ml-1 text-xs font-normal text-muted-foreground">{b.unlimited ? 'taken' : `left of ${b.limit_label}`}</span></div>
-                  {!b.unlimited && <div className="h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-primary" style={{ width: `${b.used_pct}%` }} /></div>}
+                  {!b.unlimited && <Progress value={b.used_pct} />}
                   <p className="text-xs text-muted-foreground">{b.approved_label} taken{b.has_pending && <> · {b.pending_label} waiting</>}</p>
                 </Card>
               ))}
@@ -58,21 +60,21 @@ export function MyLeavePage() {
           <Card className="overflow-x-auto p-0">
             <div className="border-b p-4 font-semibold">My requests</div>
             {d.requests.length === 0 ? <p className="p-6 text-center text-sm text-muted-foreground">You haven’t asked for any leave yet.</p> : (
-              <table className="w-full text-sm">
-                <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Dates</th><th className="p-3 font-medium">Type</th><th className="p-3 font-medium">Days</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Note</th><th className="p-3" /></tr></thead>
-                <tbody>
+              <Table>
+                <TableHeader><TableRow><TableHead>Dates</TableHead><TableHead>Type</TableHead><TableHead>Days</TableHead><TableHead>Status</TableHead><TableHead>Note</TableHead><TableHead /></TableRow></TableHeader>
+                <TableBody>
                   {d.requests.map((r) => (
-                    <tr key={r.id} className="border-b last:border-0">
-                      <td className="p-3">{r.span}{r.is_half_day && <small className="ml-1 text-muted-foreground">half day</small>}</td>
-                      <td className="p-3">{r.policy.name}</td>
-                      <td className="p-3">{r.days_label}{r.status === 'approved' && <small className="block text-muted-foreground">{r.split_label}</small>}</td>
-                      <td className="p-3"><Badge variant={TONE[r.status] ?? 'default'}>{r.status_label}</Badge></td>
-                      <td className="p-3 text-muted-foreground">{r.decision_note || r.reason}</td>
-                      <td className="p-3 text-right">{r.can_cancel && <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}>Withdraw</Button>}</td>
-                    </tr>
+                    <TableRow key={r.id}>
+                      <TableCell>{r.span}{r.is_half_day && <small className="ml-1 text-muted-foreground">half day</small>}</TableCell>
+                      <TableCell>{r.policy.name}</TableCell>
+                      <TableCell>{r.days_label}{r.status === 'approved' && <small className="block text-muted-foreground">{r.split_label}</small>}</TableCell>
+                      <TableCell><Badge variant={TONE[r.status] ?? 'default'}>{r.status_label}</Badge></TableCell>
+                      <TableCell className="text-muted-foreground">{r.decision_note || r.reason}</TableCell>
+                      <TableCell className="text-right">{r.can_cancel && <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}>Withdraw</Button>}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </Card>
         </>

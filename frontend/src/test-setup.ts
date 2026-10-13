@@ -11,3 +11,18 @@ if (!('ResizeObserver' in globalThis)) {
     disconnect() {}
   };
 }
+
+// jsdom has no matchMedia: report a desktop-sized, light, motion-ok screen.
+if (typeof window.matchMedia !== 'function') {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: /min-width/.test(query),
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList;
+}

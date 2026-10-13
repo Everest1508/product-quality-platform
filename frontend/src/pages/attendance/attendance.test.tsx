@@ -132,7 +132,7 @@ it('team today: counts, who is on the clock, forgotten days with the fix', async
   expect(await screen.findByText('forgot to check out')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Set check-out' })).toHaveAttribute('href', '/attendance/7/edit/');
   expect(screen.getAllByText('Not checked out').length).toBeGreaterThan(0);
-  await userEvent.click(screen.getByRole('button', { name: 'Week' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Week' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/attendance/team/?view=week');
 });
 

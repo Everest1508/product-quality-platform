@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LockBadge, Note, Num, PayHeader, Th } from './parts';
 import { day, money, reason, usePayQuery } from './usePayroll';
 import type { MySlips, Slip } from './types';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert } from '@/components/ui/alert';
 
 const Row = ({ k, children, strong }: { k: string; children: React.ReactNode; strong?: boolean }) => (
   <div className="flex justify-between gap-4 border-b py-2 last:border-0"><dt className="text-muted-foreground">{k}</dt><dd className={strong ? 'font-semibold' : ''}>{children}</dd></div>
@@ -90,20 +92,20 @@ export function MyPayslipsPage() {
       <PayHeader admin={d?.is_admin ?? false} title="My payslips" sub="What you were paid each cycle. Day rate is your monthly salary divided by the working days in that cycle, so weekends and holidays never cost you anything." />
       {!d ? <Skeleton className="h-40 w-full" data-testid="mine-loading" /> : (
         <>
-          {!d.on_payroll && <Card className="border-warning/40 bg-warning/10 p-4 text-sm"><b>You are not on payroll.</b> An admin has to switch you on in Payroll setup before you get a payslip.</Card>}
+          {!d.on_payroll && <Alert variant="warning" title="You are not on payroll.">An admin has to switch you on in Payroll setup before you get a payslip.</Alert>}
           <Card className="overflow-x-auto p-0">
             <div className="border-b p-4 font-semibold">Payslips</div>
-            {d.payslips.length === 0 ? <EmptyState title="No payslips yet">Payslips appear once your admin generates the cycle.</EmptyState> : (
-              <table className="w-full text-sm">
-                <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Cycle</Th><Th num>Day rate</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Deduction</Th><Th num>Net pay</Th><Th /></tr></thead>
-                <tbody>{d.payslips.map((p) => (
-                  <tr key={p.id} className="border-b last:border-0">
-                    <td className="p-3"><b>{p.run.label}</b> {p.run.is_locked && <Badge>locked</Badge>}</td><Num>{p.daily_rate}</Num><Num>{p.paid_leave_days}</Num>
+            {d.payslips.length === 0 ? <EmptyState className="rounded-none border-0" title="No payslips yet" description={<>Payslips appear once your admin generates the cycle.</>} /> : (
+              <Table>
+                <TableHeader><TableRow><Th>Cycle</Th><Th num>Day rate</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Deduction</Th><Th num>Net pay</Th><Th /></TableRow></TableHeader>
+                <TableBody>{d.payslips.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell><b>{p.run.label}</b> {p.run.is_locked && <Badge>locked</Badge>}</TableCell><Num>{p.daily_rate}</Num><Num>{p.paid_leave_days}</Num>
                     <Num>{Number(p.unpaid_leave_days) ? <Badge variant="danger">{p.unpaid_leave_days}</Badge> : '0'}</Num><Num>{Number(p.deduction) ? `−${p.deduction}` : '—'}</Num><Num strong>{money(p.currency, p.gross)}</Num>
-                    <td className="p-3 text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/me/${p.id}/`}>View</Link></Button></td>
-                  </tr>
-                ))}</tbody>
-              </table>
+                    <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/me/${p.id}/`}>View</Link></Button></TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
             )}
           </Card>
           <Note>

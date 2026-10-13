@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRule, useRuleMeta, useRuleRefresh, useRuleScope } from './useRules';
 import type { Rule, RuleInput, RuleMeta } from './types';
+import { Switch } from '@/components/ui/switch';
 
 type FieldErrors = Record<string, string[]>;
 const NONE = 'none'; // Radix Select does not allow an empty value
@@ -116,7 +117,7 @@ function RuleForm({ rule, meta, productId }: { rule?: Rule; meta: RuleMeta; prod
           <Field label="Automated action" error={errors.action}>{choose('Automated action', action, setAction, meta.actions)}</Field>
           <Field label="Assign to" error={errors.assign_to}>{choose('Assign to', assignTo, setAssignTo, [[NONE, 'Nobody (Unassigned)'], ...meta.members.map((m): [string, string] => [String(m.id), m.name])])}</Field>
         </div>
-        <label className="flex items-center gap-2 text-sm font-medium"><Checkbox checked={active} onCheckedChange={(c) => setActive(c === true)} /> Rule is active</label>
+        <label className="flex items-center gap-2 text-sm font-medium"><Switch checked={active} onCheckedChange={setActive} /> Rule is active</label>
       </Card>
       <div className="flex justify-end gap-2">
         <Button asChild variant="outline"><Link to={base}>Cancel</Link></Button>

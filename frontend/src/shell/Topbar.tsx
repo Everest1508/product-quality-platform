@@ -1,23 +1,22 @@
-import { Menu, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useProductNav } from '@/lib/useProductNav';
 import { Kbd } from '@/components/ui/kbd';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AccountMenu } from './AccountMenu';
 import { Bell } from './Bell';
 import { NewMenu } from './NewMenu';
 import { PresenceMenu } from './PresenceMenu';
 
-type Props = { onOpenNav(): void; onOpenPalette(): void };
+type Props = { onOpenPalette(): void };
 
-export function Topbar({ onOpenNav, onOpenPalette }: Props) {
+export function Topbar({ onOpenPalette }: Props) {
   const b = useBootstrapData();
   const productNav = useProductNav(useLocation().pathname);
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card px-4">
-      <button type="button" aria-label="Open navigation" onClick={onOpenNav} className="grid size-9 place-items-center rounded-md hover:bg-secondary md:hidden">
-        <Menu className="size-5" />
-      </button>
+      <SidebarTrigger />
       <span className="truncate text-sm font-semibold">{productNav?.name ?? b.company.name}</span>
       <button
         type="button"

@@ -11,6 +11,7 @@ import { Actor, EventBadge } from './EventBadge';
 import { useAudit } from './useDashboards';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const KEYS = ['q', 'type', 'actor', 'from', 'to', 'page'] as const;
 
@@ -68,26 +69,26 @@ export function AuditLogPage() {
       </div>
 
       {q.isError && !d ? (
-        <ErrorState message="Couldn’t load the audit log." onRetry={() => q.refetch()} />
+        <Card><ErrorState title="Couldn’t load the audit log."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
       ) : !d ? (
         <Card className="space-y-3 p-4" data-testid="audit-loading">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : d.items.length === 0 ? (
-        <Card><EmptyState title="No activity logged">No audit events match the current filter criteria.</EmptyState></Card>
+        <EmptyState title="No activity logged" description={<>No audit events match the current filter criteria.</>} />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Timestamp</th><th className="p-3 font-medium">Event type</th><th className="p-3 font-medium">Details &amp; description</th><th className="p-3 font-medium">Actor</th></tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader><TableRow><TableHead>Timestamp</TableHead><TableHead>Event type</TableHead><TableHead>Details &amp; description</TableHead><TableHead>Actor</TableHead></TableRow></TableHeader>
+            <TableBody>
               {d.items.map((e) => (
-                <tr key={e.id} className="border-b align-top last:border-0">
-                  <td className="whitespace-nowrap p-3 text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</td>
-                  <td className="p-3"><EventBadge e={e} /></td>
-                  <td className="min-w-64 p-3"><div className="font-medium">{e.url ? <a href={e.url} className="hover:underline">{e.title}</a> : e.title}</div>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</td>
-                  <td className="p-3"><Actor a={e.actor} /></td>
-                </tr>
+                <TableRow key={e.id} className="align-top">
+                  <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</TableCell>
+                  <TableCell><EventBadge e={e} /></TableCell>
+                  <TableCell className="min-w-64"><div className="font-medium">{e.url ? <a href={e.url} className="hover:underline">{e.title}</a> : e.title}</div>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</TableCell>
+                  <TableCell><Actor a={e.actor} /></TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {d.page.num_pages > 1 && <div className="flex justify-end border-t p-3"><Pagination page={d.page.number} pageCount={d.page.num_pages} onPageChange={(p) => set('page', p === 1 ? null : String(p))} /></div>}
         </Card>
       )}

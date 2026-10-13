@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { reason, useAttRefresh } from './useAttendance';
 import { toast } from '@/lib/toast';
 import type { MyAttendance } from './types';
+import { Progress } from '@/components/ui/progress';
+import { Alert } from '@/components/ui/alert';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const hm = (secs: number) => `${Math.floor(secs / 3600)}h ${pad(Math.floor((secs % 3600) / 60))}m`;
@@ -81,7 +83,7 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
             </div>
             <Button variant="outline" loading={busy} onClick={punch}><LogOut /> Check out</Button>
           </div>
-          <div className="h-1.5 rounded bg-secondary" aria-hidden><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
+          <Progress value={pct} aria-hidden />
         </div>
       )}
       {!p.readonly && p.state === 'ready' && (
@@ -100,13 +102,12 @@ export function PunchPanel({ p }: { p: MyAttendance['panel'] }) {
       )}
 
       {p.missing_checkouts.length > 0 && (
-        <div role="status" className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
-          <b>{p.missing_checkouts.length === 1 ? 'A day was never checked out.' : `${p.missing_checkouts.length} days were never checked out.`}</b>{' '}
+        <Alert variant="warning" title={p.missing_checkouts.length === 1 ? 'A day was never checked out.' : `${p.missing_checkouts.length} days were never checked out.`}>
           Hours are capped at one working day until it is fixed.
           <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
             {p.missing_checkouts.map((m) => <li key={m.id}>{m.date_label} — <a className="underline" href={`/attendance/corrections/request/?date=${m.date}`}>ask for a correction</a></li>)}
           </ul>
-        </div>
+        </Alert>
       )}
 
       {!p.readonly && (

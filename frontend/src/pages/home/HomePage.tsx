@@ -12,6 +12,8 @@ import { TodoCard } from './TodoCard';
 import { useHome, usePunch } from './useHome';
 import type { Home } from './types';
 import { ErrorState } from '@/components/ui/error-state';
+import { Progress } from '@/components/ui/progress';
+import { Alert } from '@/components/ui/alert';
 
 const clock = (d: Date) => ({
   greeting: d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening',
@@ -133,7 +135,7 @@ export function HomePage() {
     document.title = 'Home — PQ Platform';
   }, []);
   const h = q.data;
-  if (q.isError && !h) return <ErrorState message="Couldn’t load your home page." onRetry={() => q.refetch()} />;
+  if (q.isError && !h) return <Card><ErrorState title="Couldn’t load your home page."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>;
   if (!h) return <div className="space-y-4" data-testid="home-loading"><Skeleton className="h-36 w-full" /><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
   const p = h.payroll;
   const slip = p.payslip;
@@ -142,7 +144,7 @@ export function HomePage() {
     <div className="space-y-4">
       <Hero h={h} />
       {h.on_leave_today && <div role="status" className="rounded-lg border border-info/30 bg-info/10 p-3 text-sm"><strong>You’re on approved leave today.</strong> Payroll won’t deduct these days, and attendance won’t expect a punch.</div>}
-      {h.dsr_nudge && <div role="status" className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm"><strong>Your DSR is empty for today.</strong> Take a minute to log what you worked on before you go. <a href="/dsr/" className="ml-1 font-semibold underline">Open DSR sheet →</a></div>}
+      {h.dsr_nudge && <Alert variant="warning" title="Your DSR is empty for today.">Take a minute to log what you worked on before you go. <a href="/dsr/" className="ml-1 font-semibold underline">Open DSR sheet →</a></Alert>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi link to="/tickets/?assigned=me" v={h.kpis.my_tickets} l="Open tickets" m="assigned to you" />
@@ -210,7 +212,7 @@ export function HomePage() {
             {h.leave.balances.map((b) => (
               <li key={b.name} className="space-y-1 text-sm">
                 <div className="flex justify-between"><span>{b.name}</span><span>{b.unlimited ? `${b.approved_label} used` : <><strong>{b.remaining_label}</strong> left</>}</span></div>
-                <div className="h-1.5 rounded bg-secondary"><div className={cn('h-1.5 rounded', b.has_pending ? 'bg-warning' : 'bg-primary')} style={{ width: b.unlimited ? '100%' : `${b.used_pct}%`, opacity: b.unlimited ? 0.25 : 1 }} /></div>
+                <Progress value={b.unlimited ? 100 : b.used_pct} tone={b.has_pending ? 'warning' : 'primary'} className={b.unlimited ? 'opacity-25' : ''} />
                 {b.has_pending && <Badge variant="warning">{b.pending_label} pending</Badge>}
               </li>
             ))}

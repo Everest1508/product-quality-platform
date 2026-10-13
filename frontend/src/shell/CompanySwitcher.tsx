@@ -2,9 +2,11 @@ import { Check, ChevronDown } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { toast } from '@/lib/toast';
+import { useSidebar } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-export function CompanySwitcher({ collapsed }: { collapsed: boolean }) {
+export function CompanySwitcher() {
+  const { collapsed } = useSidebar(); // read here, so the always-expanded mobile slide-over is not affected by the desktop rail
   const b = useBootstrapData();
   const switchTo = async (id: number) => {
     try {

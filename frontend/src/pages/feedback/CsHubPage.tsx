@@ -9,6 +9,7 @@ import { ago } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { useCsHub } from './useFeedback';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const tone = (n: number | null) => (n === null ? 'text-muted-foreground' : n >= 4 ? 'text-success' : n >= 3 ? 'text-warning' : 'text-destructive');
 const bar = (n: number) => (n >= 4 ? 'bg-success' : n >= 3 ? 'bg-warning' : 'bg-destructive');
@@ -34,7 +35,7 @@ export function CsHubPage() {
       </div>
 
       {q.isError && !d ? (
-        <ErrorState message="Couldn’t load the hub." onRetry={() => q.refetch()} />
+        <Card><ErrorState title="Couldn’t load the hub."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
       ) : !d ? (
         <div className="space-y-3" data-testid="hub-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (
@@ -61,21 +62,21 @@ export function CsHubPage() {
               <p className="py-6 text-center text-sm text-muted-foreground">No products with survey data yet.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">Product</th><th className="text-center font-medium">Surveys</th><th className="text-center font-medium">Responses</th><th className="text-center font-medium">Avg score</th><th className="w-44 font-medium">Satisfaction meter</th><th /></tr></thead>
-                  <tbody>
+                <Table>
+                  <TableHeader><TableRow><TableHead className="py-2">Product</TableHead><TableHead className="text-center">Surveys</TableHead><TableHead className="text-center">Responses</TableHead><TableHead className="text-center">Avg score</TableHead><TableHead className="w-44">Satisfaction meter</TableHead><TableHead /></TableRow></TableHeader>
+                  <TableBody>
                     {d.product_stats.map((s) => (
-                      <tr key={s.product.id} className="border-b last:border-0">
-                        <td className="py-2"><div className="font-medium">{s.product.name}</div><code className="text-xs text-muted-foreground">{s.product.slug}</code></td>
-                        <td className="text-center">{s.survey_count}</td>
-                        <td className="text-center">{s.response_count}</td>
-                        <td className={cn('text-center font-medium', tone(s.avg_score))}>{s.avg_score ?? '—'}{s.avg_score !== null && <small className="text-xs text-muted-foreground"> / 5.0</small>}</td>
-                        <td>{s.avg_score === null ? <span className="text-xs italic text-muted-foreground">No responses</span> : <div className="h-2 rounded bg-secondary"><div className={cn('h-2 rounded', bar(s.avg_score))} style={{ width: `${(s.avg_score / 5) * 100}%` }} /></div>}</td>
-                        <td className="text-right"><Button asChild size="sm" variant="outline"><a href={s.dashboard_url}>Dashboard</a></Button></td>
-                      </tr>
+                      <TableRow key={s.product.id}>
+                        <TableCell className="py-2"><div className="font-medium">{s.product.name}</div><code className="text-xs text-muted-foreground">{s.product.slug}</code></TableCell>
+                        <TableCell className="text-center">{s.survey_count}</TableCell>
+                        <TableCell className="text-center">{s.response_count}</TableCell>
+                        <TableCell className={cn('text-center font-medium', tone(s.avg_score))}>{s.avg_score ?? '—'}{s.avg_score !== null && <small className="text-xs text-muted-foreground"> / 5.0</small>}</TableCell>
+                        <TableCell>{s.avg_score === null ? <span className="text-xs italic text-muted-foreground">No responses</span> : <div className="h-2 rounded bg-secondary"><div className={cn('h-2 rounded', bar(s.avg_score))} style={{ width: `${(s.avg_score / 5) * 100}%` }} /></div>}</TableCell>
+                        <TableCell className="text-right"><Button asChild size="sm" variant="outline"><a href={s.dashboard_url}>Dashboard</a></Button></TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </Card>

@@ -16,6 +16,8 @@ import { filtersFromParams, paramsFromFilters, useRuleActions, useRuleScope, use
 import type { Rule } from './types';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-fired', 'Most triggered']];
 const TABS: [string, string][] = [['', 'All'], ['1', 'Active'], ['0', 'Inactive']];
@@ -56,15 +58,7 @@ export function RulesPage() {
         <Button asChild size="sm"><Link to={`${base}create/`}><Plus /> New rule</Link></Button>
       </div>
 
-      <div className="flex w-fit rounded-lg bg-secondary p-0.5">
-        {TABS.map(([v, l]) => {
-          const active = (filters.active ?? '') === v;
-          return (
-            <button key={l} type="button" aria-pressed={active} onClick={() => setFilters({ ...filters, active: v || undefined, page: undefined })}
-              className={cn('rounded-md px-3 py-1 text-sm', active ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{l}</button>
-          );
-        })}
-      </div>
+      <Segmented value={filters.active ?? ''} onValueChange={(v) => setFilters({ ...filters, active: v || undefined, page: undefined })} options={TABS.map(([v, l]) => ({ value: v, label: l }))} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-60 max-sm:max-w-none">
@@ -77,32 +71,32 @@ export function RulesPage() {
       </div>
 
       {list.isError && !data ? (
-        <ErrorState message="Couldn’t load rules." onRetry={() => list.refetch()} />
+        <Card><ErrorState title="Couldn’t load rules."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="rules-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
-        <Card><EmptyState title="No rules found">{filters.q ? 'Try a different search term.' : 'Create a rule to open tickets automatically when errors pile up.'}</EmptyState></Card>
+        <EmptyState title="No rules found" description={<>{filters.q ? 'Try a different search term.' : 'Create a rule to open tickets automatically when errors pile up.'}</>} />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Rule</th><th className="p-3 font-medium">Trigger</th><th className="p-3 font-medium">Action</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Fired</th><th className="p-3"><span className="sr-only">Actions</span></th></tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader><TableRow><TableHead>Rule</TableHead><TableHead>Trigger</TableHead><TableHead>Action</TableHead><TableHead>Status</TableHead><TableHead>Fired</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+            <TableBody>
               {data.items.map((r) => (
-                <tr key={r.id} className="border-b last:border-0">
-                  <td className="p-3"><Link to={`/automation/${r.id}/edit/`} className="font-medium hover:underline">{r.name}</Link><div className="text-xs text-muted-foreground">{r.product ? r.product.name : 'All products'}</div></td>
-                  <td className="p-3">{r.threshold_count} errors in {r.window_minutes}m{r.severity ? ` (${r.severity})` : ''}</td>
-                  <td className="p-3">{r.action_label}</td>
-                  <td className="p-3">
+                <TableRow key={r.id}>
+                  <TableCell><Link to={`/automation/${r.id}/edit/`} className="font-medium hover:underline">{r.name}</Link><div className="text-xs text-muted-foreground">{r.product ? r.product.name : 'All products'}</div></TableCell>
+                  <TableCell>{r.threshold_count} errors in {r.window_minutes}m{r.severity ? ` (${r.severity})` : ''}</TableCell>
+                  <TableCell>{r.action_label}</TableCell>
+                  <TableCell>
                     <button type="button" aria-label={`${r.is_active ? 'Disable' : 'Enable'} ${r.name}`} onClick={() => actions.toggle(r.id)}>
                       {r.is_active ? <Badge variant="success">Active</Badge> : <Badge>Disabled</Badge>}
                     </button>
-                  </td>
-                  <td className="p-3">{r.trigger_count}</td>
-                  <td className="p-3"><div className="flex justify-end gap-1.5"><Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}>Edit</Link></Button><Button size="sm" variant="destructive" onClick={() => setConfirm(r)}>Delete</Button></div></td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{r.trigger_count}</TableCell>
+                  <TableCell><div className="flex justify-end gap-1.5"><Button asChild size="sm" variant="outline"><Link to={`/automation/${r.id}/edit/`}>Edit</Link></Button><Button size="sm" variant="destructive" onClick={() => setConfirm(r)}>Delete</Button></div></TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {data.page.num_pages > 1 && <div className="flex justify-end border-t p-3"><Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} /></div>}
         </Card>
       )}

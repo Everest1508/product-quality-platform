@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { Actor, EventBadge } from './EventBadge';
 import { useReport } from './useDashboards';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
 
 const fmt = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const md = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -70,16 +72,16 @@ export function ReportsPage() {
           <label className="grid gap-1 text-xs font-medium">To<Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} /></label>
           <Button type="submit" size="sm">Generate report</Button>
         </form>
-        <div role="group" aria-label="Quick ranges" className="flex flex-wrap rounded-lg bg-secondary p-0.5">
-          {d?.presets.map((p) => {
-            const on = p.start === d.start_date && p.end === d.end_date;
-            return <button key={p.label} type="button" aria-pressed={on} onClick={() => go(p.start, p.end)} className={cn('rounded-md px-3 py-1 text-sm', on ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{p.label}</button>;
-          })}
-        </div>
+        <Segmented
+          className="flex-wrap"
+          value={d?.presets.find((p) => p.start === d.start_date && p.end === d.end_date)?.label ?? ''}
+          onValueChange={(label) => { const p = d?.presets.find((x) => x.label === label); if (p) go(p.start, p.end); }}
+          options={(d?.presets ?? []).map((p) => ({ value: p.label, label: p.label }))}
+        />
       </div>
 
       {q.isError && !d ? (
-        <ErrorState message="Couldn’t load the report." onRetry={() => q.refetch()} />
+        <Card><ErrorState title="Couldn’t load the report."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
       ) : !d ? (
         <div className="space-y-3" data-testid="report-loading"><Skeleton className="h-24 w-full" /><Skeleton className="h-56 w-full" /></div>
       ) : (
@@ -144,10 +146,10 @@ export function ReportsPage() {
               <details>
                 <summary className="flex cursor-pointer items-center justify-between font-semibold">Numbers by product <span className="text-xs font-normal text-muted-foreground">{d.product_rows.length} products</span></summary>
                 <div className="mt-3 overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">Product</th>{['Tickets created', 'Tickets resolved', 'Errors captured', 'Errors resolved', 'Feedback'].map((h) => <th key={h} className="text-center font-medium">{h}</th>)}</tr></thead>
-                    <tbody>{d.product_rows.map((r) => <tr key={r.name} className="border-b last:border-0"><td className="py-2 font-medium">{r.name}</td>{[r.tickets_created, r.tickets_resolved, r.errors_captured, r.errors_resolved, r.feedback].map((n, i) => <td key={i} className="text-center">{n}</td>)}</tr>)}</tbody>
-                  </table>
+                  <Table>
+                    <TableHeader><TableRow><TableHead className="py-2">Product</TableHead>{['Tickets created', 'Tickets resolved', 'Errors captured', 'Errors resolved', 'Feedback'].map((h) => <TableHead key={h} className="text-center">{h}</TableHead>)}</TableRow></TableHeader>
+                    <TableBody>{d.product_rows.map((r) => <TableRow key={r.name}><TableCell className="py-2">{r.name}</TableCell>{[r.tickets_created, r.tickets_resolved, r.errors_captured, r.errors_resolved, r.feedback].map((n, i) => <TableCell key={i} className="text-center">{n}</TableCell>)}</TableRow>)}</TableBody>
+                  </Table>
                 </div>
               </details>
             </Card>
@@ -157,10 +159,10 @@ export function ReportsPage() {
               <details>
                 <summary className="flex cursor-pointer items-center justify-between font-semibold">Numbers by day <span className="text-xs font-normal text-muted-foreground">{d.daily.length} days</span></summary>
                 <div className="mt-3 overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">Date</th>{['Tickets created', 'Resolved', 'Closed', 'Errors captured', 'Errors resolved', 'Feedback', 'Total'].map((h) => <th key={h} className="text-center font-medium">{h}</th>)}</tr></thead>
-                    <tbody>{d.daily.map((r) => <tr key={r.date} className="border-b last:border-0"><td className="py-2 text-muted-foreground">{fmt(r.date)}</td>{[r.tickets_created, r.tickets_resolved, r.tickets_closed, r.errors_captured, r.errors_resolved, r.feedback, r.total].map((n, i) => <td key={i} className="text-center">{n}</td>)}</tr>)}</tbody>
-                  </table>
+                  <Table>
+                    <TableHeader><TableRow><TableHead className="py-2">Date</TableHead>{['Tickets created', 'Resolved', 'Closed', 'Errors captured', 'Errors resolved', 'Feedback', 'Total'].map((h) => <TableHead key={h} className="text-center">{h}</TableHead>)}</TableRow></TableHeader>
+                    <TableBody>{d.daily.map((r) => <TableRow key={r.date}><TableCell className="py-2 text-muted-foreground">{fmt(r.date)}</TableCell>{[r.tickets_created, r.tickets_resolved, r.tickets_closed, r.errors_captured, r.errors_resolved, r.feedback, r.total].map((n, i) => <TableCell key={i} className="text-center">{n}</TableCell>)}</TableRow>)}</TableBody>
+                  </Table>
                 </div>
               </details>
             </Card>
@@ -170,19 +172,19 @@ export function ReportsPage() {
             <Card className="p-5">
               <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Recent activity log</h2><span className="text-xs text-muted-foreground">{d.recent.length} events</span></div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">Time</th><th className="font-medium">Event</th><th className="font-medium">Details</th><th className="font-medium">Actor</th></tr></thead>
-                  <tbody>
+                <Table>
+                  <TableHeader><TableRow><TableHead className="py-2">Time</TableHead><TableHead>Event</TableHead><TableHead>Details</TableHead><TableHead>Actor</TableHead></TableRow></TableHeader>
+                  <TableBody>
                     {d.recent.map((e) => (
-                      <tr key={e.id} className="border-b last:border-0 align-top">
-                        <td className="whitespace-nowrap py-2 pr-3 text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</td>
-                        <td className="pr-3"><EventBadge e={e} /></td>
-                        <td className="pr-3"><div className="font-medium">{e.url ? <a href={e.url} className="hover:underline">{e.title}</a> : e.title}</div>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</td>
-                        <td><Actor a={e.actor} /></td>
-                      </tr>
+                      <TableRow key={e.id} className="align-top">
+                        <TableCell className="whitespace-nowrap py-2 pr-3 text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</TableCell>
+                        <TableCell className="pr-3"><EventBadge e={e} /></TableCell>
+                        <TableCell className="pr-3"><div className="font-medium">{e.url ? <a href={e.url} className="hover:underline">{e.title}</a> : e.title}</div>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</TableCell>
+                        <TableCell><Actor a={e.actor} /></TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </Card>
           ) : (

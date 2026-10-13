@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Alert } from '@/components/ui/alert';
 
 // The username/password form shared by the sign-in page and the desktop app's sign-in. The server decides where to go next.
 export function SignInForm({ path, extra, submitLabel = 'Sign in' }: { path: string; extra: Record<string, string>; submitLabel?: string }) {
@@ -36,7 +37,7 @@ export function SignInForm({ path, extra, submitLabel = 'Sign in' }: { path: str
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      {error && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && <Alert variant="danger">{error}</Alert>}
       <div className="grid gap-1.5">
         <label htmlFor="username" className="text-sm font-medium">Username or email <span aria-hidden className="text-destructive">*</span></label>
         <Input id="username" autoFocus autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="Username or email" value={username} onChange={(e) => setUsername(e.target.value)} aria-invalid={!!error} />

@@ -17,6 +17,7 @@ import { DeadlineField } from './DeadlineField';
 import { MentionTextarea } from './MentionTextarea';
 import { useTicketActions, useTicketDetail } from './useTicket';
 import type { TicketDetail } from './types';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 export const ASSIGN_DEBOUNCE_MS = 600;
 
@@ -101,17 +102,7 @@ function Detail({ data, ticketId }: { data: TicketDetail; ticketId: number }) {
 
   return (
     <div className="space-y-4">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/tickets/" className="hover:text-foreground">Tickets</Link>
-        {t.product && (
-          <>
-            <span>/</span>
-            <a href={`/products/${t.product.id}/`} className="hover:text-foreground">{t.product.name}</a>
-          </>
-        )}
-        <span>/</span>
-        <span className="font-medium text-foreground">{t.key}</span>
-      </nav>
+      <Breadcrumb items={[{ label: 'Tickets', href: '/tickets/' }, ...(t.product ? [{ label: t.product.name, href: `/products/${t.product.id}/` }] : []), { label: t.key }]} />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">

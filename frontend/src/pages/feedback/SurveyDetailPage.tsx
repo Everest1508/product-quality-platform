@@ -12,7 +12,7 @@ import { ago } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { useSurveyActions, useSurveyDetail } from './useFeedback';
 import type { SurveyDetail } from './types';
-import { Stat } from '@/components/ui/stat';
+import { StatCard } from '@/components/ui/stat-card';
 
 const NEXT: Record<string, string> = { draft: 'Activate', active: 'Close', closed: 'Reopen' };
 
@@ -53,10 +53,10 @@ function Detail({ data }: { data: SurveyDetail }) {
       <p className="text-sm text-muted-foreground">{s.product.name}{s.description ? ` · ${s.description}` : ''}</p>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat value={s.response_count} label="Responses" />
-        <Stat value={(s.type === 'nps' ? s.nps : s.avg_score) ?? '—'} label={s.type === 'nps' ? 'NPS Score' : 'Avg Score'} />
-        <Stat value={<Badge variant="info">{s.type_label}</Badge>} label="Type" />
-        <Stat value={<Badge variant={s.status === 'active' ? 'success' : s.status === 'draft' ? 'warning' : 'default'}>{s.status_label}</Badge>} label="Status" />
+        <StatCard value={s.response_count} label="Responses" />
+        <StatCard value={(s.type === 'nps' ? s.nps : s.avg_score) ?? '—'} label={s.type === 'nps' ? 'NPS Score' : 'Avg Score'} />
+        <StatCard value={<Badge variant="info">{s.type_label}</Badge>} label="Type" />
+        <StatCard value={<Badge variant={s.status === 'active' ? 'success' : s.status === 'draft' ? 'warning' : 'default'}>{s.status_label}</Badge>} label="Status" />
       </div>
 
       <div className="flex flex-wrap items-end gap-3">

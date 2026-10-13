@@ -15,6 +15,8 @@ import { useLocation } from 'react-router-dom';
 import { filtersFromParams, paramsFromFilters, useSurveyScope, useSurveys, type SurveyFilters } from './useFeedback';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
 
 const SORTS: [string, string][] = [['-created', 'Newest first'], ['created', 'Oldest first'], ['name', 'Name A-Z'], ['-responses', 'Most responses']];
 const STATUS_TABS: [string, string][] = [['', 'All'], ['active', 'Active'], ['draft', 'Draft'], ['closed', 'Closed']];
@@ -48,19 +50,10 @@ export function SurveysPage() {
     document.title = `${title} — PQ Platform`;
   }, [title]);
   const createUrl = productId ? `/products/${productId}/surveys/create/` : '/feedback/create/';
-  const tab = (key: 'status' | 'type', value: string, label: string) => {
-    const active = (filters[key] ?? '') === value && (key === 'status' ? !filters.type : !!value);
-    return (
-      <button
-        key={key + label}
-        type="button"
-        aria-pressed={active}
-        onClick={() => setFilters({ ...filters, status: key === 'status' ? value || undefined : undefined, type: key === 'type' ? value : undefined, page: undefined })}
-        className={cn('rounded-md px-3 py-1 text-sm', active ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}
-      >
-        {label}
-      </button>
-    );
+  const current = filters.type ? `type:${filters.type}` : `status:${filters.status ?? ''}`;
+  const pickTab = (v: string) => {
+    const [key, value] = [v.slice(0, v.indexOf(':')), v.slice(v.indexOf(':') + 1)];
+    setFilters({ ...filters, status: key === 'status' ? value || undefined : undefined, type: key === 'type' ? value : undefined, page: undefined });
   };
 
   return (
@@ -70,11 +63,7 @@ export function SurveysPage() {
         <Button asChild size="sm"><Link to={createUrl}><Plus /> New survey</Link></Button>
       </div>
 
-      <div className="flex w-fit flex-wrap items-center rounded-lg bg-secondary p-0.5">
-        {STATUS_TABS.map(([v, l]) => tab('status', v, l))}
-        <span className="mx-1 h-4 w-px bg-border" />
-        {TYPE_TABS.map(([v, l]) => tab('type', v, l))}
-      </div>
+      <Segmented className="flex-wrap" value={current} onValueChange={pickTab} options={[...STATUS_TABS.map(([v, l]) => ({ value: `status:${v}`, label: l })), ...TYPE_TABS.map(([v, l]) => ({ value: `type:${v}`, label: l }))]} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-60 max-sm:max-w-none">
@@ -87,34 +76,34 @@ export function SurveysPage() {
       </div>
 
       {list.isError && !data ? (
-        <ErrorState message="Couldn’t load surveys." onRetry={() => list.refetch()} />
+        <Card><ErrorState title="Couldn’t load surveys."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="surveys-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
-        <Card><EmptyState title="No surveys found">{filters.q ? 'Try a different search term.' : 'Create a survey to start collecting feedback.'}</EmptyState></Card>
+        <EmptyState title="No surveys found" description={<>{filters.q ? 'Try a different search term.' : 'Create a survey to start collecting feedback.'}</>} />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="p-3 font-medium">Name</th><th className="p-3 font-medium">Type</th>
-                {!productId && <th className="p-3 font-medium">Product</th>}
-                <th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Responses</th><th className="p-3 font-medium">Created</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead><TableHead>Type</TableHead>
+                {!productId && <TableHead>Product</TableHead>}
+                <TableHead>Status</TableHead><TableHead>Responses</TableHead><TableHead>Created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {data.items.map((s) => (
-                <tr key={s.id} className="cursor-pointer border-b last:border-0 hover:bg-secondary/50" onClick={() => navigate(s.url)}>
-                  <td className="p-3"><Link to={s.url} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{s.name}</Link></td>
-                  <td className="p-3"><Badge variant="info">{s.type_label}</Badge></td>
-                  {!productId && <td className="p-3 text-muted-foreground">{s.product.name}</td>}
-                  <td className="p-3"><Badge variant={STATUS_VARIANT[s.status] ?? 'default'}>{s.status_label}</Badge></td>
-                  <td className="p-3">{s.response_count}</td>
-                  <td className="whitespace-nowrap p-3 text-muted-foreground">{ago(s.created_at)}</td>
-                </tr>
+                <TableRow key={s.id} className="cursor-pointer hover:bg-secondary/50" onClick={() => navigate(s.url)}>
+                  <TableCell><Link to={s.url} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{s.name}</Link></TableCell>
+                  <TableCell><Badge variant="info">{s.type_label}</Badge></TableCell>
+                  {!productId && <TableCell className="text-muted-foreground">{s.product.name}</TableCell>}
+                  <TableCell><Badge variant={STATUS_VARIANT[s.status] ?? 'default'}>{s.status_label}</Badge></TableCell>
+                  <TableCell>{s.response_count}</TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">{ago(s.created_at)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {data.page.num_pages > 1 && (
             <div className="flex justify-end border-t p-3"><Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} /></div>
           )}

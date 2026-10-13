@@ -1,6 +1,7 @@
 import { usePresence } from '@/lib/usePresence';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui/avatar';
 
 const clock = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
@@ -10,9 +11,7 @@ export function PresenceMenu() {
   const live = status === 'live' || status === 'polling';
   const row = (u: (typeof users)[number]) => (
     <li key={u.user_id} className="flex items-start gap-3 px-4 py-2 text-sm">
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
-        {(u.name || '?').charAt(0).toUpperCase()}
-      </span>
+      <Avatar name={u.name || '?'} />
       <span className="min-w-0 flex-1">
         <span className="block font-medium">{u.name}</span>
         {u.activity && <span className="block text-xs text-muted-foreground">{u.activity}</span>}
@@ -31,9 +30,7 @@ export function PresenceMenu() {
         <button type="button" aria-label="Who is online" className="flex h-9 items-center gap-2 rounded-md border bg-card px-2.5 text-sm hover:bg-secondary">
           <span className="flex -space-x-1.5" aria-hidden>
             {users.slice(0, 3).map((u) => (
-              <span key={u.user_id} className="grid size-5 place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground ring-2 ring-card">
-                {(u.name || '?').charAt(0).toUpperCase()}
-              </span>
+              <Avatar key={u.user_id} name={u.name || '?'} size="xs" className="ring-2 ring-card" />
             ))}
             {!users.length && (
               <span data-testid="presence-dot" data-live={live} className={cn('size-2 self-center rounded-full', live ? 'bg-success' : 'bg-muted-foreground/40')} />

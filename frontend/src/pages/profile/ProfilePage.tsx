@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
+import { Avatar } from '@/components/ui/avatar';
 
 type Profile = {
   user: { username: string; name: string; initial: string; first_name: string; last_name: string; email: string; discord_id: string };
@@ -91,14 +92,14 @@ export function ProfilePage() {
     <div className="mx-auto max-w-3xl space-y-4">
       <PageHeader title="Settings" sub="Manage your profile details, email address, and notification preferences." />
       {q.isError && !p ? (
-        <ErrorState message="Couldn’t load your settings." onRetry={() => q.refetch()} />
+        <Card><ErrorState title="Couldn’t load your settings."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
       ) : !p ? (
         <div className="space-y-3" data-testid="profile-loading"><Skeleton className="h-20 w-full" /><Skeleton className="h-48 w-full" /></div>
       ) : (
         <>
           <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
             <div className="flex min-w-0 items-center gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-lg font-semibold text-accent-foreground">{p.user.initial}</span>
+              <Avatar name={p.user.name} size="md" />
               <div className="min-w-0"><div className="truncate font-semibold">{p.user.name}</div><div className="text-sm text-muted-foreground">@{p.user.username} · <Badge variant="info">{p.role_label}</Badge></div></div>
             </div>
             <div className="text-sm text-muted-foreground">Company: <b className="text-foreground">{p.company}</b></div>

@@ -46,7 +46,7 @@ it('the report shows KPI changes, rings and the recent log, and presets set the 
   expect(screen.getByText('new')).toBeInTheDocument();
   expect(screen.getByText('Recent activity log')).toBeInTheDocument();
   expect(get).toHaveBeenCalledWith('reports/?start_date=2026-10-13&end_date=2026-10-13');
-  await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Last 7 days' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/dashboards/reports/?start_date=2026-10-07&end_date=2026-10-13');
 });
 

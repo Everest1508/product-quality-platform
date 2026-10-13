@@ -13,6 +13,7 @@ import { CorrectionStatus } from './parts';
 import { useAttQuery, useAttWrite } from './useAttendance';
 import { api } from '@/lib/api';
 import type { MyAttendance } from './types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const CELL: Record<string, string> = {
   full: 'bg-success/70 text-success-foreground', part: 'bg-warning/60', open: 'bg-primary/70 text-primary-foreground', stale: 'bg-destructive/70 text-destructive-foreground',
@@ -85,25 +86,25 @@ export function AttendancePage() {
 
       <Card className="overflow-x-auto p-0">
         {d.records.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No attendance recorded for {m.label}.</p> : (
-          <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Date</th><th className="p-3 font-medium">Check in</th><th className="p-3 font-medium">Check out</th><th className="p-3 font-medium">Worked</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Notes</th>{d.can_edit && <th className="p-3" />}</tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Check in</TableHead><TableHead>Check out</TableHead><TableHead>Worked</TableHead><TableHead>Status</TableHead><TableHead>Notes</TableHead>{d.can_edit && <TableHead />}</TableRow></TableHeader>
+            <TableBody>
               {d.records.map((r) => {
                 const [variant, label] = STATUS[r.status];
                 return (
-                  <tr key={r.id} className={cn('border-b last:border-0', r.status === 'stale' && 'bg-warning/5')}>
-                    <td className="whitespace-nowrap p-3 text-muted-foreground">{r.date_label}</td>
-                    <td className="p-3">{r.check_in || '—'}</td>
-                    <td className="p-3">{r.status === 'complete' ? r.check_out : r.status === 'stale' ? <Badge variant="danger">not checked out</Badge> : '—'}</td>
-                    <td className="p-3">{r.worked || <span className="text-muted-foreground">{r.effective || r.elapsed || '—'}</span>}</td>
-                    <td className="p-3"><Badge variant={variant}>{label}</Badge>{r.is_edited && <Badge className="ml-1" variant="outline">edited</Badge>}</td>
-                    <td className="max-w-48 truncate p-3 text-muted-foreground">{r.notes}</td>
-                    {d.can_edit && <td className="p-3 text-right">{(r.status === 'stale' || r.status === 'open') && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${r.id}/edit/`}>{r.status === 'stale' ? 'Set check-out' : 'Edit'}</Link></Button>}</td>}
-                  </tr>
+                  <TableRow key={r.id} className={cn('border-b last:border-0', r.status === 'stale' && 'bg-warning/5')}>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{r.date_label}</TableCell>
+                    <TableCell>{r.check_in || '—'}</TableCell>
+                    <TableCell>{r.status === 'complete' ? r.check_out : r.status === 'stale' ? <Badge variant="danger">not checked out</Badge> : '—'}</TableCell>
+                    <TableCell>{r.worked || <span className="text-muted-foreground">{r.effective || r.elapsed || '—'}</span>}</TableCell>
+                    <TableCell><Badge variant={variant}>{label}</Badge>{r.is_edited && <Badge className="ml-1" variant="outline">edited</Badge>}</TableCell>
+                    <TableCell className="max-w-48 truncate text-muted-foreground">{r.notes}</TableCell>
+                    {d.can_edit && <TableCell className="text-right">{(r.status === 'stale' || r.status === 'open') && <Button asChild size="sm" variant="outline"><Link to={`/attendance/${r.id}/edit/`}>{r.status === 'stale' ? 'Set check-out' : 'Edit'}</Link></Button>}</TableCell>}
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </Card>
 

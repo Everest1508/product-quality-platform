@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { TicketItem } from './types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const statusVariant: Record<string, 'default' | 'info' | 'warning' | 'primary' | 'success' | 'outline'> = {
   open: 'default', assigned: 'info', in_progress: 'warning', testing: 'primary', resolved: 'success', closed: 'outline',
@@ -38,60 +39,60 @@ type Props = {
 
 export function TicketTable({ items, selecting, selected, onSelect, onDelete }: Props) {
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
-          {selecting && <th className="w-10 px-3 py-2"><span className="sr-only">Select</span></th>}
-          <th className="px-3 py-2">ID</th>
-          <th className="px-3 py-2">Title</th>
-          <th className="px-3 py-2">Status</th>
-          <th className="px-3 py-2">Priority</th>
-          <th className="px-3 py-2">Assignees</th>
-          <th className="px-3 py-2">Updated</th>
-          <th className="px-3 py-2"><span className="sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table>
+      <TableHeader>
+        <TableRow className="uppercase tracking-wider">
+          {selecting && <TableHead className="w-10 px-3 py-2"><span className="sr-only">Select</span></TableHead>}
+          <TableHead className="px-3 py-2">ID</TableHead>
+          <TableHead className="px-3 py-2">Title</TableHead>
+          <TableHead className="px-3 py-2">Status</TableHead>
+          <TableHead className="px-3 py-2">Priority</TableHead>
+          <TableHead className="px-3 py-2">Assignees</TableHead>
+          <TableHead className="px-3 py-2">Updated</TableHead>
+          <TableHead className="px-3 py-2"><span className="sr-only">Actions</span></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {items.map((t) => (
-          <tr key={t.id} data-ticket-row data-ticket-id={t.id} data-url={t.url} onClick={() => go(t.url)} className="cursor-pointer border-b last:border-b-0 hover:bg-muted">
+          <TableRow key={t.id} data-ticket-row data-ticket-id={t.id} data-url={t.url} onClick={() => go(t.url)} className="cursor-pointer border-b last:border-b-0 hover:bg-muted">
             {selecting && (
-              <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+              <TableCell className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                 <Checkbox aria-label={`Select ticket ${t.key}`} checked={selected.has(t.id)} onCheckedChange={(c) => onSelect(t.id, c === true)} />
-              </td>
+              </TableCell>
             )}
-            <td className="whitespace-nowrap px-3 py-3 font-semibold text-muted-foreground">{t.key}</td>
-            <td className="max-w-md px-3 py-3">
+            <TableCell className="whitespace-nowrap px-3 py-3 font-semibold text-muted-foreground">{t.key}</TableCell>
+            <TableCell className="max-w-md px-3 py-3">
               <a href={t.url} onClick={(e) => e.stopPropagation()} className="break-words font-semibold hover:underline">{t.title}</a>
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                 {t.product && <b className="font-medium text-foreground">{t.product.name}</b>}
                 <Badge variant="outline">{t.type_label}</Badge>
                 {t.linked_error && <span>Linked to error</span>}
               </div>
-            </td>
-            <td className="px-3 py-3"><Badge variant={statusVariant[t.status] ?? 'default'}>{t.status_label}</Badge></td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell className="px-3 py-3"><Badge variant={statusVariant[t.status] ?? 'default'}>{t.status_label}</Badge></TableCell>
+            <TableCell className="px-3 py-3">
               <span className="inline-flex items-center gap-1.5 text-xs">
                 <span className={cn('size-2 rounded-full', priorityDot[t.priority])} />
                 {t.priority_label}
               </span>
-            </td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell className="px-3 py-3">
               <span className="flex items-center gap-2">
                 <Assignees people={t.assignees} />
                 {t.is_overdue && <Badge variant="danger">Overdue</Badge>}
               </span>
-            </td>
-            <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground" title={new Date(t.updated_at).toLocaleString()}>{ago(t.updated_at)}</td>
-            <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+            </TableCell>
+            <TableCell className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground" title={new Date(t.updated_at).toLocaleString()}>{ago(t.updated_at)}</TableCell>
+            <TableCell className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
               {t.can_delete && (
                 <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.key}`} onClick={() => onDelete(t)}>
                   <Trash2 />
                 </Button>
               )}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }

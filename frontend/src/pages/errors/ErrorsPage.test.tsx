@@ -56,9 +56,9 @@ it('a product page scopes the request and hides the product column', async () =>
 it('tabs set the status or the regressed filter in the URL', async () => {
   setup('/errors/', errorList([errorItem()], { regressed_count: 2 }));
   await screen.findByText('TypeError: foo');
-  await userEvent.click(screen.getByRole('button', { name: 'Resolved' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Resolved' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/errors/?status=resolved');
-  await userEvent.click(screen.getByRole('button', { name: /Regressed/ }));
+  await userEvent.click(screen.getByRole('radio', { name: /Regressed/ }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/errors/?regressed=1');
 });
 

@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import type { EventRow } from './types';
+import { Avatar } from '@/components/ui/avatar';
 
 const VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'default'> = {
   open: 'info', assigned: 'info', progress: 'warning', resolved: 'success', info: 'default', critical: 'danger', closed: 'default',
@@ -10,7 +11,7 @@ export const EventBadge = ({ e }: { e: Pick<EventRow, 'pill' | 'label'> }) => <B
 export const Actor = ({ a }: { a: EventRow['actor'] }) =>
   a ? (
     <span className="inline-flex items-center gap-1.5 text-sm">
-      <span className="grid size-5 place-items-center rounded-full bg-accent text-[10px] font-medium text-accent-foreground">{a.initial}</span>
+      <Avatar name={a.name} size="xs" />
       {a.name}
     </span>
   ) : (

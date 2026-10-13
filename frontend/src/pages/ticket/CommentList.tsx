@@ -1,6 +1,7 @@
 import { ago } from '@/lib/time';
 import { renderMentions, type Person } from './mentions';
 import type { Comment } from './types';
+import { Avatar } from '@/components/ui/avatar';
 
 export function CommentList({ comments, people }: { comments: Comment[]; people: Person[] }) {
   if (!comments.length) return <p className="text-sm text-muted-foreground">No comments yet.</p>;
@@ -13,7 +14,7 @@ export function CommentList({ comments, people }: { comments: Comment[]; people:
             <span className="flex items-center gap-2 font-medium">
               {c.author ? (
                 <>
-                  <span className="grid size-5 place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground">{c.author.initial}</span>
+                  <Avatar name={c.author.name} size="xs" />
                   {c.author.name}
                 </>
               ) : (

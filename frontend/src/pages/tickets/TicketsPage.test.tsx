@@ -47,11 +47,12 @@ it('lists tickets with the count and open count in the header', async () => {
   expect(screen.getByText(/2 tickets · 1 open/)).toBeInTheDocument();
 });
 
-it('view links keep the filters, and New ticket points at the legacy form', async () => {
+it('the view switch keeps the filters, and New ticket points at the legacy form', async () => {
   setup('/tickets/list/?q=a');
   await screen.findByText('Login bug');
-  expect(screen.getByRole('link', { name: 'Kanban' })).toHaveAttribute('href', '/tickets/kanban/?q=a');
-  expect(screen.getByRole('link', { name: 'List' })).toHaveAttribute('aria-current', 'page');
+  expect(screen.getByRole('radio', { name: 'List' })).toBeChecked();
+  await userEvent.click(screen.getByRole('radio', { name: 'Kanban' }));
+  expect(screen.getByTestId('loc')).toHaveTextContent('/tickets/kanban/?q=a');
   expect(screen.getByRole('link', { name: /new ticket/i })).toHaveAttribute('href', '/tickets/create/');
 });
 

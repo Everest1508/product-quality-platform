@@ -17,6 +17,8 @@ import { filtersFromParams, paramsFromFilters, useDeleteError, useErrorMeta, use
 import type { ErrorFilters, ErrorItem } from './types';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
 
 const SORTS: [string, string][] = [
   ['-last_seen', 'Most recent'],
@@ -75,20 +77,9 @@ export function ErrorsPage() {
   const createUrl = productId ? `/products/${productId}/errors/create/` : '/errors/create/';
   const set = (key: keyof ErrorFilters) => (v: string | undefined) => setFilters({ ...filters, [key]: v, page: undefined });
   const regressed = filters.regressed === '1';
-  const tab = (status: string, label: string) => {
-    const active = !regressed && (filters.status ?? '') === status;
-    return (
-      <button
-        key={label}
-        type="button"
-        aria-current={active ? 'page' : undefined}
-        onClick={() => setFilters({ ...filters, status: status || undefined, regressed: undefined, page: undefined })}
-        className={cn('rounded-md px-3 py-1 text-sm', active ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}
-      >
-        {label}
-      </button>
-    );
-  };
+  const current = regressed ? 'regressed' : `s:${filters.status ?? ''}`;
+  const pickTab = (v: string) =>
+    setFilters({ ...filters, status: v.startsWith('s:') ? v.slice(2) || undefined : undefined, regressed: v === 'regressed' ? '1' : undefined, page: undefined });
 
   return (
     <div className="space-y-4">
@@ -109,18 +100,12 @@ export function ErrorsPage() {
         <Button asChild size="sm"><Link to={createUrl}><Plus /> Report error</Link></Button>
       </div>
 
-      <div className="flex w-fit flex-wrap rounded-lg bg-secondary p-0.5">
-        {TABS.map(([s, l]) => tab(s, l))}
-        <button
-          type="button"
-          aria-current={regressed ? 'page' : undefined}
-          title="Resolved earlier, then seen again"
-          onClick={() => setFilters({ ...filters, status: undefined, regressed: '1', page: undefined })}
-          className={cn('flex items-center gap-1.5 rounded-md px-3 py-1 text-sm', regressed ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}
-        >
-          Regressed{!!data?.regressed_count && <Badge variant="danger">{data.regressed_count}</Badge>}
-        </button>
-      </div>
+      <Segmented
+        className="flex-wrap"
+        value={current}
+        onValueChange={pickTab}
+        options={[...TABS.map(([s, l]) => ({ value: `s:${s}`, label: l })), { value: 'regressed', title: 'Resolved earlier, then seen again', label: <>Regressed{!!data?.regressed_count && <Badge variant="danger">{data.regressed_count}</Badge>}</> }]}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-60 max-sm:max-w-none">
@@ -137,31 +122,31 @@ export function ErrorsPage() {
       </div>
 
       {errors.isError && !data ? (
-        <ErrorState message="Couldn’t load errors." onRetry={() => errors.refetch()} />
+        <Card><ErrorState title="Couldn’t load errors."><Button size="sm" variant="outline" onClick={() => errors.refetch()}>Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="errors-loading">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
         </Card>
       ) : data.items.length === 0 ? (
-        <Card><EmptyState title="No errors found">{filters.q ? 'Try a different search term.' : 'Errors will appear here once your products start reporting.'}</EmptyState></Card>
+        <EmptyState title="No errors found" description={<>{filters.q ? 'Try a different search term.' : 'Errors will appear here once your products start reporting.'}</>} />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="p-3 font-medium">Error</th>
-                {!productId && <th className="p-3 font-medium">Product</th>}
-                <th className="p-3 font-medium">Severity</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Count</th>
-                <th className="p-3 font-medium">Last seen</th>
-                <th className="w-20 p-3"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Error</TableHead>
+                {!productId && <TableHead>Product</TableHead>}
+                <TableHead>Severity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Count</TableHead>
+                <TableHead>Last seen</TableHead>
+                <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {data.items.map((e) => (
-                <tr key={e.id} className="cursor-pointer border-b last:border-0 hover:bg-secondary/50" onClick={() => navigate(e.url)}>
-                  <td className="max-w-md p-3">
+                <TableRow key={e.id} className="cursor-pointer hover:bg-secondary/50" onClick={() => navigate(e.url)}>
+                  <TableCell className="max-w-md">
                     <div className="flex items-start gap-2">
                       <SeverityDot severity={e.severity} className="mt-1.5" />
                       <div className="min-w-0">
@@ -170,26 +155,26 @@ export function ErrorsPage() {
                         <div className="mt-1 flex flex-wrap gap-1"><Flags error={e} /></div>
                       </div>
                     </div>
-                  </td>
-                  {!productId && <td className="p-3 text-muted-foreground">{e.product.name}</td>}
-                  <td className="p-3"><SeverityBadge severity={e.severity} label={e.severity_label} /></td>
-                  <td className="p-3"><StatusBadge status={e.status} label={e.status_label} /></td>
-                  <td className="p-3">
+                  </TableCell>
+                  {!productId && <TableCell className="text-muted-foreground">{e.product.name}</TableCell>}
+                  <TableCell><SeverityBadge severity={e.severity} label={e.severity_label} /></TableCell>
+                  <TableCell><StatusBadge status={e.status} label={e.status_label} /></TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2"><span>{e.occurrence_count}</span><Sparkline trend={e.trend} /></div>
-                  </td>
-                  <td className="whitespace-nowrap p-3 text-muted-foreground" title={new Date(e.last_seen).toLocaleString()}>{ago(e.last_seen)}</td>
-                  <td className="p-3">
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground" title={new Date(e.last_seen).toLocaleString()}>{ago(e.last_seen)}</TableCell>
+                  <TableCell>
                     <div className="flex justify-end gap-1" onClick={(ev) => ev.stopPropagation()}>
                       <Button asChild variant="ghost" size="icon-sm" aria-label={`View ${e.title}`}><Link to={e.url}><Eye /></Link></Button>
                       {e.can_delete && (
                         <Button variant="ghost" size="icon-sm" aria-label={`Delete error #${e.id}`} onClick={() => setConfirm(e)}><Trash2 /></Button>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {data.page.num_pages > 1 && (
             <div className="flex justify-end border-t p-3">
               <Pagination page={data.page.number} pageCount={data.page.num_pages} onPageChange={(p) => setFilters({ ...filters, page: String(p) })} />

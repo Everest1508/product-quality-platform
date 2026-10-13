@@ -71,7 +71,7 @@ it('clicking the status toggles the rule; delete asks first', async () => {
 it('the Active/Inactive tabs filter through the URL', async () => {
   mount('/automation/');
   await screen.findByText('Wide');
-  await userEvent.click(screen.getByRole('button', { name: 'Inactive' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Inactive' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/automation/?active=0');
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useProductNav } from '@/lib/useProductNav';
@@ -18,6 +18,7 @@ import { useTicketKeys } from './useTicketKeys';
 import type { TicketFilters, TicketItem } from './types';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Segmented } from '@/components/ui/segmented';
 
 type Confirm = { kind: 'one'; item: TicketItem } | { kind: 'many' } | null;
 
@@ -25,6 +26,7 @@ export function TicketsPage() {
   const { productId, view } = useTicketScope();
   const { urls } = useBootstrapData();
   const { pathname, search } = useLocation();
+  const navigate = useNavigate();
   const productNav = useProductNav(pathname);
   const [params, setParams] = useSearchParams();
   const filters = filtersFromParams(params);
@@ -65,16 +67,6 @@ export function TicketsPage() {
     setSelected(new Set());
   };
 
-  const viewLink = (to: string, label: string, active: boolean) => (
-    <Link
-      to={{ pathname: to, search }}
-      aria-current={active ? 'page' : undefined}
-      className={cn('rounded-md px-3 py-1 text-sm', active ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}
-    >
-      {label}
-    </Link>
-  );
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -102,10 +94,7 @@ export function TicketsPage() {
               Delete selected ({selected.size})
             </Button>
           )}
-          <div className="flex rounded-lg bg-secondary p-0.5">
-            {viewLink(base + 'kanban/', 'Kanban', view === 'board')}
-            {viewLink(base + 'list/', 'List', view === 'list')}
-          </div>
+          <Segmented value={view === 'board' ? 'kanban' : 'list'} onValueChange={(v) => navigate({ pathname: base + v + '/', search })} options={[{ value: 'kanban', label: 'Kanban' }, { value: 'list', label: 'List' }]} />
           <Button asChild size="sm">
             <a href={newTicket}><Plus /> New ticket</a>
           </Button>
@@ -115,7 +104,7 @@ export function TicketsPage() {
       <FilterBar filters={filters} onChange={setFilters} meta={meta.data} showStatus={view === 'list'} showProduct={!productId} view={view} />
 
       {tickets.isError && !data ? (
-        <ErrorState message="Couldn’t load tickets." onRetry={() => tickets.refetch()} />
+        <Card><ErrorState title="Couldn’t load tickets."><Button size="sm" variant="outline" onClick={() => tickets.refetch()}>Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="tickets-loading">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -123,7 +112,7 @@ export function TicketsPage() {
       ) : data.view === 'board' ? (
         <Board data={data} disabled={tickets.isPlaceholderData} queryKey={ticketsKey(view, productId, filters)} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />
       ) : data.items.length === 0 ? (
-        <Card><EmptyState title="No tickets found">{filters.q ? 'Try a different search term.' : 'Create a ticket to start tracking work.'}</EmptyState></Card>
+        <EmptyState title="No tickets found" description={<>{filters.q ? 'Try a different search term.' : 'Create a ticket to start tracking work.'}</>} />
       ) : (
         <Card className="overflow-x-auto p-0">
           <TicketTable items={data.items} selecting={selecting} selected={selected} onSelect={pick} onDelete={(item) => setConfirm({ kind: 'one', item })} />

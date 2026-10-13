@@ -14,6 +14,8 @@ import { ago, shortDate } from '@/lib/time';
 import { MilestoneFlow } from './MilestoneFlow';
 import { useProductActions, useProductDetail } from './useProducts';
 import type { ApiKeyRow, ProductDetail } from './types';
+import { Avatar } from '@/components/ui/avatar';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 const GRACE: [string, string][] = [['1d', 'Old key works 24 more hours'], ['7d', 'Old key works 7 more days'], ['now', 'Stop the old key now']];
 
@@ -196,7 +198,7 @@ function AccessCard({ data, act }: { data: ProductDetail; act: ReturnType<typeof
         {data.members.map((m) => (
           <li key={m.id} className="flex items-center justify-between gap-3 py-2">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-xs font-medium text-accent-foreground">{m.username.slice(0, 1).toUpperCase()}</span>
+              <Avatar name={m.name || m.username} />
               <div className="min-w-0"><div className="truncate text-sm font-medium">{m.name}</div><div className="truncate text-xs text-muted-foreground">{m.email}</div></div>
             </div>
             {m.allocated ? (
@@ -244,9 +246,7 @@ function Detail({ data }: { data: ProductDetail }) {
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/products/" className="hover:text-foreground">Products</Link><span>/</span><span className="font-medium text-foreground">{p.name}</span>
-      </nav>
+      <Breadcrumb items={[{ label: 'Products', href: '/products/' }, { label: p.name }]} />
 
       <Card className="p-5">
         <div className="flex items-start justify-between gap-4">

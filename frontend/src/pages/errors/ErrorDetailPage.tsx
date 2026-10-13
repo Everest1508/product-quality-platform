@@ -12,6 +12,8 @@ import { ago, shortDate } from '@/lib/time';
 import { Flags, SeverityDot, StatusBadge } from './parts';
 import { useErrorActions, useErrorDetail } from './useErrors';
 import type { ErrorDetail } from './types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -63,13 +65,7 @@ function Detail({ data }: { data: ErrorDetail }) {
 
   return (
     <div className="space-y-4">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/errors/" className="hover:text-foreground">All errors</Link>
-        <span>/</span>
-        <Link to={`/products/${e.product.id}/errors/`} className="hover:text-foreground">{e.product.name}</Link>
-        <span>/</span>
-        <span className="font-medium text-foreground">#{e.id}</span>
-      </nav>
+      <Breadcrumb items={[{ label: 'All errors', href: '/errors/' }, { label: e.product.name, href: `/products/${e.product.id}/errors/` }, { label: `#${e.id}` }]} />
 
       <h1 className="flex items-start gap-2 break-words text-lg font-semibold">
         <SeverityDot severity={e.severity} className="mt-2 size-2.5" />
@@ -117,14 +113,14 @@ function Detail({ data }: { data: ErrorDetail }) {
               <span>{shortDate(trend.bars[0].date)}</span><span>Today</span>
             </div>
             {trend.by_version.length > 0 && (
-              <table className="w-full text-sm">
-                <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-1 font-medium">Release</th><th className="py-1 text-right font-medium">Occurrences</th></tr></thead>
-                <tbody>
+              <Table>
+                <TableHeader><TableRow><TableHead className="py-1">Release</TableHead><TableHead className="py-1 text-right">Occurrences</TableHead></TableRow></TableHeader>
+                <TableBody>
                   {trend.by_version.map((v) => (
-                    <tr key={v.version} className="border-t"><td className="py-1">{v.version}</td><td className="py-1 text-right">{v.count}</td></tr>
+                    <TableRow key={v.version} className="border-t"><TableCell className="py-1">{v.version}</TableCell><TableCell className="py-1 text-right">{v.count}</TableCell></TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </Card>
 

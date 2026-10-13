@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TONE, useLeaveQuery, useLeaveWrite } from './useLeave';
 import type { Queue, QueueItem } from './types';
+import { Segmented } from '@/components/ui/segmented';
+import { RadioGroup } from '@/components/ui/radio-group';
 
 function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void }) {
   const write = useLeaveWrite();
@@ -44,8 +46,15 @@ function DecisionDialog({ item, onClose }: { item: QueueItem; onClose(): void })
         <label className="flex items-center gap-2 text-sm"><Checkbox checked={half} onCheckedChange={(c) => setHalf(c === true)} /> Half day</label>
         <fieldset className="space-y-2 text-sm">
           <legend className="font-medium">Paid or unpaid</legend>
-          <label className="flex items-center gap-2"><input type="radio" name="mode" checked={mode === 'auto'} onChange={() => setMode('auto')} /> Automatic: {item.auto_paid_label} paid{Number(item.auto_unpaid) > 0 && `, ${item.auto_unpaid_label} unpaid`}</label>
-          <label className="flex items-center gap-2"><input type="radio" name="mode" checked={mode === 'manual'} onChange={() => setMode('manual')} /> I’ll choose</label>
+          <RadioGroup
+            name="mode"
+            value={mode}
+            onValueChange={(v) => setMode(v as 'auto' | 'manual')}
+            options={[
+              { value: 'auto', label: <>Automatic: {item.auto_paid_label} paid{Number(item.auto_unpaid) > 0 && `, ${item.auto_unpaid_label} unpaid`}</> },
+              { value: 'manual', label: 'I’ll choose' },
+            ]}
+          />
           {mode === 'manual' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="grid gap-1 text-xs font-medium">Paid days<Input type="number" step="0.5" min="0" value={paid} onChange={(e) => setPaid(e.target.value)} /></label>
@@ -79,9 +88,7 @@ export function ApprovalsPage() {
       <PageHeader title="Leave approvals" sub="Review, adjust the dates and the paid/unpaid split, then decide." />
       {!d ? <Skeleton className="h-40 w-full" data-testid="queue-loading" /> : (
         <>
-          <div className="flex flex-wrap gap-2" role="tablist">
-            {d.tabs.map((t) => <Button key={t.value} role="tab" aria-selected={t.value === d.status} size="sm" variant={t.value === d.status ? 'primary' : 'outline'} onClick={() => setParams(t.value === 'pending' ? {} : { status: t.value })}>{t.label} ({t.count})</Button>)}
-          </div>
+          <Segmented className="flex-wrap" value={d.status} onValueChange={(v) => setParams(v === 'pending' ? {} : { status: v })} options={d.tabs.map((t) => ({ value: t.value, label: `${t.label} (${t.count})` }))} />
           {d.items.length === 0 && <Card className="p-10 text-center text-sm text-muted-foreground">Nothing here.</Card>}
           {d.items.map((r) => (
             <Card key={r.id} className="flex flex-wrap items-center justify-between gap-3 p-4">

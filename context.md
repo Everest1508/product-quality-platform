@@ -941,3 +941,8 @@ decided what and strike the item** rather than deleting it.
 - Shared page pieces in `components/ui`: `page-header`, `empty-state`, `stat`; payroll and leave pages use them. Page tables are styled once by `main table` rules in `index.css`, so a page only declares columns. h1s are `text-2xl`; the main column is `max-w-7xl` with a `page-in` fade keyed on the path.
 - Not yet converted to the shared pieces: the older pages (tickets, errors, products, etc.) still use their own headers and empty states; they pick up the table and title styling through the global rules.
 - 1.25.1: the older pages now use `EmptyState`, `ErrorState` (`components/ui/error-state.tsx`), `Stat` and `PageHeader` where their markup matched exactly; headers with inline counts or custom action rows were left as they were (same h1 size already).
+
+### 2026-10-13 befui everywhere (1.26.0)
+- Components come from befui's registry via `scripts/befui_add.py` (befui is not on npm). Now used: Table (all 27 tables), Tabs, Segmented, Switch, RadioGroup, Avatar, Progress, StatCard, Alert, EmptyState, ErrorState, Breadcrumb, Sidebar (`SidebarProvider` + parts, replaces our own), Command (search palette, cmdk), plus a restyled Toaster. Local patches and suggested new befui components: `docs/befui-suggestions.md`.
+- Dark mode (1.25.0) uses the same tokens. jsdom has no `matchMedia`, so `src/test-setup.ts` stubs it as a desktop screen.
+- Not converted: the ticket Kanban board (server-confirmed moves, selecting mode), date inputs (native), home charts, and a few local `Stat` tiles with footers.

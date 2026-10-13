@@ -11,6 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CorrectionStatus } from './parts';
 import { reason, useAttQuery, useAttRefresh, useAttWrite } from './useAttendance';
 import type { Correction, CorrectionForm, RecordEdit } from './types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar } from '@/components/ui/avatar';
+import { Alert } from '@/components/ui/alert';
 
 const when = (c: Correction['original'] | Correction['requested']) => (c.check_in || c.check_out ? `${c.check_in || 'none'} → ${c.check_out || 'none'}` : 'none');
 
@@ -36,7 +39,7 @@ export function CorrectionQueuePage() {
           {d.pending.map((c) => (
             <Card key={c.id} className="space-y-3 p-5">
               <div className="flex items-center gap-3">
-                <span className="grid size-8 place-items-center rounded-full bg-accent text-xs font-medium text-accent-foreground">{c.person.initial}</span>
+                <Avatar name={c.person.name} />
                 <div><div className="font-medium">{c.person.name}{c.is_mine && <em className="ml-1 text-xs not-italic text-muted-foreground">You</em>}</div><div className="text-xs text-muted-foreground">{c.date_label} · asked {ago(c.created_at)}</div></div>
               </div>
               <div className="grid gap-1 text-sm sm:grid-cols-2">
@@ -56,10 +59,10 @@ export function CorrectionQueuePage() {
           {d.decided.length > 0 && (
             <Card className="overflow-x-auto p-0">
               <div className="border-b p-4 font-semibold">Recently decided</div>
-              <table className="w-full text-sm">
-                <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Person</th><th className="p-3 font-medium">Day</th><th className="p-3 font-medium">Result</th><th className="p-3 font-medium">By</th><th className="p-3 font-medium">Note</th></tr></thead>
-                <tbody>{d.decided.map((c) => <tr key={c.id} className="border-b last:border-0"><td className="p-3">{c.person.name}</td><td className="p-3">{c.date_label}</td><td className="p-3"><CorrectionStatus c={c} /></td><td className="p-3">{c.decided_by || '—'}</td><td className="p-3 text-muted-foreground">{c.decision_note}</td></tr>)}</tbody>
-              </table>
+              <Table>
+                <TableHeader><TableRow><TableHead>Person</TableHead><TableHead>Day</TableHead><TableHead>Result</TableHead><TableHead>By</TableHead><TableHead>Note</TableHead></TableRow></TableHeader>
+                <TableBody>{d.decided.map((c) => <TableRow key={c.id}><TableCell>{c.person.name}</TableCell><TableCell>{c.date_label}</TableCell><TableCell><CorrectionStatus c={c} /></TableCell><TableCell>{c.decided_by || '—'}</TableCell><TableCell className="text-muted-foreground">{c.decision_note}</TableCell></TableRow>)}</TableBody>
+              </Table>
             </Card>
           )}
         </>
@@ -116,7 +119,7 @@ export function CorrectionRequestPage() {
       <Card className="space-y-4 p-5">
         <p className="text-sm text-muted-foreground">Tell us what the day should say. Nothing changes until an owner or admin approves it. You can ask for a day in the last {d.max_age_days} days.</p>
         {d.record && <p className="rounded-md bg-secondary p-3 text-sm">Recorded for {d.date_label}: in {d.record.check_in || 'none'}, out {d.record.check_out || 'none'}.</p>}
-        {error && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <Alert variant="danger">{error}</Alert>}
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="grid gap-1.5 text-sm font-medium">Day<Input type="date" min={d.min_date} max={d.max_date} value={day} onChange={(e) => setDay(e.target.value)} /></label>
           <label className="grid gap-1.5 text-sm font-medium">Check in<Input type="time" value={inn} onChange={(e) => setInn(e.target.value)} /></label>
@@ -177,7 +180,7 @@ export function RecordEditPage() {
       <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Edit attendance</h1><Button asChild variant="outline" size="sm"><Link to="/attendance/team/">Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
         <p className="text-sm"><b>{d.user.name}</b> · {d.date_label}</p>
-        {d.status === 'stale' && <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">This day was never checked out. Until it is closed it counts for at most one working day ({d.worked_hours_per_day}), currently {d.effective}.</p>}
+        {d.status === 'stale' && <Alert variant="warning">This day was never checked out. Until it is closed it counts for at most one working day ({d.worked_hours_per_day}), currently {d.effective}.</Alert>}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium">Check in<Input type="datetime-local" value={inn} onChange={(e) => setInn(e.target.value)} /></label>
           <label className="grid gap-1.5 text-sm font-medium">Check out<Input type="datetime-local" value={out} onChange={(e) => setOut(e.target.value)} /></label>

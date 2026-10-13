@@ -10,6 +10,9 @@ import { toast } from '@/lib/toast';
 import { AddForm, EntryTable, Suggestions } from './Entries';
 import { useDsr, useDsrActions } from './useDsr';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Alert } from '@/components/ui/alert';
 
 const long = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -34,7 +37,7 @@ export function DsrPage() {
     setParams(next);
   };
 
-  if (q.isError && !sheet) return <ErrorState message="Couldn’t load the DSR sheet." onRetry={() => q.refetch()} />;
+  if (q.isError && !sheet) return <Card><ErrorState title="Couldn’t load the DSR sheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>;
   if (!sheet) return <div className="space-y-3" data-testid="dsr-loading"><Skeleton className="h-10 w-72" /><Skeleton className="h-48 w-full" /></div>;
   const isToday = sheet.date === sheet.today;
 
@@ -60,7 +63,7 @@ export function DsrPage() {
         </div>
       </div>
 
-      {!sheet.can_submit && <div role="status" className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">{sheet.locked_reason}</div>}
+      {!sheet.can_submit && <Alert variant="warning">{sheet.locked_reason}</Alert>}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card className="p-4"><div className="text-2xl font-semibold">{sheet.total}</div><div className="text-xs text-muted-foreground">Total time</div></Card>
@@ -68,7 +71,7 @@ export function DsrPage() {
         <Card className="p-4"><div className="text-2xl font-semibold">{sheet.completed}</div><div className="text-xs text-muted-foreground">Completed</div></Card>
         <Card className="p-4">
           <div className="text-2xl font-semibold">{sheet.progress}%</div>
-          <div className="mt-1 h-1.5 rounded bg-secondary" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={sheet.progress}><div className="h-1.5 rounded bg-primary" style={{ width: `${sheet.progress}%` }} /></div>
+          <Progress className="mt-1" value={sheet.progress} />
           <div className="mt-1 text-xs text-muted-foreground">of an 8h day</div>
         </Card>
       </div>
@@ -88,19 +91,19 @@ export function DsrPage() {
         <Card className="space-y-3 p-5">
           <h2 className="text-sm font-semibold">Team overview</h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">Member</th><th className="font-medium">Time</th><th className="w-40 font-medium">Of 8h</th><th className="font-medium">Completed</th><th className="font-medium">Entries</th></tr></thead>
-              <tbody>
+            <Table>
+              <TableHeader><TableRow><TableHead className="py-2">Member</TableHead><TableHead>Time</TableHead><TableHead className="w-40">Of 8h</TableHead><TableHead>Completed</TableHead><TableHead>Entries</TableHead></TableRow></TableHeader>
+              <TableBody>
                 {sheet.team_overview.map((m) => (
-                  <tr key={m.id} className="border-b last:border-0">
-                    <td className="py-2"><button type="button" className="font-medium hover:underline" onClick={() => go({ user_id: String(m.id) })}>{m.name}</button></td>
-                    <td>{m.hours}</td>
-                    <td><div className="h-1.5 rounded bg-secondary"><div className="h-1.5 rounded bg-primary" style={{ width: `${m.progress}%` }} /></div></td>
-                    <td>{m.completed}</td><td>{m.entries}</td>
-                  </tr>
+                  <TableRow key={m.id}>
+                    <TableCell className="py-2"><button type="button" className="font-medium hover:underline" onClick={() => go({ user_id: String(m.id) })}>{m.name}</button></TableCell>
+                    <TableCell>{m.hours}</TableCell>
+                    <TableCell><Progress value={m.progress} /></TableCell>
+                    <TableCell>{m.completed}</TableCell><TableCell>{m.entries}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </Card>
       )}

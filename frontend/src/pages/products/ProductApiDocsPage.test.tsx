@@ -35,7 +35,7 @@ it('shows the endpoint, its fields, errors and this product’s keys', async () 
 it('the language tab switches the snippet and is remembered', async () => {
   setup();
   expect(await screen.findByText('curl -X POST /errors')).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('tab', { name: 'Python' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Python' }));
   expect(screen.getByText('import requests')).toBeInTheDocument();
   expect(localStorage.getItem('pqApiLang')).toBe('python');
 });

@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { reason, useLeaveQuery, useLeaveWrite } from './useLeave';
 import type { Policies, Policy } from './types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 
 const NONE = 'none'; // Radix Select does not allow an empty value
 
@@ -56,7 +58,7 @@ function PolicyDialog({ policy, meta, onClose }: { policy: Policy | null; meta: 
             <label className="grid gap-1 text-sm font-medium">Days per year<Input type="number" step="0.5" min="0" placeholder="Unlimited" value={annual} onChange={(e) => setAnnual(e.target.value)} />{err('max_days_per_year')}</label>
             <label className="grid gap-1 text-sm font-medium">Paid days per spell<Input type="number" step="0.5" min="0" placeholder="No cap" value={spell} onChange={(e) => setSpell(e.target.value)} />{err('max_consecutive_days')}</label>
           </div>
-          <label className="flex items-center gap-2 text-sm"><Checkbox checked={paid} onCheckedChange={(c) => setPaid(c === true)} /> Paid leave</label>
+          <label className="flex items-center gap-2 text-sm"><Switch checked={paid} onCheckedChange={setPaid} /> Paid leave</label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1 text-sm font-medium">Colour{pick('Colour', color, setColor, meta.colors)}{err('color')}</label>
             <label className="grid gap-1 text-sm font-medium">Icon{pick('Icon', icon, setIcon, meta.icons)}{err('icon')}</label>
@@ -82,18 +84,18 @@ export function PoliciesPage() {
     <div className="space-y-4">
       <PageHeader title="Leave policy" sub="Allowances, per-spell caps and whether each type is paid." actions={<Button size="sm" onClick={() => setEditing('new')}>Add leave type</Button>} />
       <Card className="overflow-x-auto p-0">
-        <table className="w-full text-sm">
-          <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Type</th><th className="p-3 font-medium">Per year</th><th className="p-3 font-medium">Per spell</th><th className="p-3" /></tr></thead>
-          <tbody>
+        <Table>
+          <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Per year</TableHead><TableHead>Per spell</TableHead><TableHead /></TableRow></TableHeader>
+          <TableBody>
             {d.policies.map((p) => (
-              <tr key={p.id} className="border-b last:border-0">
-                <td className="p-3 font-medium">{p.name} {!p.is_paid && <Badge>Unpaid</Badge>}</td>
-                <td className="p-3">{p.annual_label}</td><td className="p-3">{p.spell_label}</td>
-                <td className="p-3 text-right"><Button variant="outline" size="sm" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}>Edit</Button></td>
-              </tr>
+              <TableRow key={p.id}>
+                <TableCell>{p.name} {!p.is_paid && <Badge>Unpaid</Badge>}</TableCell>
+                <TableCell>{p.annual_label}</TableCell><TableCell>{p.spell_label}</TableCell>
+                <TableCell className="text-right"><Button variant="outline" size="sm" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}>Edit</Button></TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </Card>
       {editing && <PolicyDialog key={editing === 'new' ? 'new' : editing.id} policy={editing === 'new' ? null : editing} meta={d} onClose={() => setEditing(null)} />}
     </div>

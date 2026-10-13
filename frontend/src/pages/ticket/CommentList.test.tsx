@@ -11,7 +11,7 @@ const people = [{ username: 'dev', name: 'Dev Dan' }];
 it('shows the author, initial and time', () => {
   render(<CommentList comments={[c()]} people={people} />);
   expect(screen.getByText('Ann Lee')).toBeInTheDocument();
-  expect(screen.getByText('A')).toBeInTheDocument();
+  expect(screen.getByText('AL')).toBeInTheDocument();
   expect(screen.getByText('just now')).toBeInTheDocument();
 });
 

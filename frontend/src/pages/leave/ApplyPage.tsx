@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { reason, useLeaveQuery } from './useLeave';
 import type { ApplyMeta, Preview } from './types';
+import { Alert } from '@/components/ui/alert';
 
 export function ApplyPage() {
   const meta = useLeaveQuery<ApplyMeta>('apply', 'leave/apply/');
@@ -66,7 +67,7 @@ export function ApplyPage() {
     <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4" noValidate>
       <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Apply for leave</h1><Button asChild variant="outline" size="sm"><Link to="/leave/">Cancel</Link></Button></div>
       <Card className="space-y-4 p-5">
-        {errors.__all__ && <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{errors.__all__.join(' ')}</div>}
+        {errors.__all__ && <Alert variant="danger">{errors.__all__.join(' ')}</Alert>}
         <label className="grid gap-1.5 text-sm font-medium">Leave type
           <Select value={policy} onValueChange={setPolicy}>
             <SelectTrigger aria-label="Leave type"><SelectValue placeholder="Choose a type" /></SelectTrigger>

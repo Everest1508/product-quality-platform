@@ -16,6 +16,9 @@ import { useRemoveMember, useTeam } from './useTeam';
 import type { Member } from './types';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
+import { Avatar } from '@/components/ui/avatar';
 
 const SORTS: [string, string][] = [['-role', 'Role (high first)'], ['role', 'Role (low first)'], ['name', 'Name A-Z'], ['-joined', 'Newest first'], ['joined', 'Oldest first']];
 const TONE: Record<string, 'info' | 'warning' | 'success' | 'default'> = { owner: 'info', admin: 'warning', developer: 'success', support: 'default', viewer: 'default' };
@@ -71,11 +74,7 @@ export function TeamPage() {
         </div>
       )}
 
-      <div className="flex w-fit flex-wrap rounded-lg bg-secondary p-0.5">
-        {[['', 'All'], ...(d?.roles ?? [])].map(([v, l]) => (
-          <button key={l} type="button" aria-pressed={role === v} onClick={() => set('role', v || null)} className={cn('rounded-md px-3 py-1 text-sm', role === v ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{l}</button>
-        ))}
-      </div>
+      <Segmented className="flex-wrap" value={role ?? ''} onValueChange={(v) => set('role', v || null)} options={[['', 'All'], ...(d?.roles ?? [])].map(([v, l]) => ({ value: v, label: l }))} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full max-w-64 max-sm:max-w-none"><Input type="search" aria-label="Search members" placeholder="Search members…" leftIcon={<Search />} value={text} onChange={(e) => setText(e.target.value)} /></div>
@@ -86,39 +85,39 @@ export function TeamPage() {
       </div>
 
       {q.isError && !d ? (
-        <ErrorState message="Couldn’t load the team." onRetry={() => q.refetch()} />
+        <Card><ErrorState title="Couldn’t load the team."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
       ) : !d ? (
         <Card className="space-y-3 p-4" data-testid="team-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</Card>
       ) : d.items.length === 0 ? (
-        <Card><EmptyState title="No members found">Try a different search term or role.</EmptyState></Card>
+        <EmptyState title="No members found" description={<>Try a different search term or role.</>} />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">User</th><th className="p-3 font-medium">Role</th><th className="p-3 font-medium">Joined</th><th className="p-3 text-right font-medium">Actions</th></tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableBody>
               {d.items.map((m) => (
-                <tr key={m.id} className="border-b last:border-0">
-                  <td className="p-3">
+                <TableRow key={m.id}>
+                  <TableCell>
                     <div className="flex items-center gap-3">
-                      <span className="grid size-8 place-items-center rounded-full bg-accent text-xs font-medium text-accent-foreground">{m.user.initial}</span>
+                      <Avatar name={m.user.name} />
                       <div className="min-w-0">
                         <div className="font-medium">{m.user.name}{m.is_you && <span className="ml-1 text-xs text-muted-foreground">(you)</span>}</div>
                         <div className="text-xs text-muted-foreground">{m.user.email}{m.user.discord_id && ` · @${m.user.discord_id}`}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="p-3"><Badge variant={TONE[m.role] ?? 'default'}>{m.role_label}</Badge>{m.is_leave_approver && <Badge variant="outline" className="ml-1">Leave approver</Badge>}</td>
-                  <td className="whitespace-nowrap p-3 text-muted-foreground">{shortDate(m.joined)}</td>
-                  <td className="p-3">
+                  </TableCell>
+                  <TableCell><Badge variant={TONE[m.role] ?? 'default'}>{m.role_label}</Badge>{m.is_leave_approver && <Badge variant="outline" className="ml-1">Leave approver</Badge>}</TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">{shortDate(m.joined)}</TableCell>
+                  <TableCell>
                     <div className="flex justify-end gap-1.5">
                       {m.can_edit && <Button size="sm" variant="outline" onClick={() => setEditing(m)}>Edit</Button>}
                       {m.can_remove && <Button size="sm" variant="destructive" onClick={() => setRemoving(m)}>Remove</Button>}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {d.page.num_pages > 1 && <div className="flex justify-end border-t p-3"><Pagination page={d.page.number} pageCount={d.page.num_pages} onPageChange={(p) => set('page', p === 1 ? null : String(p))} /></div>}
         </Card>
       )}

@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.26.0] — 2026-10-13 · one component set everywhere
+
+> In short: tables, tabs, switches, alerts, avatars, progress bars, the sidebar, the search box and breadcrumbs now all come from the same component library, so they look and behave the same on every page.
+
+### Better
+
+- **A new sidebar.** It collapses to an icon rail with tooltips, and slides in over the page on a phone.
+- **Search opens in a cleaner box.** Results are grouped, arrow keys move through them and Enter opens the highlighted one.
+- **Filters and view switches look the same everywhere.** Status filters, Kanban/List, Grid/Table and the report ranges are one segmented control.
+- **On/off settings are switches.** Payroll on/off, rule active and paid leave.
+- **Warnings and errors use one alert style, and people show as coloured initials everywhere.**
+
 ## [1.25.1] — 2026-10-13 · matching empty and error screens
 
 > In short: every list now shows the same empty and "couldn't load" screens, with the same stat tiles and page titles.

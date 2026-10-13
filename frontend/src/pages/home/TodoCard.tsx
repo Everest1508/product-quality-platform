@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useTodoActions, useTodos } from './useHome';
+import { Progress } from '@/components/ui/progress';
 
 const day = (iso: string) => new Date(`${iso}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const PRIORITY: Record<number, 'danger' | 'warning' | 'default'> = { 3: 'danger', 2: 'warning', 1: 'default' };
@@ -47,7 +48,7 @@ export function TodoCard() {
         <>
           {d.total > 0 && (
             <div className="space-y-1">
-              <div role="progressbar" aria-valuemin={0} aria-valuemax={d.total} aria-valuenow={d.done} className="h-1.5 overflow-hidden rounded bg-secondary"><span className="block h-full bg-success" style={{ width: `${(d.done / d.total) * 100}%` }} /></div>
+              <Progress value={(d.done / d.total) * 100} tone="success" />
               <p className="text-xs text-muted-foreground">
                 {d.done} of {d.total} done
                 {d.done > 0 && <> · <button type="button" className="underline" onClick={() => act.clearDone()}>Clear done</button></>}

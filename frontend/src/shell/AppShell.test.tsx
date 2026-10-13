@@ -35,7 +35,7 @@ it('renders the nav, marks the current page, and shows the content', () => {
 
 it('collapses and remembers it under the legacy storage key', async () => {
   renderShell();
-  await userEvent.click(screen.getByRole('button', { name: /collapse/i }));
+  await userEvent.click(screen.getByRole('button', { name: /toggle sidebar/i }));
   expect(localStorage.getItem('pqSidebarCollapsed')).toBe('1');
 });
 
@@ -47,7 +47,7 @@ it('starts collapsed when the legacy key says so', () => {
       <MemoryRouter><AppShell><p>x</p></AppShell></MemoryRouter>
     </QueryClientProvider>,
   );
-  expect(screen.getByRole('button', { name: /expand/i })).toBeInTheDocument();
+  expect(document.querySelector('aside')).toHaveAttribute('data-collapsed', 'true');
 });
 
 it('shows the admin items only to admins', () => {

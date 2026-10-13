@@ -1,8 +1,10 @@
 import { Check, ChevronDown } from 'lucide-react';
 import type { ProductNav } from '@/lib/useProductNav';
+import { useSidebar } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-export function ProductSwitcher({ nav, collapsed }: { nav: ProductNav; collapsed: boolean }) {
+export function ProductSwitcher({ nav }: { nav: ProductNav }) {
+  const { collapsed } = useSidebar();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger

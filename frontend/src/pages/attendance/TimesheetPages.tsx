@@ -11,6 +11,8 @@ import { useAttQuery } from './useAttendance';
 import type { Timesheet, TimesheetDetail } from './types';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/components/ui/error-state';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 function useMonthParam() {
   const [params, setParams] = useSearchParams();
@@ -37,23 +39,23 @@ export function TimesheetPage() {
         <PageHeader title="Timesheet" sub="Per-month totals for every employee." />
         {d && <MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} />}
       </div>
-      {q.isError && !d ? <ErrorState message="Couldn’t load the timesheet." onRetry={() => q.refetch()} />
+      {q.isError && !d ? <Card><ErrorState title="Couldn’t load the timesheet."><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></ErrorState></Card>
         : !d ? <Skeleton className="h-64 w-full" data-testid="ts-loading" />
         : (
           <Card className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-3 font-medium">Employee</th>{['Present', 'Absent', 'Leave', 'Late', 'Unclosed', 'Total', 'Avg / day'].map((h) => <th key={h} className="p-3 text-center font-medium">{h}</th>)}</tr></thead>
-              <tbody>
+            <Table>
+              <TableHeader><TableRow><TableHead>Employee</TableHead>{['Present', 'Absent', 'Leave', 'Late', 'Unclosed', 'Total', 'Avg / day'].map((h) => <TableHead key={h} className="text-center">{h}</TableHead>)}</TableRow></TableHeader>
+              <TableBody>
                 {d.rows.map((r) => (
-                  <tr key={r.user.id} className="border-b last:border-0">
-                    <td className="p-3"><Link to={`/attendance/timesheet/${r.user.id}/?month=${d.month.current}`} className="font-medium hover:underline">{r.user.name}</Link></td>
-                    {[r.present_days, r.absent_days, r.leave_days, r.late_days, r.open_days].map((n, i) => <td key={i} className="p-3 text-center">{n}</td>)}
-                    <td className="p-3 text-center font-medium">{r.total}</td><td className="p-3 text-center text-muted-foreground">{r.average}</td>
-                  </tr>
+                  <TableRow key={r.user.id}>
+                    <TableCell><Link to={`/attendance/timesheet/${r.user.id}/?month=${d.month.current}`} className="font-medium hover:underline">{r.user.name}</Link></TableCell>
+                    {[r.present_days, r.absent_days, r.leave_days, r.late_days, r.open_days].map((n, i) => <TableCell key={i} className="text-center">{n}</TableCell>)}
+                    <TableCell className="text-center">{r.total}</TableCell><TableCell className="text-center text-muted-foreground">{r.average}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-              <tfoot><tr className="border-t font-medium"><td className="p-3">Company total</td><td colSpan={5} /><td className="p-3 text-center">{d.company_total}</td><td /></tr></tfoot>
-            </table>
+              </TableBody>
+              <TableFooter><TableRow className="border-t font-medium"><TableCell>Company total</TableCell><TableCell colSpan={5} /><TableCell className="text-center">{d.company_total}</TableCell><TableCell /></TableRow></TableFooter>
+            </Table>
           </Card>
         )}
     </div>
@@ -75,7 +77,7 @@ export function TimesheetDetailPage() {
   if (!d) return <Skeleton className="h-64 w-full" data-testid="tsd-loading" />;
   return (
     <div className="space-y-4">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground"><Link to="/attendance/timesheet/" className="hover:text-foreground">Timesheet</Link><span>/</span><span className="font-medium text-foreground">{d.user.name}</span></nav>
+      <Breadcrumb items={[{ label: 'Timesheet', href: '/attendance/timesheet/' }, { label: d.user.name }]} />
       <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">{d.user.name}</h1><MonthNav month={d.month} onGo={(m) => go(m, d.month.today)} /></div>
       <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
         {([['Total', d.totals.total], ['Present', d.totals.present], ['Absent', d.totals.absent], ['Leave', d.totals.leave], ['Late', d.totals.late], ['Unclosed', d.totals.open]] as [string, string | number][]).map(([l, v]) => <Card key={l} className="p-3"><div className="text-xl font-semibold">{v}</div><div className="text-xs text-muted-foreground">{l}</div></Card>)}

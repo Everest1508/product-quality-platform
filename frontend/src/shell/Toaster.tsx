@@ -1,13 +1,14 @@
+import type * as React from 'react';
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { AlertCircleIcon, AlertIcon, CheckCircleIcon, InfoIcon, XIcon } from '@/components/ui/icons';
 import { dismiss, toast, useToasts, type Tags } from '@/lib/toast';
-import { cn } from '@/lib/utils';
 
-const bar: Record<Tags, string> = {
-  success: 'bg-success',
-  error: 'bg-destructive',
-  info: 'bg-info',
-  warning: 'bg-warning',
+// Same look as befui's Toaster (icon, title, dismiss); the store stays ours because every API write toasts through `toast(text, tag)`.
+const icons: Record<Tags, React.ReactElement> = {
+  success: <CheckCircleIcon className="size-4 text-success" />,
+  error: <AlertCircleIcon className="size-4 text-destructive" />,
+  info: <InfoIcon className="size-4 text-info" />,
+  warning: <AlertIcon className="size-4 text-warning" />,
 };
 
 export function Toaster() {
@@ -23,13 +24,13 @@ export function Toaster() {
     };
   }, []);
   return (
-    <div role="status" aria-live="polite" className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">
+    <div role="status" aria-live="polite" className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">
       {toasts.map((t) => (
-        <div key={t.id} className="pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border bg-card py-3 pl-4 pr-3 text-sm shadow-lg animate-toast">
-          <span className={cn('absolute inset-y-0 left-0 w-1', bar[t.tags])} />
-          <span className="flex-1">{t.text}</span>
-          <button type="button" aria-label="Dismiss" onClick={() => dismiss(t.id)} className="text-muted-foreground hover:text-foreground">
-            <X className="size-4" />
+        <div key={t.id} className="pointer-events-auto flex items-start gap-3 rounded-lg border bg-popover p-3.5 shadow-lg animate-toast">
+          <span className="mt-0.5">{icons[t.tags]}</span>
+          <p className="flex-1 text-[13px] font-medium">{t.text}</p>
+          <button type="button" aria-label="Dismiss" onClick={() => dismiss(t.id)} className="text-muted-foreground transition-colors hover:text-foreground">
+            <XIcon className="size-3.5" />
           </button>
         </div>
       ))}

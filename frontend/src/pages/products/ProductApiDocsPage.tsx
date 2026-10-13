@@ -9,6 +9,9 @@ import { ago } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { KeyState } from './ProductDetailPage';
 import { useApiDocs } from './useProducts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 const LANGS: [string, string][] = [['curl', 'curl'], ['python', 'Python'], ['javascript', 'JavaScript'], ['php', 'PHP']];
 const METHOD = { GET: 'bg-info/15 text-info', POST: 'bg-success/15 text-success', PATCH: 'bg-warning/15 text-warning' } as Record<string, string>;
@@ -55,11 +58,7 @@ export function ProductApiDocsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/products/" className="hover:text-foreground">Products</Link><span>/</span>
-        <Link to={`/products/${d.product.id}/`} className="hover:text-foreground">{d.product.name}</Link><span>/</span>
-        <span className="font-medium text-foreground">API</span>
-      </nav>
+      <Breadcrumb items={[{ label: 'Products', href: '/products/' }, { label: d.product.name, href: `/products/${d.product.id}/` }, { label: 'API' }]} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Send data to {d.product.name}</h1>
@@ -84,11 +83,7 @@ export function ProductApiDocsPage() {
         <p className="text-xs text-muted-foreground">Use <code>https</code> in production. Never put a key in front-end code that anyone can read. Send from your server, or use a key you are happy to rotate.</p>
       </Card>
 
-      <div role="tablist" aria-label="Language" className="flex w-fit rounded-lg bg-secondary p-0.5">
-        {LANGS.map(([v, l]) => (
-          <button key={v} type="button" role="tab" aria-selected={lang === v} onClick={() => pick(v)} className={cn('rounded-md px-3 py-1 text-sm', lang === v ? 'bg-card font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{l}</button>
-        ))}
-      </div>
+      <Segmented value={lang} onValueChange={pick} options={LANGS.map(([v, l]) => ({ value: v, label: l }))} />
 
       {d.endpoints.map((e) => {
         const code = e.snippets[lang] ?? e.snippets.curl ?? '';
@@ -100,19 +95,19 @@ export function ProductApiDocsPage() {
             <p className="text-sm text-muted-foreground">{e.summary}</p>
             {e.fields.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-1.5 pr-3 font-medium">Field</th><th className="pr-3 font-medium">Type</th><th className="pr-3 font-medium">Required</th><th className="font-medium">What it is</th></tr></thead>
-                  <tbody>
+                <Table>
+                  <TableHeader><TableRow><TableHead className="py-1.5 pr-3">Field</TableHead><TableHead className="pr-3">Type</TableHead><TableHead className="pr-3">Required</TableHead><TableHead>What it is</TableHead></TableRow></TableHeader>
+                  <TableBody>
                     {e.fields.map((f) => (
-                      <tr key={f.name} className="border-b last:border-0 align-top">
-                        <td className="py-1.5 pr-3"><code>{f.name}</code></td>
-                        <td className="pr-3">{f.type}{f.limits && <div className="text-xs text-muted-foreground">{f.limits}</div>}</td>
-                        <td className="pr-3">{f.required ? <b>Yes</b> : 'No'}</td>
-                        <td>{f.note}</td>
-                      </tr>
+                      <TableRow key={f.name} className="align-top">
+                        <TableCell className="py-1.5 pr-3"><code>{f.name}</code></TableCell>
+                        <TableCell className="pr-3">{f.type}{f.limits && <div className="text-xs text-muted-foreground">{f.limits}</div>}</TableCell>
+                        <TableCell className="pr-3">{f.required ? <b>Yes</b> : 'No'}</TableCell>
+                        <TableCell>{f.note}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
             <div className="relative">
@@ -127,7 +122,7 @@ export function ProductApiDocsPage() {
 
       <Card className="space-y-2 p-5">
         <h2 className="font-semibold">If something goes wrong</h2>
-        <table className="w-full text-sm"><tbody>{d.error_codes.map(([code, text]) => <tr key={code} className="border-b last:border-0"><td className="py-1.5 pr-3 align-top"><code>{code}</code></td><td>{text}</td></tr>)}</tbody></table>
+        <Table><TableBody>{d.error_codes.map(([code, text]) => <TableRow key={code}><TableCell className="py-1.5 pr-3 align-top"><code>{code}</code></TableCell><TableCell>{text}</TableCell></TableRow>)}</TableBody></Table>
       </Card>
 
       <Card className="space-y-2 p-5">

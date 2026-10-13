@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link } from 'react-router-dom';
 import type { DsrEntry, DsrSheet } from './types';
 import type { useDsrActions } from './useDsr';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type Actions = ReturnType<typeof useDsrActions>;
 const NONE = 'none';
@@ -40,8 +41,8 @@ function Row({ e, sheet, act, onDelete }: { e: DsrEntry; sheet: DsrSheet; act: A
   };
 
   return (
-    <tr className="border-b align-top last:border-0">
-      <td className="min-w-52 p-2">
+    <TableRow className="align-top">
+      <TableCell className="min-w-52 p-2">
         <div className="flex flex-wrap items-center gap-1.5">
           {e.ticket ? (
             <Link to={e.ticket.url} className="text-sm font-medium hover:underline" title="Open the ticket">{e.task_name}</Link>
@@ -58,27 +59,27 @@ function Row({ e, sheet, act, onDelete }: { e: DsrEntry; sheet: DsrSheet; act: A
         ) : (
           e.notes && <p className="mt-1 text-xs text-muted-foreground">{e.notes}</p>
         )}
-      </td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell className="p-2">
         {edit && !e.ticket ? (
           <Choice label="Product" value={e.product ? String(e.product.id) : NONE} options={productOptions} onChange={(v) => save({ product: v === NONE ? null : Number(v) })} className="h-8 w-36 text-xs" />
         ) : (
           <span className="text-sm text-muted-foreground" title={e.ticket ? 'Comes from the ticket' : undefined}>{e.product?.name ?? '-'}</span>
         )}
-      </td>
-      <td className="p-2">{edit ? <Choice label="Category" value={e.category} options={sheet.categories} onChange={(v) => save({ category: v })} className="h-8 w-40 text-xs" /> : <span className="text-sm">{e.category_label}</span>}</td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell className="p-2">{edit ? <Choice label="Category" value={e.category} options={sheet.categories} onChange={(v) => save({ category: v })} className="h-8 w-40 text-xs" /> : <span className="text-sm">{e.category_label}</span>}</TableCell>
+      <TableCell className="p-2">
         {edit ? (
           <Input aria-label="Time spent, like 45m or 1h 30m" className="h-8 w-24" autoComplete="off" value={hours} onChange={(x) => setHours(x.target.value)} onBlur={() => hours !== e.hours && save({ hours_spent: hours })} />
         ) : (
           <span className="text-sm">{e.hours}</span>
         )}
-      </td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell className="p-2">
         {edit ? <Choice label="Status" value={e.status} options={sheet.statuses} onChange={(v) => save({ status: v })} className="h-8 w-32 text-xs" /> : <Badge variant={e.status === 'completed' ? 'success' : e.status === 'in_progress' ? 'info' : 'danger'}>{e.status_label}</Badge>}
-      </td>
-      <td className="p-2 text-right">{edit && <Button variant="ghost" size="icon-sm" aria-label="Delete entry" onClick={() => onDelete(e)}><X /></Button>}</td>
-    </tr>
+      </TableCell>
+      <TableCell className="p-2 text-right">{edit && <Button variant="ghost" size="icon-sm" aria-label="Delete entry" onClick={() => onDelete(e)}><X /></Button>}</TableCell>
+    </TableRow>
   );
 }
 
@@ -90,10 +91,10 @@ export function EntryTable({ sheet, act }: { sheet: DsrSheet; act: Actions }) {
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="p-2 font-medium">Task</th><th className="p-2 font-medium">Project</th><th className="p-2 font-medium">Category</th><th className="p-2 font-medium">Time</th><th className="p-2 font-medium">Status</th><th className="p-2"><span className="sr-only">Actions</span></th></tr></thead>
-          <tbody>{sheet.entries.map((e) => <Row key={`${e.id}-${e.task_name}-${e.hours}-${e.notes}-${e.status}-${e.category}-${e.product?.id}`} e={e} sheet={sheet} act={act} onDelete={setConfirm} />)}</tbody>
-        </table>
+        <Table>
+          <TableHeader><TableRow><TableHead className="p-2">Task</TableHead><TableHead className="p-2">Project</TableHead><TableHead className="p-2">Category</TableHead><TableHead className="p-2">Time</TableHead><TableHead className="p-2">Status</TableHead><TableHead className="p-2"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+          <TableBody>{sheet.entries.map((e) => <Row key={`${e.id}-${e.task_name}-${e.hours}-${e.notes}-${e.status}-${e.category}-${e.product?.id}`} e={e} sheet={sheet} act={act} onDelete={setConfirm} />)}</TableBody>
+        </Table>
       </div>
       <AlertDialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)} destructive title="Delete this entry?" description="This cannot be undone." confirmLabel="Delete" onConfirm={() => confirm && act.remove(confirm.id)} />
     </>

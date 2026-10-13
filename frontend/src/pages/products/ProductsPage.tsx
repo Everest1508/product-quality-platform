@@ -13,6 +13,8 @@ import { useProductList } from './useProducts';
 import type { ProductItem } from './types';
 import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Segmented } from '@/components/ui/segmented';
 
 const SORTS: [string, string][] = [
   ['name', 'Name A-Z'], ['-name', 'Name Z-A'], ['-created', 'Newest first'], ['created', 'Oldest first'], ['-versions', 'Most versions'],
@@ -123,47 +125,44 @@ export function ProductsPage() {
           <SelectTrigger aria-label="Sort" className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>{SORTS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
-        <div className="ml-auto flex rounded-lg bg-secondary p-0.5">
-          <Button variant={view === 'grid' ? 'outline' : 'ghost'} size="icon-sm" aria-label="Grid view" aria-pressed={view === 'grid'} onClick={() => set('view', null)}><LayoutGrid /></Button>
-          <Button variant={view === 'table' ? 'outline' : 'ghost'} size="icon-sm" aria-label="Table view" aria-pressed={view === 'table'} onClick={() => set('view', 'table')}><List /></Button>
-        </div>
+        <Segmented className="ml-auto" value={view === 'table' ? 'table' : 'grid'} onValueChange={(v) => set('view', v === 'table' ? 'table' : null)} options={[{ value: 'grid', label: <LayoutGrid />, ariaLabel: 'Grid view' }, { value: 'table', label: <List />, ariaLabel: 'Table view' }]} />
       </div>
 
       {list.isError && !data ? (
-        <ErrorState message="Couldn’t load products." onRetry={() => list.refetch()} />
+        <Card><ErrorState title="Couldn’t load products."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
       ) : !data ? (
         <Card className="space-y-3 p-4" data-testid="products-loading">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</Card>
       ) : data.items.length === 0 ? (
-        <Card><EmptyState title="No products found">{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</EmptyState></Card>
+        <EmptyState title="No products found" description={<>{params.get('q') ? 'Try a different search term.' : 'Add a product to start tracking errors and feedback.'}</>} />
       ) : view === 'grid' ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{data.items.map((p) => <ProductCard key={p.id} p={p} canEdit={data.can_create} />)}</div>
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                {['Product', 'Slug', 'Errors', 'Tickets', 'Versions', 'API keys'].map((h) => <th key={h} className="p-3 font-medium">{h}</th>)}
-                <th className="p-3"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {['Product', 'Slug', 'Errors', 'Tickets', 'Versions', 'API keys'].map((h) => <TableHead key={h}>{h}</TableHead>)}
+                <TableHead><span className="sr-only">Actions</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {data.items.map((p) => (
-                <tr key={p.id} className="cursor-pointer border-b last:border-0 hover:bg-secondary/50" onClick={() => navigate(p.url)}>
-                  <td className="p-3">
+                <TableRow key={p.id} className="cursor-pointer hover:bg-secondary/50" onClick={() => navigate(p.url)}>
+                  <TableCell>
                     <div className="flex items-center gap-2"><Health health={p.health} /><Link to={p.url} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{p.name}</Link></div>
-                  </td>
-                  <td className="p-3"><code className="text-xs">{p.slug}</code></td>
-                  <td className="p-3">{p.open_errors}</td>
-                  <td className="p-3">{p.open_tickets}</td>
-                  <td className="p-3">{p.version_count}</td>
-                  <td className="p-3">{p.api_key_count}</td>
-                  <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  </TableCell>
+                  <TableCell><code className="text-xs">{p.slug}</code></TableCell>
+                  <TableCell>{p.open_errors}</TableCell>
+                  <TableCell>{p.open_tickets}</TableCell>
+                  <TableCell>{p.version_count}</TableCell>
+                  <TableCell>{p.api_key_count}</TableCell>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <Button asChild variant="outline" size="sm"><a href={p.dashboard_url}>Dashboard</a></Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </Card>
       )}
 

@@ -6,10 +6,11 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Stat } from '@/components/ui/stat';
 import { LockBadge, Note, Num, PayHeader, Th, Who } from './parts';
 import { day, money, reason, usePayQuery, usePayWrite } from './usePayroll';
 import type { Preview, RunDetail, RunList } from './types';
+import { Table, TableBody, TableCell, TableFooter, TableHeader, TableRow } from '@/components/ui/table';
+import { StatCard } from '@/components/ui/stat-card';
 
 const useTitle = (t: string) => useEffect(() => { document.title = `${t} — PQ Platform`; }, [t]);
 
@@ -27,17 +28,17 @@ export function RunListPage() {
       {!d ? <Skeleton className="h-40 w-full" data-testid="runs-loading" /> : (
         <Card className="overflow-x-auto p-0">
           <div className="border-b p-4 font-semibold">Runs</div>
-          {d.runs.length === 0 ? <EmptyState title="No payroll runs yet">Set a monthly salary in <Link className="underline" to="/payroll/profiles/">Payroll setup</Link>, then preview the current cycle.</EmptyState> : (
-            <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Cycle</Th><Th num>Working days</Th><Th num>Payslips</Th><Th num>Total deduction</Th><Th num>Total gross</Th><Th>Status</Th><Th /></tr></thead>
-              <tbody>{d.runs.map((r) => (
-                <tr key={r.id} className="border-b last:border-0">
-                  <td className="p-3 font-medium">{r.label}</td><Num>{r.working_days}</Num><Num>{r.payslips}</Num><Num>{r.total_deduction}</Num><Num strong>{r.total_gross}</Num>
-                  <td className="p-3"><LockBadge locked={r.is_locked} /></td>
-                  <td className="p-3 text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/runs/${r.id}/`}>View</Link></Button></td>
-                </tr>
-              ))}</tbody>
-            </table>
+          {d.runs.length === 0 ? <EmptyState className="rounded-none border-0" title="No payroll runs yet" description={<>Set a monthly salary in <Link className="underline" to="/payroll/profiles/">Payroll setup</Link>, then preview the current cycle.</>} /> : (
+            <Table>
+              <TableHeader><TableRow><Th>Cycle</Th><Th num>Working days</Th><Th num>Payslips</Th><Th num>Total deduction</Th><Th num>Total gross</Th><Th>Status</Th><Th /></TableRow></TableHeader>
+              <TableBody>{d.runs.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.label}</TableCell><Num>{r.working_days}</Num><Num>{r.payslips}</Num><Num>{r.total_deduction}</Num><Num strong>{r.total_gross}</Num>
+                  <TableCell><LockBadge locked={r.is_locked} /></TableCell>
+                  <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/runs/${r.id}/`}>View</Link></Button></TableCell>
+                </TableRow>
+              ))}</TableBody>
+            </Table>
           )}
         </Card>
       )}
@@ -73,19 +74,19 @@ export function PreviewPage() {
       {!d ? <Skeleton className="h-40 w-full" data-testid="preview-loading" /> : (
         <>
           <Card className="overflow-x-auto p-0">
-            {d.rows.length === 0 ? <EmptyState title="Nobody is on payroll">Switch someone on in <Link className="underline" to="/payroll/profiles/">Salaries</Link> first.</EmptyState> : (
-              <table className="w-full text-sm">
-                <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Employee</Th><Th num>Monthly</Th><Th num>Day rate</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Payable days</Th><Th num>Deduction</Th><Th num>Gross</Th></tr></thead>
-                <tbody>{d.rows.map((r) => (
-                  <tr key={r.person.id} className="border-b">
-                    <td className="p-3"><Who p={r.person} /></td>
+            {d.rows.length === 0 ? <EmptyState className="rounded-none border-0" title="Nobody is on payroll" description={<>Switch someone on in <Link className="underline" to="/payroll/profiles/">Salaries</Link> first.</>} /> : (
+              <Table>
+                <TableHeader><TableRow><Th>Employee</Th><Th num>Monthly</Th><Th num>Day rate</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Payable days</Th><Th num>Deduction</Th><Th num>Gross</Th></TableRow></TableHeader>
+                <TableBody>{d.rows.map((r) => (
+                  <TableRow key={r.person.id}>
+                    <TableCell><Who p={r.person} /></TableCell>
                     <Num>{r.monthly_salary ? <>{money(r.currency, r.monthly_salary)}<small className="block text-muted-foreground">÷ {d.working_days} days</small></> : <span className="text-muted-foreground">daily rate</span>}</Num>
                     <Num>{money(r.currency, r.daily_rate)}</Num><Num>{r.paid_leave_days}</Num><Num>{r.unpaid_leave_days}</Num><Num strong>{r.payable_days}</Num>
                     <Num>{Number(r.deduction) ? `−${money(r.currency, r.deduction)}` : '—'}</Num><Num strong>{money(r.currency, r.gross)}</Num>
-                  </tr>
-                ))}</tbody>
-                <tfoot><tr><td colSpan={6} className="p-3 text-right font-semibold">Total</td><Num>−{d.total_deduction}</Num><Num strong>{d.total_gross}</Num></tr></tfoot>
-              </table>
+                  </TableRow>
+                ))}</TableBody>
+                <TableFooter><TableRow><TableCell colSpan={6} className="text-right font-semibold">Total</TableCell><Num>−{d.total_deduction}</Num><Num strong>{d.total_gross}</Num></TableRow></TableFooter>
+              </Table>
             )}
           </Card>
           {d.rows.length > 0 && <div className="flex items-center gap-3"><Button onClick={generate} loading={busy}>Generate payslips for this cycle</Button><span className="text-sm text-muted-foreground">This snapshots the numbers above.</span></div>}
@@ -117,22 +118,22 @@ export function RunDetailPage() {
         <Button variant="outline" size="sm" disabled={busy} onClick={lock}>{d.is_locked ? 'Unlock' : 'Lock'}</Button>
       </>} />
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat value={d.total_payable} label="Total payable days" />
-        <Stat value={d.total_deduction} label="Total deduction" tone="danger" />
-        <Stat value={d.total_gross} label="Total gross" tone="success" />
+        <StatCard value={d.total_payable} label="Total payable days" />
+        <StatCard value={<span className="text-destructive">{d.total_deduction}</span>} label="Total deduction" />
+        <StatCard value={<span className="text-success">{d.total_gross}</span>} label="Total gross" />
       </div>
       <Card className="overflow-x-auto p-0">
-        {d.slips.length === 0 ? <EmptyState title="No payslips in this run">Re-preview and generate, or check that someone is switched on in <Link className="underline" to="/payroll/profiles/">Salaries</Link>.</EmptyState> : (
-          <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-xs text-muted-foreground"><Th>Employee</Th><Th num>Day rate</Th><Th num>Working days</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Payable days</Th><Th num>Deduction</Th><Th num>Gross</Th><Th /></tr></thead>
-            <tbody>{d.slips.map((p) => (
-              <tr key={p.id} className="border-b last:border-0">
-                <td className="p-3"><Who p={p.person} /></td><Num>{money(p.currency, p.daily_rate)}</Num><Num>{p.working_days}</Num><Num>{p.paid_leave_days}</Num><Num>{p.unpaid_leave_days}</Num><Num strong>{p.payable_days}</Num>
+        {d.slips.length === 0 ? <EmptyState className="rounded-none border-0" title="No payslips in this run" description={<>Re-preview and generate, or check that someone is switched on in <Link className="underline" to="/payroll/profiles/">Salaries</Link>.</>} /> : (
+          <Table>
+            <TableHeader><TableRow><Th>Employee</Th><Th num>Day rate</Th><Th num>Working days</Th><Th num>Paid leave</Th><Th num>Unpaid leave</Th><Th num>Payable days</Th><Th num>Deduction</Th><Th num>Gross</Th><Th /></TableRow></TableHeader>
+            <TableBody>{d.slips.map((p) => (
+              <TableRow key={p.id}>
+                <TableCell><Who p={p.person} /></TableCell><Num>{money(p.currency, p.daily_rate)}</Num><Num>{p.working_days}</Num><Num>{p.paid_leave_days}</Num><Num>{p.unpaid_leave_days}</Num><Num strong>{p.payable_days}</Num>
                 <Num>{Number(p.deduction) ? `−${p.deduction}` : '—'}</Num><Num strong>{money(p.currency, p.gross)}</Num>
-                <td className="p-3 text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/payslips/${p.id}/`}>Payslip</Link></Button></td>
-              </tr>
-            ))}</tbody>
-          </table>
+                <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/payroll/payslips/${p.id}/`}>Payslip</Link></Button></TableCell>
+              </TableRow>
+            ))}</TableBody>
+          </Table>
         )}
       </Card>
       <Note><span>Regenerating an <b>open</b> run rewrites its payslips with today’s numbers — useful after fixing a holiday or a leave record.</span><br /><span>A <b>locked</b> run is never rewritten, so issued payslips keep the figures that applied at the time.</span></Note>

@@ -92,10 +92,10 @@ export function Notifications() {
           </div>
         )}
         {list.isError && !list.data && (
-          <ErrorState message="Couldn’t load notifications." onRetry={() => list.refetch()} />
+          <Card><ErrorState title="Couldn’t load notifications."><Button size="sm" variant="outline" onClick={() => list.refetch()}>Try again</Button></ErrorState></Card>
         )}
         {list.data && list.data.items.length === 0 && (
-          <EmptyState title={filter === 'unread' ? 'Nothing unread' : 'No notifications yet'}>You will see assignments, mentions and decisions here.</EmptyState>
+          <EmptyState className="rounded-none border-0" title={filter === 'unread' ? 'Nothing unread' : 'No notifications yet'} description={<>You will see assignments, mentions and decisions here.</>} />
         )}
         {list.data?.items.map((n) => (
           <Row key={n.id} n={n} />

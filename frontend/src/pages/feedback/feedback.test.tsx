@@ -67,9 +67,9 @@ it('lists surveys; a product page scopes the request and drops the product colum
 it('tabs filter by status or type through the URL; rows open the survey', async () => {
   mount('/feedback/');
   await screen.findByText('Q1 NPS');
-  await userEvent.click(screen.getByRole('button', { name: 'Draft' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Draft' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/feedback/?status=draft');
-  await userEvent.click(screen.getByRole('button', { name: 'CSAT' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'CSAT' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/feedback/?type=csat');
   await userEvent.click(await screen.findByText('Q2 CSAT'));
   expect(screen.getByTestId('loc')).toHaveTextContent('/feedback/5/');

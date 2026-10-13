@@ -57,7 +57,7 @@ it('a non-manager sees no Add member button', async () => {
 it('role tabs and sort go through the URL', async () => {
   setup();
   await screen.findByText('Dev Team');
-  await userEvent.click(screen.getByRole('button', { name: 'Admin' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Admin' }));
   expect(screen.getByTestId('loc')).toHaveTextContent('/team/?role=admin');
 });
 
