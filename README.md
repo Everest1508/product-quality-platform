@@ -6,8 +6,8 @@
 
 [![Django](https://img.shields.io/badge/Django-6.0-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![HTMX](https://img.shields.io/badge/HTMX-2.x-3366CC?style=for-the-badge&logo=htmx&logoColor=white)](https://htmx.org/)
-[![Alpine.js](https://img.shields.io/badge/Alpine.js-3.x-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=white)](https://alpinejs.dev/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![REST API](https://img.shields.io/badge/DRF-3.17-red?style=for-the-badge)](https://www.django-rest-framework.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
@@ -28,13 +28,14 @@ Engineering organizations frequently suffer from **context fragmentation**:
 1. **Telemetry is trapped in silos:** Application errors trigger alerts in error monitoring tools that never get triaged into engineering sprint boards.
 2. **Timesheets and DSRs are despised:** Engineers waste Friday afternoons manually guessing how many hours they spent on bug fixes, leading to inaccurate Daily Status Reports.
 3. **Customer feedback gets lost:** Support tickets in CS tools don't link back to specific products or underlying error occurrences.
-4. **Heavyweight frontend drag:** Modern web apps drown in massive `node_modules`, complex Webpack/Vite build matrices, and brittle hydration errors.
+4. **Slow, inconsistent interfaces:** Five tools means five different designs. PQ Platform is one app with one component set, a dark theme, and keyboard shortcuts everywhere.
 
-**PQ Platform solves this with an integrated, zero-build architecture:**
+**PQ Platform solves this with one integrated workspace:**
 - 💥 **Automated Incident-to-Ticket Flow:** Errors captured via SDK deduplicate into Error Groups. When error frequency exceeds threshold rules, the platform automatically files prioritized engineering tickets.
 - ⏱️ **Zero-Friction DSR Timesheets:** When an engineer resolves a ticket, the platform automatically logs the elapsed duration into their Daily Status Report (DSR) spreadsheet.
 - 💬 **Customer Success Operations:** Triage CSAT/NPS survey responses and bug reports directly into backlog items.
-- ⚡ **SPA Speed with Zero Build Steps:** Powered by **Django 6 + HTMX + Alpine.js**, delivering instantaneous UI swaps and silky interactions with zero npm dependencies.
+- 🧑‍💼 **People Operations:** Attendance with lateness rules, leave with paid/unpaid splitting and approvals, and payroll cycles that turn both into payslips.
+- ⚡ **A fast React front end on a plain Django back end:** **Django 6** serves a JSON API, auth, ingestion and WebSockets; the whole UI is **React 19 + Tailwind 4** built from [befui](https://befui.vercel.app/) components, with light and dark themes.
 
 ---
 
@@ -93,8 +94,8 @@ flowchart TD
 
 ### 1. 🎯 Linear-Style Ticket Tracking & Kanban
 - **Flexible Views:** Seamless toggle between interactive **Kanban Board** and high-density **List View** with preserved search and filter parameters.
-- **Dynamic HTMX Filtering:** Filter instantly by status, priority, assignee, type, and search keyword without full page reloads.
-- **Mobile Touch Ready:** Touch fallback allows long-pressing cards on mobile and tablet devices to transition columns effortlessly.
+- **Instant Filtering:** Filter by status, priority, assignee, type, and search keyword; the filters live in the URL so a view can be shared.
+- **Drag or Keyboard:** Drag cards between columns, move them with Alt + arrow keys, or use the Move menu on touch screens.
 - **Full Lifecycle Support:** Manage tickets from `Backlog` ➔ `Todo` ➔ `In Progress` ➔ `In Review` ➔ `Resolved` ➔ `Closed`.
 
 ### 2. ⚡ Telemetry & Error Tracking (Sentry-Alternative)
@@ -104,7 +105,7 @@ flowchart TD
 - **Triage Actions:** Resolve or ignore errors directly from the dashboard or error detail views.
 
 ### 3. 📊 Automated DSR (Daily Status Report) & Timesheets
-- **Interactive Spreadsheet Grid:** Real-time editable DSR table with inline HTMX cell editing for hours, notes, and task categorizations.
+- **Interactive Spreadsheet Grid:** An editable DSR table with inline editing for hours, notes, and task categorizations.
 - **Automatic Duration Tracking:** Resolving or closing a ticket automatically calculates active duration and logs a `[AUTO]` DSR entry for assignees.
 - **Daily Target Progress:** Dynamic visual progress meter tracking completion toward the standard 8.0-hour daily goal.
 - **Manager & Admin Oversight:** Company leadership can view team-wide progress bars, completed task metrics, and inspect individual timesheets.
@@ -124,7 +125,16 @@ flowchart TD
 - **Real-Time Webhook Dispatch:** Post rich embeds to product-specific Discord channels on ticket creation, status changes, and critical incidents.
 - **Native User Mentions:** Maps user profiles to Discord IDs (`<@discord_id>`) for direct attention and notification routing.
 
-### 7. 🛡️ Two-Tier Multi-Tenancy & Access Control
+### 7. 🕒 Attendance, Leave & Payroll
+- **Attendance:** One-click check-in and check-out with a live day counter, lateness bands that feed pay, a month view, a team view, and correction requests that owners and admins approve.
+- **Leave:** Leave types with yearly allowances and per-spell caps, a live paid/unpaid preview when you apply, a team calendar, and an approvals queue where approvers can adjust dates and the split.
+- **Payroll:** Monthly salaries divided over each 27th–26th cycle's working days, cycle preview, locked runs, payslips that show how every figure was worked out, and company holidays.
+
+### 8. 🔎 Search, Notifications & Presence
+- **Ctrl K search** across tickets, errors, products and pages, limited to what you can open.
+- **Notifications** in the app and as web push, **who is online** in the top bar, and a **What's new** dialog fed by `CHANGELOG.md`.
+
+### 9. 🛡️ Two-Tier Multi-Tenancy & Access Control
 - **Layer 1 (Company Isolation):** Complete tenant partitioning via `Company` and `Membership` roles (`Owner`, `Admin`, `Developer`, `Support`, `Viewer`).
 - **Layer 2 (Per-Product RBAC):** Fine-grained `ProductAccess` controls ensuring developers and support agents only see products and tickets they have been explicitly granted.
 
@@ -134,6 +144,7 @@ flowchart TD
 
 ### Prerequisites
 - **Python 3.12+**
+- **Node 22+** (only to build the front end)
 - **SQLite 3** (Default) or PostgreSQL
 - Git
 
@@ -151,15 +162,20 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Run database migrations
+# 4. Build the React front end (Django serves frontend/dist at /ui/)
+(cd frontend && npm ci && npm run build)
+
+# 5. Run database migrations
 python manage.py migrate
 
-# 5. Populate workspace with demo data (Acme Corp)
+# 6. Populate workspace with demo data (Acme Corp)
 python manage.py seed_data
 
-# 6. Start the development server
+# 7. Start the development server
 python manage.py runserver 8010
 ```
+
+For front-end work run `npm test` in `frontend/` (Vitest) and rebuild with `npm run build` after changes.
 
 Visit **[http://localhost:8010](http://localhost:8010)** in your browser.
 
@@ -174,7 +190,7 @@ Run the entire application in a container with persistent SQLite storage:
 docker-compose up --build
 ```
 
-The application will be accessible at **[http://localhost:8011](http://localhost:8011)**.
+The image builds the front end in a Node stage, so no local Node is needed. The application will be accessible at **[http://localhost:8011](http://localhost:8011)**.
 
 ---
 
@@ -296,14 +312,14 @@ python manage.py seed_data
 | Layer | Technology | Rationale |
 | :--- | :--- | :--- |
 | **Backend Framework** | **Django 6.0** | Robust ORM, built-in security protections, enterprise authentication, and bulletproof relational data modeling. |
-| **Dynamic Frontend** | **HTMX 2.x** | Enables full SPA capabilities (live search, modal drawers, in-place table updates) while writing simple, readable Django HTML templates. |
-| **Client Reactivity** | **Alpine.js 3.x** | Lightweight micro-reactivity for dropdowns, modals, and local component states without a JavaScript framework bundle. |
-| **Styling & Design** | **Modern CSS Tokens** | Zero CSS framework lock-in. Built entirely with clean CSS custom properties (`--panel`, `--border`, `--accent`) providing consistent contrast, typography, and dark/light adaptability. |
+| **Frontend** | **React 19 + Vite + TypeScript** | One single-page app (`frontend/`) with TanStack Query for data and React Router for pages. Django renders only the page that boots it. |
+| **Components & Styling** | **befui + Tailwind 4** | Copy-paste Radix components (tables, tabs, pickers, kanban, sidebar, command palette) themed by CSS variables, with a light and a dark theme. Add one with `scripts/befui_add.py <name>`. |
+| **Live features** | **Django Channels** | WebSockets for presence, notifications and the Serop inbox. |
 | **API Layer** | **Django REST Framework** | Token-authenticated ingestion endpoints with throttling, validation, and JSON schemas. |
 | **Database** | **SQLite / PostgreSQL** | Zero-config SQLite out of the box with total migration compatibility for production PostgreSQL. |
 
-> ### 💡 Why No Node / Webpack / React?
-> We believe modern developer platforms spend too much compute and operational overhead on frontend build pipelines. By leveraging **Django 6 + HTMX + Alpine.js**, this codebase achieves **instant cold-starts, sub-30ms response times, zero asset compilation steps, and trivial deployments**.
+> ### 💡 Why a separate front end now?
+> The app began as server-rendered HTML with HTMX and Alpine.js. As it grew (kanban, pickers, live presence, a dark theme) a single component library and typed API made the interface faster to change and far easier to test. The Django side kept every rule, permission check and model: the React app talks to it through session-authenticated JSON endpoints under `/ui-api/v1/`, and the SDK ingestion API under `/api/v1/` is unchanged.
 
 ---
 
@@ -314,7 +330,13 @@ product-quality-platform/
 ├── apps/
 │   ├── accounts/       # User model, multi-tenant Company, Membership, & Auth views
 │   ├── automation/     # Auto-ticket threshold rules & cron evaluation engine
-│   ├── core/           # Middleware, tenant-scoped base models, context processors
+│   ├── attendance/     # Check-in/out, lateness, corrections, team and timesheet views
+│   ├── leave/          # Leave types, paid/unpaid split, calendar, approvals
+│   ├── payroll/        # Pay cycles, runs, payslips, salaries, holidays
+│   ├── notifications/  # In-app and web-push notifications
+│   ├── presence/       # Who is online (WebSocket)
+│   ├── uiapi/          # JSON API for the React app (/ui-api/v1/)
+│   ├── core/           # Middleware, tenant-scoped base models, search, PWA
 │   ├── dashboards/     # Executive stats, needs-attention list, activity audit log
 │   ├── dsr/            # Daily Status Report spreadsheet, auto-logger, & standup export
 │   ├── errors/         # Error groups, occurrences, stack traces, & triage views
@@ -326,7 +348,9 @@ product-quality-platform/
 │   ├── settings.py     # Global Django configuration & security parameters
 │   ├── urls.py         # Root URL routing table
 │   └── wsgi.py         # Production WSGI application gateway
-├── templates/          # Server-rendered HTML templates & modular HTMX partials
+├── frontend/           # React app: src/pages, src/components/ui (befui), src/shell
+├── scripts/            # befui_add.py: copy a befui component into the front end
+├── templates/          # Only the page that boots React, and the offline page
 ├── docker-compose.yml  # Local container orchestration
 ├── Dockerfile          # Multi-stage production container image
 ├── entrypoint.sh       # Container migration & startup script
@@ -348,7 +372,12 @@ python manage.py test apps.tickets
 
 # Run tests for ingestion API
 python manage.py test apps.ingestion
+
+# Front end tests and type check
+(cd frontend && npm test && npx tsc --noEmit)
 ```
+
+One test (`test_signup_creates_user`) fails on a clean checkout because the self-serve signup route does not exist; it is not a regression.
 
 ---
 

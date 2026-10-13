@@ -951,3 +951,6 @@ decided what and strike the item** rather than deleting it.
 - Dates and times: `components/ui/date-field.tsx` wraps befui's DatePicker/TimePicker so pages keep ISO strings (`DateField`, `DateTimeField`, `TimeField`). Tests drive them with `pickDate` / `pickTime` in `src/test-utils.ts`. A date field must not sit inside a `<label>` (the label re-clicks its first control); pages use a `<div><span>` and an `aria-label`.
 - Ticket board is befui's `Kanban` (one status change per drop; reordering inside a column is not saved). Home donut, report rings and product sparklines use `charts` / `progress-ring`. Raw `<button>`s became `Button`, `Chip`, `Switch` or `Segmented`; payslip lines use `DescriptionList`; labels use `Label`.
 - Still hand-built: the bar clusters with state colours (hours this week, error histogram, survey scores chart), the textarea (befui has none), and the errors-list sparkline, which draws server-computed points.
+
+### 2026-10-13 Release 1.28.0
+- README rewritten for the React front end (badges, features incl. attendance/leave/payroll, quickstart with the npm build, tech stack, structure). 1.28.0 is a summary release of the migration and polish work (1.16.0 to 1.27.0); no code change beyond the version.

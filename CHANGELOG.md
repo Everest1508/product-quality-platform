@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.28.0] — 2026-10-13 · the whole app, in one design
+
+> In short: every page now uses the same design and components, with a dark theme, calendar and clock pickers, and a faster, steadier experience from sign-in to payroll.
+
+### New
+
+- **One look across the whole app.** Home, tickets, errors, products, feedback, automation, attendance, leave, payroll, team and settings all share one set of tables, filters, buttons, forms and screens for empty and failed pages.
+- **A dark theme and a calendar picker for every date.** Choose Light, Dark or System from your account menu.
+
+### Better
+
+- **Pages open faster and move between each other without a reload.**
+- **Forms refuse odd input with a clear message** instead of an error page, and double clicks no longer send things twice.
+
+### Security
+
+- **Leave you ask for can't be approved by you** while another approver is available, and the old admin pages are gone.
+
 ## [1.27.0] — 2026-10-13 · pickers, board and charts
 
 > In short: dates and times are chosen from a calendar and a clock, the ticket board and charts use the same library as everything else, and buttons look the same everywhere.
