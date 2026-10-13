@@ -880,3 +880,9 @@ decided what and strike the item** rather than deleting it.
 - The six error pages (`/errors/`, `/errors/create/`, `/errors/<pk>/` and the three under `/products/<pk>/errors/`) are served by the React shell. Endpoints in `apps/uiapi/errors.py`; the rules (status, convert to ticket, delete) moved to `apps/errors/service.py`. Resolve and ignore keep their own activity events; other moves log `error_status_changed` with from/to.
 - Legacy routes removed: `error_status`, `error_delete`, `error_convert_to_ticket`, `product_error_convert_to_ticket`. Kept: `error_resolve` / `error_ignore` (home dashboard hx-posts to them) and the `_error_status_badge.html` partial they return.
 - The product-scoped list gained the Regressed tab and severity filter the old product page lacked (one endpoint serves both). Remaining htmx: 26 templates.
+
+### 2026-10-13 React products
+- `/products/`, `/products/create/`, `/products/<pk>/`, `/products/<pk>/edit/`, `/products/<pk>/api/` are served by the React shell. Rules moved to `apps/products/service.py`; endpoints in `apps/uiapi/products.py` (list, detail, versions, API keys incl. rotate/revoke, team access, milestones, API docs, key suggestion). Create/edit stay owner/admin only (403 on the page too); access add/remove still 404 for non-admins.
+- Removed legacy routes: `product_delete`, `product_key_suggest`, `api_key_*`, `version_*`, `product_access_*`, `milestone_*`. Product-scoped surveys and rules pages still use legacy templates until feedback/automation move.
+- `CompanyAPIView` now answers 400 to a write whose body is not a JSON object (an array used to 500). Number parsing in the API uses `isdecimal` (`"²".isdigit()` is true but `int("²")` raises).
+- Master checklist for the rest of the migration: `docs/superpowers/plans/2026-10-13-react-remaining-pages.md`.

@@ -63,37 +63,6 @@ class ToastAfterMutationTest(TestCase):
         self.assertIn('id="toast-seed"', body, "no toast was rendered on the next page")
         self.assertIn(fragment, body, f"expected {fragment!r} in the rendered toast")
 
-    def test_creating_a_product_says_so(self):
-        response = self.client.post(
-            reverse("products:product_create"),
-            {"name": "Gadget", "description": "", "default_environment": "production"},
-        )
-        self.assert_toast_after(response, "Gadget")
-
-    def test_editing_a_product_says_so(self):
-        response = self.client.post(
-            reverse("products:product_edit", kwargs={"pk": self.product.pk}),
-            {
-                "name": "Widget Renamed",
-                "description": "",
-                "default_environment": "production",
-            },
-        )
-        self.assert_toast_after(response, "updated")
-
-    def test_deleting_a_product_says_so(self):
-        response = self.client.post(
-            reverse("products:product_delete", kwargs={"pk": self.product.pk})
-        )
-        self.assert_toast_after(response, "deleted")
-
-    def test_adding_a_version_says_so(self):
-        response = self.client.post(
-            reverse("products:version_create", kwargs={"pk": self.product.pk}),
-            {"version_string": "2.1.0"},
-        )
-        self.assert_toast_after(response, "2.1.0")
-
     def test_logging_dsr_time_says_so(self):
         response = self.client.post(
             reverse("dsr:dsr_add"),
@@ -120,40 +89,7 @@ class ToastAfterMutationTest(TestCase):
         response = self.client.post(reverse("dsr:dsr_delete", kwargs={"pk": entry.pk}))
         self.assert_toast_after(response, "Chased the flaky test")
 
-    def test_a_milestone_toggle_says_what_it_became(self):
-        """A status change that reports nothing looks like a dead button."""
-        from apps.products.models import ProductMilestone
-
-        milestone = ProductMilestone.objects.create(
-            company=self.company,
-            product=self.product,
-            title="Ship v2",
-            status=ProductMilestone.Status.UPCOMING,
-            target_date=timezone.localdate() + timedelta(days=7),
-        )
-        response = self.client.post(
-            reverse("products:milestone_toggle", kwargs={"pk": milestone.pk})
-        )
-        self.assert_toast_after(response, "in progress")
-        milestone.refresh_from_db()
-        self.assertEqual(milestone.status, ProductMilestone.Status.IN_PROGRESS)
-
-    def test_deleting_a_milestone_says_so(self):
-        from apps.products.models import ProductMilestone
-
-        milestone = ProductMilestone.objects.create(
-            company=self.company,
-            product=self.product,
-            title="Cut v1",
-            status=ProductMilestone.Status.UPCOMING,
-            target_date=timezone.localdate() + timedelta(days=7),
-        )
-        response = self.client.post(
-            reverse("products:milestone_delete", kwargs={"pk": milestone.pk})
-        )
-        self.assert_toast_after(response, "Cut v1")
-
     def test_an_empty_queue_renders_no_script_at_all(self):
         """An empty ``<script>`` block on every page is noise; see the tag."""
-        body = self.client.get(reverse("products:product_list")).content.decode()
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
         self.assertNotIn('id="toast-seed"', body)

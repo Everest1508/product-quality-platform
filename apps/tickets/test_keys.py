@@ -150,13 +150,15 @@ class TicketKeyScreensTest(TestCase):
 
     def test_product_form_validates_and_saves_the_key(self):
         other = Product.objects.create(company=self.company, name="Other App", slug="other-app")
-        url = reverse("products:product_edit", args=[self.product.pk])
-        bad = self.client.post(url, {"name": "AU-Marketing", "key": other.key, "default_environment": "production"})
-        self.assertContains(bad, "already uses")
-        worse = self.client.post(url, {"name": "AU-Marketing", "key": "1x!", "default_environment": "production"})
-        self.assertContains(worse, "starting with a letter")
-        ok = self.client.post(url, {"name": "AU-Marketing", "key": "mkt", "default_environment": "production"})
-        self.assertEqual(ok.status_code, 302)
+        url = f"/ui-api/v1/products/{self.product.pk}/"
+        body = {"name": "AU-Marketing", "default_environment": "production"}
+        patch = lambda key: self.client.patch(url, {**body, "key": key}, content_type="application/json")
+        bad = patch(other.key)
+        self.assertEqual(bad.status_code, 400)
+        self.assertIn("already uses", bad.json()["errors"]["key"][0])
+        worse = patch("1x!")
+        self.assertIn("starting with a letter", worse.json()["errors"]["key"][0])
+        self.assertEqual(patch("mkt").status_code, 200)
         self.product.refresh_from_db()
         self.assertEqual(self.product.key, "MKT")
         self.assertEqual(self.client.get("/ui-api/v1/tickets/").json()["items"][0]["key"], "MKT-001")
@@ -172,7 +174,7 @@ class KeySuggestEndpointTest(TestCase):
         self.product = Product.objects.create(company=self.company, name="AU-Marketing", slug="aum")
 
     def suggest(self, **params):
-        return self.client.get(reverse("products:product_key_suggest"), params)
+        return self.client.get("/ui-api/v1/products/key-suggestion/", params)
 
     def test_suggests_from_the_name_as_it_is_typed(self):
         self.client.login(username="own", password="pass1234")
@@ -190,9 +192,3 @@ class KeySuggestEndpointTest(TestCase):
     def test_only_owners_and_admins_can_ask(self):
         self.client.login(username="dev", password="pass1234")
         self.assertEqual(self.suggest(name="Anything").status_code, 403)
-
-    def test_the_create_form_wires_the_name_to_the_prefix(self):
-        self.client.login(username="own", password="pass1234")
-        body = self.client.get(reverse("products:product_create")).content.decode()
-        self.assertIn("product-name", body)
-        self.assertIn(reverse("products:product_key_suggest"), body)

@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.17.0] — 2026-10-13 · products, redone
+
+> In short: the products list, the product page and its forms have a new look, with the roadmap, versions, API keys and team access all on one page that saves as you go.
+
+### New
+
+- **A new product list.** Switch between cards and a table, search, sort, and see how healthy each product is at a glance.
+- **A new product page.** The milestone roadmap, versions, API keys and team access, each with buttons that save straight away and tell you what happened.
+- **A new form for creating and editing a product.** The ticket prefix is suggested from the name as you type.
+- **A new page that shows how to send data to a product.** Pick your language and copy a ready-made example.
+
+### Better
+
+- **A new API key is shown once, right where you made it.** You can copy it with one click.
+- **Rotating a key asks you first.** You choose whether the old key stops now or keeps working for a day or a week.
+
 ## [1.16.0] — 2026-10-13 · errors, redone
 
 > In short: the error list, the error page and the report form have a new look, with one-click resolve and ignore, a trend chart and a ticket button on every error.

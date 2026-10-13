@@ -2,6 +2,10 @@ import type { RouteObject } from 'react-router-dom';
 import { ErrorDetailPage } from '@/pages/errors/ErrorDetailPage';
 import { ErrorFormPage } from '@/pages/errors/ErrorFormPage';
 import { ErrorsPage } from '@/pages/errors/ErrorsPage';
+import { ProductApiDocsPage } from '@/pages/products/ProductApiDocsPage';
+import { ProductDetailPage } from '@/pages/products/ProductDetailPage';
+import { ProductFormPage } from '@/pages/products/ProductFormPage';
+import { ProductsPage } from '@/pages/products/ProductsPage';
 import { Notifications } from '@/pages/Notifications';
 import { TicketDetailPage } from '@/pages/ticket/TicketDetailPage';
 import { TicketFormPage } from '@/pages/ticket/TicketFormPage';
@@ -28,4 +32,9 @@ export const shellRoutes: RouteObject[] = [
   { path: '/products/:pk/errors/create/', element: <ErrorFormPage /> },
   { path: '/errors/:id/', element: <ErrorDetailPage /> },
   { path: '/products/:pk/errors/:error_pk/', element: <ErrorDetailPage /> },
+  { path: '/products/', element: <ProductsPage /> },
+  { path: '/products/create/', element: <ProductFormPage /> },
+  { path: '/products/:pk/', element: <ProductDetailPage /> },
+  { path: '/products/:pk/edit/', element: <ProductFormPage /> },
+  { path: '/products/:pk/api/', element: <ProductApiDocsPage /> },
 ];

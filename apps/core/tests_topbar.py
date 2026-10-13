@@ -57,8 +57,8 @@ class TopbarFeaturesTest(TestCase):
             self.assertIn(marker, page)
 
     def test_products_page_shows_summary_tiles(self):
-        page = self.client.get(reverse("products:product_list")).content.decode()
-        self.assertIn("pl-tiles", page)
+        summary = self.client.get("/ui-api/v1/products/").json()["summary"]
+        self.assertEqual(set(summary), {"products", "open_errors", "open_tickets", "attention"})
 
 
 class FeatureRoundTwoTest(TestCase):

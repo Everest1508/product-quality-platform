@@ -15,6 +15,7 @@ const REACT_PATH_RES = [
   /^\/products\/\d+\/tickets\/(kanban\/|list\/)?$/,
   /^\/tickets\/(create\/|\d+\/|\d+\/edit\/)$/,
   /^\/products\/\d+\/tickets\/(create\/|\d+\/)$/,
+  /^\/products\/(create\/|\d+\/(edit\/|api\/)?)?$/,
   /^\/errors\/(create\/|\d+\/)?$/,
   /^\/products\/\d+\/errors\/(create\/|\d+\/)?$/,
 ];

@@ -32,9 +32,9 @@ import { isReactPath, productIdFromPath, productSection } from './nav';
 it('knows which paths React owns', () => {
   for (const p of ['/notifications/', '/tickets/', '/tickets/kanban/', '/tickets/list/', '/products/3/tickets/', '/products/3/tickets/kanban/', '/products/12/tickets/list/',
     '/tickets/create/', '/tickets/5/', '/tickets/5/edit/', '/products/3/tickets/create/', '/products/3/tickets/5/',
-    '/errors/', '/errors/create/', '/errors/5/', '/products/3/errors/', '/products/3/errors/create/', '/products/3/errors/5/'])
+    '/errors/', '/errors/create/', '/errors/5/', '/products/3/errors/', '/products/3/errors/create/', '/products/3/errors/5/', '/products/', '/products/create/', '/products/3/', '/products/3/edit/', '/products/3/api/'])
     expect(isReactPath(p), p).toBe(true);
-  for (const p of ['/tickets/5/status/', '/tickets/5/foo/', '/products/3/', '/errors/5/resolve/', '/errors/5/x/', '/products/3/tickets/create/x/', '/products/3/tickets/5/edit/', '/leave/'])
+  for (const p of ['/tickets/5/status/', '/tickets/5/foo/', '/products/3/delete/', '/products/3/foo/', '/errors/5/resolve/', '/errors/5/x/', '/products/3/tickets/create/x/', '/products/3/tickets/5/edit/', '/leave/'])
     expect(isReactPath(p), p).toBe(false);
 });
 
@@ -44,7 +44,7 @@ it('reads the product id from the path', () => {
   expect(productIdFromPath('/tickets/')).toBeNull();
 });
 
-it('product section: one active item, badges, Errors and Tickets are the React links', () => {
+it('product section: one active item, badges, Overview, Errors and Tickets are the React links', () => {
   const nav = {
     id: 3, name: 'App', counts: { errors: 2, tickets: 5, surveys: 0, rules: 1 },
     urls: { overview: '/products/3/', errors: '/products/3/errors/', tickets: '/products/3/tickets/', surveys: '/products/3/surveys/', rules: '/products/3/rules/' },
@@ -54,7 +54,7 @@ it('product section: one active item, badges, Errors and Tickets are the React l
   const sections = [...navSections(sampleBootstrap()), section];
   expect(section.items.find((i) => i.key === 'p_tickets')?.badge).toBe(5);
   expect(section.items.find((i) => i.key === 'p_surveys')?.badge).toBeUndefined();
-  expect(section.items.filter((i) => i.react).map((i) => i.key)).toEqual(['p_errors', 'p_tickets']);
+  expect(section.items.filter((i) => i.react).map((i) => i.key)).toEqual(['p_overview', 'p_errors', 'p_tickets']);
   expect(activeKey('/products/3/tickets/kanban/', sections)).toBe('p_tickets');
   expect(activeKey('/products/3/', sections)).toBe('p_overview');
   expect(activeKey('/products/3/errors/9/', sections)).toBe('p_errors');

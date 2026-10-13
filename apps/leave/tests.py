@@ -1603,7 +1603,6 @@ class SidebarActiveStateTest(LeaveTestBase):
             ("/payroll/me/", "My payslips"),
             ("/dsr/", "DSR Sheet"),
             ("/leave/approvals/", "Leave approvals"),
-            ("/products/create/", "Products"),
         ]:
             with self.subTest(url=url):
                 self.assertEqual(self.active_labels(url), [expected])

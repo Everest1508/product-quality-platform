@@ -5,20 +5,11 @@ from apps.products import views
 app_name = "products"
 
 urlpatterns = [
-    path("", views.ProductListView.as_view(), name="product_list"),
-    path("create/", views.ProductCreateView.as_view(), name="product_create"),
-    path("key-suggestion/", views.ProductKeySuggestView.as_view(), name="product_key_suggest"),
-    path("<int:pk>/", views.ProductDetailView.as_view(), name="product_detail"),
+    path("", views.ProductShellView.as_view(), name="product_list"),
+    path("create/", views.ProductAdminShellView.as_view(), name="product_create"),
+    path("<int:pk>/", views.ProductPageView.as_view(), name="product_detail"),
     path("<int:pk>/edit/", views.ProductEditView.as_view(), name="product_edit"),
-    path("<int:pk>/delete/", views.ProductDeleteView.as_view(), name="product_delete"),
-    path("<int:pk>/api-keys/create/", views.APIKeyCreateView.as_view(), name="api_key_create"),
-    path("<int:pk>/api/", views.ProductApiDocsView.as_view(), name="product_api"),
-    path("api-keys/<int:pk>/rotate/", views.APIKeyRotateView.as_view(), name="api_key_rotate"),
-    path("api-keys/<int:pk>/revoke/", views.APIKeyRevokeView.as_view(), name="api_key_revoke"),
-    path("<int:pk>/versions/add/", views.VersionCreateView.as_view(), name="version_create"),
-    path("<int:pk>/versions/<int:version_pk>/delete/", views.VersionDeleteView.as_view(), name="version_delete"),
-    path("<int:pk>/access/add/", views.ProductAccessAddView.as_view(), name="product_access_add"),
-    path("<int:pk>/access/<int:user_pk>/remove/", views.ProductAccessRemoveView.as_view(), name="product_access_remove"),
+    path("<int:pk>/api/", views.ProductPageView.as_view(), name="product_api"),
     # Product-scoped routes
     path("<int:pk>/errors/", views.ProductErrorShellView.as_view(), name="product_errors"),
     path("<int:pk>/errors/create/", views.ProductErrorShellView.as_view(), name="product_error_create"),
@@ -32,7 +23,4 @@ urlpatterns = [
     path("<int:pk>/surveys/create/", views.ProductSurveyCreateView.as_view(), name="product_survey_create"),
     path("<int:pk>/rules/", views.ProductRuleListView.as_view(), name="product_rules"),
     path("<int:pk>/rules/create/", views.ProductRuleCreateView.as_view(), name="product_rule_create"),
-    path("<int:pk>/milestones/add/", views.ProductMilestoneAddView.as_view(), name="milestone_add"),
-    path("milestones/<int:pk>/toggle/", views.ProductMilestoneToggleView.as_view(), name="milestone_toggle"),
-    path("milestones/<int:pk>/delete/", views.ProductMilestoneDeleteView.as_view(), name="milestone_delete"),
 ]

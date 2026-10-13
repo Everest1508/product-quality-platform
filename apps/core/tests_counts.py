@@ -75,9 +75,8 @@ class OpenCountsTest(TestCase):
 
     def test_product_cards_say_open(self):
         self.login(self.owner)
-        res = self.client.get(reverse("products:product_list"))
-        self.assertContains(res, "Open errors")
-        self.assertContains(res, "Open tickets")
+        data = self.client.get("/ui-api/v1/products/").json()
+        self.assertEqual((data["summary"]["open_errors"], data["summary"]["open_tickets"]), (2, 3))
 
 
 class HomeAndReportsTest(TestCase):

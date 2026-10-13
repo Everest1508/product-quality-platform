@@ -293,12 +293,12 @@ class AuditWiringTest(TestCase):
         )
 
     def test_product_creation_is_logged(self):
-        response = self.client.post(reverse("products:product_create"), {
+        response = self.client.post("/ui-api/v1/products/", {
             "name": "New App",
             "description": "Test",
             "default_environment": "production",
-        })
-        self.assertEqual(response.status_code, 302)
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, 201)
         self.assertTrue(
             ActivityLog.objects.filter(
                 company=self.company,
