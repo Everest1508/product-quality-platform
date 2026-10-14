@@ -1,49 +1,39 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}Notifications — PQ Platform{% endblock %}
 
 {% block content %}
-<nav class="breadcrumbs">
-  <span class="current">Notifications</span>
-</nav>
-
-<div class="head">
+<div class="pg-head">
   <div>
-    <h1>Notifications <span class="count">{{ unread }} unread</span></h1>
-    <p class="text-sm text-muted" style="margin-top:4px;">Assignments, mentions, comments, leave and attendance decisions.</p>
+    <h1>Notifications <span class="sub" style="font-size:14px;font-weight:400;margin-left:8px">{{ unread }} unread</span></h1>
+    <p class="sub">Assignments, mentions, comments, leave and attendance decisions.</p>
   </div>
-  <div class="head-actions">
-    <div class="chips" role="group" aria-label="Filter">
-      <a class="chip {% if not only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}">All</a>
-      <a class="chip {% if only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}?filter=unread">Unread</a>
+  <div class="pg-actions">
+    <div class="seg" role="group" aria-label="Filter">
+      <a class="{% if not only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}">All</a>
+      <a class="{% if only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}?filter=unread">Unread</a>
     </div>
     {% if unread %}
-    <form method="post" action="{% url 'notifications:read_all' %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-sm">Mark all read</button>
-    </form>
+    <form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}<button type="submit" class="btn">{% icon 'check' 'ic' %}Mark all read</button></form>
     {% endif %}
   </div>
 </div>
 
-<section class="card" style="padding:0;overflow:hidden;">
-  {% for n in notifications %}
-  <a href="{% url 'notifications:open' n.pk %}" class="notice-row {% if not n.is_read %}is-unread{% endif %}">
-    <span class="bell-dot" aria-hidden="true"></span>
-    <span class="notice-text">
-      <strong>{{ n.title }}</strong>
-      {% if n.body %}<span>{{ n.body }}</span>{% endif %}
-    </span>
-    <span class="notice-meta">
-      <span class="pill closed">{{ n.get_kind_display }}</span>
-      <time datetime="{{ n.created_at|date:'c' }}" title="{{ n.created_at|date:'M j, Y g:i A' }}">{{ n.created_at|timesince }} ago</time>
-    </span>
-  </a>
+<section class="card-flush">
+  {% regroup notifications by created_at.date as days %}
+  {% for day in days %}
+    <h2 class="nt-day">{% now "Y-m-d" as today_s %}{% if day.grouper|date:"Y-m-d" == today_s %}Today{% else %}{{ day.grouper|date:"l, j F" }}{% endif %}</h2>
+    {% for n in day.list %}
+    <a href="{% url 'notifications:open' n.pk %}" class="nt-row {% if not n.is_read %}is-unread{% endif %}">
+      <span class="nt-ic">{% if n.kind == 'assigned' %}{% icon 'user' 'ic' %}{% elif n.kind == 'mention' %}{% icon 'messages-square' 'ic' %}{% elif n.kind == 'comment' %}{% icon 'messages-square' 'ic' %}{% elif n.kind == 'payslip' %}{% icon 'wallet' 'ic' %}{% elif n.kind == 'leave_request' or n.kind == 'leave_decision' %}{% icon 'calendar-days' 'ic' %}{% elif n.kind == 'regression' %}{% icon 'refresh' 'ic' %}{% else %}{% icon 'bell' 'ic' %}{% endif %}</span>
+      <span class="nt-text"><strong>{{ n.title }}</strong>{% if n.body %}<span>{{ n.body }}</span>{% endif %}</span>
+      <span class="nt-meta"><span class="bdg">{{ n.get_kind_display }}</span>
+        <time datetime="{{ n.created_at|date:'c' }}" title="{{ n.created_at|date:'M j, Y g:i A' }}">{{ n.created_at|timesince }} ago</time></span>
+    </a>
+    {% endfor %}
   {% empty %}
-  <div class="empty">
-    <h3>{% if only_unread %}Nothing unread{% else %}No notifications yet{% endif %}</h3>
-    <p>You will see assignments, mentions and decisions here.</p>
-  </div>
+  <div class="empty-state"><strong>{% if only_unread %}Nothing unread{% else %}No notifications yet{% endif %}</strong>You will see assignments, mentions and decisions here.</div>
   {% endfor %}
 </section>
 {% endblock %}

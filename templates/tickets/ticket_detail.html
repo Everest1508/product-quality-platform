@@ -1,129 +1,55 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}{{ ticket.key }} — PQ Platform{% endblock %}
 
 {% block content %}
-<style>.detail-stack{display:grid;gap:6px;}.detail-stack .dd,.detail-stack .assignee-dd{width:100%;}</style>
 <nav class="breadcrumbs">
   <a href="{% url 'tickets:ticket_board' %}">Tickets</a>
   <span class="sep">/</span>
-  {% if ticket.product %}
-  <a href="{% url 'products:product_detail' pk=ticket.product.pk %}">{{ ticket.product.name }}</a>
-  <span class="sep">/</span>
-  {% endif %}
+  {% if ticket.product %}<a href="{% url 'products:product_detail' pk=ticket.product.pk %}">{{ ticket.product.name }}</a><span class="sep">/</span>{% endif %}
   <span class="current">{{ ticket.key }}</span>
 </nav>
 
-<div class="head">
-  <h1>{{ ticket.key }} <span class="count">{{ ticket.title }}</span></h1>
-  {% include "tickets/partials/_ticket_viewers.html" %}
-  <div class="head-actions">
-    {% if ticket.product %}
-    <a href="{% url 'products:product_board' pk=ticket.product.pk %}" class="btn">← {{ ticket.product.name }} tickets</a>
-    {% else %}
-    <a href="{% url 'tickets:ticket_board' %}" class="btn">← Tickets</a>
-    {% endif %}
-    <a href="{% url 'tickets:ticket_edit' pk=ticket.pk %}" data-shortcut="edit" class="btn" style="font-size:13px;display:inline-flex;align-items:center;gap:6px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-      Edit Ticket
-    </a>
-    {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
-    <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket {{ ticket.key }}? This cannot be undone.')" style="display:inline;">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-danger" title="Delete ticket" aria-label="Delete ticket" style="display:inline-flex;align-items:center;gap:6px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        Delete
-      </button>
-    </form>
-    {% endif %}
-  </div>
-</div>
-
-<div class="grid-2" style="grid-template-columns:1fr 320px;gap:32px;">
-  <div class="space-y">
-    <div class="card">
-      <div class="flex-between mb-4">
-        <div>
-          <span class="pill {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>
-          {% if ticket.product %}
-          <span class="text-sm text-muted" style="margin-left:8px;">{{ ticket.product.name }}</span>
-          {% endif %}
-        </div>
-        <span class="date" title="{{ ticket.created_at|date:'M j, Y, g:i A' }}">Created {{ ticket.created_at|timesince }} ago</span>
-      </div>
-      {% if ticket.description %}
-      <div class="text-sm" style="white-space:pre-wrap;">{{ ticket.description }}</div>
+<div class="td-page">
+  <div class="pg-head">
+    <div style="min-width:0">
+      <h1><span style="color:var(--muted)">{{ ticket.key }}</span> {{ ticket.title }}</h1>
+      <p class="sub"><span class="bdg bdg-outline">{{ ticket.get_ticket_type_display }}</span>
+        Created {{ ticket.created_at|timesince }} ago · updated {{ ticket.updated_at|timesince }} ago · {{ ticket.get_source_display }}
+        {% include "tickets/partials/_ticket_viewers.html" %}</p>
+    </div>
+    <div class="pg-actions">
+      <a href="{% url 'tickets:ticket_edit' pk=ticket.pk %}" data-shortcut="edit" class="btn">{% icon 'edit' 'ic' %}Edit Ticket</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
+      <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" style="display:inline" data-confirm="Delete ticket {{ ticket.key }}?" data-confirm-text="This cannot be undone." data-confirm-label="Delete">
+        {% csrf_token %}<button type="submit" class="btn btn-danger">{% icon 'trash' 'ic' %}Delete</button>
+      </form>
       {% endif %}
     </div>
+  </div>
 
+  <section class="td-props">
+    <div class="td-prop"><span class="k">Status</span><div id="detail-status">{% include "tickets/partials/_ticket_status.html" with ticket=ticket %}</div></div>
+    <div class="td-prop"><span class="k">Priority</span><div id="detail-priority">{% include "tickets/partials/_ticket_priority.html" with ticket=ticket priority_choices=priority_choices %}</div></div>
+    <div class="td-prop"><span class="k">Assignee</span><div id="detail-assignee">{% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}</div></div>
+    <div class="td-prop"><span class="k">Deadline</span><div id="detail-deadline">{% include "tickets/partials/_ticket_deadline.html" with ticket=ticket %}</div></div>
+  </section>
+
+  <div class="td-sec-head"><h2>Description</h2>{% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}</div>
+  <div class="card-flush" style="padding:18px 20px">
+    {% if ticket.description %}<div style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px">{{ ticket.description }}</div>{% else %}<p style="color:var(--muted);font-size:13.5px">No description.</p>{% endif %}
     {% if ticket.linked_error_group %}
-    <div class="card">
-      <div class="text-sm font-medium mb-4">Linked Error</div>
-      {% if ticket.product %}
-      <a href="{% url 'products:product_error_detail' pk=ticket.product.pk error_pk=ticket.linked_error_group.pk %}" class="text-sm" style="color:var(--blue);">
-      {% else %}
-      <a href="{% url 'errors:error_detail' pk=ticket.linked_error_group.pk %}" class="text-sm" style="color:var(--blue);">
-      {% endif %}
-        {{ ticket.linked_error_group.title }}
-      </a>
-    </div>
+      <p style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px"><span style="color:var(--muted)">Linked error: </span>
+      {% if ticket.product %}<a style="color:var(--accent)" href="{% url 'products:product_error_detail' pk=ticket.product.pk error_pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>
+      {% else %}<a style="color:var(--accent)" href="{% url 'errors:error_detail' pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>{% endif %}</p>
     {% endif %}
-
-    <div class="card">
-      <div class="flex-between mb-4">
-        <div class="text-sm font-medium">Comments <span class="text-muted">({{ comments|length }})</span></div>
-      </div>
-      <div id="comment-list" class="space-y" style="border-top:1px solid var(--border);padding-top:12px;">
-        {% include "tickets/partials/_comment_list.html" with comments=comments %}
-      </div>
-      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
-        {% include "tickets/partials/_comment_form.html" %}
-      </div>
-    </div>
   </div>
 
-  <div class="space-y">
-    <div class="card">
-      <div class="text-sm font-medium mb-4">Details</div>
-      <div class="space-y">
-        <div class="detail-stack">
-          <span class="text-sm text-muted">Status</span>
-          <div id="detail-status">
-            {% include "tickets/partials/_ticket_status.html" with ticket=ticket %}
-          </div>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
-          <span class="text-sm text-muted">Priority</span>
-          <div id="detail-priority">
-            {% include "tickets/partials/_ticket_priority.html" with ticket=ticket priority_choices=priority_choices %}
-          </div>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="detail-stack">
-          <span class="text-sm text-muted">Assignee</span>
-          <div id="detail-assignee">
-            {% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}
-          </div>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
-          <span class="text-sm text-muted">Notifications</span>
-          {% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="detail-stack">
-          <span class="text-sm text-muted">Deadline</span>
-          <div id="detail-deadline">
-            {% include "tickets/partials/_ticket_deadline.html" with ticket=ticket %}
-          </div>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
-          <span class="text-sm text-muted">Source</span>
-          <span class="text-sm">{{ ticket.get_source_display }}</span>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:10px;" class="flex-between">
-          <span class="text-sm text-muted">Updated</span>
-          <span class="text-sm" title="{{ ticket.updated_at|date:'M j, Y, g:i A' }}">{{ ticket.updated_at|timesince }} ago</span>
-        </div>
-      </div>
-    </div>
+  <div class="td-sec-head"><h2>Comments <span style="font-weight:400;color:var(--muted)">({{ comments|length }})</span></h2></div>
+  <div class="card-flush" style="padding:18px 20px">
+    <div id="comment-list">{% include "tickets/partials/_comment_list.html" with comments=comments %}</div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">{% include "tickets/partials/_comment_form.html" %}</div>
   </div>
 </div>
 {% endblock %}

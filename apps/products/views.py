@@ -641,31 +641,13 @@ class ProductTicketBulkDeleteView(CompanyMemberRequiredMixin, View):
 
 
 class ProductTicketDetailView(CompanyMemberRequiredMixin, View):
+    """A product's ticket opens on the one ticket page. Access is still checked: the product, then the ticket inside it."""
+
     def get(self, request, pk, ticket_pk):
-        from apps.tickets import mentions
-        from apps.tickets.forms import TicketCommentForm
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        _attach_product_counts(product)
-        ticket = get_object_or_404(
-            product.tickets.select_related("assigned_to", "created_by", "linked_error_group"),
-            pk=ticket_pk,
-        )
-        comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
-        members = __import__("django.contrib.auth", fromlist=["get_user_model"]).get_user_model().objects.filter(
-            memberships__company=request.company
-        ).order_by("username")
-        from apps.products.access import product_users
-        members = product_users(product, request.company)
-        return render(request, "products/product_ticket_detail.html", {
-            "product": product, "ticket": ticket, "comments": comments,
-            "comment_form": TicketCommentForm(), "members": members,
-            "mention_candidates": mentions.candidates_json(ticket, request.company),
-            "following": ticket.watchers.filter(pk=request.user.pk).exists(),
-            "watcher_count": ticket.watchers.count(),
-            "assignee_selected_ids": [str(pk) for pk in ticket.assignees.values_list("pk", flat=True)],
-            "status_choices": __import__("apps.tickets.models", fromlist=["Ticket"]).Ticket.Status.choices,
-        })
+        get_object_or_404(product.tickets, pk=ticket_pk)
+        return redirect("tickets:ticket_detail", pk=ticket_pk)
 
 
 class ProductSurveyListView(CompanyMemberRequiredMixin, View):
