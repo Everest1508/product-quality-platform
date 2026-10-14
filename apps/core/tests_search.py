@@ -139,3 +139,22 @@ class DesignKitTest(TestCase):
 
     def test_anonymous_visitors_are_sent_to_sign_in(self):
         self.assertEqual(self.client.get(reverse("design")).status_code, 302)
+
+
+class BefuiAssetTest(TestCase):
+    def test_files_are_served_gzipped_with_an_etag_and_nothing_else_resolves(self):
+        gz = self.client.get("/befui/befui.js", HTTP_ACCEPT_ENCODING="gzip")
+        self.assertEqual(gz.status_code, 200)
+        self.assertEqual(gz["Content-Encoding"], "gzip")
+        again = self.client.get("/befui/befui.js", HTTP_IF_NONE_MATCH=gz["ETag"])
+        self.assertEqual(again.status_code, 304)
+        self.assertEqual(self.client.get("/befui/befui.css").status_code, 200)
+        self.assertEqual(self.client.get("/befui/demos.json").status_code, 404)
+        self.assertEqual(self.client.get("/befui/..%2Fsettings.py").status_code, 404)
+
+    def test_every_component_has_a_demo(self):
+        from apps.core import befui
+
+        groups = befui.demos()
+        self.assertEqual(sum(len(items) for _, items in groups), 199)
+        self.assertTrue(all(item["html"] for _, items in groups for item in items))

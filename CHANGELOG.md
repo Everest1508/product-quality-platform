@@ -12,13 +12,13 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ## [1.44.0] "Cetti" — 2026-10-14 · a design kit page with every component and icon
 
-> In short: a new Design kit page shows every component and 350 icons with the HTML to copy, and the full set of animated befui icons is now available in every page.
+> In short: a new Design kit page shows all 199 befui components and 350 icons with the HTML to copy, and the animated befui icons are available on every page.
 
 ### New
 
 - **A Design kit page.** Open it from the sidebar to see buttons, badges, tabs, inputs, dropdowns, windows, confirmations and toasts, each with the code to copy.
 - **The whole befui icon set.** 283 more icons can be used anywhere, and they redraw themselves when you hover over them.
-- **More building blocks, only the ones this app needs.** Accordion, alerts, banner, avatars, status dots, spinner, skeleton, progress bar and ring, stat card, timeline, switch, checkbox, radio, tag input, stepper, popover, tooltip, pagination, bar list, button group, number stepper and underline tabs, all in light and dark.
+- **All 199 befui components, as plain HTML.** The Design kit lists every one with a live demo and the code to copy, in light and dark. Pages can use tags like bef-button and bef-dialog with no React.
 - **Click an icon to copy its tag.** The Design kit lists every icon with a search box, so you can find one and paste it straight into a page.
 
 ## [1.43.2] "Dollarbird" — 2026-10-14 · dropdowns open on top of pop-ups, and What's new shows once

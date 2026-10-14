@@ -1,0 +1,15 @@
+{% comment %}
+befui's HTML build: one stylesheet and one script that define <bef-*> custom elements.
+The script is about 1 MB (React is inside it), so a page opts in with
+{% block extra_head %}{% include "core/_befui.html" %}{% endblock %} instead of every page paying for it.
+{% endcomment %}
+<link rel="stylesheet" href="/befui/befui.css">
+<script src="/befui/befui.js" defer></script>
+<style>
+/* befui reads shadcn-style variables. Wrap befui markup in <div class="bef-theme"> and it takes our colours, light and dark.
+   Its --accent and --muted mean different things from ours, so those two are set one level down. */
+.bef-theme{--background:var(--surface);--foreground:var(--text);--card:var(--surface);--card-foreground:var(--text);--popover:var(--surface);--popover-foreground:var(--text);
+  --primary:var(--accent);--primary-foreground:var(--on-accent);--secondary:var(--panel);--secondary-foreground:var(--text);--muted-foreground:var(--muted);
+  --destructive:var(--red);--input:var(--border);--ring:var(--accent);--success:var(--green);--warning:var(--orange);--info:var(--blue);color:var(--text);}
+.bef-theme > *{--muted:var(--panel);--accent:var(--panel);--accent-foreground:var(--text);}
+</style>

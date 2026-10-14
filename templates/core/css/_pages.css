@@ -724,6 +724,9 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 .dk-code{position:relative;}
 .dk-code .btn{position:absolute;top:8px;right:8px;}
 .dk-code pre{margin:0;padding:14px;border-radius:var(--radius);background:var(--panel);overflow:auto;font-size:12.5px;line-height:1.5;}
+.dk-tags{font-weight:400;font-size:12px;color:var(--muted);font-family:ui-monospace,monospace;margin-left:6px;}
+.dk-bef{min-height:56px;display:block;padding:0;}
+.dk-frame{display:block;width:100%;border:0;background:transparent;}
 .dk-h{margin:16px 0 8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
 .dk-icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;}
 .dk-icon{display:grid;justify-items:center;gap:6px;padding:12px 6px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;font:inherit;}

@@ -3,26 +3,86 @@
 {% block title %}Design kit — PQ Platform{% endblock %}
 {% block content %}
 <div class="pg-head">
-  <div><h1>Design kit</h1><p class="sub">Every component and icon, as plain HTML. Copy the code, paste it into a template.</p></div>
+  <div><h1>Design kit</h1><p class="sub">Our components and befui's {{ total }} HTML components, as plain markup. Copy the code, paste it into a template.</p></div>
 </div>
 
-<div x-data="{ q: '' }">
-  {% for b in blocks %}
-  <section class="card dk-card">
-    <h2>{{ b.title }}</h2><p class="sub">{{ b.note }}</p>
-    <div class="dk-demo">{{ b.demo }}</div>
-    <div class="dk-code"><button type="button" class="btn btn-sm" onclick="pqCopy(this)" data-copy="{{ b.code }}">{% icon 'copy' %}Copy</button><pre><code>{{ b.code }}</code></pre></div>
-  </section>
-  {% endfor %}
+<div x-data="{ tab: (location.hash || '#bef').slice(1), cat: '{{ groups.0.0 }}', q: '' }" x-init="if(!['app','bef','icons'].includes(tab)) tab='bef'">
+  <div class="seg" role="tablist" aria-label="Kit sections" style="margin-bottom:16px">
+    <button type="button" role="tab" :class="{ 'is-on': tab==='bef' }" @click="tab='bef'; history.replaceState(null,'','#bef')">befui components ({{ total }})</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='app' }" @click="tab='app'; history.replaceState(null,'','#app')">App components</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='icons' }" @click="tab='icons'; history.replaceState(null,'','#icons')">Icons</button>
+  </div>
 
-  <section class="card dk-card">
-    <h2>Icons</h2>
-    <p class="sub">{{ lucide|length }} outline icons and {{ befui|length }} befui icons. Click one to copy its tag. Use <code>{% verbatim %}{% icon 'name' %}{% endverbatim %}</code>; <code>bef:name</code> picks the befui drawing where both sets have the name; add <code>ic icon-draw</code> for the hover redraw.</p>
-    <input class="form-input" type="search" placeholder="Find an icon" x-model="q" style="max-width:280px;margin:8px 0 12px">
-    <h3 class="dk-h">Outline set</h3>
-    <div class="dk-icons">{% for n in lucide %}<button type="button" class="dk-icon" data-name="{{ n }}" x-show="!q || '{{ n }}'.includes(q.toLowerCase())" onclick="pqCopy(this)" data-copy="{% templatetag openblock %} icon '{{ n }}' {% templatetag closeblock %}" title="{{ n }}">{% icon n 'ic' %}<span>{{ n }}</span></button>{% endfor %}</div>
-    <h3 class="dk-h">befui set (hover to draw)</h3>
-    <div class="dk-icons">{% for n in befui %}<button type="button" class="dk-icon icon-hover" x-show="!q || '{{ n }}'.includes(q.toLowerCase())" onclick="pqCopy(this)" data-copy="{% templatetag openblock %} icon 'bef:{{ n }}' 'ic icon-draw' {% templatetag closeblock %}" title="{{ n }}">{% with "bef:"|add:n as bn %}{% icon bn 'ic icon-draw' %}{% endwith %}<span>{{ n }}</span></button>{% endfor %}</div>
-  </section>
+  <div x-show="tab==='bef'">
+    <div class="card dk-card">
+      <p class="sub">These are <code>&lt;bef-*&gt;</code> custom elements from befui's HTML build (vendored in the app, served from <code>/befui/</code>). A page opts in with <code>{% verbatim %}{% block extra_head %}{% include "core/_befui.html" %}{% endblock %}{% endverbatim %}</code>, then writes the tags below. Each demo below runs in its own frame, so befui's styles and scripts stay apart from this page. On a page that uses Alpine, befui's <code>:items='[...]'</code> attributes clash with Alpine's own <code>:</code> binding, so set those with a script instead: <code>el.props = { items }</code>.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px">
+        <input class="form-input" type="search" placeholder="Find a component" x-model="q" style="max-width:260px">
+        <div class="seg" role="group" aria-label="Category">{% for cat, items in groups %}<button type="button" :class="{ 'is-on': cat==='{{ cat }}' && !q }" @click="cat='{{ cat }}'; q=''">{{ cat }} {{ items|length }}</button>{% endfor %}</div>
+      </div>
+    </div>
+    {% for cat, items in groups %}{% for it in items %}
+    <section class="card dk-card" x-show="q ? '{{ it.name|lower }} {{ it.slug }}'.includes(q.toLowerCase()) : cat==='{{ cat }}'" style="display:none">
+      <h2>{{ it.name }} <small class="dk-tags">{% for t in it.tags %}&lt;{{ t }}&gt; {% endfor %}</small></h2>
+      <p class="sub">{{ it.description }}</p>
+      <div class="dk-demo dk-bef" data-cat="{{ cat }}"><template>{{ it.html|safe }}</template></div>
+      <div class="dk-code"><button type="button" class="btn btn-sm" onclick="pqCopy(this)">{% icon 'copy' %}Copy</button><pre><code>{{ it.html }}</code></pre></div>
+    </section>
+    {% endfor %}{% endfor %}
+  </div>
+
+  <div x-show="tab==='app'" style="display:none">
+    {% for b in blocks %}
+    <section class="card dk-card">
+      <h2>{{ b.title }}</h2><p class="sub">{{ b.note }}</p>
+      <div class="dk-demo">{{ b.demo }}</div>
+      <div class="dk-code"><button type="button" class="btn btn-sm" onclick="pqCopy(this)">{% icon 'copy' %}Copy</button><pre><code>{{ b.code }}</code></pre></div>
+    </section>
+    {% endfor %}
+  </div>
+
+  <div x-show="tab==='icons'" style="display:none">
+    <section class="card dk-card">
+      <h2>Icons</h2>
+      <p class="sub">{{ lucide|length }} outline icons and {{ befui|length }} befui icons. Click one to copy its tag. Use <code>{% verbatim %}{% icon 'name' %}{% endverbatim %}</code>; <code>bef:name</code> picks the befui drawing where both sets have the name; add <code>ic icon-draw</code> for the hover redraw. In befui markup the same icons are <code>&lt;bef-name-icon&gt;</code>.</p>
+      <input class="form-input" type="search" placeholder="Find an icon" x-model="q" style="max-width:280px;margin:8px 0 12px">
+      <h3 class="dk-h">Outline set</h3>
+      <div class="dk-icons">{% for n in lucide %}<button type="button" class="dk-icon" x-show="!q || '{{ n }}'.includes(q.toLowerCase())" onclick="pqCopy(this)" data-copy="{% templatetag openblock %} icon '{{ n }}' {% templatetag closeblock %}" title="{{ n }}">{% icon n 'ic' %}<span>{{ n }}</span></button>{% endfor %}</div>
+      <h3 class="dk-h">befui set (hover to draw)</h3>
+      <div class="dk-icons">{% for n in befui %}<button type="button" class="dk-icon icon-hover" x-show="!q || '{{ n }}'.includes(q.toLowerCase())" onclick="pqCopy(this)" data-copy="{% templatetag openblock %} icon 'bef:{{ n }}' 'ic icon-draw' {% templatetag closeblock %}" title="{{ n }}">{% with "bef:"|add:n as bn %}{% icon bn 'ic icon-draw' %}{% endwith %}<span>{{ n }}</span></button>{% endfor %}</div>
+    </section>
+  </div>
 </div>
+<script>
+window.pqCopy=function(b){var c=b.dataset.copy||b.parentNode.querySelector('code').textContent;navigator.clipboard.writeText(c).then(function(){window.pqToast&&pqToast('Copied.','success')})};
+// A demo is only built when it scrolls into view, and each one gets its own frame: befui ships Tailwind-based
+// CSS and React, and Alpine would otherwise treat its :prop attributes as bindings.
+(function(){
+  function build(box){
+    var t=box.querySelector('template'); if(!t) return;
+    var dark=document.documentElement.classList.contains('dark');
+    var tall=box.dataset.cat==='Overlays';
+    // befui reads shadcn-style variables (--primary, --muted-foreground, ...); hand it our colours, resolved to values.
+    var cs=getComputedStyle(document.documentElement), g=function(n){return cs.getPropertyValue(n).trim()};
+    var theme=':root{--background:'+g('--surface')+';--foreground:'+g('--text')+';--card:'+g('--surface')+';--card-foreground:'+g('--text')
+      +';--popover:'+g('--surface')+';--popover-foreground:'+g('--text')+';--primary:'+g('--accent')+';--primary-foreground:'+g('--on-accent')
+      +';--secondary:'+g('--panel')+';--secondary-foreground:'+g('--text')+';--muted:'+g('--panel')+';--muted-foreground:'+g('--muted')
+      +';--accent:'+g('--panel')+';--accent-foreground:'+g('--text')+';--destructive:'+g('--red')+';--border:'+g('--border')+';--input:'+g('--border')
+      +';--ring:'+g('--accent')+';--success:'+g('--green')+';--warning:'+g('--orange')+';--info:'+g('--blue')+';color-scheme:'+(dark?'dark':'light')+'}';
+    var doc='<!doctype html><html class="'+(dark?'dark':'')+'"><head><meta charset="utf-8"><link rel="stylesheet" href="/befui/befui.css">'
+      +'<style>'+theme+'html,body{margin:0;background:transparent;color:var(--foreground)}html{overflow:hidden}body{padding:4px;font-family:Inter,system-ui,sans-serif}</style>'
+      +'<script src="/befui/befui.js" defer><\/script></head><body>'+t.innerHTML
+      +'</body></html>';
+    var f=document.createElement('iframe'); f.className='dk-frame'; f.title='Demo'; f.style.minHeight=tall?'340px':'80px';
+    f.addEventListener('load',function(){
+      var d=f.contentDocument; if(!d) return;
+      var fit=function(){f.style.height=Math.max(d.documentElement.scrollHeight,tall?340:80)+'px'};
+      new ResizeObserver(fit).observe(d.body); fit();
+    });
+    f.srcdoc=doc; box.replaceChildren(f);
+  }
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){io.unobserve(e.target);build(e.target)}})},{rootMargin:'300px'});
+  document.querySelectorAll('.dk-bef').forEach(function(b){io.observe(b)});
+})();
+</script>
 {% endblock %}
