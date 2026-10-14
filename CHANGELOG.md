@@ -23,7 +23,12 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 ### Better
 - **Products and the team are lists, not cards.** Each one is a single full-width strip with its numbers and actions on the same line.
 - **The ticket page is one column.** Status, priority, assignee and deadline sit in a strip at the top, then the description and the comments.
-- **Notifications are grouped by day.** Each one has an icon for its kind.
+- **Notifications are grouped by day.** Each one has an icon for its kind, and you can filter them by type.
+- **The product page has tabs.** Overview, versions and webhook, API keys, and team access each get their own tab.
+- **A ticket shows its history.** Status changes and assignments are listed in order above the comments.
+- **The board is friendlier.** Hover a card for a peek at its status, people and due date, switch to compact cards, and watch cards settle in when you drop them.
+- **Icon buttons have tooltips, long forms keep Save in reach, and the sidebar glides open and shut.** Small touches that make the app calmer to use.
+- **A missing page or a failure now says so calmly.** Both show a short message and a button back to Home.
 
 ## [1.13.0] "Swift" — 2026-10-14 · a DSR that is one table, and honest hours for long tickets
 
@@ -31,7 +36,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### New
 - **The DSR is one table of everything submitted.** Today and earlier days sit together, grouped by day with a total, and you can filter by range or person and search.
-- **You can export the DSR to a spreadsheet.** The Export CSV button saves whatever range, person and search you are looking at.
+- **You can export to a spreadsheet.** The DSR, the attendance timesheet and each payroll run have an Export CSV button, and the DSR one saves whatever range, person and search you are looking at.
 - **Add everything you worked on in one click.** A banner lists the tickets you touched today and adds them all at sensible hours.
 - **A long-open ticket asks for your real time.** When you resolve a ticket that was open for more than a working day, a message and a small window ask how long you worked on it today, and only that counts.
 

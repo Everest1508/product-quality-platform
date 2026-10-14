@@ -9,6 +9,7 @@
   <span class="current">{{ product.name }}</span>
 </nav>
 
+<div x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','configuration','keys','team'].includes(tab)) tab='overview'">
 <div class="card overview-hero mb-6">
   <div class="flex-between" style="gap:16px;">
     <div style="display:flex;align-items:flex-start;gap:14px;min-width:0;">
@@ -45,6 +46,14 @@
   {% endif %}
 </div>
 
+<div class="seg" role="tablist" aria-label="Product sections" style="margin-bottom:16px">
+  <button type="button" role="tab" :class="{ 'is-on': tab==='overview' }" @click="tab='overview'; history.replaceState(null,'','#overview')">Overview</button>
+  <button type="button" role="tab" :class="{ 'is-on': tab==='configuration' }" @click="tab='configuration'; history.replaceState(null,'','#configuration')">Versions &amp; webhook</button>
+  <button type="button" role="tab" :class="{ 'is-on': tab==='keys' }" @click="tab='keys'; history.replaceState(null,'','#keys')">API keys</button>
+  {% if is_privileged %}<button type="button" role="tab" :class="{ 'is-on': tab==='team' }" @click="tab='team'; history.replaceState(null,'','#team')">Team access</button>{% endif %}
+</div>
+
+<div x-show="tab==='overview'">
 {% include "products/partials/_milestone_tree.html" %}
 
 <div class="grid-4 mb-6">
@@ -90,9 +99,9 @@
   </div>
 </div>
 
-<div class="section-head mb-4">
-  <h2>Configuration</h2>
 </div>
+
+<div x-show="tab==='configuration'" style="display:none">
 <div class="grid-2 mb-6">
   <div class="card">
     <div class="flex-between mb-4">
@@ -143,9 +152,9 @@
   </div>
 </div>
 
-<div class="section-head mb-4">
-  <h2>API Keys</h2>
 </div>
+
+<div x-show="tab==='keys'" style="display:none">
 <div class="card mb-6">
   <div class="flex-between mb-4">
     <div class="text-sm font-medium">API Keys</div>
@@ -175,10 +184,10 @@
   {% endif %}
 </div>
 
-{% if is_privileged %}
-<div class="section-head mb-4">
-  <h2>Team Access</h2>
 </div>
+
+{% if is_privileged %}
+<div x-show="tab==='team'" style="display:none">
 <div class="card">
   <div class="flex-between mb-4">
     <div class="text-sm font-medium">Allocated Members</div>
@@ -189,5 +198,7 @@
     {% include "products/partials/_product_access_list.html" with all_members=all_members allocated_ids=allocated_ids product=product is_privileged=is_privileged %}
   </div>
 </div>
+</div>
 {% endif %}
+</div>
 {% endblock %}
