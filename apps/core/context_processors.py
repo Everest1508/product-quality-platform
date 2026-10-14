@@ -54,7 +54,7 @@ def product_context(request):
                 ctx["nav_products"] = list(
                     accessible_products(request.user, request.company)
                     .order_by("name")
-                    .values("pk", "name")
+                    .values("pk", "name", "icon")
                 )
     except Exception:
         pass

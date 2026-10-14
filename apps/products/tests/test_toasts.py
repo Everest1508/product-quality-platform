@@ -184,3 +184,28 @@ class ToastAfterMutationTest(TestCase):
         """An empty ``<script>`` block on every page is noise; see the tag."""
         body = self.client.get(reverse("products:product_list")).content.decode()
         self.assertNotIn('id="toast-seed"', body)
+
+
+class ProductIconTest(ToastAfterMutationTest):
+    """A product carries the icon chosen for it, and the switcher lists every product."""
+
+    def test_icon_is_saved_and_shown_in_list_and_switcher(self):
+        Product.objects.create(company=self.company, name="Gadget", slug="gadget")
+        self.client.post(
+            reverse("products:product_edit", kwargs={"pk": self.product.pk}),
+            {"name": "Widget", "key": "", "icon": "wallet", "description": "", "default_environment": "production"},
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.icon, "wallet")
+        page = self.client.get(reverse("products:product_list")).content.decode()
+        self.assertIn("lmark-ic", page)
+        board = self.client.get(reverse("products:product_tickets", kwargs={"pk": self.product.pk}), follow=True).content.decode()
+        self.assertIn("Gadget", board.split("switch-menu")[-1])  # the other product is in the switcher
+
+    def test_unknown_icon_falls_back_to_blank(self):
+        self.client.post(
+            reverse("products:product_edit", kwargs={"pk": self.product.pk}),
+            {"name": "Widget", "key": "", "icon": "<script>", "description": "", "default_environment": "production"},
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.icon, "")

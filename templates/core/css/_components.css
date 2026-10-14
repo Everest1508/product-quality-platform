@@ -570,6 +570,7 @@ dialog.dlg[open]{animation:dlgIn .22s cubic-bezier(.22,1,.36,1);}
 .lrow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tone);}
 .lrow.t-green{--tone:var(--green)}.lrow.t-orange{--tone:var(--orange)}.lrow.t-red{--tone:var(--red)}.lrow.t-blue{--tone:var(--blue)}.lrow.t-off{--tone:var(--border-strong)}
 .lmark{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--navy-2);color:#fff;font-weight:650;font-size:15px;}
+.lmark-ic{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 html.dark .lmark{background:var(--panel);color:var(--text);}
 .lmain{min-width:0;}
 .lt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px;font-weight:600;}

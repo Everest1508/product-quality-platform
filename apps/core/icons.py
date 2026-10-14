@@ -262,6 +262,15 @@ UI_ICONS = {
     "monitor": '<rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" />',
 }
 
+# What a product can be marked with, in the picker and everywhere the product is listed.
+PRODUCT_ICONS = (
+    "package", "briefcase", "layout-dashboard", "monitor", "chart-column", "chart", "users", "user",
+    "wallet", "banknote", "coins", "landmark", "ticket", "clipboard-list", "file-text", "calendar-days",
+    "clock", "target", "zap", "flame", "sparkles", "send", "inbox", "bell", "messages-square", "life-buoy",
+    "compass", "house", "plane", "car", "stethoscope", "heart-pulse", "gift", "music", "coffee", "tree-pine", "settings", "eye",
+)
+DEFAULT_PRODUCT_ICON = "package"
+
 ICON_CHOICES = tuple((name, name.replace("-", " ").title()) for name in ICONS)
 ICON_NAMES = frozenset(ICONS)
 
@@ -294,3 +303,8 @@ def render_brand_mark(css_class="ic"):
         css_class,
         mark_safe(BRAND_MARK),
     )
+
+
+def product_icon_name(name):
+    """The icon to draw for a product: its own, or the default box."""
+    return name if name in PRODUCT_ICONS else DEFAULT_PRODUCT_ICON

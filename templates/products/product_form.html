@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load dropdown_tags %}
+{% load dropdown_tags icon_tags %}
 
 {% block title %}{% if editing %}Edit Product{% else %}New Product{% endif %} — PQ Platform{% endblock %}
 
@@ -49,6 +49,18 @@
             <div class="form-group">
               <span class="dd-label">Default Environment</span>
               {% dropdown "default_environment" "production:Production|staging:Staging"|opts form.default_environment.value placeholder="Production" label="Default Environment" %}
+            </div>
+          </div>
+          <div class="form-group">
+            <span class="dd-label">Icon</span>
+            {% product_icon_choices as pick %}
+            <div class="pi-grid" role="radiogroup" aria-label="Product icon">
+              {% for name, glyph in pick %}
+              <label class="lp-icon-opt" title="{{ name }}">
+                <input type="radio" name="icon" value="{{ name }}" {% if form.icon.value == name or not form.icon.value and name == 'package' %}checked{% endif %}>
+                <span class="lp-icon-cell">{{ glyph }}</span>
+              </label>
+              {% endfor %}
             </div>
           </div>
           {% comment %}

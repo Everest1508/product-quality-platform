@@ -27,6 +27,8 @@ class Product(TenantScopedModel):
     # Last ticket number handed out. Only ever raised, so a deleted ticket's number
     # is never reused by the next one.
     ticket_counter = models.PositiveIntegerField(default=0)
+    # Name of an icon from apps.core.icons.PRODUCT_ICONS; blank shows the package icon.
+    icon = models.CharField(max_length=40, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

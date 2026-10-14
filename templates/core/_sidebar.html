@@ -56,13 +56,14 @@
     <div class="switch" x-data="{ open: false }" @keydown.escape.window="open = false">
       <button type="button" class="switch-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
         <span class="switch-dot"></span>
-        <span class="switch-glyph">{{ product.name|make_list|first|upper }}</span>
+        <span class="switch-glyph">{% product_icon product "switch-ic" %}</span>
         <span class="switch-name">{{ product.name }}</span>
         {% icon 'chevron-down' 'switch-caret' %}
       </button>
       <div class="switch-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
         {% for p in nav_products %}
         <a href="{% url 'products:product_board' pk=p.pk %}" class="switch-item {% if p.pk == product.pk %}current{% endif %}">
+          <span class="switch-pic">{% product_icon p "switch-ic" %}</span>
           <span class="switch-item-name">{{ p.name }}</span>
           {% if p.pk == product.pk %}{% icon 'check' 'switch-tick' %}{% endif %}
         </a>

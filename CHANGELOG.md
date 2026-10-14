@@ -10,6 +10,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.43.0] "Cuckoo" — 2026-10-14 · pick an icon for each product, and centred windows
+
+> In short: every product can now have its own icon, shown in the list and the product switcher, and pop-up windows open in the middle of the screen again.
+
+### New
+
+- **Choose an icon for each product.** Pick one when you create or edit a product, and it replaces the plain letter tile in the products list and the product switcher.
+
+### Better
+
+- **The product switcher shows each product with its icon.** Jump between products from the sidebar without going back to the list.
+
+### Fixed
+
+- **What's new and confirmation windows opened in the top-left corner.** They now open in the middle of the screen.
+- **The Settings page sat against the left edge.** Every tab in your profile is now centred.
+
 ## [1.42.0] "Bobolink" — 2026-10-14 · back to the fast, simple pages, with a how-to for the SDK
 
 > In short: the app is back to pages that load straight from the server in its new look, with dark mode, a friendlier Home, and a step-by-step SDK guide for every framework.

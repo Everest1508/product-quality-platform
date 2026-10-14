@@ -1,6 +1,8 @@
 from django import template
 
-from apps.core.icons import ICON_CHOICES, render_brand_mark, render_icon
+from apps.core.icons import (
+    ICON_CHOICES, PRODUCT_ICONS, product_icon_name, render_brand_mark, render_icon,
+)
 
 register = template.Library()
 
@@ -24,3 +26,16 @@ def icon_choices():
         (name, label, render_icon(name, "lp-icon-glyph"))
         for name, label in ICON_CHOICES
     ]
+
+
+@register.simple_tag
+def product_icon(product, css_class="ic"):
+    """A product's own icon, or the default one when none was chosen."""
+    name = product.get("icon") if isinstance(product, dict) else getattr(product, "icon", "")
+    return render_icon(product_icon_name(name or ""), css_class)
+
+
+@register.simple_tag
+def product_icon_choices():
+    """`[(name, svg)]` for the product form's icon picker."""
+    return [(n, render_icon(n, "lp-icon-glyph")) for n in PRODUCT_ICONS]

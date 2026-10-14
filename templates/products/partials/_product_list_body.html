@@ -3,7 +3,7 @@
 <div class="ledger">
   {% for product in page %}
   <article class="lrow t-{% if product.card_data.health == 'healthy' %}green{% elif product.card_data.health == 'critical' %}red{% elif product.card_data.health == 'warning' %}orange{% else %}off{% endif %}">
-    <span class="lmark">{{ product.name|slice:":1"|upper }}</span>
+    <span class="lmark">{% product_icon product "lmark-ic" %}</span>
     <div class="lmain">
       <div class="lt"><a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
         {% if product.key %}<span class="bdg bdg-outline">{{ product.key }}</span>{% endif %}

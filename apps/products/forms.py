@@ -27,10 +27,18 @@ class TicketKeyMixin:
         return key
 
 
-class ProductCreateForm(TicketKeyMixin, forms.ModelForm):
+class IconMixin:
+    def clean_icon(self):
+        from apps.core.icons import PRODUCT_ICONS
+
+        icon = (self.cleaned_data.get("icon") or "").strip()
+        return icon if icon in PRODUCT_ICONS else ""
+
+
+class ProductCreateForm(IconMixin, TicketKeyMixin, forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "key", "description", "default_environment", "discord_webhook_url"]
+        fields = ["name", "key", "icon", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={
                 "class": "form-input",
@@ -71,10 +79,10 @@ class ProductCreateForm(TicketKeyMixin, forms.ModelForm):
         return instance
 
 
-class ProductEditForm(TicketKeyMixin, forms.ModelForm):
+class ProductEditForm(IconMixin, TicketKeyMixin, forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "key", "description", "default_environment", "discord_webhook_url"]
+        fields = ["name", "key", "icon", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
             "description": forms.Textarea(attrs={"class": "form-input", "rows": 3}),
