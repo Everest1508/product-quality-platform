@@ -561,3 +561,27 @@ dialog.dlg[open]{animation:dlgIn .22s cubic-bezier(.22,1,.36,1);}
 .dlg-icon.danger{background:var(--red-bg);color:var(--red);}
 .dlg-icon .ic{width:20px;height:20px;}
 @media (prefers-reduced-motion:reduce){dialog.dlg[open]{animation:none}}
+
+/* ───────── Ledger: one full-width strip per item instead of a card ───────── */
+.ledger{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px;}
+.lrow{--tone:var(--border-strong);position:relative;display:grid;grid-template-columns:auto minmax(0,1.5fr) auto auto auto;align-items:center;gap:18px;padding:14px 18px 14px 22px;border-bottom:1px solid var(--line);transition:background .15s;}
+.lrow:last-child{border-bottom:0;}
+.lrow:hover{background:color-mix(in srgb,var(--panel) 50%,transparent);}
+.lrow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tone);}
+.lrow.t-green{--tone:var(--green)}.lrow.t-orange{--tone:var(--orange)}.lrow.t-red{--tone:var(--red)}.lrow.t-blue{--tone:var(--blue)}.lrow.t-off{--tone:var(--border-strong)}
+.lmark{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--navy-2);color:#fff;font-weight:650;font-size:15px;}
+html.dark .lmark{background:var(--panel);color:var(--text);}
+.lmain{min-width:0;}
+.lt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px;font-weight:600;}
+.lt a:hover{text-decoration:underline;}
+.ls{margin-top:2px;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lmetrics{display:flex;gap:22px;}
+.lmetrics>div{display:grid;justify-items:center;min-width:44px;}
+.lmetrics .v{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;}
+.lmetrics .v.is-zero{color:var(--muted-2);font-weight:500;}
+.lmetrics .l,.lspark .l{font-size:11.5px;color:var(--muted);}
+.lspark{display:grid;gap:3px;justify-items:end;min-width:96px;}
+.lspark-bars{display:flex;align-items:flex-end;gap:2px;height:26px;width:84px;}
+.lspark-bars i{flex:1;min-height:3px;border-radius:2px;background:var(--border-strong);}
+.lactions{display:flex;align-items:center;gap:6px;}
+@media (max-width:1100px){.lrow{grid-template-columns:auto minmax(0,1fr);}.lmetrics,.lspark,.lactions{grid-column:2;justify-self:start;}}
