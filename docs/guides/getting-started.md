@@ -14,7 +14,8 @@ shows up in a list, in search, or in a count.
 
 ## Find things fast
 
-* Press **Ctrl K** (Cmd K on a Mac) or **/** to search tickets, errors, products and pages.
+* Press **Ctrl K** (Cmd K on a Mac) or **/** to search tickets, errors, products and pages, or to run an action such as requesting leave.
+* Press **?** to see every keyboard shortcut. **g** then a letter jumps to a page, **t** switches light and dark, and **[** folds the sidebar.
   Typing a ticket number jumps straight to it.
 * The bell in the sidebar lists what is waiting for you: assignments, mentions,
   decisions on your leave.
