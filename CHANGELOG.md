@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.48.0] "Pewit" — 2026-10-14 · the Projects release goes live
+
+> In short: this release carries the new Projects pages, the Pod and the project log to everyone, and updates the database on its own when the app starts.
+
+### Better
+
+- **The Projects pages are live.** The board, the journey view, the project log and the clearer project form are all part of this release, and the database is updated automatically the first time the app starts.
+
 ## [1.47.0] "Yellowthroat" — 2026-10-14 · one Projects list, clearer forms and roomier pages
 
 > In short: products and projects are now one thing called Projects, the project form says what is needed and what each part is for, and pages have more breathing room.
