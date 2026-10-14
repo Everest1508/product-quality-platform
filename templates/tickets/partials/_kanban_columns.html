@@ -28,7 +28,7 @@
         {% endif %}
       </div>
       <div class="card-title">
-        <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}">{{ ticket.title }}</a>
+        <a href="{% url 'tickets:ticket_detail' pk=ticket.pk %}" data-peek="{{ ticket.key }} · {{ ticket.get_status_display }}&#10;{{ ticket.get_ticket_type_display }} · {{ ticket.get_priority_display }} priority&#10;{% for a in ticket.assignees.all %}{{ a.get_full_name|default:a.username }}{% if not forloop.last %}, {% endif %}{% empty %}Nobody assigned{% endfor %}{% if ticket.deadline %}&#10;{% if ticket.is_overdue %}Overdue since{% else %}Due{% endif %} {{ ticket.deadline|date:'M j' }}{% endif %}&#10;Updated {{ ticket.updated_at|timesince }} ago">{{ ticket.title }}</a>
       </div>
       <div class="card-meta">
         <span class="card-type {{ ticket.ticket_type }}">{{ ticket.get_ticket_type_display }}</span>

@@ -14,6 +14,7 @@
     <p class="text-sm text-muted" style="margin-top:4px;">Tickets from every product you can access. Use the product filter to narrow to one.</p>
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
+    <button type="button" class="btn" id="compact-btn" aria-pressed="false" title="Compact cards" onclick="var on=document.body.classList.toggle('board-compact');this.setAttribute('aria-pressed',on);this.classList.toggle('is-on',on);try{localStorage.setItem('pq:board-compact',on?'1':'0')}catch(e){}">Compact</button>
     <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Select</button>
     <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "tickets:ticket_bulk_delete" %}')">
       Delete Selected (<span id="bulk-delete-count">0</span>)
@@ -33,4 +34,5 @@
 </div>
 
 {% include "tickets/partials/_kanban_drag.html" %}
+<script>try{if(localStorage.getItem('pq:board-compact')==='1'){document.body.classList.add('board-compact');var b=document.getElementById('compact-btn');if(b){b.classList.add('is-on');b.setAttribute('aria-pressed','true')}}}catch(e){}</script>
 {% endblock %}

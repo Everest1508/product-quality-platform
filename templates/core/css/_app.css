@@ -443,7 +443,7 @@
   .kanban-header .dot.closed{background:var(--gray);}
   .kanban-count{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1px 8px;font-weight:500;}
   .kanban-cards{padding:8px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;min-height:60px;}
-  .kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;transition:box-shadow .15s,transform .15s,opacity .15s;cursor:grab;position:relative;}
+  .kanban-card{animation:cardDrop .35s cubic-bezier(.22,1,.36,1);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;transition:box-shadow .15s,transform .15s,opacity .15s;cursor:grab;position:relative;}
   .kanban-card:hover{box-shadow:0 4px 12px rgba(13,17,23,.08);transform:translateY(-1px);}
   .kanban-card:active{cursor:grabbing;}
   .kanban-card.dragging{opacity:.4;transform:rotate(2deg) scale(.98);box-shadow:none;}
