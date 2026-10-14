@@ -27,7 +27,14 @@ class ListView(CompanyMemberRequiredMixin, View):
         only_unread = request.GET.get("filter") == "unread"
         if only_unread:
             rows = rows.filter(read_at__isnull=True)
+        kinds = [(k, label) for k, label in Notification.Kind.choices if rows.filter(kind=k).exists()]
+        kind = request.GET.get("kind", "")
+        if kind in Notification.Kind.values:
+            rows = rows.filter(kind=kind)
+        else:
+            kind = ""
         return render(request, "notifications/list.html", {
+            "kinds": kinds, "kind": kind,
             "notifications": rows[:100],
             "only_unread": only_unread,
             "unread": service.unread_count(request.user, request.company),

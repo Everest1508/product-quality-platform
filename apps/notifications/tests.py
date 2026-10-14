@@ -203,3 +203,12 @@ class LiveDeliveryTest(TransactionTestCase):
             await comm.disconnect()
 
         async_to_sync(run)()
+
+
+class KindFilterTest(ViewsTest):
+    def test_the_list_can_be_filtered_by_kind(self):
+        service.notify(user=self.bob, company=self.company, kind="mention", title="Zed mentioned you", actor=self.ann)
+        r = self.client.get(reverse("notifications:list") + "?kind=mention")
+        self.assertContains(r, "Zed mentioned you")
+        self.assertNotContains(r, ">Mine<")
+        self.assertContains(r, 'name="kind"')

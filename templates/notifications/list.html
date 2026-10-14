@@ -10,9 +10,17 @@
     <p class="sub">Assignments, mentions, comments, leave and attendance decisions.</p>
   </div>
   <div class="pg-actions">
+    {% if kinds|length > 1 %}
+    <form method="get" style="display:inline">
+      {% if only_unread %}<input type="hidden" name="filter" value="unread">{% endif %}
+      <select name="kind" class="form-input" aria-label="Type" style="width:11rem" onchange="this.form.submit()">
+        <option value="">All types</option>{% for k, label in kinds %}<option value="{{ k }}"{% if kind == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </form>
+    {% endif %}
     <div class="seg" role="group" aria-label="Filter">
-      <a class="{% if not only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}">All</a>
-      <a class="{% if only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}?filter=unread">Unread</a>
+      <a class="{% if not only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}{% if kind %}?kind={{ kind }}{% endif %}">All</a>
+      <a class="{% if only_unread %}is-on{% endif %}" href="{% url 'notifications:list' %}?filter=unread{% if kind %}&kind={{ kind }}{% endif %}">Unread</a>
     </div>
     {% if unread %}
     <form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}<button type="submit" class="btn">{% icon 'check' 'ic' %}Mark all read</button></form>
