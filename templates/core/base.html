@@ -595,8 +595,13 @@
 
   function positionPopover(input) {
     var rect = input.getBoundingClientRect();
-    popover.style.top = (rect.bottom + window.scrollY + 6) + 'px';
-    popover.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 300) + 'px';
+    // A modal <dialog> sits in the top layer, above everything in <body>, so a
+    // popover opened from inside one has to live inside it to be seen.
+    var host = input.closest('dialog[open]') || document.body;
+    if (popover.parentNode !== host) host.appendChild(popover);
+    popover.style.position = 'fixed';
+    popover.style.top = (rect.bottom + 6) + 'px';
+    popover.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 300)) + 'px';
     popover.style.display = 'block';
   }
 
@@ -726,8 +731,11 @@
 
   function positionSelectPopover(selectEl) {
     var rect = selectEl.getBoundingClientRect();
-    selectPopover.style.top = (rect.bottom + window.scrollY + 4) + 'px';
-    selectPopover.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 320) + 'px';
+    var host = selectEl.closest('dialog[open]') || document.body;
+    if (selectPopover.parentNode !== host) host.appendChild(selectPopover);
+    selectPopover.style.position = 'fixed';
+    selectPopover.style.top = (rect.bottom + 4) + 'px';
+    selectPopover.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 320)) + 'px';
     selectPopover.style.minWidth = Math.max(rect.width, 160) + 'px';
     selectPopover.style.display = 'block';
   }
