@@ -5,6 +5,7 @@
 
 {% block content %}
 {% url 'dsr:dsr_sheet' as here %}
+{% include "core/_mywork_tabs.html" with here="dsr" %}
 <div class="pg-head">
   <div>
     <h1>Daily Status Report</h1>
@@ -53,22 +54,27 @@
 </section>
 {% endif %}
 
-{% if not can_log and rng == 'today' and locked_reason %}<div class="hm-note is-warn" style="margin-bottom:14px">{{ locked_reason }}</div>{% endif %}
-
-{% if waiting %}
-  <div class="alert-bar is-warn" role="status">
-    <p><b>{% if waiting|length == 1 %}A ticket that was open a long time was added to your DSR.{% else %}{{ waiting|length }} long-open tickets were added to your DSR.{% endif %}</b>
-      {% for e in waiting|slice:":2" %}{{ e.ticket.key|default:e.task_name }} (open for {{ e.elapsed }}){% if not forloop.last %}, {% endif %}{% endfor %}. Add the time you worked on {% if waiting|length == 1 %}it{% else %}them{% endif %} today. Until then {% if waiting|length == 1 %}it counts{% else %}they count{% endif %} for nothing.</p>
-    <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('dsr-needs').showModal()">{% icon 'clock' 'ic' %}Add time</button>
-  </div>
-{% endif %}
-
-{% if work_suggestions %}
-  <div class="alert-bar">
-    <p><b>{{ work_suggestions|length }} ticket{{ work_suggestions|length|pluralize }}</b> you worked on today {{ work_suggestions|length|pluralize:"isn’t,aren’t" }} in your DSR yet: {% for s in work_suggestions|slice:":3" %}{{ s.key }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if work_suggestions|length > 3 %}…{% endif %}.</p>
-    <span style="display:flex;gap:8px"><button type="button" class="btn btn-sm" onclick="document.getElementById('dsr-sugg').showModal()">Review</button>
-      <form method="post" action="{% url 'dsr:dsr_suggestion_add_all' %}?user_id={{ target.pk }}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary">{% icon 'plus' 'ic' %}Add all</button></form></span>
-  </div>
+{% if waiting or work_suggestions or locked_reason and not can_log and rng == 'today' %}
+<section class="dsr-notices" aria-label="Needs your attention">
+  <h2>{% icon 'bell' 'ic' %}Needs your attention</h2>
+  <ul>
+    {% if not can_log and rng == 'today' and locked_reason %}
+    <li><span class="dsr-n-dot is-info"></span><p>{{ locked_reason }}</p></li>
+    {% endif %}
+    {% if waiting %}
+    <li><span class="dsr-n-dot is-warn"></span>
+      <p><b>{% if waiting|length == 1 %}A ticket that was open a long time was added to your DSR.{% else %}{{ waiting|length }} long-open tickets were added to your DSR.{% endif %}</b>
+        {% for e in waiting|slice:":2" %}{{ e.ticket.key|default:e.task_name }} (open for {{ e.elapsed }}){% if not forloop.last %}, {% endif %}{% endfor %}. Add the time you worked on {% if waiting|length == 1 %}it{% else %}them{% endif %} today; until then {% if waiting|length == 1 %}it counts{% else %}they count{% endif %} for nothing.</p>
+      <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('dsr-needs').showModal()">{% icon 'clock' 'ic' %}Add time</button></li>
+    {% endif %}
+    {% if work_suggestions %}
+    <li><span class="dsr-n-dot"></span>
+      <p><b>{{ work_suggestions|length }} ticket{{ work_suggestions|length|pluralize }}</b> you worked on today {{ work_suggestions|length|pluralize:"isn’t,aren’t" }} in your DSR yet: {% for s in work_suggestions|slice:":3" %}{{ s.key }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if work_suggestions|length > 3 %}…{% endif %}.</p>
+      <span class="dsr-n-actions"><button type="button" class="btn btn-sm" onclick="document.getElementById('dsr-sugg').showModal()">Review</button>
+        <form method="post" action="{% url 'dsr:dsr_suggestion_add_all' %}?user_id={{ target.pk }}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary">{% icon 'plus' 'ic' %}Add all</button></form></span></li>
+    {% endif %}
+  </ul>
+</section>
 {% endif %}
 
 <div class="card-flush">

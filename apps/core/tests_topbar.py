@@ -53,7 +53,7 @@ class TopbarFeaturesTest(TestCase):
 
     def test_home_has_the_charts(self):
         page = self.client.get(reverse("dashboards:index")).content.decode()
-        for marker in ("Hours this week", "This week", "hm-bars", "hm-kpis"):
+        for marker in ("This week", "hm-bars", "in your DSR"):
             self.assertIn(marker, page)
 
     def test_products_page_shows_summary_tiles(self):

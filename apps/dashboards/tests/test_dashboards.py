@@ -503,8 +503,10 @@ class PersonalDashboardTest(TestCase):
             "Theirs", [e.task_name for e in data["dsr"]["dsr_recent"]]
         )
 
-    def test_dsr_empty_state_explains_itself(self):
-        self.assertContains(self.get(), "0 entries this week")
+    def test_the_today_card_shows_how_much_of_the_day_is_in_the_dsr(self):
+        response = self.get()
+        self.assertContains(response, "in your DSR")
+        self.assertEqual(response.context["dsr_today"]["percent"], 0)
 
     def test_htmx_request_returns_the_partial(self):
         response = self.get(reverse("dashboards:index"))

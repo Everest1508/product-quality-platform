@@ -3,6 +3,7 @@
 {% block title %}Leave calendar — PQ Platform{% endblock %}
 
 {% block content %}
+{% include "core/_mywork_tabs.html" with here="calendar" %}
 <nav class="breadcrumbs">
   <a href="{% url 'leave:my_leave' %}">Leave</a>
   <span class="sep">/</span>

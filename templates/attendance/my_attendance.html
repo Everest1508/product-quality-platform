@@ -3,6 +3,7 @@
 {% block title %}My Attendance — PQ Platform{% endblock %}
 
 {% block content %}
+{% include "core/_mywork_tabs.html" with here="attendance" %}
 <nav class="breadcrumbs">
   <a href="{% url 'attendance:my_attendance' %}">Attendance</a>
   <span class="sep">/</span>

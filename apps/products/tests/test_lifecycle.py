@@ -156,8 +156,12 @@ class ProjectPagesTests(LifecycleBase):
         return reverse(f"products:{name}", args=args)
 
     def test_board_journey_lifecycle_and_plan_pages_open(self):
-        for name, args in (("project_board", ()), ("project_lifecycle", (self.product.pk,)), ("project_details", (self.product.pk,))):
+        for name, args in (("project_board", ()), ("project_lifecycle", (self.product.pk,)), ("product_detail", (self.product.pk,))):
             self.assertEqual(self.client.get(self.url(name, *args)).status_code, 200, name)
+        # the old plan page now lives inside Settings
+        r = self.client.get(self.url("project_details", self.product.pk))
+        self.assertRedirects(r, self.url("product_detail", self.product.pk) + "#plan", fetch_redirect_response=False)
+        self.assertContains(self.client.get(self.url("product_detail", self.product.pk)), 'id="plan"')
         self.assertEqual(self.client.get(self.url("project_board") + "?view=journey").status_code, 200)
 
     def test_moving_needs_a_reason_and_works_over_json(self):

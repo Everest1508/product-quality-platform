@@ -187,7 +187,11 @@ class ProductDetailView(CompanyMemberRequiredMixin, View):
         versions = product.versions.all()
         api_keys = product.api_keys.all()
         milestones = product.milestones.all()
+        from apps.products.project_views import ProjectDetailsView
+
+        plan = ProjectDetailsView()._context(request, product)
         return render(request, "products/product_detail.html", {
+            **plan,
             "product": product,
             "versions": versions,
             "api_keys": api_keys,

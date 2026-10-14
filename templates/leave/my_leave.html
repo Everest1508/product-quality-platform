@@ -4,6 +4,7 @@
 {% block title %}My Leave — PQ Platform{% endblock %}
 
 {% block content %}
+{% include "core/_mywork_tabs.html" with here="leave" %}
 <nav class="breadcrumbs">
   <a href="{% url 'leave:my_leave' %}">Leave</a>
   <span class="sep">/</span>

@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views import View
@@ -227,7 +228,7 @@ class ProjectDetailsView(CompanyMemberRequiredMixin, View):
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
-        return render(request, "products/project_details.html", self._context(request, product))
+        return redirect(reverse("products:product_detail", kwargs={"pk": pk}) + "#plan")
 
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk, company=request.company)
@@ -248,7 +249,7 @@ class ProjectDetailsView(CompanyMemberRequiredMixin, View):
             product.refresh_from_db()
             return render(request, "products/project_details.html", self._context(request, product, str(exc)), status=400)
         messages.success(request, "Project plan saved.")
-        return redirect("products:project_details", pk=pk)
+        return redirect(reverse("products:product_detail", kwargs={"pk": pk}) + "#plan")
 
 
 class ProjectCrunchAddView(CompanyMemberRequiredMixin, View):

@@ -916,3 +916,52 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 .dsr-today.is-ok .dsr-today-bar i{background:var(--green);}.dsr-today.is-low .dsr-today-bar i{background:var(--purple);}
 .dsr-today-pct{font-size:var(--fs-md);font-weight:650;font-variant-numeric:tabular-nums;min-width:3.2ch;text-align:right;}
 @media (max-width:760px){.dsr-today{grid-template-columns:1fr auto;}.dsr-today-bar{grid-column:1 / -1;order:3;}}
+
+/* ───────── Sidebar: a fold for the Admin group, and the My work tabs ───────── */
+.mywork-tabs{margin:0 0 var(--space-5);}
+.nav-fold .fold-head{width:100%;justify-content:flex-start;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;}
+.nav-fold .fold-head .side-label{flex:1;text-align:left;}
+.nav-fold .fold-caret{margin-left:auto;width:14px;height:14px;transition:transform .25s cubic-bezier(.22,1,.36,1);}
+.nav-fold.is-open .fold-caret{transform:rotate(180deg);}
+.nav-fold .fold-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s cubic-bezier(.22,1,.36,1);}
+.nav-fold.is-open .fold-body{grid-template-rows:1fr;}
+.nav-fold .fold-inner{overflow:hidden;min-height:0;}
+html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
+
+/* ───────── Accordion sections (project settings) ───────── */
+.acc{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);margin-bottom:var(--space-4);transition:border-color .2s,box-shadow .2s;}
+.acc[open]{border-color:var(--border-strong);box-shadow:var(--shadow-sm);}
+.acc>summary{display:flex;align-items:baseline;gap:var(--space-3);padding:var(--space-4) var(--space-5);cursor:pointer;list-style:none;font-size:var(--fs-md);font-weight:600;border-radius:var(--radius-lg);transition:background .15s;}
+.acc>summary::-webkit-details-marker{display:none;}
+.acc>summary:hover{background:var(--panel);}
+.acc>summary small{font-size:var(--fs-sm);font-weight:400;color:var(--muted);}
+.acc>summary::after{content:"";margin-left:auto;align-self:center;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .25s cubic-bezier(.22,1,.36,1);}
+.acc[open]>summary::after{transform:rotate(-135deg);}
+.acc>.acc-body{padding:var(--space-2) var(--space-5) var(--space-5);}
+.acc[open]>.acc-body{animation:accIn .3s cubic-bezier(.22,1,.36,1);}
+@keyframes accIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.pj-settings #overview{margin-bottom:var(--space-6);}
+
+/* ───────── Simpler Home: Today carries the DSR bar, This week is one wide card, the rest sits under More ───────── */
+.hm-bento .hm-tiles>.hm-card{grid-column:1 / -1;}
+.hm-bento .hm-bars{height:96px;}
+.hm-dsr{display:grid;gap:var(--space-2);margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--line);color:inherit;}
+.hm-dsr-text{font-size:var(--fs-sm);color:var(--muted);}.hm-dsr-text b{color:var(--text);font-weight:600;}
+.hm-dsr:hover .hm-dsr-text{color:var(--text);}
+.hm-meter.is-low i{background:var(--purple);}
+.hm-more-acc{margin-top:var(--space-5);}
+.hm-leave-card{max-width:520px;}
+@media (max-width:1180px){.hm-bento .hm-tiles>.hm-card:last-child{grid-column:1 / -1;}}
+
+/* ───────── One notices card on the DSR instead of stacked bars ───────── */
+.dsr-notices{margin:0 0 var(--space-5);padding:var(--space-4) var(--space-5);border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+.dsr-notices h2{display:flex;align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);font-size:var(--fs-sm);font-weight:600;color:var(--muted);}
+.dsr-notices h2 .ic{width:15px;height:15px;}
+.dsr-notices ul{list-style:none;margin:0;padding:0;}
+.dsr-notices li{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0;font-size:var(--fs-base);}
+.dsr-notices li+li{border-top:1px solid var(--line);}
+.dsr-notices li p{margin:0;flex:1;min-width:0;line-height:1.5;}
+.dsr-n-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.dsr-n-dot.is-warn{background:var(--orange);}.dsr-n-dot.is-info{background:var(--blue);}
+.dsr-n-actions{display:flex;gap:var(--space-2);flex:none;}.dsr-n-actions form{margin:0;}
+@media (max-width:720px){.dsr-notices li{flex-wrap:wrap;}}

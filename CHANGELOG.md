@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.50.0] "Siskin" — 2026-10-14 · a simpler app, with smoother movement
+
+> In short: the sidebar is much shorter, project settings live in one place, Home keeps only what you need today, the DSR has one notices card, and the whole app moves more smoothly.
+
+### Better
+
+- **A shorter sidebar.** Home, Projects, Tickets, Errors, Feedback, My work and Reports are always there, and everything for admins is folded into one Admin group that remembers whether you left it open.
+- **My work brings your own pages together.** Attendance, Leave, Calendar, DSR and Payslips share one set of tabs, so they feel like one place.
+- **Project settings are in one place.** The Plan, versions and webhook, API keys and team access are sections on a single Settings page that you open one at a time.
+- **A calmer Home.** It keeps your tickets, today's punch with how much of the day is in your DSR, your to-do and your week, and puts leave balance under More.
+- **One notices card on the DSR.** Long-open tickets, tickets you have not logged and locked days now appear in a single Needs your attention card instead of stacked bars.
+- **Smoother movement everywhere.** Pages fade between each other, cards and rows rise in one after another, buttons respond when pressed, menus pop open, folds slide, and bars grow to their value. It all switches off if your device is set to reduce motion.
+
 ## [1.49.0] "Greenfinch" — 2026-10-14 · pick any dates on the DSR and see today's progress
 
 > In short: the Daily Status Report has From and To date pickers, and a bar showing how much of today's time at work is in your DSR.

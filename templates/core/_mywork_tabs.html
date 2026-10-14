@@ -1,0 +1,8 @@
+{% comment %}"My work": attendance, leave, the leave calendar, the DSR and payslips as one set of tabs. Needs `here`.{% endcomment %}
+<div class="seg mywork-tabs" role="tablist" aria-label="My work">
+  <a href="{% url 'attendance:my_attendance' %}" class="{% if here == 'attendance' %}is-on{% endif %}">Attendance</a>
+  <a href="{% url 'leave:my_leave' %}" class="{% if here == 'leave' %}is-on{% endif %}">Leave</a>
+  <a href="{% url 'leave:calendar' %}" class="{% if here == 'calendar' %}is-on{% endif %}">Calendar</a>
+  <a href="{% url 'dsr:dsr_sheet' %}" class="{% if here == 'dsr' %}is-on{% endif %}">DSR</a>
+  <a href="{% url 'payroll:my_payslips' %}" class="{% if here == 'payslips' %}is-on{% endif %}">Payslips</a>
+</div>

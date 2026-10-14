@@ -101,6 +101,7 @@ title, a subtitle, its actions and its body.
   }
 </style>
 
+{% if pay_section == 'mine' %}{% include "core/_mywork_tabs.html" with here="payslips" %}{% endif %}
 {% include "core/_breadcrumbs.html" %}
 
 <div class="head">
@@ -112,9 +113,7 @@ title, a subtitle, its actions and its body.
 </div>
 
 <nav class="tabs">
-  {% if pay_section == 'mine' %}
-    <a class="tab active" href="{% url 'payroll:my_payslips' %}">My payslips</a>
-  {% else %}
+  {% if pay_section != 'mine' %}
     <a class="tab{% if pay_section == 'runs' %} active{% endif %}" href="{% url 'payroll:run_list' %}">Runs</a>
     <a class="tab{% if pay_section == 'salaries' %} active{% endif %}" href="{% url 'payroll:profiles' %}">Salaries</a>
     <a class="tab{% if pay_section == 'holidays' %} active{% endif %}" href="{% url 'payroll:holidays' %}">Holidays</a>

@@ -26,27 +26,32 @@
        class="side-item {% if u == 'product_list' or u == 'product_create' or u == 'project_board' or u == 'project_new' %}active{% endif %}">
       {% icon 'package' %} <span class="side-label">Projects</span>
     </a>
-    <a href="{% url 'tickets:ticket_board' %}" data-label="All tickets"
+    <a href="{% url 'tickets:ticket_board' %}" data-label="Tickets"
        {% if u == 'ticket_board' or u == 'ticket_kanban' or u == 'ticket_list' or u == 'ticket_create' or u == 'ticket_detail' or u == 'ticket_edit' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'ticket_board' or u == 'ticket_kanban' or u == 'ticket_list' or u == 'ticket_create' or u == 'ticket_detail' or u == 'ticket_edit' %}active{% endif %}">
-      {% icon 'ticket' %} <span class="side-label">All tickets</span>
+      {% icon 'ticket' %} <span class="side-label">Tickets</span>
       {% if nav_open_tickets %}<span class="side-badge">{{ nav_open_tickets }}</span>{% endif %}
     </a>
-    <a href="{% url 'errors:error_list' %}" data-label="All errors"
+    <a href="{% url 'errors:error_list' %}" data-label="Errors"
        {% if u == 'error_list' or u == 'error_detail' or u == 'error_create' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'error_list' or u == 'error_detail' or u == 'error_create' %}active{% endif %}">
-      {% icon 'triangle-alert' %} <span class="side-label">All errors</span>
+      {% icon 'triangle-alert' %} <span class="side-label">Errors</span>
       {% if nav_open_errors %}<span class="side-badge">{{ nav_open_errors }}</span>{% endif %}
+    </a>
+    <a href="{% url 'feedback:cs_hub' %}" data-label="Feedback"
+       {% if u == 'cs_hub' or u == 'survey_list' or u == 'survey_create' or u == 'survey_detail' or u == 'survey_toggle' or u == 'survey_delete' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'cs_hub' or u == 'survey_list' or u == 'survey_create' or u == 'survey_detail' or u == 'survey_toggle' or u == 'survey_delete' %}active{% endif %}">
+      {% icon 'headset' %} <span class="side-label">Feedback</span>
+    </a>
+    <a href="{% url 'attendance:my_attendance' %}" data-label="My work"
+       {% if u == 'my_attendance' or u == 'punch' or u == 'my_leave' or u == 'apply' or u == 'calendar' or u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' or u == 'my_payslips' or u == 'my_payslip' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'my_attendance' or u == 'punch' or u == 'my_leave' or u == 'apply' or u == 'calendar' or u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' or u == 'my_payslips' or u == 'my_payslip' %}active{% endif %}">
+      {% icon 'clock' %} <span class="side-label">My work</span>
     </a>
     <a href="{% url 'dashboards:reports' %}" data-label="Reports"
        {% if u == 'reports' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'reports' %}active{% endif %}">
       {% icon 'chart-column' %} <span class="side-label">Reports</span>
-    </a>
-    <a href="{% url 'automation:rule_list' %}" data-label="All automation"
-       {% if u == 'rule_list' or u == 'rule_create' or u == 'rule_edit' or u == 'rule_delete' or u == 'rule_toggle' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'rule_list' or u == 'rule_create' or u == 'rule_edit' or u == 'rule_delete' or u == 'rule_toggle' %}active{% endif %}">
-      {% icon 'sparkles' %} <span class="side-label">All automation</span>
     </a>
   </nav>
 
@@ -113,48 +118,18 @@
   </div>
   {% endif %}
 
-  <nav class="nav-section" aria-label="Operations">
-    <div class="nav-label">Operations</div>
-    <a href="{% url 'feedback:cs_hub' %}" data-label="CS Hub"
-       {% if u == 'cs_hub' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'cs_hub' %}active{% endif %}">
-      {% icon 'headset' %} <span class="side-label">CS Hub</span>
-    </a>
-    <a href="{% url 'feedback:survey_list' %}" data-label="All feedback"
-       {% if u == 'survey_list' or u == 'survey_create' or u == 'survey_detail' or u == 'survey_toggle' or u == 'survey_delete' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'survey_list' or u == 'survey_create' or u == 'survey_detail' or u == 'survey_toggle' or u == 'survey_delete' %}active{% endif %}">
-      {% icon 'file-text' %} <span class="side-label">All feedback</span>
-    </a>
-    <a href="{% url 'attendance:my_attendance' %}" data-label="My attendance"
-       {% if u == 'my_attendance' or u == 'punch' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'my_attendance' or u == 'punch' %}active{% endif %}">
-      {% icon 'clock' %} <span class="side-label">My attendance</span>
-    </a>
-    <a href="{% url 'leave:my_leave' %}" data-label="My leave"
-       {% if u == 'my_leave' or u == 'apply' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'my_leave' or u == 'apply' %}active{% endif %}">
-      {% icon 'calendar-days' %} <span class="side-label">My leave</span>
-    </a>
-    <a href="{% url 'leave:calendar' %}" data-label="Leave calendar"
-       {% if u == 'calendar' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'calendar' %}active{% endif %}">
-      {% icon 'calendar-days' %} <span class="side-label">Leave calendar</span>
-    </a>
-    <a href="{% url 'dsr:dsr_sheet' %}" data-label="DSR Sheet"
-       {% if u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' %}active{% endif %}">
-      {% icon 'clipboard-list' %} <span class="side-label">DSR Sheet</span>
-    </a>
-    <a href="{% url 'payroll:my_payslips' %}" data-label="My payslips"
-       {% if u == 'my_payslips' or u == 'my_payslip' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'my_payslips' or u == 'my_payslip' %}active{% endif %}">
-      {% icon 'banknote' %} <span class="side-label">My payslips</span>
-    </a>
-  </nav>
 
   {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-  <nav class="nav-section" aria-label="Admin">
-    <div class="nav-label">Admin</div>
+  <nav class="nav-section nav-fold" aria-label="Admin" x-data="{ open: false }"
+       x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('pqAdminFold') === '1'"
+       :class="{ 'is-open': open }">
+    <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqAdminFold', open ? '1' : '0') } catch (e) {}"
+            :aria-expanded="open.toString()" data-label="Admin">
+      {% icon 'settings' %} <span class="side-label">Admin</span>
+      {% if nav_pending_corrections %}<span class="side-badge" x-show="!open">{{ nav_pending_corrections }}</span>{% endif %}
+      {% icon 'chevron-down' 'fold-caret' %}
+    </button>
+    <div class="fold-body"><div class="fold-inner">
     <a href="{% url 'attendance:team_attendance' %}" data-label="Team attendance"
        {% if u == 'team_attendance' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'team_attendance' %}active{% endif %}">
@@ -201,6 +176,12 @@
        class="side-item {% if u == 'audit_log' %}active{% endif %}">
       {% icon 'history' %} <span class="side-label">Audit log</span>
     </a>
+    <a href="{% url 'automation:rule_list' %}" data-label="Automation"
+       {% if u == 'rule_list' or u == 'rule_create' or u == 'rule_edit' or u == 'rule_delete' or u == 'rule_toggle' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'rule_list' or u == 'rule_create' or u == 'rule_edit' or u == 'rule_delete' or u == 'rule_toggle' %}active{% endif %}">
+      {% icon 'sparkles' %} <span class="side-label">Automation</span>
+    </a>
+    </div></div>
   </nav>
   {% endif %}
   {% endwith %}

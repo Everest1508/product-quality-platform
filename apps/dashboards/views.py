@@ -38,6 +38,9 @@ class DashboardView(CompanyMemberRequiredMixin, View):
         hour = timezone.localtime().hour
         from apps.core import kudos
 
+        from apps.dsr.views import _today_work
+
+        data["dsr_today"] = _today_work(request.company, request.user, timezone.localdate())
         data["now"] = timezone.localtime()
         data["streak"] = kudos.on_time_streak(request.company, request.user)
         data["milestones"] = kudos.milestones(request.company, request.user)

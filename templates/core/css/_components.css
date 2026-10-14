@@ -653,3 +653,55 @@ dialog.cl.is-closing{animation:clOut .2s ease-in forwards;}
 [data-tip]::before{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 7px);transform:translate(-50%,4px);z-index:90;padding:4px 8px;border-radius:6px;background:var(--tooltip-bg);color:var(--tooltip-text);font-size:11.5px;font-weight:500;line-height:1.3;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s .25s,transform .15s .25s;}
 [data-tip]:hover::before,[data-tip]:focus-visible::before{opacity:1;transform:translate(-50%,0);}
 @media (hover:none){[data-tip]::before{display:none;}}
+
+
+/* ───────── Motion ─────────
+   Short and quiet. Everything animated lives inside no-preference, so reduced motion gets the plain page. */
+@media (prefers-reduced-motion:no-preference){
+  /* Moving between pages cross-fades the content; the sidebar and top bar stay put. */
+  @view-transition{navigation:auto;}
+  .sidebar{view-transition-name:pq-sidebar;}
+  .topbar{view-transition-name:pq-topbar;}
+  ::view-transition-old(root){animation:pqFadeOut var(--dur-2) ease both;}
+  ::view-transition-new(root){animation:pqRiseIn var(--dur-3) var(--ease-out) both;}
+  @keyframes pqFadeOut{to{opacity:0}}
+  @keyframes pqRiseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes pqPop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes pqGrowX{from{width:0}}
+  @keyframes pqGrowY{from{height:0}}
+
+  /* Cards and rows rise in one after another (the first twelve), so a page assembles instead of appearing. */
+  :is(.hm-bento>*,.hm-bento .hm-card,.ledger>.lrow,.pj-cards>.pj-card,.pj-journey>.pj-row,.pj-formwrap>*,.pj-sections>*,.pj-feed .pj-entry,.pj-side>*,.dsr-notices,.dsr-today,.acc){
+    animation:pqRiseIn .45s var(--ease-out) both;
+  }
+  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(2){animation-delay:40ms;}
+  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(3){animation-delay:80ms;}
+  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(4){animation-delay:120ms;}
+  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(5){animation-delay:160ms;}
+  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(6){animation-delay:200ms;}
+  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(n+7){animation-delay:240ms;}
+
+  /* Things you can press respond. */
+  .btn,.icon-btn,.seg a,.seg button,.side-item,.switch-btn,.chip{transition:background var(--dur-1) ease,border-color var(--dur-1) ease,color var(--dur-1) ease,box-shadow var(--dur-2) ease,transform var(--dur-1) ease;}
+  .btn:active,.icon-btn:active{transform:scale(.97);}
+  .btn-primary:hover{box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 35%,transparent);}
+  .side-item .ic{transition:transform var(--dur-2) var(--ease-out);}
+  .side-item:hover .ic{transform:scale(1.12);}
+  .pj-card,.hm-kpi,.lrow,.pj-person,.pj-phase span{transition:transform var(--dur-2) var(--ease-out),box-shadow var(--dur-2) ease,border-color var(--dur-2) ease,background var(--dur-2) ease;}
+  .pj-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border-strong);}
+  .pj-card.is-dragging{transform:rotate(1.5deg) scale(1.02);}
+  .hm-card,.acc{transition:box-shadow var(--dur-2) ease,border-color var(--dur-2) ease;}
+  .hm-card:hover{box-shadow:var(--shadow-md);}
+
+  /* Menus and popovers open with a short pop. */
+  .dd-menu,.switch-menu,.side-user-menu,.pq-select-popover,.pq-datepicker-popover,.mention-list,.pj-suggest,.kt-pop-body{transform-origin:top;animation:pqPop .16s var(--ease-out) both;}
+  .mention-list{transform-origin:bottom;}
+
+  /* Bars grow to their value when they appear. */
+  :is(.hm-meter,.dsr-today-bar) i{animation:pqGrowX .9s var(--ease-out) .15s both;}
+  .hm-bar-track i{animation:pqGrowY .8s var(--ease-out) .15s both;}
+
+  /* Content swapped in by htmx fades in instead of snapping. */
+  .htmx-added{animation:pqRiseIn .3s var(--ease-out) both;}
+  .htmx-request{opacity:.7;transition:opacity var(--dur-2) ease;}
+}

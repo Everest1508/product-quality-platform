@@ -9,12 +9,6 @@
 {% endif %}
 
 <div class="hm-bento">
-<div class="hm-kpis">
-  <a class="hm-kpi" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ my_ticket_count }}">{{ my_ticket_count }}</span><span class="l">Open tickets</span></a>
-  <a class="hm-kpi{% if overdue_count %} is-alert{% endif %}" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ overdue_count }}">{{ overdue_count }}</span><span class="l">Overdue</span></a>
-  <a class="hm-kpi" href="{% url 'dsr:dsr_sheet' %}"><span class="v">{{ dsr.dsr_hours|floatformat:"1" }}</span><span class="l">Logged this week</span></a>
-  <a class="hm-kpi" href="{% url 'attendance:my_attendance' %}"><span class="v">{{ chart_week_total }}</span><span class="l">Hours this week</span></a>
-</div>
 
 <div class="hm-grid">
   <section class="hm-card hm-work" x-data="{ tab: 'assigned' }">
@@ -68,6 +62,12 @@
         </div>
       {% endwith %}
       {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
+      {% if dsr_today %}
+      <a class="hm-dsr" href="{% url 'dsr:dsr_sheet' %}" title="Open the DSR">
+        <span class="hm-dsr-text"><b>{{ dsr_today.logged }}</b> of <b>{{ dsr_today.basis }}</b> in your DSR</span>
+        <span class="hm-meter{% if dsr_today.state == 'low' %} is-low{% endif %}"><i style="width:{{ dsr_today.percent }}%"></i></span>
+      </a>
+      {% endif %}
       <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
     </section>
 
@@ -91,7 +91,14 @@
     </div>
   </section>
 
-  <section class="hm-card hm-tile">
+
+</div>
+</div>
+
+<details class="acc hm-more-acc">
+  <summary><span>More</span><small>leave balance</small></summary>
+  <div class="acc-body">
+  <section class="hm-leave-card">
     <div class="hm-tile-head"><h2>{% icon 'calendar-days' 'ic' %}Leave</h2></div>
     <ul class="hm-leave">
       {% for b in leave_balances|slice:":3" %}
@@ -103,12 +110,5 @@
     </ul>
     <a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a>
   </section>
-
-  <section class="hm-card hm-tile">
-    <div class="hm-tile-head"><h2>{% icon 'file-text' 'ic' %}DSR</h2></div>
-    <div class="hm-big">{{ dsr.dsr_hours|floatformat:"1" }}<small>h</small></div>
-    <p class="hm-sub">{{ dsr.dsr_entries }} {% if dsr.dsr_entries == 1 %}entry{% else %}entries{% endif %} this week{% if dsr.dsr_open_count %} · {{ dsr.dsr_open_count }} still open{% endif %}</p>
-    <a class="hm-more" href="{% url 'dsr:dsr_sheet' %}">Open DSR sheet →</a>
-  </section>
-</div>
-</div>
+  </div>
+</details>

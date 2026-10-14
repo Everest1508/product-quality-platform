@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}{{ product.name }} — PQ Platform{% endblock %}
 
@@ -9,8 +10,8 @@
   <span class="current">{{ product.name }}</span>
 </nav>
 
-<p style="margin:-6px 0 10px"><a class="btn btn-sm" href="{% url 'products:project_lifecycle' pk=product.pk %}">{% load icon_tags %}{% icon 'compass' 'ic' %}Lifecycle &amp; log</a></p>
-<div x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','configuration','keys','team'].includes(tab)) tab='overview'">
+{% include "products/_project_tabs.html" with here="settings" %}
+<div class="pj-settings">
 <div class="card overview-hero mb-6">
   <div class="flex-between" style="gap:16px;">
     <div style="display:flex;align-items:flex-start;gap:14px;min-width:0;">
@@ -47,14 +48,8 @@
   {% endif %}
 </div>
 
-<div class="seg" role="tablist" aria-label="Product sections" style="margin-bottom:16px">
-  <button type="button" role="tab" :class="{ 'is-on': tab==='overview' }" @click="tab='overview'; history.replaceState(null,'','#overview')">Overview</button>
-  <button type="button" role="tab" :class="{ 'is-on': tab==='configuration' }" @click="tab='configuration'; history.replaceState(null,'','#configuration')">Versions &amp; webhook</button>
-  <button type="button" role="tab" :class="{ 'is-on': tab==='keys' }" @click="tab='keys'; history.replaceState(null,'','#keys')">API keys</button>
-  {% if is_privileged %}<button type="button" role="tab" :class="{ 'is-on': tab==='team' }" @click="tab='team'; history.replaceState(null,'','#team')">Team access</button>{% endif %}
-</div>
 
-<div x-show="tab==='overview'">
+<div id="overview">
 {% include "products/partials/_milestone_tree.html" %}
 
 <div class="grid-4 mb-6">
@@ -102,7 +97,21 @@
 
 </div>
 
-<div x-show="tab==='configuration'" style="display:none">
+<details class="acc" id="plan">
+<summary><span>Plan</span><small>dates, Pod, tech stack, SRS, phases and schedule</small></summary>
+<div class="acc-body">
+<form method="post" action="{% url 'products:project_details' pk=product.pk %}" class="pj-formwrap">
+  {% csrf_token %}
+  {% include "products/_project_fields.html" %}
+  {% if can_work %}<div class="pj-formbar"><button class="btn btn-primary">{% icon 'check' 'ic' %}Save plan</button></div>
+  {% else %}<p class="field-hint">Only the Pod, owners and admins can change the plan.</p>{% endif %}
+</form>
+</div>
+</details>
+
+<details class="acc" id="configuration">
+<summary><span>Versions &amp; webhook</span><small>releases and the Discord channel</small></summary>
+<div class="acc-body">
 <div class="grid-2 mb-6">
   <div class="card">
     <div class="flex-between mb-4">
@@ -154,8 +163,11 @@
 </div>
 
 </div>
+</details>
 
-<div x-show="tab==='keys'" style="display:none">
+<details class="acc" id="keys">
+<summary><span>API keys</span><small>let your app report errors and feedback</small></summary>
+<div class="acc-body">
 <div class="card mb-6">
   <div class="flex-between mb-4">
     <div class="text-sm font-medium">API Keys</div>
@@ -186,9 +198,12 @@
 </div>
 
 </div>
+</details>
 
 {% if is_privileged %}
-<div x-show="tab==='team'" style="display:none">
+<details class="acc" id="team">
+<summary><span>Team access</span><small>who can open this project</small></summary>
+<div class="acc-body">
 <div class="card">
   <div class="flex-between mb-4">
     <div class="text-sm font-medium">Allocated Members</div>
@@ -200,6 +215,11 @@
   </div>
 </div>
 </div>
+</details>
 {% endif %}
 </div>
+<script>
+// A link with #plan, #keys and so on opens that section.
+(function(){var d=document.getElementById((location.hash||'').slice(1));if(d&&d.tagName==='DETAILS'){d.open=true;setTimeout(function(){d.scrollIntoView({behavior:'smooth',block:'start'})},60)}})();
+</script>
 {% endblock %}

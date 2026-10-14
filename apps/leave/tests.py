@@ -1535,10 +1535,10 @@ class SidebarActiveStateTest(LeaveTestBase):
 
     def test_exactly_one_item_is_active_per_page(self):
         for url, expected in [
-            ("/attendance/", "My attendance"),
+            ("/attendance/", "My work"),
             ("/attendance/team/", "Team attendance"),
             ("/attendance/timesheet/", "Timesheet"),
-            ("/leave/", "My leave"),
+            ("/leave/", "My work"),
             ("/leave/policies/", "Leave Policy"),
             ("/team/", "Team"),
         ]:
@@ -1592,20 +1592,20 @@ class SidebarActiveStateTest(LeaveTestBase):
         the app had fewer pages than it has.
         """
         for url, expected in [
-            ("/leave/apply/", "My leave"),
-            ("/feedback/", "All feedback"),
-            ("/feedback/create/", "All feedback"),
-            ("/feedback/cs-hub/", "CS Hub"),
-            ("/automation/", "All automation"),
-            ("/automation/create/", "All automation"),
+            ("/leave/apply/", "My work"),
+            ("/feedback/", "Feedback"),
+            ("/feedback/create/", "Feedback"),
+            ("/feedback/cs-hub/", "Feedback"),
+            ("/automation/", "Automation"),
+            ("/automation/create/", "Automation"),
             ("/payroll/holidays/", "Payroll"),
             ("/payroll/preview/", "Payroll"),
-            ("/payroll/me/", "My payslips"),
-            ("/dsr/", "DSR Sheet"),
+            ("/payroll/me/", "My work"),
+            ("/dsr/", "My work"),
             ("/leave/approvals/", "Leave approvals"),
-            ("/tickets/kanban/", "All tickets"),
-            ("/errors/create/", "All errors"),
-            ("/products/create/", "Products"),
+            ("/tickets/kanban/", "Tickets"),
+            ("/errors/create/", "Errors"),
+            ("/products/create/", "Projects"),
         ]:
             with self.subTest(url=url):
                 self.assertEqual(self.active_labels(url), [expected])
@@ -1683,7 +1683,7 @@ class SidebarActiveStateTest(LeaveTestBase):
         "navigation" entries in a screen reader's landmark list."""
         bar = self.sidebar("/leave/")
         navs = re.findall(r"<nav\b[^>]*>", bar)
-        self.assertGreaterEqual(len(navs), 3)
+        self.assertGreaterEqual(len(navs), 2)
         for nav in navs:
             with self.subTest(nav=nav):
                 self.assertIn("aria-label=", nav)

@@ -154,8 +154,24 @@ Plain words, sentence case, no jargon. Buttons are verbs ("Add to log", "Move").
 
 ## Motion
 
-Short and quiet. 120 to 220ms for hovers and entrances. The only looping motion
-is the presence dot and the clock. `prefers-reduced-motion` stops all of it.
+Short and quiet, and always optional: every animation sits inside `@media (prefers-reduced-motion:no-preference)` (bottom of `_components.css`), so a person who asks for less motion gets the plain page.
+
+| Token | Use |
+|---|---|
+| `--dur-1` 120ms | Hover and press feedback (buttons, sidebar items, tabs) |
+| `--dur-2` 200ms | Hover lift, menu and card state changes, page fade-out |
+| `--dur-3` 320ms | Page and card entrance |
+| `--ease-out` | The only curve: fast start, soft landing |
+
+What moves, and what does not:
+
+- **Page to page:** the content cross-fades (`@view-transition`), while the sidebar and top bar stay put.
+- **A page assembling:** cards, rows and feed entries rise in one after another, 40ms apart, for the first six.
+- **Pressing:** buttons dip to 97% when pressed; primary buttons glow slightly on hover; sidebar icons grow a little on hover.
+- **Opening things:** menus and popovers pop in (`pqPop`), accordions and the Admin fold slide open (grid rows `0fr` to `1fr`), dialogs use `dlgIn`.
+- **Values:** progress bars and bar charts grow to their value when they appear.
+- **Content swapped by htmx** fades in (`.htmx-added`); a request in flight dims its element.
+- Nothing loops except the presence dot and the clock, and nothing animates `width`, `height` or `top` on a hot path other than the one-off bar growth.
 
 ## Accessibility
 
