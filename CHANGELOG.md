@@ -18,6 +18,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **A Design kit page.** Open it from the sidebar to see buttons, badges, tabs, inputs, dropdowns, windows, confirmations and toasts, each with the code to copy.
 - **The whole befui icon set.** 283 more icons can be used anywhere, and they redraw themselves when you hover over them.
+- **More building blocks, only the ones this app needs.** Accordion, alerts, banner, avatars, status dots, spinner, skeleton, progress bar and ring, stat card, timeline, switch, checkbox, radio, tag input, stepper, popover, tooltip, pagination, bar list, button group, number stepper and underline tabs, all in light and dark.
 - **Click an icon to copy its tag.** The Design kit lists every icon with a search box, so you can find one and paste it straight into a page.
 
 ## [1.43.2] "Dollarbird" — 2026-10-14 · dropdowns open on top of pop-ups, and What's new shows once
