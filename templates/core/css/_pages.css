@@ -703,3 +703,10 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 .td-timeline .dot{position:absolute;left:-20px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--border-strong);box-shadow:0 0 0 3px var(--bg);}
 .td-timeline b{font-weight:500;color:var(--text);}
 .td-timeline time{margin-left:8px;font-size:11.5px;}
+
+/* Rows of stat cards become one divided sheet: less box, same numbers. */
+.grid-4:has(> .stat-card),.grid-3:has(> .stat-card),.pay-stats:has(> .stat),.att-stats{gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.grid-4 > .stat-card,.grid-3 > .stat-card,.pay-stats > .stat{border:0;border-radius:0;box-shadow:none;}
+.stat-card .stat-icon{display:none;}
+.stat-card .flex-between.mb-4{margin-bottom:6px;}
+.stat-card .stat-label{font-size:12.5px;color:var(--muted);}
