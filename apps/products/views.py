@@ -510,7 +510,7 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
         require_product_access(request, product)
         _attach_product_counts(product)
 
-        qs = product.tickets.select_related("assigned_to", "created_by")
+        qs = product.tickets.select_related("assigned_to", "created_by").prefetch_related("assignees")
         qs, ctx = apply_ticket_filters(request, qs)
         status = request.GET.get("status")
         if status:
@@ -544,7 +544,7 @@ class ProductTicketKanbanView(CompanyMemberRequiredMixin, View):
         require_product_access(request, product)
         _attach_product_counts(product)
 
-        qs = product.tickets.select_related("assigned_to", "created_by")
+        qs = product.tickets.select_related("assigned_to", "created_by").prefetch_related("assignees")
         qs, ctx = apply_ticket_filters(request, qs)
         qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
 

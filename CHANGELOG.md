@@ -10,6 +10,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.45.0] "Pipit" — 2026-10-14 · a bento Home, calmer colours, faster ticket lists
+
+> In short: Home is laid out as a grid of cards that fill the space, the yellow tones are gone, attendance numbers are tidier, and the ticket lists load faster.
+
+### Better
+
+- **Home is a grid of cards that fill the space.** Empty cards no longer leave a hole, and the to-do card keeps its list inside the card and scrolls when it grows.
+- **No more yellow.** The greeting banner is now blue and violet, and warnings use a softer orange.
+- **Attendance numbers are tidier.** The team attendance counts are separate cards with the icon beside the number, and long labels no longer break awkwardly.
+- **Ticket lists load faster.** Showing who is assigned no longer asks the database once for every ticket.
+
 ## [1.44.0] "Cetti" — 2026-10-14 · a design kit page with every component and icon
 
 > In short: a new Design kit page shows all 199 befui components and 350 icons with the HTML to copy, and the animated befui icons are available on every page.

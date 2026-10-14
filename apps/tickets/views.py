@@ -117,7 +117,7 @@ OPEN_EXCLUDED = ("resolved", "closed")
 
 class TicketListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
+        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by").prefetch_related("assignees")
         qs, ctx = apply_ticket_filters(request, qs)
 
         status = request.GET.get("status")
@@ -150,7 +150,7 @@ class TicketListView(CompanyMemberRequiredMixin, View):
 
 class TicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by")
+        qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by").prefetch_related("assignees")
         qs, ctx = apply_ticket_filters(request, qs)
         qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
 

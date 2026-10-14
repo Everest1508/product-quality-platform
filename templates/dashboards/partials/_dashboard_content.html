@@ -8,6 +8,7 @@
   </div>
 {% endif %}
 
+<div class="hm-bento">
 <div class="hm-kpis">
   <a class="hm-kpi" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ my_ticket_count }}">{{ my_ticket_count }}</span><span class="l">Open tickets</span></a>
   <a class="hm-kpi{% if overdue_count %} is-alert{% endif %}" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ overdue_count }}">{{ overdue_count }}</span><span class="l">Overdue</span></a>
@@ -29,7 +30,7 @@
           {% endfor %}
         </ul>
         <a class="hm-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
-      {% else %}<p class="hm-empty">No open tickets assigned to you. Nice.</p>{% endif %}
+      {% else %}<div class="hm-empty"><span>No open tickets assigned to you.</span><span class="hm-sub">Enjoy the quiet, or pick something up from the board.</span><a class="hm-more" href="{% url 'tickets:ticket_board' %}">Open the board →</a></div>{% endif %}
     </div>
     <div x-show="tab === 'due'" style="display:none;">
       {% if due_soon %}
@@ -39,7 +40,7 @@
               <span class="chip-d{% if t.is_overdue %} is-late{% endif %}">{% if t.is_overdue %}Overdue{% else %}{{ t.deadline|date:"M j" }}{% endif %}</span></a></li>
           {% endfor %}
         </ul>
-      {% else %}<p class="hm-empty">Nothing is due in the next 7 days.</p>{% endif %}
+      {% else %}<div class="hm-empty"><span>Nothing is due in the next 7 days.</span></div>{% endif %}
     </div>
   </section>
 
@@ -66,7 +67,7 @@
           {% endif %}
         </div>
       {% endwith %}
-      {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-orange" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
+      {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
       <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
     </section>
 
@@ -109,4 +110,5 @@
     <p class="hm-sub">{{ dsr.dsr_entries }} {% if dsr.dsr_entries == 1 %}entry{% else %}entries{% endif %} this week{% if dsr.dsr_open_count %} · {{ dsr.dsr_open_count }} still open{% endif %}</p>
     <a class="hm-more" href="{% url 'dsr:dsr_sheet' %}">Open DSR sheet →</a>
   </section>
+</div>
 </div>

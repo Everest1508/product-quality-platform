@@ -512,13 +512,13 @@ a.dsr-link::after{content:" \2197";font-size:11px;color:var(--muted);}
 
 /* ───────── Home (new look) ───────── */
 .hm{display:grid;gap:18px;max-width:1280px;margin:0 auto;}
-.hm-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:22px 24px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:linear-gradient(90deg,#fef3c7 0%,var(--surface) 55%,#e0f2fe 100%);transition:background .6s;}
-.hm-hero.is-afternoon{background:linear-gradient(90deg,#dbeafe 0%,var(--surface) 55%,#fef9c3 100%);}
-.hm-hero.is-evening{background:linear-gradient(90deg,#ffedd5 0%,var(--surface) 50%,#fce7f3 100%);}
+.hm-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:22px 24px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:linear-gradient(90deg,#e0f2fe 0%,var(--surface) 55%,#dbeafe 100%);transition:background .6s;}
+.hm-hero.is-afternoon{background:linear-gradient(90deg,#dbeafe 0%,var(--surface) 55%,#e0e7ff 100%);}
+.hm-hero.is-evening{background:linear-gradient(90deg,#e0e7ff 0%,var(--surface) 50%,#ede9fe 100%);}
 .hm-hero.is-night{background:linear-gradient(90deg,#e0e7ff 0%,#e2e8f0 55%,#c7d2fe 100%);}
-html.dark .hm-hero{background:linear-gradient(90deg,#2a2210 0%,var(--surface) 60%,#0e2236 100%);}
-html.dark .hm-hero.is-afternoon{background:linear-gradient(90deg,#10233f 0%,var(--surface) 60%,#2a2610 100%);}
-html.dark .hm-hero.is-evening{background:linear-gradient(90deg,#33200f 0%,var(--surface) 55%,#331527 100%);}
+html.dark .hm-hero{background:linear-gradient(90deg,#0e2a44 0%,var(--surface) 60%,#0e2236 100%);}
+html.dark .hm-hero.is-afternoon{background:linear-gradient(90deg,#10233f 0%,var(--surface) 60%,#161f45 100%);}
+html.dark .hm-hero.is-evening{background:linear-gradient(90deg,#1c1f4a 0%,var(--surface) 55%,#2a1a4a 100%);}
 html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 55%,#1e2554 100%);}
 .hm-hero-art{position:absolute;right:-14px;top:-18px;opacity:.1;color:var(--text);pointer-events:none;animation:hmFloat 6s ease-in-out infinite;}
 .hm-hero-art .ic{width:128px;height:128px;stroke-width:1.5;}
@@ -535,7 +535,7 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .hm-hero-actions{position:relative;display:flex;gap:8px;flex-wrap:wrap;}
 .hm-note{padding:12px 14px;border-radius:var(--radius);border:1px solid var(--border);font-size:13.5px;}
 .hm-note.is-info{background:var(--blue-bg);border-color:color-mix(in srgb,var(--blue) 30%,transparent);}
-.hm-note.is-warn{background:var(--orange-bg);border-color:color-mix(in srgb,var(--orange) 30%,transparent);}
+.hm-note.is-warn{background:var(--accent-soft);border-color:var(--accent-line);}
 .hm-note a{font-weight:600;margin-left:6px;text-decoration:underline;}
 .hm-attn{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);margin:-4px 0 14px;}
 .hm-attn a:hover{color:var(--text);}
@@ -586,7 +586,7 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .hm-leave .r{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
 .hm-meter{display:block;height:6px;border-radius:99px;background:var(--panel);overflow:hidden;}
 .hm-meter i{display:block;height:100%;border-radius:99px;background:var(--accent);}
-.hm-meter.is-pending i{background:var(--orange);}
+.hm-meter.is-pending i{background:var(--purple);}
 .hm-big{font-size:26px;font-weight:650;letter-spacing:-.02em;}
 .hm-big small{font-size:14px;font-weight:500;color:var(--muted);margin-left:2px;}
 @media (max-width:960px){.hm-grid{grid-template-columns:1fr;}.hm-tiles{grid-template-columns:1fr;}.hm-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
@@ -660,7 +660,7 @@ kbd{display:inline-flex;align-items:center;justify-content:center;min-width:20px
 @media (max-width:760px){.pf-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
 .hm-mile{list-style:none;margin-top:8px;display:grid;gap:3px;}
 .hm-mile li{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;}
-.hm-mile .ic{width:15px;height:15px;color:var(--orange);}
+.hm-mile .ic{width:15px;height:15px;color:var(--accent);}
 .hm-today .bdg .ic{width:12px;height:12px;}
 
 /* ───────── The older class names, brought up to the new look ───────── */
@@ -737,3 +737,42 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 @keyframes iconDraw{from{stroke-dasharray:1;stroke-dashoffset:1}to{stroke-dasharray:1;stroke-dashoffset:0}}
 .icon-hover:hover .icon-draw :is(path,circle,rect){animation:iconDraw var(--icon-ms,.7s) ease both;animation-delay:calc(var(--i,0) * 90ms);}
 @media (prefers-reduced-motion:reduce){.icon-hover:hover .icon-draw :is(path,circle,rect){animation:none}}
+
+
+/* ───────── Home as a bento grid ─────────
+   One 12-column grid; the wrappers from the markup dissolve so every card is a cell. Cards stretch to the row,
+   so an empty card still fills its cell instead of leaving a hole, and the to-do list scrolls inside its card. */
+.hm-bento{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;grid-auto-flow:dense;}
+.hm-bento .hm-kpis,.hm-bento .hm-grid,.hm-bento .hm-side,.hm-bento .hm-tiles{display:contents;}
+.hm-bento .hm-kpi{grid-column:span 3;}
+.hm-bento .hm-work{grid-column:span 8;grid-row:span 2;}
+.hm-bento .hm-today,.hm-bento #todo-card{grid-column:span 4;}
+.hm-bento .hm-tiles>.hm-card{grid-column:span 4;}
+.hm-bento .hm-card{display:flex;flex-direction:column;min-width:0;}
+.hm-bento .hm-work>div:not(.hm-tabs){flex:1;display:flex;flex-direction:column;}
+.hm-bento .hm-empty{flex:1;display:grid;place-content:center;gap:4px;padding:30px 0;}
+.hm-bento #todo-list{flex:1;display:flex;flex-direction:column;min-height:0;}
+.hm-bento .td-list{flex:1;max-height:280px;}
+.hm-bento .td-add{margin-top:10px;}
+.hm-bento .td-add .td-text{flex:1 1 100%;}
+.hm-bento .td-add .td-due{flex:1 1 130px;width:auto;min-width:0;}
+.hm-bento .td-add .td-btn{margin-left:auto;}
+.hm-bento .td-empty{flex:1;display:grid;place-content:center;padding:20px 8px;}
+@media (max-width:1180px){.hm-bento .hm-work{grid-column:span 12;grid-row:auto;}.hm-bento .hm-today,.hm-bento #todo-card{grid-column:span 6;}.hm-bento .hm-tiles>.hm-card{grid-column:span 6;}.hm-bento .hm-tiles>.hm-card:last-child{grid-column:span 12;}}
+@media (max-width:720px){.hm-bento .hm-kpi{grid-column:span 6;}.hm-bento .hm-today,.hm-bento #todo-card,.hm-bento .hm-tiles>.hm-card{grid-column:span 12;}}
+
+/* ───────── Attendance stat tiles: separate cards, icon beside the number ───────── */
+.att-stats{gap:12px;background:none;border:0;border-radius:0;overflow:visible;}
+.att-stats>.kpi{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"i n" "i l";column-gap:12px;row-gap:0;align-items:center;padding:14px 16px;}
+.att-stats .kpi-icon{grid-area:i;width:38px;height:38px;margin:0;}
+.att-stats .kpi-num{grid-area:n;font-size:24px;}
+.att-stats .kpi-label{grid-area:l;line-height:1.25;font-size:12px;}
+@media (max-width:1100px){.team-att .att-stats{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media (max-width:640px){.team-att .att-stats,.att-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* No yellow or amber: leave is violet, warnings are red or blue. */
+.kpi-orange .kpi-icon{background:var(--purple-bg);color:var(--purple);}
+.kpi-orange .kpi-num{color:var(--text);}
+.me-card.me-leave{border-left-color:var(--purple);}
+.dot.is-leave{background:var(--purple);}
+.stale-card{border-color:var(--red);}

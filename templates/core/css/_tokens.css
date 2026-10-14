@@ -22,7 +22,7 @@
   --tooltip-bg:#0f172a; --tooltip-text:#f8fafc;
 
   /* Status colors (semantic, keep distinct from the accent) */
-  --red:#e11d48; --red-bg:#fff1f2; --orange:#b45309; --orange-bg:#fffbeb;
+  --red:#e11d48; --red-bg:#fff1f2; --orange:#c2410c; --orange-bg:#fff1ea;
   --blue:#2563eb; --blue-bg:#eff6ff;
   --green:#059669; --green-bg:#ecfdf5; --purple:#7c3aed; --purple-bg:#f5f3ff;
   --gray:#64748b; --gray-bg:#f1f5f9;
@@ -58,7 +58,7 @@ html.dark{
   --overlay:rgba(0,0,0,.6);
   --tooltip-bg:#e6edf6; --tooltip-text:#0b1220;
 
-  --red:#f4607f; --red-bg:rgba(244,96,127,.12); --orange:#fbbf24; --orange-bg:rgba(251,191,36,.12);
+  --red:#f4607f; --red-bg:rgba(244,96,127,.12); --orange:#fb923c; --orange-bg:rgba(251,146,60,.13);
   --blue:#60a5fa; --blue-bg:rgba(96,165,250,.12);
   --green:#34d399; --green-bg:rgba(52,211,153,.12); --purple:#a78bfa; --purple-bg:rgba(167,139,250,.14);
   --gray:#8d9bb0; --gray-bg:#1a2538;

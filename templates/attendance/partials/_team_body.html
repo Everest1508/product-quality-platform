@@ -32,7 +32,7 @@
     <div class="card stat kpi kpi-blue">
       <span class="kpi-icon">{% icon 'circle-check' %}</span>
       <span class="kpi-num">{{ present_count }}<small>/{{ team_count }}</small></span>
-      <span class="kpi-label">Checked in today</span>
+      <span class="kpi-label">Checked in</span>
     </div>
     <button type="button" class="card stat kpi kpi-gray" :class="{ 'is-on': filter === 'absent' }" @click="filter = filter === 'absent' ? 'all' : 'absent'">
       <span class="kpi-icon">{% icon 'user' %}</span>
@@ -47,7 +47,7 @@
     <button type="button" class="card stat kpi {% if stale_count %}kpi-red{% else %}kpi-gray{% endif %}" :class="{ 'is-on': filter === 'stale' }" @click="filter = filter === 'stale' ? 'all' : 'stale'">
       <span class="kpi-icon">{% icon 'triangle-alert' %}</span>
       <span class="kpi-num">{{ stale_count }}</span>
-      <span class="kpi-label">Forgotten check-outs</span>
+      <span class="kpi-label">Missed check-outs</span>
     </button>
   </div>
 
