@@ -4,7 +4,7 @@
 {% block title %}Profile — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="pf" x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','settings','notifications','shortcuts'].includes(tab)) tab='overview'">
+<div class="pf" x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','settings','sdk','notifications','shortcuts'].includes(tab)) tab='overview'">
   <section class="pf-banner">
     <span class="avatar pf-avatar">{{ request.user.username.0|upper }}</span>
     <div class="pf-who">
@@ -24,6 +24,7 @@
   <div class="seg pf-tabs" role="tablist" aria-label="Profile sections">
     <button type="button" role="tab" :class="{ 'is-on': tab==='overview' }" @click="tab='overview'; history.replaceState(null,'','#overview')">Overview</button>
     <button type="button" role="tab" :class="{ 'is-on': tab==='settings' }" @click="tab='settings'; history.replaceState(null,'','#settings')">Settings</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='sdk' }" @click="tab='sdk'; history.replaceState(null,'','#sdk')">SDK guide</button>
     <button type="button" role="tab" :class="{ 'is-on': tab==='notifications' }" @click="tab='notifications'; history.replaceState(null,'','#notifications')">Notifications</button>
     <button type="button" role="tab" :class="{ 'is-on': tab==='shortcuts' }" @click="tab='shortcuts'; history.replaceState(null,'','#shortcuts')">Keyboard shortcuts</button>
   </div>
@@ -51,6 +52,11 @@
         <p class="sub">Used to mention you in Discord webhook alerts when a ticket is assigned to you. Enable <b>Developer Mode</b> in Discord settings, right-click your avatar, and choose <i>“Copy User ID”</i>.</p></div>
       <div class="pf-save"><button type="submit" class="btn btn-primary">{% icon 'check' 'ic' %}Save changes</button></div>
     </form>
+  </section>
+
+  <section x-show="tab==='sdk'" class="pf-pane" style="display:none;max-width:860px">
+    {% include "products/_sdk_guide.html" %}
+    <p class="sub">The same steps, with your product's key, are on each product's API page. Full write-up: <code>docs/guides/using-the-sdk.md</code>.</p>
   </section>
 
   <section x-show="tab==='notifications'" class="pf-pane" style="display:none;max-width:760px">

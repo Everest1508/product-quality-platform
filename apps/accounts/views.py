@@ -329,7 +329,12 @@ def _profile_context(request, form):
     from apps.accounts.overview import my_overview
     from apps.notifications import service as notes
 
-    return {"form": form, "overview": my_overview(request.user, request.company), "kinds": notes.settings_for(request.user)}
+    from apps.ingestion import docs
+
+    return {
+        "form": form, "overview": my_overview(request.user, request.company), "kinds": notes.settings_for(request.user),
+        "sdk_guide": docs.sdk_guide(request.build_absolute_uri("/")), "sdk_check": docs.SDK_CHECK,
+    }
 
 
 class ProfileView(CompanyMemberRequiredMixin, View):

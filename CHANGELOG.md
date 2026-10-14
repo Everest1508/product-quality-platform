@@ -19,6 +19,13 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **A "Use the SDK" section on the API page.** Pick Python, Django, Flask, FastAPI, Express, Fastify, Koa, NestJS, Electron or the browser and get the install line and the exact code, with your own address already filled in.
 - **A step-by-step SDK guide.** It covers making a key, setting it safely, hooking in, sending feedback and tickets, and checking that it arrived.
 
+- **An SDK guide tab in your profile.** It sits beside Settings, so the same framework-by-framework steps are one click away.
+
+### Better
+
+- **Reporting errors from your app no longer waits on Discord.** The Discord message is now sent in the background, so a slow Discord can no longer delay the response your app gets.
+- **API keys no longer write to the database on every request.** The "last used" time is refreshed at most once a minute, which keeps busy apps fast.
+
 ### Fixed
 
 - **The install command was wrong.** The package is installed with pq-befu, not pq-sdk, and the README now says so.
