@@ -9,6 +9,7 @@
   <span class="current">{{ product.name }}</span>
 </nav>
 
+<p style="margin:-6px 0 10px"><a class="btn btn-sm" href="{% url 'products:project_lifecycle' pk=product.pk %}">{% load icon_tags %}{% icon 'compass' 'ic' %}Lifecycle &amp; log</a></p>
 <div x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','configuration','keys','team'].includes(tab)) tab='overview'">
 <div class="card overview-hero mb-6">
   <div class="flex-between" style="gap:16px;">

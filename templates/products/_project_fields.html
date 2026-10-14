@@ -1,0 +1,79 @@
+{% load icon_tags %}
+{{ presets|json_script:"pj-presets" }}
+{{ on_map|json_script:"pj-on" }}
+{% comment %}
+The plan fields, shared by "New project" and "Plan & details". `rows` is [(key, label, enabled, plan)],
+`members` everyone in the company, `pod_ids` who is on the Pod now, `product` the project (or a blank stub).
+{% endcomment %}
+<div x-data="pjPlan()">
+<section class="card form-card pj-form">
+  <div class="form-section-label">Duration</div>
+  <div class="form-row">
+    <div class="form-group"><label for="start_date">Start date</label><input id="start_date" type="date" name="start_date" class="form-input" value="{{ product.start_date|date:'Y-m-d' }}" x-ref="start"></div>
+    <div class="form-group"><label for="end_date">End date</label><input id="end_date" type="date" name="end_date" class="form-input" value="{{ product.end_date|date:'Y-m-d' }}" x-ref="end"></div>
+  </div>
+</section>
+
+<section class="card form-card pj-form">
+  <div class="form-section-label">Pod</div>
+  <p class="field-hint" style="margin:0 0 8px">The lead and the people assigned. They can move the project and write to its log, and they are told about everything.</p>
+  <div class="form-row">
+    <div class="form-group"><label for="lead">Project lead</label>
+      <select id="lead" name="lead" class="form-input"><option value="">No lead yet</option>{% for u in members %}<option value="{{ u.pk }}" {% if product.lead_id == u.pk or not product.pk and u.pk in pod_ids and forloop.first %}selected{% endif %}>{{ u.get_full_name|default:u.username }} (@{{ u.username }})</option>{% endfor %}</select></div>
+  </div>
+  <div class="pj-pickers">{% for u in members %}<label class="kt-check"><input type="checkbox" name="pod" value="{{ u.pk }}" {% if u.pk in pod_ids %}checked{% endif %}><span>{{ u.get_full_name|default:u.username }} <small>@{{ u.username }}</small></span></label>{% endfor %}</div>
+</section>
+
+<section class="card form-card pj-form">
+  <div class="form-section-label">Tech stack</div>
+  <input type="text" name="tech_stack" class="form-input" value="{{ product.tech_stack|join:', ' }}" placeholder="Django, React, Postgres" autocomplete="off">
+  <p class="field-hint">Separate with commas.</p>
+  <div class="form-section-label" style="margin-top:16px">SRS</div>
+  <textarea name="srs" class="form-input" rows="8" placeholder="What the project has to do: features, rules, who uses it.">{{ product.srs }}</textarea>
+  {% if product.srs_updated_at %}<p class="field-hint">Last edited {{ product.srs_updated_at|date:"j M Y, g:i A" }}.</p>{% endif %}
+</section>
+
+<section class="card form-card pj-form">
+  <div class="form-section-label">Phases this project uses</div>
+  <p class="field-hint" style="margin:0 0 8px">Phases you leave out are grayed out on the board, and moving the project skips them.</p>
+  <div class="pj-presets">
+    <button type="button" class="btn btn-sm" @click="preset('full')">All nine</button>
+    <button type="button" class="btn btn-sm" @click="preset('frontend')">Frontend only</button>
+    <button type="button" class="btn btn-sm" @click="preset('backend')">Backend only</button>
+    <button type="button" class="btn btn-sm" @click="preset('maintenance')">Maintenance</button>
+  </div>
+  <div class="pj-pickers">{% for k, l, on, plan in rows %}<label class="kt-check"><input type="checkbox" name="phase_{{ k }}" value="1" x-model="on.{{ k }}" {% if on %}checked{% endif %}><span>{{ l }}</span></label>{% endfor %}</div>
+</section>
+
+<section class="card form-card pj-form">
+  <div class="form-section-label">Schedule</div>
+  <p class="field-hint" style="margin:0 0 8px">When each phase should happen, inside the project dates. Phases can overlap. Enter dates, hours, or both.</p>
+  <button type="button" class="btn btn-sm" @click="spread()">{% icon 'refresh' 'ic' %}Spread across the project</button>
+  <table class="pj-sched"><thead><tr><th>Phase</th><th>Start</th><th>End</th><th>Hours</th></tr></thead><tbody>
+    {% for k, l, on, plan in rows %}
+    <tr x-show="on.{{ k }}" {% if not on %}style="display:none"{% endif %} data-key="{{ k }}">
+      <td>{{ l }}</td>
+      <td><input type="date" class="form-input" name="s_{{ k }}" value="{{ plan.start_date|date:'Y-m-d' }}"></td>
+      <td><input type="date" class="form-input" name="e_{{ k }}" value="{{ plan.end_date|date:'Y-m-d' }}"></td>
+      <td><input type="number" class="form-input" name="h_{{ k }}" min="0" step="0.5" value="{% if plan.planned_hours is not None %}{{ plan.planned_hours|stringformat:'s' }}{% endif %}" placeholder="h"></td>
+    </tr>{% endfor %}
+  </tbody></table>
+</section>
+</div>
+<script>
+function pjPlan(){
+  var PRESETS=JSON.parse(document.getElementById('pj-presets').textContent);
+  return {
+    on:JSON.parse(document.getElementById('pj-on').textContent),
+    init(){},
+    preset(name){var s=PRESETS[name]||[];Object.keys(this.on).forEach(function(k){this.on[k]=s.indexOf(k)>-1}.bind(this))},
+    spread(){
+      var a=this.$refs.start.value,b=this.$refs.end.value; if(!a||!b||b<a){alert('Set the start and end dates first.');return}
+      var keys=Object.keys(this.on).filter(function(k){return this.on[k]}.bind(this)),t0=Date.parse(a),t1=Date.parse(b),step=(t1-t0)/keys.length;
+      var iso=function(t){return new Date(t).toISOString().slice(0,10)};
+      keys.forEach(function(k,i){var s=document.querySelector('[name=s_'+k+']'),e=document.querySelector('[name=e_'+k+']');
+        s.value=iso(t0+step*i+(i?86400000:0)); e.value=iso(i===keys.length-1?t1:t0+step*(i+1));});
+    }
+  };
+}
+</script>

@@ -1,0 +1,39 @@
+{% load icon_tags %}
+{% comment %}
+One "why are you moving this?" dialog for the board, the journey and the lifecycle page.
+Call pjMove(productId, toStage, toLabel, fromLabel, projectName, daysInFrom, isBack). A reason is required.
+{% endcomment %}
+<dialog class="dlg" id="pj-move" style="max-width:460px">
+  <form id="pj-move-form" method="post">
+    <div class="dlg-head"><h2 id="pj-move-title">Move project</h2><p id="pj-move-sub"></p></div>
+    <div class="dlg-body" style="padding:16px 22px 4px">
+      <label for="pj-move-reason" class="dd-label">Why are you moving this?</label>
+      <textarea id="pj-move-reason" class="form-input" rows="3" maxlength="1000" required placeholder="e.g. API keys are done and the front end is connected" style="width:100%"></textarea>
+      <p class="field-hint" id="pj-move-hint" style="margin-top:6px">This is saved in the project log with your name and the time, and the Pod is told. Type @ to tag a Pod member.</p>
+      <p class="field-error" id="pj-move-err" style="display:none"></p>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" id="pj-move-cancel">Cancel</button><button type="submit" class="btn btn-primary" id="pj-move-ok">{% icon 'check' 'ic' %}Move</button></div>
+  </form>
+</dialog>
+<script>
+(function(){
+  var dlg=document.getElementById('pj-move'), form=document.getElementById('pj-move-form'), reason=document.getElementById('pj-move-reason'), err=document.getElementById('pj-move-err'), cur=null;
+  function csrf(){var m=document.cookie.match(/csrftoken=([^;]+)/);return m?m[1]:''}
+  window.pjMove=function(id,to,toLabel,fromLabel,name,days,back){
+    cur={id:id,to:to}; reason.value=''; err.style.display='none';
+    document.getElementById('pj-move-title').textContent=(back?'Send back ':'Move ')+name;
+    document.getElementById('pj-move-sub').textContent=fromLabel+' → '+toLabel+(days!=null?' · '+days+' day'+(days==1?'':'s')+' in '+fromLabel:'');
+    document.getElementById('pj-move-ok').lastChild.textContent=back?'Send back':'Move';
+    dlg.showModal(); reason.focus();
+  };
+  document.getElementById('pj-move-cancel').addEventListener('click',function(){dlg.close()});
+  form.addEventListener('submit',function(e){
+    e.preventDefault(); if(!cur) return;
+    var body=new URLSearchParams({to:cur.to,reason:reason.value}), btn=document.getElementById('pj-move-ok'); btn.disabled=true;
+    fetch('/products/'+cur.id+'/stage/',{method:'POST',headers:{'X-CSRFToken':csrf(),'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},body:body,credentials:'same-origin'})
+      .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d}})})
+      .then(function(x){ if(x.ok){location.reload()} else {err.textContent=x.d.message||'Could not move it.';err.style.display='block';btn.disabled=false} })
+      .catch(function(){err.textContent='Could not reach the server.';err.style.display='block';btn.disabled=false});
+  });
+})();
+</script>

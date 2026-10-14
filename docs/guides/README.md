@@ -8,6 +8,7 @@ Short how-tos for the people using PQ Platform, plus one for whoever runs it.
 | [Attendance and leave](attendance-and-leave.md) | Everyone |
 | [The DSR](dsr.md) | Everyone who logs work |
 | [Using the SDK](using-the-sdk.md) | Developers hooking an app up to PQ |
+| [Projects](projects.md) | Everyone who runs or works on a project |
 | [Tickets and errors](tickets-and-errors.md) | Developers and support |
 | [Home and reports](home-and-reports.md) | Everyone, owners and admins for company numbers |
 | [Live presence and alerts](presence-and-alerts.md) | Everyone, and whoever runs the server |

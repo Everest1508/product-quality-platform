@@ -1,0 +1,7 @@
+{% comment %}Lifecycle / Plan / Product page tabs for one project. Needs `product` and `here`.{% endcomment %}
+<div class="seg pj-tabs" role="tablist" aria-label="Project sections">
+  <a href="{% url 'products:project_lifecycle' pk=product.pk %}" class="{% if here == 'lifecycle' %}is-on{% endif %}">Lifecycle</a>
+  <a href="{% url 'products:project_details' pk=product.pk %}" class="{% if here == 'details' %}is-on{% endif %}">Plan &amp; details</a>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">Product settings</a>
+  <a href="{% url 'products:product_board' pk=product.pk %}">Tickets</a>
+</div>

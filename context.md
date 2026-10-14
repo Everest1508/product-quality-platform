@@ -829,3 +829,8 @@ decided what and strike the item** rather than deleting it.
 ## 2026-10-14 (SDK how-to)
 - Package name is `pq-befu` (PyPI, import `pq_sdk`; also npm). The PyPI README itself still says `pip install pq-sdk`: fix there on next release of the SDK.
 - API page has a framework-by-framework "Use the SDK" section from `apps/ingestion/docs.py` (`SDK_FRAMEWORKS`, `sdk_guide`); guide at `docs/guides/using-the-sdk.md`. Added on htmx-restyle only; production (main, React) still needs the same section in `ProductApiDocsPage.tsx`. Released as 1.15.0 "Umbrellabird".
+
+## 2026-10-14 (project lifecycle, 1.46.0)
+- Product is the project. New fields on Product (stage, stage_changed_at, start/end, lead, tech_stack, srs, phases) and tables PodMember, PhasePlan, ProjectLogEntry (append-only, `save()` refuses edits), CrunchItem. All rules in `apps/products/lifecycle.py` (`move_stage`, `add_entry`, `save_plan`, `set_team`, `add_crunch`); views in `project_views.py`, pages under `/products/projects/` and `/products/<pk>/lifecycle/` + `/project/`.
+- Moving always needs a reason; only lead/Pod/owner/admin may move or write. Unused phases are refused and skipped. Existing products start in Creation with `stage_changed_at` empty (falls back to created_at), no lead or Pod.
+- Not done / ideas: target-date alerts for late phases (card shows "Nd late" only), a cron to notify when a Crunch date is near, per-person mute per project.

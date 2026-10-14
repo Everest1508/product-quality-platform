@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.46.0] "Whinchat" — 2026-10-14 · project phases, a Pod and a full log
+
+> In short: every project now has a life from Creation to Close, with a board, a journey view, a team called the Pod and a dated log of everything that happens.
+
+### New
+
+- **A Projects board.** Nine phases, one column each: Creation, FE, BE, Connection, Deploy, Testing, UAT, Live and Close. Add a project in any column and drag it along.
+- **A Journey view.** One row per project shows how far it has got, with the date each step was reached, and you can click a step to move there.
+- **A reason for every move.** The project lead, the Pod, owners and admins can move a project, and they always say why. The reason is saved with their name and the time.
+- **The Pod.** The people assigned to a project can write updates, blockers and decisions in its log, tag each other with at-names, and everyone on the Pod is told.
+- **A full log for every project.** It runs from creation to close with exact times, and entries cannot be edited, only corrected with a new entry.
+- **A plan for each project.** Set dates, tech stack, the SRS, which phases the project uses and a schedule for each phase, and unused phases are grayed out and skipped.
+- **Crunch items.** List features that must ship before the project ends, each with a due date and reason, and see the next one on the project card.
+
 ## [1.45.0] "Pipit" — 2026-10-14 · a bento Home, calmer colours, faster ticket lists
 
 > In short: Home is laid out as a grid of cards that fill the space, the yellow tones are gone, attendance numbers are tidier, and the ticket lists load faster.

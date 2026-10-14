@@ -24,6 +24,7 @@ class Notification(TenantScopedModel):
         ATTENDANCE_CHECKIN = "attendance_checkin", "Check-in reminder"
         ATTENDANCE_CHECKOUT = "attendance_checkout", "Check-out reminder"
         REGRESSION = "regression", "Error came back"
+        PROJECT = "project", "Project update"
         SYSTEM = "system", "System"
 
     user = models.ForeignKey(

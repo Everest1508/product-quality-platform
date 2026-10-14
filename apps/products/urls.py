@@ -1,7 +1,7 @@
 from django.urls import path
 
 from apps.errors import views as error_views
-from apps.products import views
+from apps.products import project_views, views
 
 app_name = "products"
 
@@ -9,6 +9,15 @@ urlpatterns = [
     path("", views.ProductListView.as_view(), name="product_list"),
     path("create/", views.ProductCreateView.as_view(), name="product_create"),
     path("key-suggestion/", views.ProductKeySuggestView.as_view(), name="product_key_suggest"),
+    path("projects/", project_views.ProjectsBoardView.as_view(), name="project_board"),
+    path("projects/add/", project_views.ProjectQuickAddView.as_view(), name="project_quick_add"),
+    path("projects/new/", project_views.ProjectNewView.as_view(), name="project_new"),
+    path("<int:pk>/lifecycle/", project_views.ProjectLifecycleView.as_view(), name="project_lifecycle"),
+    path("<int:pk>/project/", project_views.ProjectDetailsView.as_view(), name="project_details"),
+    path("<int:pk>/stage/", project_views.ProjectMoveView.as_view(), name="project_move"),
+    path("<int:pk>/log/add/", project_views.ProjectLogAddView.as_view(), name="project_log_add"),
+    path("<int:pk>/crunch/add/", project_views.ProjectCrunchAddView.as_view(), name="project_crunch_add"),
+    path("crunch/<int:pk>/done/", project_views.ProjectCrunchDoneView.as_view(), name="project_crunch_done"),
     path("<int:pk>/", views.ProductDetailView.as_view(), name="product_detail"),
     path("<int:pk>/edit/", views.ProductEditView.as_view(), name="product_edit"),
     path("<int:pk>/delete/", views.ProductDeleteView.as_view(), name="product_delete"),

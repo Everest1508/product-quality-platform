@@ -1,0 +1,98 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+{% block title %}Projects — PQ Platform{% endblock %}
+{% block content %}
+<div class="pg-head">
+  <div><h1>Projects</h1><p class="sub">{{ total }} project{{ total|pluralize }} across nine phases. Drag a card to move it, and say why.</p></div>
+  <div class="pg-actions">
+    <div class="seg" role="group" aria-label="View">
+      <a href="?view=board" class="{% if view == 'board' %}is-on{% endif %}">Board</a>
+      <a href="?view=journey" class="{% if view == 'journey' %}is-on{% endif %}">Journey</a>
+    </div>
+    {% if can_add %}<a class="btn btn-primary" href="{% url 'products:project_new' %}">{% icon 'plus' 'ic' %}New project</a>{% endif %}
+  </div>
+</div>
+
+{% if view == 'board' %}
+<div class="pj-board" id="pj-board">
+  {% for col in columns %}
+  <section class="pj-col" data-stage="{{ col.key }}" data-off-text="Not part of this project">
+    <header><span class="pj-col-name">{{ col.label }}</span><span class="pj-count">{{ col.cards|length }}</span></header>
+    <div class="pj-cards">
+      {% for c in col.cards %}
+      <article class="pj-card" draggable="true" data-id="{{ c.product.pk }}" data-name="{{ c.product.name }}" data-stage="{{ c.stage }}" data-off="{{ c.off_json }}" data-days="{{ c.days }}">
+        <a class="pj-title" href="{% url 'products:project_lifecycle' pk=c.product.pk %}">{{ c.product.name }}</a>
+        <div class="pj-meta">
+          <span title="Time in {{ col.label }}">{% icon 'clock' 'ic' %}{{ c.days }}d</span>
+          {% if c.product.end_date %}<span title="Project end date">{% icon 'calendar-days' 'ic' %}{{ c.product.end_date|date:"j M" }}</span>{% endif %}
+        </div>
+        <div class="pj-badges">
+          {% if c.late_days %}<span class="bdg bdg-red" title="Planned end passed">{{ c.late_days }}d late</span>{% endif %}
+          {% if c.crunch_open %}<span class="bdg {% if c.next_crunch_state == 'late' %}bdg-red{% elif c.next_crunch_state == 'soon' %}bdg-orange{% else %}bdg-blue{% endif %}" title="Next Crunch: {{ c.next_crunch.feature }} by {{ c.next_crunch.due_date|date:'j M' }}">Crunch {{ c.next_crunch.due_date|date:"j M" }}</span>{% endif %}
+        </div>
+        <div class="pj-pod">{% for u in c.pod|slice:":4" %}<span class="kt-av" title="{{ u.get_full_name|default:u.username }}{% if forloop.first and c.product.lead_id %} (lead){% endif %}">{{ u.username.0|upper }}</span>{% endfor %}{% if c.pod|length > 4 %}<span class="kt-av more">+{{ c.pod|length|add:"-4" }}</span>{% endif %}</div>
+      </article>
+      {% empty %}<p class="pj-empty">Nothing here</p>{% endfor %}
+    </div>
+    {% if can_add %}
+    <form class="pj-add" method="post" action="{% url 'products:project_quick_add' %}">{% csrf_token %}
+      <input type="hidden" name="stage" value="{{ col.key }}">
+      <input class="form-input" name="name" placeholder="+ Add project" maxlength="255" aria-label="Add a project to {{ col.label }}" autocomplete="off">
+    </form>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+<div class="pj-journey">
+  {% for r in rows %}
+  <article class="pj-row">
+    <div class="pj-row-head">
+      <a class="pj-title" href="{% url 'products:project_lifecycle' pk=r.card.product.pk %}">{{ r.card.product.name }}</a>
+      <span class="pj-sub">{% if r.card.product.start_date %}{{ r.card.product.start_date|date:"j M" }} to {{ r.card.product.end_date|date:"j M Y"|default:"?" }}{% else %}No dates yet{% endif %}</span>
+      <span class="pj-pod">{% for u in r.card.pod|slice:":4" %}<span class="kt-av" title="{{ u.get_full_name|default:u.username }}">{{ u.username.0|upper }}</span>{% endfor %}</span>
+      {% if r.card.late_days %}<span class="bdg bdg-red">{{ r.card.late_days }}d late</span>{% endif %}
+      {% if r.card.crunch_open %}<span class="bdg bdg-orange">Crunch {{ r.card.next_crunch.due_date|date:"j M" }}</span>{% endif %}
+    </div>
+    <ol class="pj-track">
+      {% for n in r.nodes %}
+      <li class="is-{{ n.state }}">
+        <button type="button" class="pj-node" {% if n.state == 'off' or n.state == 'now' %}disabled{% endif %}
+          {% if n.state != 'off' and n.state != 'now' %}onclick="pjMove({{ r.card.product.pk }},'{{ n.key }}','{{ n.label }}','{{ r.card.stage_label }}','{{ r.card.product.name|escapejs }}',{{ r.card.days }},{% if n.state == 'done' %}true{% else %}false{% endif %})"{% endif %}
+          title="{% if n.state == 'off' %}Not part of this project{% elif n.state == 'now' %}Here now, {{ r.card.days }} days{% elif n.state == 'done' %}Done. Click to send back{% else %}Click to move here{% endif %}">
+          {% if n.state == 'done' %}{% icon 'check' 'ic' %}{% endif %}
+        </button>
+        <span class="pj-lab">{{ n.label }}</span>
+        <span class="pj-date">{% if n.since %}{{ n.since|date:"j M" }}{% elif n.state == 'off' %}n/a{% elif n.plan and n.plan.end_date %}plan {{ n.plan.end_date|date:"j M" }}{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </article>
+  {% empty %}<p class="pj-empty">No projects yet.</p>{% endfor %}
+</div>
+{% endif %}
+
+{% include "products/_move_dialog.html" %}
+<script>
+(function(){
+  var board=document.getElementById('pj-board'); if(!board) return;
+  var STAGES={}, drag=null;
+  board.querySelectorAll('.pj-col').forEach(function(c){STAGES[c.dataset.stage]=c.querySelector('.pj-col-name').textContent});
+  var ORDER=Object.keys(STAGES);
+  board.addEventListener('dragstart',function(e){
+    var c=e.target.closest('.pj-card'); if(!c) return; drag=c; c.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',c.dataset.id);
+    var off=(c.dataset.off||'').split(',');
+    board.querySelectorAll('.pj-col').forEach(function(col){ if(off.indexOf(col.dataset.stage)>-1) col.classList.add('is-off'); });
+  });
+  board.addEventListener('dragend',function(){ if(drag) drag.classList.remove('is-dragging'); drag=null; board.querySelectorAll('.pj-col').forEach(function(c){c.classList.remove('is-off','is-over')}); });
+  board.addEventListener('dragover',function(e){ var col=e.target.closest('.pj-col'); if(!col||!drag||col.classList.contains('is-off')) return; e.preventDefault(); col.classList.add('is-over'); });
+  board.addEventListener('dragleave',function(e){ var col=e.target.closest('.pj-col'); if(col&&!col.contains(e.relatedTarget)) col.classList.remove('is-over'); });
+  board.addEventListener('drop',function(e){
+    var col=e.target.closest('.pj-col'); if(!col||!drag||col.classList.contains('is-off')) return; e.preventDefault();
+    var to=col.dataset.stage, from=drag.dataset.stage; if(to===from) return;
+    pjMove(drag.dataset.id,to,STAGES[to],STAGES[from],drag.dataset.name,+drag.dataset.days,ORDER.indexOf(to)<ORDER.indexOf(from));
+  });
+})();
+</script>
+{% endblock %}

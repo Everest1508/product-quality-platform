@@ -1,0 +1,116 @@
+{% extends "core/base.html" %}
+{% load icon_tags project_tags %}
+{% block title %}{{ product.name }} lifecycle — PQ Platform{% endblock %}
+{% block content %}
+{{ mention_people|json_script:"pj-people" }}
+<nav class="breadcrumbs"><a href="{% url 'products:project_board' %}">Projects</a><span class="sep">/</span><span class="current">{{ product.name }}</span></nav>
+<div class="pg-head">
+  <div>
+    <h1>{{ product.name }}</h1>
+    <p class="sub">In <b>{{ card.stage_label }}</b> for {{ card.days }} day{{ card.days|pluralize }}{% if product.start_date %} · {{ product.start_date|date:"j M Y" }} to {{ product.end_date|date:"j M Y"|default:"?" }}{% endif %}{% if card.late_days %} · <span style="color:var(--red)">{{ card.late_days }} days past plan</span>{% endif %}</p>
+  </div>
+  {% if can_work %}
+  <div class="pg-actions">
+    <select class="form-input" id="pj-moveto" aria-label="Move to another phase" style="min-width:150px">
+      <option value="">Move to…</option>
+      {% for k, l in stages %}{% if k in card.enabled and k != card.stage %}<option value="{{ k }}">{{ l }}</option>{% endif %}{% endfor %}
+    </select>
+    {% if next_stage %}<button type="button" class="btn btn-primary" onclick="pjMove({{ product.pk }},'{{ next_stage }}','{{ labels|dictget:next_stage }}','{{ card.stage_label }}','{{ product.name|escapejs }}',{{ card.days }},false)">{% icon 'arrow-right' 'ic' %}Next phase</button>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% include "products/_project_tabs.html" with here="lifecycle" %}
+
+<ol class="pj-track pj-track-lg">
+  {% for n in nodes %}
+  <li class="is-{{ n.state }}"><span class="pj-node">{% if n.state == 'done' %}{% icon 'check' 'ic' %}{% endif %}</span><span class="pj-lab">{{ n.label }}</span>
+    <span class="pj-date">{% if n.since %}{{ n.since|date:"j M" }}{% elif n.state == 'off' %}not used{% elif n.plan and n.plan.end_date %}plan {{ n.plan.end_date|date:"j M" }}{% endif %}</span></li>
+  {% endfor %}
+</ol>
+
+<div class="pj-cols">
+  <div class="pj-main">
+    {% if can_work %}
+    <form class="card pj-compose" method="post" action="{% url 'products:project_log_add' pk=product.pk %}" x-data="pjCompose()">
+      {% csrf_token %}
+      <textarea name="body" class="form-input" rows="3" required maxlength="4000" placeholder="What happened? Type @ to tag someone on the Pod" x-ref="box" @input="onInput" @keydown.escape="open=false" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.enter="pick($event)" @keydown.tab="pick($event)"></textarea>
+      <ul class="pj-suggest" x-show="open && matches.length" style="display:none"><template x-for="(m,i) in matches" :key="m.username"><li :class="{ on: i===idx }" @mousedown.prevent="choose(m)"><b x-text="'@'+m.username"></b> <span x-text="m.name"></span></li></template></ul>
+      <div class="pj-compose-bar">
+        <div class="seg" role="group" aria-label="Type">
+          {% for v, l in compose_kinds %}<label><input type="radio" name="kind" value="{{ v }}" {% if forloop.first %}checked{% endif %}><span>{{ l }}</span></label>{% endfor %}
+        </div>
+        <button class="btn btn-primary">{% icon 'send' 'ic' %}Add to log</button>
+      </div>
+    </form>
+    {% endif %}
+
+    <form class="pj-filters" method="get">
+      <div class="seg" role="group" aria-label="Filter the log">{% for v, l in kind_filters %}<a href="?{% if v %}kind={{ v }}{% endif %}{% if mine %}{% if v %}&{% endif %}mine=1{% endif %}" class="{% if kind == v %}is-on{% endif %}">{{ l }}</a>{% endfor %}</div>
+      <a class="btn btn-sm {% if mine %}btn-primary{% endif %}" href="?{% if not mine %}mine=1{% endif %}{% if kind %}{% if not mine %}&{% endif %}kind={{ kind }}{% endif %}">{% icon 'bell' 'ic' %}Mentions me</a>
+    </form>
+
+    <div class="pj-feed">
+      {% regroup entries by created_at.date as days %}
+      {% for day in days %}
+      <h3 class="pj-day">{{ day.grouper|day_label }}</h3>
+      {% for e in day.list %}
+      <article class="pj-entry k-{{ e.kind }}">
+        <span class="pj-dot" aria-hidden="true"></span>
+        <div class="pj-entry-main">
+          <header>
+            <span class="kt-av">{{ e.author|initial }}</span>
+            <b>{{ e.author.get_full_name|default:e.author.username|default:"System" }}</b>
+            <span class="pj-kind">{{ e.get_kind_display }}</span>
+            <time datetime="{{ e.created_at|date:'c' }}" title="{{ e.created_at|date:'j M Y, g:i:s A' }}">{{ e.created_at|date:"g:i A" }} · {{ e.created_at|timesince }} ago</time>
+          </header>
+          {% if e.kind == 'stage' %}
+          <p class="pj-move{% if e.meta.back %} is-back{% endif %}"><span>{{ labels|dictget:e.from_stage }}</span> {% icon 'arrow-right' 'ic' %} <span>{{ labels|dictget:e.to_stage }}</span>
+            {% if e.meta.days_in_from is not None %}<small>{{ e.meta.days_in_from }} day{{ e.meta.days_in_from|pluralize }} in {{ labels|dictget:e.from_stage }}</small>{% endif %}
+            {% if e.meta.back %}<span class="bdg bdg-red">sent back</span>{% endif %}
+            {% if e.meta.skipped %}<small>skipped {{ e.meta.skipped|join:", " }}</small>{% endif %}</p>
+          {% endif %}
+          {% if e.body %}<p class="pj-text">{{ e|log_body }}</p>{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+      {% empty %}<p class="pj-empty">Nothing in the log yet.</p>{% endfor %}
+    </div>
+  </div>
+
+  <aside class="pj-side">
+    <section class="card pj-box"><h2>Pod</h2>
+      <ul class="pj-people">{% for u in pod %}<li><span class="kt-av">{{ u|initial }}</span><span>{{ u.get_full_name|default:u.username }}<small>@{{ u.username }}{% if forloop.first and product.lead_id == u.pk %} · lead{% endif %}</small></span></li>{% empty %}<li class="pj-empty">No one yet. <a href="{% url 'products:project_details' pk=product.pk %}">Add the Pod</a></li>{% endfor %}</ul>
+    </section>
+    <section class="card pj-box"><h2>Time in each phase</h2>
+      <table class="pj-times"><thead><tr><th>Phase</th><th>Actual</th><th>Plan</th></tr></thead><tbody>
+        {% for k, l, days, plan in stage_days %}<tr class="{% if k == card.stage %}is-now{% endif %}"><td>{{ l }}</td><td>{% if days or k == card.stage %}{{ days }}d{% else %}·{% endif %}</td><td>{% if plan and plan.start_date %}{{ plan.start_date|date:"j M" }}{% if plan.end_date %} – {{ plan.end_date|date:"j M" }}{% endif %}{% elif plan and plan.planned_hours %}{{ plan.planned_hours }}h{% else %}<span class="pj-faint">·</span>{% endif %}</td></tr>{% endfor %}
+      </tbody></table>
+    </section>
+    <section class="card pj-box"><h2>Crunch</h2>
+      <ul class="pj-crunch">{% for c, state in crunch %}<li class="is-{{ state }}"><div><b>{{ c.feature }}</b><small>{% if c.done %}done {{ c.done_at|date:"j M" }}{% else %}by {{ c.due_date|date:"j M" }}{% if state == 'late' %} · late{% elif state == 'soon' %} · soon{% endif %}{% endif %}{% if c.reason %} · {{ c.reason }}{% endif %}</small></div>
+        {% if can_work and not c.done %}<form method="post" action="{% url 'products:project_crunch_done' pk=c.pk %}">{% csrf_token %}<button class="icon-btn" aria-label="Mark done" title="Mark done">{% icon 'check' 'ic' %}</button></form>{% endif %}</li>{% empty %}<li class="pj-empty">No Crunch items.</li>{% endfor %}</ul>
+      {% if can_work %}<details class="pj-add-crunch"><summary class="btn btn-sm">{% icon 'plus' 'ic' %}Add Crunch</summary>
+        <form method="post" action="{% url 'products:project_crunch_add' pk=product.pk %}">{% csrf_token %}
+          <input class="form-input" name="feature" placeholder="Feature that must ship early" required maxlength="200">
+          <input class="form-input" type="date" name="due" required {% if product.end_date %}max="{{ product.end_date|date:'Y-m-d' }}"{% endif %}>
+          <input class="form-input" name="reason" placeholder="Why (optional)" maxlength="300">
+          <button class="btn btn-primary btn-sm">Add</button></form></details>{% endif %}
+    </section>
+    {% if product.tech_stack %}<section class="card pj-box"><h2>Tech stack</h2><p class="pj-tags">{% for t in product.tech_stack %}<span class="bdg bdg-outline">{{ t }}</span>{% endfor %}</p></section>{% endif %}
+  </aside>
+</div>
+
+{% include "products/_move_dialog.html" %}
+<script>
+document.getElementById('pj-moveto')&&document.getElementById('pj-moveto').addEventListener('change',function(){
+  var to=this.value; if(!to) return; var opt=this.options[this.selectedIndex], order={{ stages|length }}, keys=[{% for k, l in stages %}'{{ k }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+  this.value=''; pjMove({{ product.pk }},to,opt.text,'{{ card.stage_label }}','{{ product.name|escapejs }}',{{ card.days }},keys.indexOf(to)<keys.indexOf('{{ card.stage }}'));
+});
+function pjCompose(){return{people:JSON.parse(document.getElementById('pj-people').textContent),open:false,matches:[],idx:0,at:-1,
+  onInput(e){var t=e.target,v=t.value.slice(0,t.selectionStart),m=/(?:^|\s)@([\w.+-]*)$/.exec(v);if(!m){this.open=false;return}
+    this.at=v.length-m[1].length-1;var q=m[1].toLowerCase();this.matches=this.people.filter(function(p){return p.username.toLowerCase().indexOf(q)===0||p.name.toLowerCase().indexOf(q)===0}).slice(0,6);this.idx=0;this.open=true},
+  move(d){if(this.open&&this.matches.length)this.idx=(this.idx+d+this.matches.length)%this.matches.length},
+  pick(e){if(this.open&&this.matches.length){e.preventDefault();this.choose(this.matches[this.idx])}},
+  choose(m){var t=this.$refs.box,end=t.selectionStart;t.value=t.value.slice(0,this.at)+'@'+m.username+' '+t.value.slice(end);t.focus();this.open=false}}}
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+{% block title %}{{ product.name }} plan — PQ Platform{% endblock %}
+{% block content %}
+<nav class="breadcrumbs"><a href="{% url 'products:project_board' %}">Projects</a><span class="sep">/</span><a href="{% url 'products:project_lifecycle' pk=product.pk %}">{{ product.name }}</a><span class="sep">/</span><span class="current">Plan</span></nav>
+<div class="pg-head"><div><h1>{{ product.name }}</h1><p class="sub">The plan: dates, Pod, stack, SRS and the schedule for each phase.</p></div></div>
+{% include "products/_project_tabs.html" with here="details" %}
+{% if error %}<div class="alert alert-warn" role="alert">{{ error }}</div>{% endif %}
+<form method="post" class="pj-formwrap">
+  {% csrf_token %}
+  {% include "products/_project_fields.html" %}
+  {% if can_work %}<div class="pj-formbar"><button class="btn btn-primary">{% icon 'check' 'ic' %}Save plan</button><a class="btn" href="{% url 'products:project_lifecycle' pk=product.pk %}">Cancel</a></div>
+  {% else %}<p class="field-hint">Only the Pod, owners and admins can change the plan.</p>{% endif %}
+</form>
+{% endblock %}

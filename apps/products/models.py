@@ -29,6 +29,19 @@ class Product(TenantScopedModel):
     ticket_counter = models.PositiveIntegerField(default=0)
     # Name of an icon from apps.core.icons.PRODUCT_ICONS; blank shows the package icon.
     icon = models.CharField(max_length=40, blank=True, default="")
+    # Project lifecycle (see apps/products/lifecycle.py): where the project is, when it moved there, and its plan.
+    stage = models.CharField(max_length=20, default="creation")
+    stage_changed_at = models.DateTimeField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    lead = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="led_products",
+    )
+    tech_stack = models.JSONField(default=list, blank=True)
+    srs = models.TextField(blank=True, default="")
+    srs_updated_at = models.DateTimeField(null=True, blank=True)
+    # The phases this project uses, in no particular order; empty means all of them.
+    phases = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -225,3 +238,76 @@ class APIKey(models.Model):
             return api_key
         except cls.DoesNotExist:
             return None
+
+
+class PodMember(TenantScopedModel):
+    """A person on a project's Pod. The lead is `Product.lead`; everyone else is here."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="pod_members")
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="pod_memberships")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        unique_together = ("product", "user")
+
+
+class PhasePlan(TenantScopedModel):
+    """The plan for one phase of one project: when, and optionally how many hours."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="phase_plans")
+    phase = models.CharField(max_length=20)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    planned_hours = models.DecimalField(max_digits=7, decimal_places=1, null=True, blank=True)
+
+    class Meta(TenantScopedModel.Meta):
+        unique_together = ("product", "phase")
+
+
+class ProjectLogEntry(TenantScopedModel):
+    """One line in a project's history. Append-only: a mistake gets a correction entry, not an edit."""
+
+    class Kind(models.TextChoices):
+        UPDATE = "update", "Update"
+        STAGE = "stage", "Stage change"
+        SCHEDULE = "schedule", "Schedule change"
+        CRUNCH = "crunch", "Crunch"
+        BLOCKER = "blocker", "Blocker"
+        DECISION = "decision", "Decision"
+        CORRECTION = "correction", "Correction"
+        SETUP = "setup", "Project set up"
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="log_entries")
+    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.UPDATE)
+    author = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    body = models.TextField(blank=True, default="")
+    from_stage = models.CharField(max_length=20, blank=True, default="")
+    to_stage = models.CharField(max_length=20, blank=True, default="")
+    mentions = models.ManyToManyField("accounts.User", blank=True, related_name="project_mentions")
+    meta = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["product", "-created_at"])]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValueError("Project log entries cannot be edited. Add a correction entry instead.")
+        super().save(*args, **kwargs)
+
+
+class CrunchItem(TenantScopedModel):
+    """A feature that has to ship earlier than the project's end date."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="crunch_items")
+    feature = models.CharField(max_length=200)
+    due_date = models.DateField()
+    reason = models.CharField(max_length=300, blank=True, default="")
+    done = models.BooleanField(default=False)
+    done_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        ordering = ["done", "due_date", "id"]

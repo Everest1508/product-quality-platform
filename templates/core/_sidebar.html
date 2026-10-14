@@ -26,6 +26,11 @@
        class="side-item {% if u == 'product_list' or u == 'product_create' %}active{% endif %}">
       {% icon 'package' %} <span class="side-label">Products</span>
     </a>
+    <a href="{% url 'products:project_board' %}" data-label="Projects"
+       {% if u == 'project_board' or u == 'project_new' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'project_board' or u == 'project_new' %}active{% endif %}">
+      {% icon 'layout-dashboard' %} <span class="side-label">Projects</span>
+    </a>
     <a href="{% url 'tickets:ticket_board' %}" data-label="All tickets"
        {% if u == 'ticket_board' or u == 'ticket_kanban' or u == 'ticket_list' or u == 'ticket_create' or u == 'ticket_detail' or u == 'ticket_edit' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'ticket_board' or u == 'ticket_kanban' or u == 'ticket_list' or u == 'ticket_create' or u == 'ticket_detail' or u == 'ticket_edit' %}active{% endif %}">
