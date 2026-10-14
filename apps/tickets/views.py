@@ -279,7 +279,14 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             from apps.products.access import product_users
             members = product_users(ticket.product, request.company)
 
+        from apps.dashboards.models import ActivityLog
+
+        events = list(
+            ActivityLog.objects.filter(company=request.company, target_content_type="ticket", target_object_id=ticket.pk)
+            .exclude(event_type="ticket_commented").select_related("actor").order_by("created_at", "id")[:100]
+        )
         return render(request, "tickets/ticket_detail.html", {
+            "events": events,
             "ticket": ticket,
             "comments": comments,
             "comment_form": comment_form,

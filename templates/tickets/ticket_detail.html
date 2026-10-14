@@ -46,6 +46,13 @@
     {% endif %}
   </div>
 
+  {% if events %}
+  <div class="td-sec-head"><h2>History <span style="font-weight:400;color:var(--muted)">({{ events|length }})</span></h2></div>
+  <ol class="td-timeline">
+    {% for e in events %}<li><span class="dot" aria-hidden="true"></span><p><b>{{ e.actor.get_full_name|default:e.actor.username|default:"System" }}</b> {{ e.title|cut:ticket.key|lower|cut:"ticket  "|cut:"ticket " }}{% if e.description %}: {{ e.description }}{% endif %}<time title="{{ e.created_at|date:'M j, Y g:i A' }}">{{ e.created_at|timesince }} ago</time></p></li>{% endfor %}
+  </ol>
+  {% endif %}
+
   <div class="td-sec-head"><h2>Comments <span style="font-weight:400;color:var(--muted)">({{ comments|length }})</span></h2></div>
   <div class="card-flush" style="padding:18px 20px">
     <div id="comment-list">{% include "tickets/partials/_comment_list.html" with comments=comments %}</div>
