@@ -660,3 +660,17 @@ class ChangelogDialogTest(TestCase):
         for marker in ('id="cl-search"', 'id="cl-chips"', 'id="cl-older"', "cl-card", "pq:seen-version", "inert"):
             self.assertIn(marker, body)
         self.assertIn(f'data-version="{settings.APP_VERSION}"', body)
+
+
+class ErrorPagesTest(TestCase):
+    def test_a_missing_page_and_a_crash_get_calm_pages_with_a_way_home(self):
+        from django.test import override_settings
+
+        with override_settings(DEBUG=False, ALLOWED_HOSTS=["testserver"]):
+            r = self.client.get("/definitely/not/here/")
+        self.assertEqual(r.status_code, 404)
+        self.assertContains(r, "couldn’t find that page", status_code=404)
+        self.assertContains(r, 'href="/dashboards/"', status_code=404)
+        from django.template.loader import render_to_string
+
+        self.assertIn("Something went wrong", render_to_string("500.html"))

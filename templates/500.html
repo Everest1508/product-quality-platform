@@ -1,0 +1,23 @@
+{% load icon_tags %}<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark">
+<title>Something went wrong on our side — PQ Platform</title>
+<script>try{var t=localStorage.getItem("pqTheme");if(t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}</script>
+<style>
+{% include "core/css/_tokens.css" %}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:14px/1.5 Inter,-apple-system,system-ui,sans-serif}
+.box{max-width:380px;text-align:center;display:grid;justify-items:center;gap:14px}
+.ico{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--panel);color:var(--muted);animation:f 6s ease-in-out infinite}
+.ico svg{width:30px;height:30px}
+@keyframes f{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+h1{font-size:20px;font-weight:650}p{color:var(--muted)}
+a.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;background:var(--accent);color:var(--on-accent);font-weight:500;text-decoration:none}
+small{color:var(--muted);font-size:12px}kbd{border:1px solid var(--border);border-radius:4px;padding:0 4px;font:11px monospace}
+@media (prefers-reduced-motion:reduce){.ico{animation:none}}
+</style></head>
+<body><div class="box">
+<span class="ico">{% icon 'triangle-alert' 'ic' %}</span>
+<h1>Something went wrong on our side</h1><p>It’s not you. Your work is safe. Try again in a moment, and tell your admin if it keeps happening.</p>
+<a class="btn" href="/dashboards/">{% icon 'house' 'ic' %}Back to Home</a>
+
+</div></body></html>
