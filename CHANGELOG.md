@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.44.0] "Cetti" — 2026-10-14 · a design kit page with every component and icon
+
+> In short: a new Design kit page shows every component and 350 icons with the HTML to copy, and the full set of animated befui icons is now available in every page.
+
+### New
+
+- **A Design kit page.** Open it from the sidebar to see buttons, badges, tabs, inputs, dropdowns, windows, confirmations and toasts, each with the code to copy.
+- **The whole befui icon set.** 283 more icons can be used anywhere, and they redraw themselves when you hover over them.
+- **Click an icon to copy its tag.** The Design kit lists every icon with a search box, so you can find one and paste it straight into a page.
+
 ## [1.43.2] "Dollarbird" — 2026-10-14 · dropdowns open on top of pop-ups, and What's new shows once
 
 > In short: the dropdown lists and date pickers in pop-up windows, such as Log work in the DSR, now open in front of the window instead of behind it.

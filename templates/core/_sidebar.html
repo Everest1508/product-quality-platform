@@ -214,6 +214,11 @@
       <span class="side-badge">v{{ app_version }}</span>
     </button>
 
+    <a href="{% url 'design' %}" class="side-item" data-label="Design kit">
+      {% icon 'layout-dashboard' %}
+      <span class="side-label">Design kit</span>
+    </a>
+
     <button type="button" class="side-item" data-pwa-install hidden>
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
       <span class="side-label">Install app</span>

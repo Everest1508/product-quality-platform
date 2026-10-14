@@ -15,6 +15,7 @@ forgets to validate first. Icons are `stroke="currentColor"`, so they inherit
 text colour and need no per-icon colours.
 """
 
+from apps.core.befui_icons import BEFUI_ICONS
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -281,7 +282,10 @@ def render_icon(name, css_class="ic", size=None):
     Returns `""` instead of raising, so a policy with no icon (the default)
     renders no glyph rather than a placeholder box.
     """
-    body = ICONS.get(name) or UI_ICONS.get(name)
+    if name and name.startswith("bef:"):  # "bef:search" is befui's own drawing, even where a lucide one exists
+        body = BEFUI_ICONS.get(name[4:])
+    else:
+        body = ICONS.get(name) or UI_ICONS.get(name) or BEFUI_ICONS.get(name)
     if not name or not body:
         return ""
     return format_html(

@@ -716,3 +716,21 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 .rk-row>.rk{border:0;border-radius:0;box-shadow:none;}
 .bento{gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
 .bento>.tile{border:0;border-radius:0;box-shadow:none;}
+
+/* ---- Design kit page ---- */
+.dk-card{padding:20px;margin-bottom:16px;}
+.dk-card h2{font-size:16px;font-weight:600;}
+.dk-demo{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:18px;margin:12px 0;border:1px dashed var(--border);border-radius:var(--radius);}
+.dk-code{position:relative;}
+.dk-code .btn{position:absolute;top:8px;right:8px;}
+.dk-code pre{margin:0;padding:14px;border-radius:var(--radius);background:var(--panel);overflow:auto;font-size:12.5px;line-height:1.5;}
+.dk-h{margin:16px 0 8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.dk-icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;}
+.dk-icon{display:grid;justify-items:center;gap:6px;padding:12px 6px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;font:inherit;}
+.dk-icon:hover{border-color:var(--accent);color:var(--accent);}
+.dk-icon .ic{width:22px;height:22px;}
+.dk-icon span{font-size:11px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* befui's hover redraw: each stroke draws itself in turn */
+@keyframes iconDraw{from{stroke-dasharray:1;stroke-dashoffset:1}to{stroke-dasharray:1;stroke-dashoffset:0}}
+.icon-hover:hover .icon-draw :is(path,circle,rect){animation:iconDraw var(--icon-ms,.7s) ease both;animation-delay:calc(var(--i,0) * 90ms);}
+@media (prefers-reduced-motion:reduce){.icon-hover:hover .icon-draw :is(path,circle,rect){animation:none}}

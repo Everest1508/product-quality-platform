@@ -1,0 +1,28 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+{% block title %}Design kit — PQ Platform{% endblock %}
+{% block content %}
+<div class="pg-head">
+  <div><h1>Design kit</h1><p class="sub">Every component and icon, as plain HTML. Copy the code, paste it into a template.</p></div>
+</div>
+
+<div x-data="{ q: '' }">
+  {% for b in blocks %}
+  <section class="card dk-card">
+    <h2>{{ b.title }}</h2><p class="sub">{{ b.note }}</p>
+    <div class="dk-demo">{{ b.demo }}</div>
+    <div class="dk-code"><button type="button" class="btn btn-sm" onclick="pqCopy(this)" data-copy="{{ b.code }}">{% icon 'copy' %}Copy</button><pre><code>{{ b.code }}</code></pre></div>
+  </section>
+  {% endfor %}
+
+  <section class="card dk-card">
+    <h2>Icons</h2>
+    <p class="sub">{{ lucide|length }} outline icons and {{ befui|length }} befui icons. Click one to copy its tag. Use <code>{% verbatim %}{% icon 'name' %}{% endverbatim %}</code>; <code>bef:name</code> picks the befui drawing where both sets have the name; add <code>ic icon-draw</code> for the hover redraw.</p>
+    <input class="form-input" type="search" placeholder="Find an icon" x-model="q" style="max-width:280px;margin:8px 0 12px">
+    <h3 class="dk-h">Outline set</h3>
+    <div class="dk-icons">{% for n in lucide %}<button type="button" class="dk-icon" data-name="{{ n }}" x-show="!q || '{{ n }}'.includes(q.toLowerCase())" onclick="pqCopy(this)" data-copy="{% templatetag openblock %} icon '{{ n }}' {% templatetag closeblock %}" title="{{ n }}">{% icon n 'ic' %}<span>{{ n }}</span></button>{% endfor %}</div>
+    <h3 class="dk-h">befui set (hover to draw)</h3>
+    <div class="dk-icons">{% for n in befui %}<button type="button" class="dk-icon icon-hover" x-show="!q || '{{ n }}'.includes(q.toLowerCase())" onclick="pqCopy(this)" data-copy="{% templatetag openblock %} icon 'bef:{{ n }}' 'ic icon-draw' {% templatetag closeblock %}" title="{{ n }}">{% with "bef:"|add:n as bn %}{% icon bn 'ic icon-draw' %}{% endwith %}<span>{{ n }}</span></button>{% endfor %}</div>
+  </section>
+</div>
+{% endblock %}

@@ -119,3 +119,23 @@ class SearchTest(TestCase):
         page = self.client.get(reverse("dashboards:index"), follow=True).content.decode()
         self.assertIn('role="combobox"', page)
         self.assertIn("pq-palette", page)
+
+
+class DesignKitTest(TestCase):
+    def test_members_see_every_component_and_the_befui_icons(self):
+        from apps.accounts.models import Company, Membership
+        from apps.core.icons import render_icon
+
+        user = get_user_model().objects.create_user(username="dk", password="pass1234")
+        company = Company.objects.create(name="Dk", slug="dk")
+        Membership.objects.create(user=user, company=company, role=Membership.Role.VIEWER)
+        self.client.force_login(user)
+        body = self.client.get(reverse("design")).content.decode()
+        self.assertIn("Design kit", body)
+        self.assertIn("befui set", body)
+        self.assertIn('class="dk-icon icon-hover"', body)
+        self.assertIn("pathLength", str(render_icon("bef:search", "ic icon-draw")))
+        self.assertEqual(render_icon("no-such-icon"), "")
+
+    def test_anonymous_visitors_are_sent_to_sign_in(self):
+        self.assertEqual(self.client.get(reverse("design")).status_code, 302)
