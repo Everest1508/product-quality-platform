@@ -10,6 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.40.2] "Meadowlark" — 2026-10-14 · no pay widget on Home
+
+> In short: Home no longer shows a pay card.
+
+### Better
+- **Home no longer shows your pay.** The pay card is gone, so the bottom row holds only your week, your leave and your DSR. Your payslips are still under My payslips in the sidebar.
+
 ## [1.40.1] "Skylark" — 2026-10-14 · much faster loading
 
 > In short: pages open much faster, and opening another page of the app downloads almost nothing.

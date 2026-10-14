@@ -30,19 +30,13 @@ it('greets by name from the browser clock and shows the numbers', async () => {
   expect(screen.getByText('12h 30m')).toBeInTheDocument();
 });
 
-it('not on payroll and empty states say so', async () => {
+it('empty states say so, and Home has no pay widget', async () => {
   setup(home({ my_tickets: [], due_soon: [], activity: [] }));
-  expect(await screen.findByText(/not on payroll yet/)).toBeInTheDocument();
-  expect(screen.getByText('No open tickets assigned to you. Nice.')).toBeInTheDocument();
+  expect(await screen.findByText('No open tickets assigned to you. Nice.')).toBeInTheDocument();
+  expect(screen.queryByText('Pay')).not.toBeInTheDocument();
+  expect(screen.queryByText(/payslip/i)).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('tab', { name: /Due soon/ }));
   expect(await screen.findByText('Nothing is due in the next 7 days.')).toBeInTheDocument();
-});
-
-it('a payslip shows net pay with the deduction for unpaid leave', async () => {
-  setup(home({ payroll: { on_payroll: true, has_profile: true, monthly_salary: '42,000.00', payslip: { id: 9, run_label: 'Sep 2026', currency: 'INR', gross: '40,000.00', deduction: '2,000.00', unpaid_leave_days: '1', url: '/payroll/me/9/' } } }));
-  expect(await screen.findByText('INR 40,000.00')).toBeInTheDocument();
-  expect(screen.getByText(/for 1 unpaid leave/)).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Full breakdown →' })).toHaveAttribute('href', '/payroll/me/9/');
 });
 
 it('Punch in posts to the attendance endpoint and says what happened', async () => {

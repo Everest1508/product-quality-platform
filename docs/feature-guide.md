@@ -76,7 +76,7 @@ in the [release timeline](#release-timeline) at the end.
   its typewriter line in 1.34.1 "Thrush" (2026-10-13).
 - **Why:** the old home opened on company-wide numbers that told a person nothing about their own day.
 - **How:** Home shows what is yours first: open tickets, overdue, hours logged, hours worked, then Assigned and Due soon,
-  Today and your to-do list, this week, pay and leave. The banner changes colour and icon through the day and types out a
+  Today and your to-do list, this week, leave and your DSR week. The banner changes colour and icon through the day and types out a
   line. Hover its icon to see it redraw.
 
 ### Punch in and out from Home

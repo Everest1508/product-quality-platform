@@ -1,7 +1,7 @@
 import { HomeSkeleton } from '@/components/skeletons';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarIcon, CoffeeIcon, FlameIcon, MoonIcon, SunIcon, LogInIcon, PlusIcon, RefreshIcon, SendIcon, WalletIcon, FileTextIcon } from '@/components/ui/icons';
+import { CalendarIcon, CoffeeIcon, FlameIcon, MoonIcon, SunIcon, LogInIcon, PlusIcon, RefreshIcon, SendIcon, FileTextIcon } from '@/components/ui/icons';
 import { Alert } from '@/components/ui/alert';
 import { BarChart } from '@/components/ui/charts';
 import { Badge } from '@/components/ui/badge';
@@ -169,8 +169,6 @@ export function HomePage() {
   const h = q.data;
   if (q.isError && !h) return <Card><ErrorState title="Couldn’t load your home page."><Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshIcon />Try again</Button></ErrorState></Card>;
   if (!h) return <HomeSkeleton />;
-  const p = h.payroll;
-  const slip = p.payslip;
   const na = h.needs_attention;
   const now = new Date();
 
@@ -225,18 +223,8 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <WeekCard h={h} />
-        <Tile icon={<WalletIcon />} title="Pay" to={slip ? slip.url : '/payroll/me/'} link={slip ? 'Full breakdown' : 'My payslips'}>
-          {slip ? (
-            <>
-              <div className="text-xs text-muted-foreground">Net pay · {slip.run_label}</div>
-              <div className="text-xl font-semibold">{slip.currency} {slip.gross}</div>
-              {slip.unpaid_leave_days !== '0' && <p><span className="text-destructive">−{slip.currency} {slip.deduction}</span> for {slip.unpaid_leave_days} unpaid leave</p>}
-            </>
-          ) : p.has_profile ? <p className="text-muted-foreground">You’re on payroll at {p.monthly_salary}/month, but no payslip has been generated for you yet.</p>
-            : <p className="text-muted-foreground">You’re not on payroll yet. Once an admin adds you, your payslips appear here.</p>}
-        </Tile>
         <Tile icon={<CalendarIcon />} title="Leave" to="/leave/" link="All my leave">
           {h.leave.balances.length === 0 && <p className="text-muted-foreground">No leave policies configured yet.</p>}
           {h.leave.balances.slice(0, 3).map((b) => (
