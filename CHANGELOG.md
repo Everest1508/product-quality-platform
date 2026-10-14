@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.47.0] "Yellowthroat" — 2026-10-14 · one Projects list, clearer forms and roomier pages
+
+> In short: products and projects are now one thing called Projects, the project form says what is needed and what each part is for, and pages have more breathing room.
+
+### Better
+
+- **Products and projects are one thing.** The sidebar has a single Projects entry, with Board, Journey and List views, and the New project button opens the full project form.
+- **The project form says what is needed.** Only the name is required, every section is marked Required or Optional, and each one explains what it is for.
+- **Choosing the Pod is clear.** Each person is a card with their name, username and role, a visible tick, a count of how many you picked, and a search box when the team is big.
+- **Crunch rows are labelled.** The form explains that a Crunch item is a feature that must be ready before the project ends, and its fields say what to enter, with an example.
+- **Cards have room to breathe.** Project pages and the Home grid use a consistent spacing scale, so cards no longer sit tight against each other.
+
+### Fixed
+
+- **The Design kit page is gone.** It was only a showcase and is no longer in the sidebar.
+
 ## [1.46.0] "Whinchat" — 2026-10-14 · project phases, a Pod and a full log
 
 > In short: every project now has a life from Creation to Close, with a board, a journey view, a team called the Pod and a dated log of everything that happens.

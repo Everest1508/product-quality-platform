@@ -5,10 +5,7 @@
 <div class="pg-head">
   <div><h1>Projects</h1><p class="sub">{{ total }} project{{ total|pluralize }} across nine phases. Drag a card to move it, and say why.</p></div>
   <div class="pg-actions">
-    <div class="seg" role="group" aria-label="View">
-      <a href="?view=board" class="{% if view == 'board' %}is-on{% endif %}">Board</a>
-      <a href="?view=journey" class="{% if view == 'journey' %}is-on{% endif %}">Journey</a>
-    </div>
+    {% include "products/_project_views.html" with here=view %}
     {% if can_add %}<a class="btn btn-primary" href="{% url 'products:project_new' %}">{% icon 'plus' 'ic' %}New project</a>{% endif %}
   </div>
 </div>

@@ -4,7 +4,6 @@ from django.contrib import admin
 from django.urls import include, path
 
 from apps.core import befui
-from apps.core.design import DesignView
 from django.views.generic import RedirectView
 
 from apps.core.brand import brand_file, favicon_ico
@@ -19,7 +18,6 @@ urlpatterns = [
     path("offline/", offline),
     path("brand/<str:name>", brand_file),
     path("admin/", admin.site.urls),
-    path("design/", DesignView.as_view(), name="design"),
     path("befui/<str:name>", befui.asset),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),

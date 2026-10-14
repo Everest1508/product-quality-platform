@@ -3,59 +3,68 @@
 {{ on_map|json_script:"pj-on" }}
 {% comment %}
 The plan fields, shared by "New project" and "Plan & details". `rows` is [(key, label, enabled, plan)],
-`members` everyone in the company, `pod_ids` who is on the Pod now, `product` the project (or a blank stub).
+`members` everyone in the company (with `pj_role`), `pod_ids` who is on the Pod now, `product` the project (or a blank stub).
+Every section says whether it is required and what it is for (see design.md, "Forms").
 {% endcomment %}
-<div x-data="pjPlan()">
+<div class="pj-sections" x-data="pjPlan()">
+
 <section class="card form-card pj-form">
-  <div class="form-section-label">Duration</div>
+  <header class="pj-sec-head"><div><h2>Duration</h2><p>When the project runs. It is used to check the schedule below and to show when a project is running late.</p></div><span class="pj-req is-opt">Optional</span></header>
   <div class="form-row">
     <div class="form-group"><label for="start_date">Start date</label><input id="start_date" type="date" name="start_date" class="form-input" value="{{ product.start_date|date:'Y-m-d' }}" x-ref="start"></div>
     <div class="form-group"><label for="end_date">End date</label><input id="end_date" type="date" name="end_date" class="form-input" value="{{ product.end_date|date:'Y-m-d' }}" x-ref="end"></div>
   </div>
 </section>
 
-<section class="card form-card pj-form">
-  <div class="form-section-label">Pod</div>
-  <p class="field-hint" style="margin:0 0 8px">The lead and the people assigned. They can move the project and write to its log, and they are told about everything.</p>
-  <div class="form-row">
-    <div class="form-group"><label for="lead">Project lead</label>
-      <select id="lead" name="lead" class="form-input"><option value="">No lead yet</option>{% for u in members %}<option value="{{ u.pk }}" {% if product.lead_id == u.pk or not product.pk and u.pk in pod_ids and forloop.first %}selected{% endif %}>{{ u.get_full_name|default:u.username }} (@{{ u.username }})</option>{% endfor %}</select></div>
+<section class="card form-card pj-form" x-data="{ n: {{ pod_ids|length }}, q: '' }">
+  <header class="pj-sec-head"><div><h2>Pod</h2><p>The Pod is the team assigned to this project. Pod members can move the project between phases, write in its log and tag each other, and they are told about everything that happens.</p></div><span class="pj-req is-opt">Optional</span></header>
+  <div class="form-group" style="max-width:360px"><label for="lead">Project lead</label>
+    <select id="lead" name="lead" class="form-input"><option value="">No lead yet</option>{% for u in members %}<option value="{{ u.pk }}" {% if product.lead_id == u.pk %}selected{% endif %}>{{ u.get_full_name|default:u.username }} (@{{ u.username }})</option>{% endfor %}</select>
+    <p class="field-hint">The person responsible. They are always on the Pod.</p></div>
+  <div class="pj-pod-head"><b>Who else works on it?</b> <span class="pj-faint">Tick everyone on the team. <span x-text="n"></span> selected.</span>
+    {% if members|length > 8 %}<input type="search" class="form-input" placeholder="Find a person" x-model="q" style="max-width:220px;margin-left:auto">{% endif %}</div>
+  <div class="pj-people-pick" @change="n = $root.querySelectorAll('input[name=pod]:checked').length">
+    {% for u in members %}
+    <label class="pj-person" x-show="!q || '{{ u.username|lower }} {{ u.get_full_name|lower }}'.includes(q.toLowerCase())">
+      <input type="checkbox" name="pod" value="{{ u.pk }}" {% if u.pk in pod_ids %}checked{% endif %}>
+      <span class="kt-av lg">{{ u.username.0|upper }}</span>
+      <span class="pj-person-name"><b>{{ u.get_full_name|default:u.username }}</b><small>@{{ u.username }}{% if u.pj_role %} · {{ u.pj_role|title }}{% endif %}</small></span>
+      <span class="pj-tick" aria-hidden="true">{% icon 'check' 'ic' %}</span>
+    </label>
+    {% endfor %}
   </div>
-  <div class="pj-pickers">{% for u in members %}<label class="kt-check"><input type="checkbox" name="pod" value="{{ u.pk }}" {% if u.pk in pod_ids %}checked{% endif %}><span>{{ u.get_full_name|default:u.username }} <small>@{{ u.username }}</small></span></label>{% endfor %}</div>
 </section>
 
 <section class="card form-card pj-form">
-  <div class="form-section-label">Tech stack</div>
-  <input type="text" name="tech_stack" class="form-input" value="{{ product.tech_stack|join:', ' }}" placeholder="Django, React, Postgres" autocomplete="off">
-  <p class="field-hint">Separate with commas.</p>
-  <div class="form-section-label" style="margin-top:16px">SRS</div>
-  <textarea name="srs" class="form-input" rows="8" placeholder="What the project has to do: features, rules, who uses it.">{{ product.srs }}</textarea>
-  {% if product.srs_updated_at %}<p class="field-hint">Last edited {{ product.srs_updated_at|date:"j M Y, g:i A" }}.</p>{% endif %}
+  <header class="pj-sec-head"><div><h2>Tech stack and SRS</h2><p>What it is built with, and what it has to do. Shown on the project page so everyone has the same picture.</p></div><span class="pj-req is-opt">Optional</span></header>
+  <div class="form-group"><label for="tech_stack">Tech stack</label>
+    <input id="tech_stack" type="text" name="tech_stack" class="form-input" value="{{ product.tech_stack|join:', ' }}" placeholder="Django, React, Postgres" autocomplete="off">
+    <p class="field-hint">Separate with commas.</p></div>
+  <div class="form-group"><label for="srs">SRS (software requirements)</label>
+    <textarea id="srs" name="srs" class="form-input" rows="8" placeholder="What the project has to do: the features, the rules, and who uses it.">{{ product.srs }}</textarea>
+    {% if product.srs_updated_at %}<p class="field-hint">Last edited {{ product.srs_updated_at|date:"j M Y, g:i A" }}.</p>{% endif %}</div>
 </section>
 
 <section class="card form-card pj-form">
-  <div class="form-section-label">Phases this project uses</div>
-  <p class="field-hint" style="margin:0 0 8px">Phases you leave out are grayed out on the board, and moving the project skips them.</p>
-  <div class="pj-presets">
+  <header class="pj-sec-head"><div><h2>Phases</h2><p>Which of the nine phases this project goes through. A phase you leave out is grayed on the board, and moving the project skips it.</p></div><span class="pj-req is-opt">Optional, all nine by default</span></header>
+  <div class="pj-presets"><span class="pj-faint">Quick pick:</span>
     <button type="button" class="btn btn-sm" @click="preset('full')">All nine</button>
     <button type="button" class="btn btn-sm" @click="preset('frontend')">Frontend only</button>
     <button type="button" class="btn btn-sm" @click="preset('backend')">Backend only</button>
-    <button type="button" class="btn btn-sm" @click="preset('maintenance')">Maintenance</button>
-  </div>
-  <div class="pj-pickers">{% for k, l, on, plan in rows %}<label class="kt-check"><input type="checkbox" name="phase_{{ k }}" value="1" x-model="on.{{ k }}" {% if on %}checked{% endif %}><span>{{ l }}</span></label>{% endfor %}</div>
+    <button type="button" class="btn btn-sm" @click="preset('maintenance')">Maintenance</button></div>
+  <div class="pj-phasepick">{% for k, l, on, plan in rows %}<label class="pj-phase"><input type="checkbox" name="phase_{{ k }}" value="1" x-model="on.{{ k }}" {% if on %}checked{% endif %}><span><b>{{ forloop.counter }}</b> {{ l }}</span></label>{% endfor %}</div>
 </section>
 
 <section class="card form-card pj-form">
-  <div class="form-section-label">Schedule</div>
-  <p class="field-hint" style="margin:0 0 8px">When each phase should happen, inside the project dates. Phases can overlap. Enter dates, hours, or both.</p>
-  <button type="button" class="btn btn-sm" @click="spread()">{% icon 'refresh' 'ic' %}Spread across the project</button>
-  <table class="pj-sched"><thead><tr><th>Phase</th><th>Start</th><th>End</th><th>Hours</th></tr></thead><tbody>
+  <header class="pj-sec-head"><div><h2>Schedule</h2><p>When each phase should happen, inside the project dates. Phases may overlap, for example FE and BE together. Fill dates, hours, or both.</p></div><span class="pj-req is-opt">Optional</span></header>
+  <button type="button" class="btn btn-sm" @click="spread()">{% icon 'refresh' 'ic' %}Spread across the project dates</button>
+  <table class="pj-sched"><thead><tr><th>Phase</th><th>Starts</th><th>Ends</th><th>Planned hours</th></tr></thead><tbody>
     {% for k, l, on, plan in rows %}
     <tr x-show="on.{{ k }}" {% if not on %}style="display:none"{% endif %} data-key="{{ k }}">
-      <td>{{ l }}</td>
-      <td><input type="date" class="form-input" name="s_{{ k }}" value="{{ plan.start_date|date:'Y-m-d' }}"></td>
-      <td><input type="date" class="form-input" name="e_{{ k }}" value="{{ plan.end_date|date:'Y-m-d' }}"></td>
-      <td><input type="number" class="form-input" name="h_{{ k }}" min="0" step="0.5" value="{% if plan.planned_hours is not None %}{{ plan.planned_hours|stringformat:'s' }}{% endif %}" placeholder="h"></td>
+      <td><b>{{ l }}</b></td>
+      <td><input type="date" class="form-input" name="s_{{ k }}" value="{{ plan.start_date|date:'Y-m-d' }}" aria-label="{{ l }} starts"></td>
+      <td><input type="date" class="form-input" name="e_{{ k }}" value="{{ plan.end_date|date:'Y-m-d' }}" aria-label="{{ l }} ends"></td>
+      <td><input type="number" class="form-input" name="h_{{ k }}" min="0" step="0.5" value="{% if plan.planned_hours is not None %}{{ plan.planned_hours|stringformat:'s' }}{% endif %}" placeholder="e.g. 40" aria-label="{{ l }} planned hours"></td>
     </tr>{% endfor %}
   </tbody></table>
 </section>
@@ -65,7 +74,6 @@ function pjPlan(){
   var PRESETS=JSON.parse(document.getElementById('pj-presets').textContent);
   return {
     on:JSON.parse(document.getElementById('pj-on').textContent),
-    init(){},
     preset(name){var s=PRESETS[name]||[];Object.keys(this.on).forEach(function(k){this.on[k]=s.indexOf(k)>-1}.bind(this))},
     spread(){
       var a=this.$refs.start.value,b=this.$refs.end.value; if(!a||!b||b<a){alert('Set the start and end dates first.');return}

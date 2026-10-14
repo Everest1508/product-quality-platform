@@ -3,7 +3,7 @@
 {% block title %}{{ product.name }} plan — PQ Platform{% endblock %}
 {% block content %}
 <nav class="breadcrumbs"><a href="{% url 'products:project_board' %}">Projects</a><span class="sep">/</span><a href="{% url 'products:project_lifecycle' pk=product.pk %}">{{ product.name }}</a><span class="sep">/</span><span class="current">Plan</span></nav>
-<div class="pg-head"><div><h1>{{ product.name }}</h1><p class="sub">The plan: dates, Pod, stack, SRS and the schedule for each phase.</p></div></div>
+<div class="pg-head"><div><h1>{{ product.name }}</h1><p class="sub">Everything on this page is optional. Fill in what you know; you can come back to it any time, and changes are logged.</p></div></div>
 {% include "products/_project_tabs.html" with here="details" %}
 {% if error %}<div class="alert alert-warn" role="alert">{{ error }}</div>{% endif %}
 <form method="post" class="pj-formwrap">

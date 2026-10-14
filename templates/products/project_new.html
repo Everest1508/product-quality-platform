@@ -3,25 +3,27 @@
 {% block title %}New project — PQ Platform{% endblock %}
 {% block content %}
 <nav class="breadcrumbs"><a href="{% url 'products:project_board' %}">Projects</a><span class="sep">/</span><span class="current">New project</span></nav>
-<div class="pg-head"><div><h1>New project</h1><p class="sub">Set it up once: dates, Pod, stack, SRS, phases, schedule and any Crunch items.</p></div></div>
+<div class="pg-head"><div><h1>New project</h1><p class="sub">Only the name is required. Everything else is optional and can be filled in later from the project's Plan &amp; details tab.</p></div></div>
 {% if error %}<div class="alert alert-warn" role="alert">{{ error }}</div>{% endif %}
 <form method="post" class="pj-formwrap">
   {% csrf_token %}
   <section class="card form-card pj-form">
-    <div class="form-section-label">Basics</div>
-    <div class="form-group"><label for="name">Name</label><input id="name" name="name" class="form-input" maxlength="255" required autofocus value="{{ posted.name }}" placeholder="Billing Portal"></div>
-    <div class="form-group"><label for="description">Description</label><textarea id="description" name="description" class="form-input" rows="2" placeholder="Optional">{{ posted.description }}</textarea></div>
+    <header class="pj-sec-head"><div><h2>Basics</h2><p>What the project is called. The name also makes the ticket prefix, for example Billing Portal becomes BIL-001.</p></div><span class="pj-req">Required</span></header>
+    <div class="form-group"><label for="name">Project name</label><input id="name" name="name" class="form-input" maxlength="255" required autofocus value="{{ posted.name }}" placeholder="e.g. Billing Portal"></div>
+    <div class="form-group"><label for="description">Short description <span class="pj-opt">optional</span></label><textarea id="description" name="description" class="form-input" rows="2" placeholder="One or two lines on what this project is for.">{{ posted.description }}</textarea></div>
   </section>
+
   {% include "products/_project_fields.html" with product=stub %}
+
   <section class="card form-card pj-form" x-data="{ items: [{}] }">
-    <div class="form-section-label">Crunch</div>
-    <p class="field-hint" style="margin:0 0 8px">Features that have to ship earlier than the end date. Leave empty if there are none.</p>
+    <header class="pj-sec-head"><div><h2>Crunch</h2><p>A Crunch item is a feature that has to be ready <b>before the project's end date</b>, for example because it was promised for a client demo. Add one row for each such feature. Leave it empty if nothing needs to come early.</p></div><span class="pj-req is-opt">Optional</span></header>
+    <div class="pj-crunch-head" aria-hidden="true"><span>Feature that must come early</span><span>Must be ready by</span><span>Why it cannot wait</span></div>
     <template x-for="(it, i) in items" :key="i"><div class="pj-crunch-row">
-      <input class="form-input" name="crunch_feature" placeholder="Feature" maxlength="200">
-      <input class="form-input" type="date" name="crunch_due">
-      <input class="form-input" name="crunch_reason" placeholder="Why" maxlength="300">
+      <input class="form-input" name="crunch_feature" placeholder="e.g. Login and sign-up" maxlength="200" aria-label="Feature that must come early">
+      <input class="form-input" type="date" name="crunch_due" aria-label="Must be ready by">
+      <input class="form-input" name="crunch_reason" placeholder="e.g. Client demo on 20 Oct" maxlength="300" aria-label="Why it cannot wait">
     </div></template>
-    <button type="button" class="btn btn-sm" @click="items.push({})">{% icon 'plus' 'ic' %}Another</button>
+    <button type="button" class="btn btn-sm" @click="items.push({})">{% icon 'plus' 'ic' %}Add another feature</button>
   </section>
   <div class="pj-formbar"><button class="btn btn-primary">{% icon 'check' 'ic' %}Create project</button><a class="btn" href="{% url 'products:project_board' %}">Cancel</a></div>
 </form>

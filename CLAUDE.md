@@ -38,6 +38,7 @@ Root-level `test_api*.py`, `check_db*.py`, `check_serializer.py` are ad-hoc thro
 
 ## Companion docs — read before changing an area
 
+- **`design-system.md`** is the UI rules: tokens, the 4px spacing scale, type, icons, forms, components. Read it before building or changing any page, and use its tokens (`--space-*`, `--fs-*`, colors) instead of literals. (`design.md` is the PDF style guide, a different thing.)
 - **`AGENTS.md`** is the long-form version of this file (per-feature invariants for attendance, leave, payroll, toasts, dropdowns, sidebar, changelog). Read the relevant section before touching those areas.
 - **`context.md`** is the project's running memory (what was done and why, "deliberately not changed", numbered open questions). Consult it before changing an area and append to today's `## YYYY-MM-DD` section after a behaviour change.
 - **`CHANGELOG.md` is a runtime asset** (parsed by `apps/core/changelog.py` for the "What's new" dialog and `/api/v1/changelog/`): add releases at the top, never edit old entries, keep `!CHANGELOG.md` after `*.md` in `.dockerignore`.

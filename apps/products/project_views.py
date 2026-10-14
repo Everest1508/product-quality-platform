@@ -126,6 +126,17 @@ class ProjectMoveView(CompanyMemberRequiredMixin, View):
         return _respond(request, True, f"{product.name} moved to {lc.LABELS[product.stage]}.", back)
 
 
+def _people(request):
+    """Everyone in the company, each with their role, for the Pod picker."""
+    from apps.accounts.models import Membership
+
+    roles = dict(Membership.objects.filter(company=request.company).values_list("user_id", "role"))
+    people = list(_members(request))
+    for u in people:
+        u.pj_role = roles.get(u.pk, "")
+    return people
+
+
 def _members(request, product=None):
     User = get_user_model()
     if product is not None:
@@ -205,7 +216,7 @@ class ProjectDetailsView(CompanyMemberRequiredMixin, View):
         today = timezone.localdate()
         card = _card(product, today)
         return {
-            "product": product, "card": card, "members": _members(request), "error": error, "stages": lc.STAGES,
+            "product": product, "card": card, "members": _people(request), "error": error, "stages": lc.STAGES,
             "can_work": lc.can_work(request.user, product, request.company_role), "presets": lc.PRESETS,
             "pod_ids": {u.pk for u in card["pod"]}, "plans": card["plans"],
             "crunch": [(c, lc.crunch_state(c, today)) for c in product.crunch_items.all()],
@@ -269,7 +280,7 @@ class ProjectNewView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         stub = Product(company=request.company, name="", stage="creation", phases=[])
         return render(request, "products/project_new.html", {
-            "members": _members(request), "stages": lc.STAGES, "presets": lc.PRESETS, "error": "", "posted": {},
+            "members": _people(request), "stages": lc.STAGES, "presets": lc.PRESETS, "error": "", "posted": {},
             "rows": [(k, l, True, None) for k, l in lc.STAGES], "pod_ids": {request.user.pk}, "stub": stub,
             "on_map": {k: True for k, _ in lc.STAGES},
         })
@@ -282,7 +293,7 @@ class ProjectNewView(CompanyAdminRequiredMixin, View):
 
         def again(error):
             return render(request, "products/project_new.html", {
-                "members": _members(request), "stages": lc.STAGES, "presets": lc.PRESETS, "error": error, "posted": post,
+                "members": _people(request), "stages": lc.STAGES, "presets": lc.PRESETS, "error": error, "posted": post,
                 "rows": [(k, l, k in phases or not phases, None) for k, l in lc.STAGES],
                 "on_map": {k: (k in phases or not phases) for k, _ in lc.STAGES},
                 "pod_ids": {m.pk for m in members}, "stub": Product(name=name),

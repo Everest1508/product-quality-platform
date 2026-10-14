@@ -21,15 +21,10 @@
        class="side-item {% if u == 'index' %}active{% endif %}">
       {% icon 'house' %} <span class="side-label">Home</span>
     </a>
-    <a href="{% url 'products:product_list' %}" data-label="Products"
-       {% if u == 'product_list' or u == 'product_create' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'product_list' or u == 'product_create' %}active{% endif %}">
-      {% icon 'package' %} <span class="side-label">Products</span>
-    </a>
     <a href="{% url 'products:project_board' %}" data-label="Projects"
-       {% if u == 'project_board' or u == 'project_new' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'project_board' or u == 'project_new' %}active{% endif %}">
-      {% icon 'layout-dashboard' %} <span class="side-label">Projects</span>
+       {% if u == 'product_list' or u == 'product_create' or u == 'project_board' or u == 'project_new' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'product_list' or u == 'product_create' or u == 'project_board' or u == 'project_new' %}active{% endif %}">
+      {% icon 'package' %} <span class="side-label">Projects</span>
     </a>
     <a href="{% url 'tickets:ticket_board' %}" data-label="All tickets"
        {% if u == 'ticket_board' or u == 'ticket_kanban' or u == 'ticket_list' or u == 'ticket_create' or u == 'ticket_detail' or u == 'ticket_edit' %}aria-current="page"{% endif %}
@@ -78,8 +73,8 @@
           </a>
           {% endfor %}
         </div>
-        <a href="{% url 'products:product_list' %}" class="switch-item switch-item-all">
-          <span class="switch-item-name">View all products</span>
+        <a href="{% url 'products:project_board' %}" class="switch-item switch-item-all">
+          <span class="switch-item-name">View all projects</span>
           {% icon 'arrow-right' 'switch-icon' %}
         </a>
       </div>
@@ -218,11 +213,6 @@
       <span class="side-label">What's new</span>
       <span class="side-badge">v{{ app_version }}</span>
     </button>
-
-    <a href="{% url 'design' %}" class="side-item" data-label="Design kit">
-      {% icon 'layout-dashboard' %}
-      <span class="side-label">Design kit</span>
-    </a>
 
     <button type="button" class="side-item" data-pwa-install hidden>
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>

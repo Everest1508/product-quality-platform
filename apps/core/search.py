@@ -32,7 +32,7 @@ def _pages(request):
     approver = is_admin or is_approver(request.user, request.company)
     rows = [
         ("Home", reverse("dashboards:index"), "dashboard overview", False),
-        ("Products", reverse("products:product_list"), "apps projects", False),
+        ("Projects", reverse("products:project_board"), "apps products", False),
         ("All tickets", reverse("tickets:ticket_board"), "kanban board issues bugs", False),
         ("All errors", reverse("errors:error_list"), "exceptions crashes", False),
         ("Reports", reverse("dashboards:reports"), "summary analytics", False),

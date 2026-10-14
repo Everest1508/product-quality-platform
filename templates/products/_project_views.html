@@ -1,0 +1,5 @@
+<div class="seg" role="group" aria-label="View">
+  <a href="{% url 'products:project_board' %}" class="{% if here == 'board' %}is-on{% endif %}">Board</a>
+  <a href="{% url 'products:project_board' %}?view=journey" class="{% if here == 'journey' %}is-on{% endif %}">Journey</a>
+  <a href="{% url 'products:product_list' %}" class="{% if here == 'list' %}is-on{% endif %}">List</a>
+</div>

@@ -1,116 +1,147 @@
 # PQ Platform UI design system
 
-How the app looks and how to keep it that way. `design.md` in this folder is a
-different thing: it styles generated PDF documents. This file is for the web app.
+The one place that says how the app looks, so every new page matches the old ones.
+`design.md` in this folder is a different thing: it styles generated PDF documents
+(SRS, proposals). This file is for the web app. If a rule here and a stylesheet
+disagree, fix the stylesheet.
 
 ## Where things live
 
 | What | File |
 |---|---|
-| Colors and every other token | `templates/core/css/_tokens.css` |
-| Base styles (layout, sidebar, tables, forms, kanban) | `templates/core/css/_app.css` |
-| Presence, punch panel, team attendance, DSR form | `templates/core/css/_components.css` |
-| Page layouts: home bento, reports, DSR log, stat strip, product cards | `templates/core/css/_pages.css` |
+| Every color, space, size and radius (tokens) | `templates/core/css/_tokens.css` |
+| Base: reset, layout shell, sidebar, forms, tables | `templates/core/css/_app.css` |
+| Widgets: buttons, badges, tabs, dialogs, ledger rows, presence | `templates/core/css/_components.css` |
+| Page layouts: home bento, DSR, profile, projects | `templates/core/css/_pages.css` |
 | Phone, tablet, touch, print, reduced motion | `templates/core/css/_responsive.css` |
-| Logo files, favicons, app icons | `brand/` (see `brand/README.md`) |
+| Icons | `apps/core/icons.py` (outline set) and `apps/core/befui_icons.py` (befui set) |
+| Logo, favicons | `brand/` |
 
-`base.html` includes the five CSS files (`_tokens`, `_app`, `_components`, `_pages`, `_responsive`) in that order, inside one `<style>`, so a
-later file wins when specificity is equal. There is no build step and no static
-files folder. Do not add one for CSS. The Docker image runs daphne, which does
-not serve static files.
+`base.html` inlines the five CSS files in that order, so a later file wins at equal specificity.
+There is no build step and no static folder. Do not add one for CSS.
 
-## Colors
+## The rule above all the others
 
-Change a color in `_tokens.css` and nothing else. Every other file reads tokens.
+**Use a token. Never write a literal color, pixel gap or font size in a template or a new rule.**
+If none fits, add a token to `_tokens.css` first. Dark mode works only because every color is a token.
 
-| Token | Value | Use |
+## Color
+
+Light is the default; `html.dark` swaps the same names. Never test only one theme.
+
+| Token | Meaning | Use for |
 |---|---|---|
-| `--accent` | `#1A5BFF` | Links, active nav item, focus rings, primary highlights |
-| `--accent-soft` | `#EBF0FF` | Active nav background, selected rows, soft chips |
-| `--primary` | `#0D1117` | Main buttons, headings, strong text |
-| `--text` / `--muted` | `#0D1117` / `#6B7280` | Body text and secondary text |
-| `--bg` / `--surface` | white | Page and cards |
-| `--panel` | `#F5F7FC` | Table headers, quiet blocks |
-| `--border` / `--border-strong` | `#D1D8E8` / `#C2CEE8` | Lines and hovered lines |
-| `--green` `--orange` `--red` `--purple` | status hues | Status only, never decoration |
-| `--*-bg` | pale versions | Backgrounds behind the matching status text |
+| `--accent`, `--accent-soft`, `--accent-line` | The brand blue and its tints | Primary action, links, current item, focus, selected |
+| `--text`, `--muted`, `--muted-2` | Body, secondary, faint text | Everything written |
+| `--bg`, `--surface`, `--panel` | Page, card, quiet block | Backgrounds, from back to front |
+| `--border`, `--border-strong`, `--line` | Outlines, hover outlines, hairlines | Dividers and card edges |
+| `--green` / `--green-bg` | Good, done, active | Status only |
+| `--red` / `--red-bg` | Wrong, late, destructive | Status only |
+| `--orange` / `--orange-bg` | Needs a look, Crunch | Status only. A warm orange, never yellow |
+| `--blue` / `--blue-bg` | Information | Notes and info |
+| `--purple` / `--purple-bg` | Leave, decisions | Status only |
 
-Rules:
+- **No yellow or amber anywhere**, in light or dark. Greetings and banners stay in blue and violet.
+- Status colors mean something. Do not use them to make a page livelier.
+- Status is never color alone: a badge has text, a dot has a title.
+- Write attribute selectors without quotes (`input[type=date]`); the stylesheet is inlined and tests search the HTML for the quoted form.
 
-- Status colors mean something. Green is good or active, orange needs a look,
-  red is wrong or costs money. Do not use them to make a page livelier.
-- Write attribute selectors without quotes (`input[type=date]`). The stylesheet is
-  inlined into every page and some tests search the HTML for the quoted form.
-- Never put a literal hex in a template. Add a token if none fits.
-- Favicons and data-URI images cannot read CSS variables, so they use the hex
-  directly. Update them when the palette changes.
+## Spacing
 
-## Type and spacing
+Everything is a multiple of 4. Use the tokens.
 
-Inter, loaded from Google Fonts, with the system font as the fallback. Body text
-is 14px with a 1.5 line height. Page titles are 19px, card titles 15px, and
-labels or table headers 12px. Numbers that change (timers, counts, money) use
-`font-variant-numeric: tabular-nums` so they do not jitter.
+| Token | px | Use |
+|---|---|---|
+| `--space-1` | 4 | Icon to its label, tight pairs |
+| `--space-2` | 8 | Between buttons, chips, small controls |
+| `--space-3` | 12 | Between rows in a list, inside small cards |
+| `--space-4` | 16 | Between form fields, inside dense cards, grid gap in boards |
+| `--space-5` | 20 | **Card padding, and the gap between cards** |
+| `--space-6` | 24 | **Between sections and form cards; page header to content** |
+| `--space-8` | 32 | Between page-level blocks |
+| `--space-10` | 40 | Page gutters on a wide screen |
 
-Spacing runs in steps of 4px. Cards use 16 to 20px of padding with a 10 to 14px
-radius. Page gutters are 36px on desktop, 24px on a small laptop, 16px on a phone.
+Rules of thumb:
 
-## Components
+- **Cards never touch.** Two cards side by side or stacked are `--space-5` apart (`--space-6` for form sections). 12px is only for items inside a card.
+- Card padding is `--space-5` (`--space-6` for form cards). Never less than `--space-4`.
+- A label sits `--space-2` above its field; a field and the next field are `--space-4` apart; a hint sits `--space-1` under its field.
+- The page header (`.pg-head`) is `--space-6` above the content. A section heading is `--space-4` above its first item.
+- Page gutters: 40px wide desktop, 24px small laptop, 16px phone.
 
-- **Card.** `.card`, white, 1px border, radius 8 to 14. Quiet blocks use `--panel`.
-- **Buttons.** `.btn` is the default, `.btn-primary` is navy, `.btn-sm` is smaller.
-  One primary button per view. The punch buttons are the only large ones.
-- **Pills.** `.pill` with `open`, `high`, `resolved` or `closed` for status.
-- **Stat card.** `.card.stat`, or `.kpi` when it is clickable. Icon, big number, label.
-- **Chips.** `.chip` for filters (`.is-on` when active), `.dc-chip` for shortcuts.
-- **Toasts.** Stack bottom right and, on a phone, run full width at the bottom.
-  Trigger one with `window.dispatchEvent(new CustomEvent('django-message',
-  { detail: { text, tags: 'success' | 'error' | 'warning' } }))`.
-- **Notifications.** The bell is `core/_bell.html`, fed by the `notifications` Alpine
-  store, which loads the recent list and then receives new ones over the presence
-  socket. Create one from Python with `apps.notifications.service.notify`. It skips the
-  person who caused the event.
-- **Search palette.** `core/_palette.html` is a keyboard combobox over `/search/`. Any
-  new place worth jumping to goes in `_pages` in `apps/core/search.py`.
-- **Flags and sparklines.** `.flag .flag-red|blue|orange` for small status tags, and
-  `errors/partials/_sparkline.html` for a 14 day chart from `errors.trends`.
-- **Presence.** `{% include "core/_presence_panel.html" %}` anywhere shows who is
-  online. It reads the shared `presence` Alpine store, so it updates live.
-- **Bento.** `.bento` is a 12 column grid and `.tile` is one cell. Give a tile
-  `w-3`, `w-4` (the default), `w-5`, `w-6`, `w-7`, `w-8` or `w-12` for its width. Rows should add
-  up to 12. The home page reuses the older `.pd-grid` with spans set in `_pages.css`.
-- **Report tiles and bars.** `.rk-row` and `.rk` for a number with its change, `.cols`
-  for a column chart, `.hbar` for a horizontal bar, `.ring` for a percentage. Heights and
-  widths are computed in `apps/dashboards/service.py` so templates do no maths. No chart
-  library is loaded.
-- **Stat strip.** `.stat-strip` is one box with dividers, used instead of a card per number.
-- **One dropdown at a time.** Every `details.dd-wrap` closes when another opens, on an outside
-  click, on Escape and after a single choice. The script is in `base.html`.
-- **Collapsed sidebar tooltips.** One fixed `.side-tip` element, filled from `data-label`,
-  `aria-label` or the visible label. Give a new sidebar control a `data-label`.
-  A count badge becomes a dot on the icon.
-- **What's new dialog.** Built in `core/_changelog_modal.html` from the changelog API. The newest
-  release is open with its summary line; older ones are `details` cards. Section colors come from
-  the slug (`added` blue, `changed` green, `fixed` orange, `security` red) in `_pages.css`.
-- **Row forms.** Put the controls of an editable list row in one `<form>`. Radios with the
-  same name and no form share one group across the whole page.
-- **Icons.** Lucide, inline, 24px grid, 2px round stroke, through `{% icon 'name' %}`.
-  The logo is `{% brand_mark %}` and is kept out of the picker list on purpose.
+## Type
+
+Inter, with the system font as fallback. Weights 400 body, 500 labels and buttons, 600 headings, 650 page titles.
+
+| Token | px | Use |
+|---|---|---|
+| `--fs-xs` | 12 | Captions, table headers, badges, hints, timestamps |
+| `--fs-sm` | 13 | Secondary text, dense lists, field hints |
+| `--fs-base` | 14 | Body, inputs, buttons (the default) |
+| `--fs-md` | 16 | Card and section titles |
+| `--fs-lg` | 20 | Big numbers in a card |
+| `--fs-xl` | 24 | Page titles |
+
+Line height 1.5 for text, 1.1 for big numbers. Numbers that change (counts, money, timers) use
+`font-variant-numeric: tabular-nums`. Table headers and small section labels may be uppercase with 0.05em tracking. Nothing else is.
+
+## Shape and depth
+
+Radius `--radius` (8px) for controls and small cards, `--radius-lg` (12px) for cards and dialogs, `99px` for pills and avatars.
+Borders are 1px `--border`. Shadows are `--shadow-sm` at rest and `--shadow-md` for a raised or hovered card and for popovers. No other shadows.
+
+## Icons
+
+- Inline SVG through `{% icon 'name' %}`. 24px grid, 2px round stroke, `currentColor`, so an icon takes its text color.
+- Size: 16px beside text (`.ic`), 15 in dense rows, 20 to 24 on their own. Never stretch an icon.
+- **Every text button starts with an icon**, then its label. Icon-only buttons need an `aria-label`.
+- Pick from the existing sets (about 75 outline icons and 283 befui icons). `bef:name` forces the befui drawing; add `icon-draw` for the hover redraw. Do not paste ad-hoc SVG into a template.
+- A project can carry its own icon; the products list and switcher draw it with `{% product_icon %}`.
 
 ## Layout
 
-The shell is a fixed-height grid. The sidebar is 272px and collapses to icons.
-Below 860px the sidebar becomes a drawer and a top bar appears. The page scrolls
-inside `.main`, not the document.
+The shell is a fixed-height grid: a 272px sidebar (collapses to icons; a drawer below 860px), a top bar, and the page scrolling inside `.main`.
+A page is: breadcrumbs (when nested), `.pg-head` (title and one-line subtitle on the left, actions on the right, one primary button), an optional `.toolbar`, then cards.
+Content width: lists and boards use the full width; forms and reading pages cap at about 860px and sit on the left.
+Breakpoints: 1180, 1100, 980, 860 (drawer), 760, 640 (phone), 380.
+Grid items get `min-width:0`, or long text pushes a column past the screen. Tables scroll sideways on a phone inside `.table-scroll`.
 
-Breakpoints: 1100 (small laptop), 1000 (four-up rows become two), 860 (drawer),
-760 and 640 (phone), 380 (small phone).
+## Components
 
-Grids: `.grid-2`, `.grid-3`, `.grid-4` collapse as the screen narrows. Grid items
-get `min-width:0`, otherwise long text pushes a column past the screen.
+Reuse before you write. Each is a class in `_components.css`; the markup is on any page that uses it.
 
-Tables stay tables. A small script wraps each one in `.table-scroll`, which scrolls
-sideways on a phone and does nothing on a desktop.
+- **Card** `.card` (white, 1px border, `--radius-lg`, `--space-5` padding). Quiet blocks use `--panel`. **Ledger** `.ledger` with `.lrow` for a list of rows.
+- **Button** `.btn`, `.btn-primary` (one per view), `.btn-danger`, `.btn-sm`, `.icon-btn`. **Badge** `.bdg` with `-green -orange -red -blue -outline`; **pill** `.pill` for ticket status.
+- **Tabs** `.seg` (links or buttons, current one `.is-on`). **Dialog** native `<dialog class="dlg">` with `.dlg-head`, `.dlg-body`, `.dlg-foot`; it opens centred and closes on Esc and on the backdrop. Dropdowns and date pickers open *inside* an open dialog.
+- **Confirm** add `data-confirm`, `data-confirm-text`, `data-confirm-label` to a form; every delete asks first.
+- **Dropdown** `{% dropdown %}`; native `<select>` is enhanced by the same popover. **Toast** `window.pqToast(text, kind)` or a Django `messages` call.
+- **Avatar** `.kt-av` (initial in a circle, `.lg` and `.more` variants). **Empty state** `.empty-state`: one line of what is missing and one line of what to do.
+- **Home bento** `.hm-bento`: a 12 column grid whose cards stretch to the row, so nothing leaves a hole. **Projects** use `.pj-*`: board columns, cards, journey track, lifecycle feed, Pod and phase pickers.
+- **Notifications** go through `apps.notifications.service.notify`; toasts, presence, the palette and the changelog dialog are described in their templates.
+
+## Forms
+
+Every form tells the person what to do. No guessing.
+
+1. **Say what is required.** A card header carries a pill: `Required` (blue) or `Optional` (gray). If only one thing is required, say so in the page subtitle ("Only the name is required").
+2. **Say what a section is for** in one sentence under its title (max about 62 characters wide), in `--muted`. Name the consequence: "Phases you leave out are grayed on the board".
+3. **Every control has a visible label.** A placeholder is an example ("e.g. Billing Portal"), never the label.
+4. **Choices that are people or things use cards,** not a bare checkbox list: avatar or icon, a name, a second line, and a visible tick. Show how many are selected.
+5. **Repeated rows get column headings** ("Feature that must come early", "Must be ready by", "Why it cannot wait") and one example in the placeholders.
+6. Errors appear above the form in an `.alert`, in plain words, naming the field. Nothing is saved when anything is wrong.
+7. Primary action bottom left ("Create project"), then Cancel. Never two primary buttons.
+
+## Writing
+
+Plain words, sentence case, no jargon. Buttons are verbs ("Add to log", "Move"). Say why: "Why are you moving this?". Dates read `14 Oct 2026`; times `4:10 pm` with the exact time on hover. Counts pluralize ("1 day", "2 days").
+
+## Check before you finish
+
+- Tokens only: no hex, no px gap that is not on the scale, no `font-size` outside the type scale.
+- Looks right in light and dark, at 360, 768 and 1440px wide, and with the keyboard (visible focus on everything you can click).
+- Cards have breathing room (see Spacing). Nothing yellow. Every text button has an icon.
+- A new page is added to the sidebar active-state conditions and the palette (`apps/core/search.py`) if it deserves a shortcut.
+- A user-facing change gets a `CHANGELOG.md` entry; a multi-line template note uses `{% comment %}`, never a multi-line `{# #}`.
 
 ## Touch and small screens
 

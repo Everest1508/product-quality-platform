@@ -1,23 +1,24 @@
 {% extends "core/base.html" %}
 {% load dropdown_tags %}
 
-{% block title %}Products — PQ Platform{% endblock %}
+{% block title %}Projects — PQ Platform{% endblock %}
 
 {% block content %}
 {% load icon_tags %}
 <div class="pg-head">
   <div>
-    <h1>Products</h1>
-    <p class="sub">{{ summary.products }} product{{ summary.products|pluralize }} · {{ summary.open_errors }} open error{{ summary.open_errors|pluralize }} · {{ summary.open_tickets }} open ticket{{ summary.open_tickets|pluralize }}{% if summary.attention %} · <b style="color:var(--red)">{{ summary.attention }} need attention</b>{% endif %}</p>
+    <h1>Projects</h1>
+    <p class="sub">{{ summary.products }} project{{ summary.products|pluralize }} · {{ summary.open_errors }} open error{{ summary.open_errors|pluralize }} · {{ summary.open_tickets }} open ticket{{ summary.open_tickets|pluralize }}{% if summary.attention %} · <b style="color:var(--red)">{{ summary.attention }} need attention</b>{% endif %}</p>
   </div>
   <div class="pg-actions">
-    {% if request.company_role == 'owner' or request.company_role == 'admin' %}<a href="{% url 'products:product_create' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New product</a>{% endif %}
+    {% include "products/_project_views.html" with here="list" %}
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}<a href="{% url 'products:project_new' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New project</a>{% endif %}
   </div>
 </div>
 
 <div class="toolbar">
   <form method="get" class="input-icon" style="width:20rem;max-width:100%">
-    {% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ search }}" aria-label="Search products" placeholder="Search products...">
+    {% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ search }}" aria-label="Search projects" placeholder="Search projects...">
     {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
   </form>
   {% dropdown "sort" "name:Name A-Z|-name:Name Z-A|-created:Newest first|created:Oldest first|-versions:Most versions"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}

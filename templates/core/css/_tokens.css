@@ -30,6 +30,10 @@
   --bf-primary:#2563eb; --bf-ring:#3b82f6; --bf-border:#e2e8f0; --bf-muted:#f8fafc; --bf-muted-fg:#64748b;
   --bf-destructive:#e11d48; --bf-destructive-bg:#fff1f2; --bf-radius:.5rem;
 
+  /* Spacing (4px base) and type scale. design.md says where each step is used. */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px;
+  --fs-xs:12px; --fs-sm:13px; --fs-base:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:24px;
+
   /* Shape and depth: 8px corners, hairline borders, very soft shadows. */
   --radius:.5rem; --radius-lg:.75rem;
   --shadow-sm:0 1px 2px rgb(15 23 42 / .04); --shadow-md:0 6px 20px rgb(15 23 42 / .08);

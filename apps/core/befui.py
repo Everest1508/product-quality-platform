@@ -7,7 +7,6 @@ gzipped once in memory, with an ETag so a reload costs a 304.
 
 import gzip
 import hashlib
-import json
 from functools import lru_cache
 
 from django.conf import settings
@@ -37,13 +36,3 @@ def asset(request, name):
     response["ETag"] = etag
     response["Cache-Control"] = "public, max-age=3600"
     return response
-
-
-@lru_cache(maxsize=None)
-def demos():
-    """The 199 components with a live demo each: [(category, [item, ...])] in befui's own order."""
-    data = json.loads((DIR / "demos.json").read_text())
-    groups = {}
-    for item in data["list"]:
-        groups.setdefault(item["category"], []).append({**item, "html": data["demo"].get(item["slug"], "")})
-    return list(groups.items())

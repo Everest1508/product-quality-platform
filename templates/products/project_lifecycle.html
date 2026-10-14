@@ -86,14 +86,14 @@
         {% for k, l, days, plan in stage_days %}<tr class="{% if k == card.stage %}is-now{% endif %}"><td>{{ l }}</td><td>{% if days or k == card.stage %}{{ days }}d{% else %}·{% endif %}</td><td>{% if plan and plan.start_date %}{{ plan.start_date|date:"j M" }}{% if plan.end_date %} – {{ plan.end_date|date:"j M" }}{% endif %}{% elif plan and plan.planned_hours %}{{ plan.planned_hours }}h{% else %}<span class="pj-faint">·</span>{% endif %}</td></tr>{% endfor %}
       </tbody></table>
     </section>
-    <section class="card pj-box"><h2>Crunch</h2>
+    <section class="card pj-box"><h2>{% icon 'flame' 'ic' %}Crunch <small class="pj-faint">must ship before the end date</small></h2>
       <ul class="pj-crunch">{% for c, state in crunch %}<li class="is-{{ state }}"><div><b>{{ c.feature }}</b><small>{% if c.done %}done {{ c.done_at|date:"j M" }}{% else %}by {{ c.due_date|date:"j M" }}{% if state == 'late' %} · late{% elif state == 'soon' %} · soon{% endif %}{% endif %}{% if c.reason %} · {{ c.reason }}{% endif %}</small></div>
         {% if can_work and not c.done %}<form method="post" action="{% url 'products:project_crunch_done' pk=c.pk %}">{% csrf_token %}<button class="icon-btn" aria-label="Mark done" title="Mark done">{% icon 'check' 'ic' %}</button></form>{% endif %}</li>{% empty %}<li class="pj-empty">No Crunch items.</li>{% endfor %}</ul>
       {% if can_work %}<details class="pj-add-crunch"><summary class="btn btn-sm">{% icon 'plus' 'ic' %}Add Crunch</summary>
         <form method="post" action="{% url 'products:project_crunch_add' pk=product.pk %}">{% csrf_token %}
-          <input class="form-input" name="feature" placeholder="Feature that must ship early" required maxlength="200">
-          <input class="form-input" type="date" name="due" required {% if product.end_date %}max="{{ product.end_date|date:'Y-m-d' }}"{% endif %}>
-          <input class="form-input" name="reason" placeholder="Why (optional)" maxlength="300">
+          <label class="dd-label">Feature that must come early</label><input class="form-input" name="feature" placeholder="e.g. Login and sign-up" required maxlength="200">
+          <label class="dd-label">Must be ready by</label><input class="form-input" type="date" name="due" required {% if product.end_date %}max="{{ product.end_date|date:'Y-m-d' }}"{% endif %}>
+          <label class="dd-label">Why it cannot wait <span class="pj-opt">optional</span></label><input class="form-input" name="reason" placeholder="e.g. Client demo on 20 Oct" maxlength="300">
           <button class="btn btn-primary btn-sm">Add</button></form></details>{% endif %}
     </section>
     {% if product.tech_stack %}<section class="card pj-box"><h2>Tech stack</h2><p class="pj-tags">{% for t in product.tech_stack %}<span class="bdg bdg-outline">{{ t }}</span>{% endfor %}</p></section>{% endif %}
