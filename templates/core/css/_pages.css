@@ -710,3 +710,9 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 .stat-card .stat-icon{display:none;}
 .stat-card .flex-between.mb-4{margin-bottom:6px;}
 .stat-card .stat-label{font-size:12.5px;color:var(--muted);}
+
+/* Reports: the numbers as one divided sheet, the tiles below as divided sections of one sheet. */
+.rk-row{gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px;}
+.rk-row>.rk{border:0;border-radius:0;box-shadow:none;}
+.bento{gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.bento>.tile{border:0;border-radius:0;box-shadow:none;}
