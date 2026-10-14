@@ -74,8 +74,8 @@ class OpenCountsTest(TestCase):
     def test_product_cards_say_open(self):
         self.login(self.owner)
         res = self.client.get(reverse("products:product_list"))
-        self.assertContains(res, "Open errors")
-        self.assertContains(res, "Open tickets")
+        self.assertContains(res, "open error")
+        self.assertContains(res, "open ticket")
 
 
 class HomeAndReportsTest(TestCase):
@@ -87,10 +87,10 @@ class HomeAndReportsTest(TestCase):
 
     def test_home_has_a_greeting_a_clock_and_a_quote(self):
         res = self.client.get(reverse("dashboards:index"))
-        self.assertContains(res, 'class="hero"')
+        self.assertContains(res, 'class="hm-hero"')
         self.assertContains(res, "Olive")
-        self.assertContains(res, 'id="dash-quote"')
-        self.assertContains(res, "heroClock(")
+        self.assertContains(res, "homeHero(")
+        self.assertContains(res, "hm-hero-line")
 
     def test_quote_endpoint_returns_a_fragment_that_differs_from_the_current_one(self):
         from apps.dashboards.quotes import QUOTES

@@ -149,4 +149,4 @@ class DSRApiRealTimeTest(DSRApiTest):
         DSREntry.objects.create(company=self.company, user=self.dev, date=self.today, task_name="By hand", hours_spent=1, is_auto_logged=False)
         self.client.login(username="dev", password="pass1234")
         body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
-        self.assertEqual(body.count('class="dsr-tag mcp"'), 1)
+        self.assertEqual(body.count("via MCP"), 1)

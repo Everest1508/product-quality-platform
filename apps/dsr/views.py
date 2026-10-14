@@ -478,7 +478,8 @@ class DSRLogView(CompanyMemberRequiredMixin, View):
             d["is_today"] = d["date"] == today
             lines.append(f"📅 {d['date'].strftime('%a, %-d %b')}: {format_hm(d['hours'])}, {len(d['rows'])} task{'s' if len(d['rows']) != 1 else ''}")
         for e in entries:
-            lines.append(f"- {e.date.strftime('%-d %b')} {e.person + ': ' if everyone else ''}{e.task_name} ({e.get_category_display()}) - {format_hm(e.hours_spent)} [{e.get_status_display()}]")
+            where = f"[{e.product.name}] " if e.product and f"[{e.product.name}]" not in e.task_name else ""
+            lines.append(f"- {e.date.strftime('%-d %b')} {e.person + ': ' if everyone else ''}{where}{e.task_name} ({e.get_category_display()}) - {format_hm(e.hours_spent)} [{e.get_status_display()}]")
 
         waiting = [e for e in entries if e.needs_time and e.can_change]
         can_log, locked = submission_window(today, privileged)

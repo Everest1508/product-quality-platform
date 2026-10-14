@@ -105,7 +105,7 @@ class DSRProductTest(TestCase):
     def test_the_copied_summary_names_the_product(self):
         self.add(product=self.mine.pk)
         res = self.client.get(reverse("dsr:dsr_sheet"))
-        self.assertIn("[Billing] Wrote the report", res.context["copy_summary_text"])
+        self.assertIn("[Billing] Wrote the report", res.context["summary_text"])
 
 
 class DSRProductFromTicketsTest(TestCase):

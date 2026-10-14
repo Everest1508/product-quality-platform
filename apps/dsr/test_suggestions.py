@@ -211,10 +211,10 @@ class AddViewTest(Base):
 
     def test_the_sheet_shows_the_panel_to_the_person_who_can_use_it(self):
         page = self.client.get(reverse("dsr:dsr_sheet"))
-        self.assertContains(page, "From your work today")
+        self.assertContains(page, "Suggested from your work")
         self.assertContains(page, "Login bug")
         past = self.client.get(reverse("dsr:dsr_sheet"), {"date": (self.today - timedelta(days=1)).isoformat()})
-        self.assertNotContains(past, "From your work today")
+        self.assertNotContains(past, "Suggested from your work")
 
     def test_double_submitting_does_not_log_twice(self):
         self.add(); self.add()

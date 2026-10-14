@@ -323,16 +323,15 @@ class PersonalDashboardTest(TestCase):
     def test_personal_cards_are_shown_to_a_developer(self):
         response = self.get()
         self.assertEqual(response.status_code, 200)
-        for section in ("today", "pay", "leave", "dsr", "tickets"):
-            self.assertContains(response, f"pd-card pd-{section}")
+        for marker in ("hm-today", "hm-work", "hm-tiles", "hm-kpis"):
+            self.assertContains(response, marker)
 
     def test_company_cards_are_admin_only(self):
-        self.assertNotContains(self.get(), "pd-card pd-company")
-        self.assertNotContains(self.get(), 'class="pd-attn"')
+        self.assertNotContains(self.get(), 'class="hm-attn"')
 
         self.client.login(username="boss", password="pass1234")
         response = self.get()
-        self.assertContains(response, 'class="pd-attn"')
+        self.assertContains(response, 'class="hm-attn"')
 
     def test_leave_approvals_only_for_privileged_roles(self):
         from apps.leave.models import LeavePolicy, LeaveRequest
@@ -350,10 +349,10 @@ class PersonalDashboardTest(TestCase):
             days=2,
             status="pending",
         )
-        self.assertNotContains(self.get(), 'class="pd-attn"')
+        self.assertNotContains(self.get(), "leave to approve")
 
         self.client.login(username="boss", password="pass1234")
-        self.assertContains(self.get(), 'class="pd-attn"')
+        self.assertContains(self.get(), "leave to approve")
 
     def test_attendance_reflects_only_my_own_punches(self):
         from datetime import date, datetime, time, timedelta
@@ -430,54 +429,15 @@ class PersonalDashboardTest(TestCase):
         )
         self.assertGreater(response.context["attendance"]["worked_minutes"], 0)
 
-    def test_payroll_shows_my_salary_not_a_colleagues(self):
+    def test_home_has_no_pay_widget_and_never_shows_a_salary(self):
         from datetime import date
         from decimal import Decimal
         from apps.payroll.models import PayrollProfile
 
-        PayrollProfile.objects.create(
-            company=self.company,
-            user=self.dev,
-            effective_from=date(2026, 1, 1),
-            monthly_salary=Decimal("42000.00"),
-            is_on_payroll=True,
-        )
-        rich = User.objects.create_user("rich", "rich@test.com", "pass1234")
-        Membership.objects.create(user=rich, company=self.company, role="developer")
-        PayrollProfile.objects.create(
-            company=self.company,
-            user=rich,
-            effective_from=date(2026, 1, 1),
-            monthly_salary=Decimal("99000.00"),
-            is_on_payroll=True,
-        )
-
+        PayrollProfile.objects.create(company=self.company, user=self.dev, effective_from=date(2026, 1, 1), monthly_salary=Decimal("42000.00"), is_on_payroll=True)
         body = self.get().content.decode()
-        self.assertIn("42,000.00", body)
-        self.assertNotIn("99,000.00", body)
-
-    def test_not_on_payroll_says_so_rather_than_showing_zero(self):
-        self.assertContains(self.get(), "not on payroll")
-
-    def test_on_payroll_without_a_generated_slip_is_not_claimed_as_absent(self):
-        """Regression: 'on payroll' is a profile fact. Reading it off the
-        payslip told someone whose admin had not run payroll yet that they
-        were not on payroll at all."""
-        from datetime import date
-        from decimal import Decimal
-        from apps.payroll.models import PayrollProfile
-
-        PayrollProfile.objects.create(
-            company=self.company,
-            user=self.dev,
-            effective_from=date(2026, 1, 1),
-            monthly_salary=Decimal("42000.00"),
-            is_on_payroll=True,
-        )
-        response = self.get()
-        self.assertTrue(response.context["payroll"]["has_profile"])
-        self.assertFalse(response.context["payroll"]["on_payroll"])
-        self.assertContains(response, "no payslip has been generated")
+        self.assertNotIn("42,000.00", body)
+        self.assertNotIn("Net pay", body)
 
     def test_my_tickets_respect_product_access(self):
         """A ticket in a product the developer cannot see must not surface,
@@ -544,7 +504,7 @@ class PersonalDashboardTest(TestCase):
         )
 
     def test_dsr_empty_state_explains_itself(self):
-        self.assertContains(self.get(), "Nothing logged this week")
+        self.assertContains(self.get(), "0 entries this week")
 
     def test_htmx_request_returns_the_partial(self):
         response = self.get(reverse("dashboards:index"))

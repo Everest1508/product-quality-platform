@@ -550,7 +550,7 @@ dialog.dlg::backdrop{background:var(--overlay);backdrop-filter:blur(2px);}
 dialog.dlg[open]{animation:dlgIn .22s cubic-bezier(.22,1,.36,1);}
 @keyframes dlgIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 .dlg-head{padding:20px 22px 0;}
-.dlg-head h2{font-size:16px;font-weight:600;}
+.dlg-head h2,.dlg-head h3{font-size:16px;font-weight:600;}
 .dlg-head p{margin-top:4px;font-size:13px;color:var(--muted);}
 .dlg-body{padding:16px 22px;display:grid;gap:14px;}
 .dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:0 22px 20px;}

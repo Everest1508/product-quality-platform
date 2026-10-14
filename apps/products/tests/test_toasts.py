@@ -58,7 +58,7 @@ class ToastAfterMutationTest(TestCase):
                 if response.status_code == 302
                 else reverse("products:product_list")
             )
-        page = self.client.get(page_url)
+        page = self.client.get(page_url, follow=True)  # a product's ticket page now redirects to the one ticket page
         body = page.content.decode()
         self.assertIn('id="toast-seed"', body, "no toast was rendered on the next page")
         self.assertIn(fragment, body, f"expected {fragment!r} in the rendered toast")

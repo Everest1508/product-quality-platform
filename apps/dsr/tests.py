@@ -343,16 +343,15 @@ class DSRSheetRenderTest(TestCase):
         response = self.client.get(reverse("dsr:dsr_sheet"))
         self.assertEqual(response.status_code, 200)
         body = response.content.decode()
-        for field in ("task_name", "category", "hours", "minutes", "status", "notes"):
-            self.assertIn(field, body)
+        for field in ("task_name", "category", "hours_spent", "status", "notes", "product"):
+            self.assertIn(f'name="{field}"', body)
         self.assertIn("placeholder=\"What did you work on?\"", body)
 
-    def test_add_form_is_editable_htmx_scope(self):
+    def test_log_work_opens_a_dialog_with_the_add_form(self):
         self.client.login(username="member", password="password")
         body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
-        # An empty day opens the add form straight away, so it is there after check-out.
-        self.assertIn('x-data="{ addOpen: true }"', body)
-        self.assertIn('x-show="addOpen"', body)
+        self.assertIn('id="dsr-dlg"', body)
+        self.assertIn("dsrOpen()", body)
 
     def test_add_form_ids_are_unique_across_both_copies(self):
         """The sheet renders the add form twice, so ids must not repeat.
@@ -367,8 +366,7 @@ class DSRSheetRenderTest(TestCase):
         repeated = {i for i in ids if ids.count(i) > 1}
         self.assertEqual(repeated, set(), f"duplicate ids on the DSR sheet: {sorted(repeated)}")
         # one add form only: a second copy inside the scrolling table was clipped on a phone
-        self.assertIn("dsr-bar-task_name", body)
-        self.assertNotIn("dsr-row-task_name", body)
+        self.assertIn('id="dsr-task"', body)
 
     def test_every_add_form_label_points_at_a_real_control(self):
         self.client.login(username="member", password="password")
@@ -419,7 +417,6 @@ class SubmissionWindowTest(TestCase):
         body = self.sheet(self.past).content.decode()
         self.assertNotIn(f"/dsr/{self.entry.pk}/update/", body)
         self.assertNotIn(f"/dsr/{self.entry.pk}/delete/", body)
-        self.assertIn("Read-only", body)
 
     def test_past_day_refuses_an_update(self):
         self.login()

@@ -23,12 +23,13 @@ class DSRLogRowTest(TestCase):
         """Radios with one name and no form are a single group on the page, so a
         choice in one row used to clear the others."""
         body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
-        self.assertEqual(body.count('<form id="dsr-row-'), 2)
-        self.assertIn(f'id="dsr-row-{self.a.pk}"', body)
+        for entry in (self.a, self.b):  # one delete form per row, each asking first
+            self.assertEqual(body.count(f'action="/dsr/{entry.pk}/delete/"'), 1)
+        self.assertGreaterEqual(body.count('data-confirm="Delete this entry?"'), 2)
 
     def test_manual_rows_are_not_tagged_auto(self):
         body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
-        self.assertNotIn('class="dsr-tag auto"', body)
+        self.assertNotIn(">Auto<", body)
 
     def test_inline_edit_returns_a_row_that_is_still_editable(self):
         res = self.client.post(

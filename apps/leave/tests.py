@@ -1676,7 +1676,7 @@ class SidebarActiveStateTest(LeaveTestBase):
         self.assertEqual(bar.count('aria-current="page"'), 0)
         body = self.client.get("/profile/", follow=True).content.decode()
         menu = body[body.index('class="side-user-menu"') :]
-        self.assertIn('aria-current="page"', menu[: menu.index("</div>")])
+        self.assertIn('aria-current="page"', menu[: menu.index("Sign out")])
 
     def test_every_nav_landmark_is_named(self):
         """Four `<nav>` elements with no `aria-label` are four identical

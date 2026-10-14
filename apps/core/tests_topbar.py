@@ -53,12 +53,12 @@ class TopbarFeaturesTest(TestCase):
 
     def test_home_has_the_charts(self):
         page = self.client.get(reverse("dashboards:index")).content.decode()
-        for marker in ("Hours this week", "Tickets by status", "ch-spark"):
+        for marker in ("Hours this week", "This week", "hm-bars", "hm-kpis"):
             self.assertIn(marker, page)
 
     def test_products_page_shows_summary_tiles(self):
         page = self.client.get(reverse("products:product_list")).content.decode()
-        self.assertIn("pl-tiles", page)
+        self.assertIn("open error", page)  # the summary line that replaced the tiles
 
 
 class FeatureRoundTwoTest(TestCase):
