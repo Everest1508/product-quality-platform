@@ -1,36 +1,79 @@
 :root{
-  /* Brand palette. Change colors here only; everything else reads these tokens. */
-  --navy:#231F20; --navy-2:#2E2A2B; --blue-500:#1C75BC; --blue-50:#D6E7F1;
-  --ink:#231F20; --wave:#75BAE6;
-  --slate-50:#E8F1F6; --slate-100:#E3EEF4; --slate-200:#D6E7F1; --slate-300:#C2D8E6;
-  --stone:#6D737F; --stone-light:#8A93A0;
+  /* Palette. The names are the ones every stylesheet already uses, so changing a value here restyles the whole app.
+     Light is the default; `html.dark` (set by the theme switch, remembered in localStorage) swaps the set below. */
+  --navy:#0f172a; --navy-2:#1e293b; --blue-500:#1c75bc; --blue-50:#eff6ff;
+  --ink:#0f172a; --wave:#75bae6;
+  --slate-50:#f1f5f9; --slate-100:#eef2f7; --slate-200:#e2e8f0; --slate-300:#cbd5e1;
+  --stone:#64748b; --stone-light:#94a3b8;
 
   /* Surfaces and text */
-  --bg:#F2F7F9; --surface:#ffffff; --panel:var(--slate-50); --line:#E3EEF4;
-  --border:var(--slate-200); --border-strong:var(--slate-300);
-  --text:var(--navy); --muted:var(--stone); --muted-2:var(--stone-light);
+  --bg:#f8fafc; --surface:#ffffff; --panel:#f1f5f9; --line:#e2e8f0;
+  --border:#e2e8f0; --border-strong:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --muted-2:#94a3b8;
   --on-accent:#ffffff;
 
   /* Accent and actions */
-  --accent:var(--blue-500); --accent-soft:var(--blue-50);
+  --accent:#1c75bc; --accent-soft:#eff6ff;
   --primary:var(--accent); --primary-hover:var(--accent-strong);
-  --accent-line:#B5D3EA; --accent-strong:#165B93;
-  --focus-ring:rgba(28,117,188,.16);
-  --overlay:rgba(13,17,23,.4);
+  --accent-line:#bfdbfe; --accent-strong:#165b93;
+  --focus-ring:rgba(28,117,188,.22);
+  --overlay:rgba(15,23,42,.45);
   --brand-dark:var(--navy-2);
-  --tooltip-bg:var(--navy); --tooltip-text:#F8FAFC;
+  --tooltip-bg:#0f172a; --tooltip-text:#f8fafc;
 
   /* Status colors (semantic, keep distinct from the accent) */
-  --red:#c0362c; --red-bg:#fbebea; --orange:#a15c07; --orange-bg:#fdf3e2;
-  --blue:var(--accent); --blue-bg:var(--accent-soft);
-  --green:#177a4c; --green-bg:#e8f5ee; --purple:#7c3aed; --purple-bg:#f3f0ff;
-  --gray:var(--stone); --gray-bg:#F1F3F9;
+  --red:#e11d48; --red-bg:#fff1f2; --orange:#b45309; --orange-bg:#fffbeb;
+  --blue:#2563eb; --blue-bg:#eff6ff;
+  --green:#059669; --green-bg:#ecfdf5; --purple:#7c3aed; --purple-bg:#f5f3ff;
+  --gray:#64748b; --gray-bg:#f1f5f9;
 
-  /* befui (https://befui.vercel.app) look, used by the home to-do card: a slate border, a blue ring, 8px corners. */
   --bf-primary:#2563eb; --bf-ring:#3b82f6; --bf-border:#e2e8f0; --bf-muted:#f8fafc; --bf-muted-fg:#64748b;
   --bf-destructive:#e11d48; --bf-destructive-bg:#fff1f2; --bf-radius:.5rem;
 
+  /* Shape and depth: 8px corners, hairline borders, very soft shadows. */
+  --radius:.5rem; --radius-lg:.75rem;
+  --shadow-sm:0 1px 2px rgb(15 23 42 / .04); --shadow-md:0 6px 20px rgb(15 23 42 / .08);
+
   /* Charts */
-  --chart-error-a:#f87171; --chart-error-b:#dc2626;
-  --chart-burn-a:#75BAE6; --chart-burn-b:var(--blue-500);
+  --chart-error-a:#fb7185; --chart-error-b:#e11d48;
+  --chart-burn-a:#93c5fd; --chart-burn-b:#1c75bc;
+
+  color-scheme:light;
+}
+
+html.dark{
+  --navy:#0b1220; --navy-2:#111a2b; --blue-500:#3b94dc; --blue-50:#14253d;
+  --ink:#e6edf6; --wave:#3b94dc;
+  --slate-50:#1a2538; --slate-100:#162033; --slate-200:#223049; --slate-300:#2a3a56;
+  --stone:#8d9bb0; --stone-light:#6b7a90;
+
+  --bg:#0b1220; --surface:#111a2b; --panel:#1a2538; --line:#223049;
+  --border:#223049; --border-strong:#2a3a56;
+  --text:#e6edf6; --muted:#8d9bb0; --muted-2:#6b7a90;
+  --on-accent:#06121f;
+
+  --accent:#3b94dc; --accent-soft:#14253d;
+  --accent-line:#24425f; --accent-strong:#8cc4f0;
+  --focus-ring:rgba(59,148,220,.3);
+  --overlay:rgba(0,0,0,.6);
+  --tooltip-bg:#e6edf6; --tooltip-text:#0b1220;
+
+  --red:#f4607f; --red-bg:rgba(244,96,127,.12); --orange:#fbbf24; --orange-bg:rgba(251,191,36,.12);
+  --blue:#60a5fa; --blue-bg:rgba(96,165,250,.12);
+  --green:#34d399; --green-bg:rgba(52,211,153,.12); --purple:#a78bfa; --purple-bg:rgba(167,139,250,.14);
+  --gray:#8d9bb0; --gray-bg:#1a2538;
+
+  --bf-primary:#3b94dc; --bf-ring:#3b94dc; --bf-border:#223049; --bf-muted:#0e1626; --bf-muted-fg:#8d9bb0;
+  --bf-destructive:#f4607f; --bf-destructive-bg:rgba(244,96,127,.12);
+
+  --shadow-sm:0 1px 2px rgb(0 0 0 / .3); --shadow-md:0 8px 24px rgb(0 0 0 / .45);
+  --chart-error-a:#f4607f; --chart-error-b:#be123c;
+  --chart-burn-a:#3b94dc; --chart-burn-b:#8cc4f0;
+
+  color-scheme:dark;
+}
+
+/* A short cross-fade when the theme changes. */
+html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after{
+  transition:background-color .35s ease, border-color .35s ease, color .35s ease, fill .35s ease, stroke .35s ease !important;
 }

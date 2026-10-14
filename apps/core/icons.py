@@ -239,6 +239,13 @@ BRAND_MARK = (
     '<path d="M15 15l6.5 6.5" />'
 )
 
+# Interface glyphs (theme switch and the like). Separate from ICONS so they do not appear in the leave policy picker.
+UI_ICONS = {
+    "sun": '<circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />',
+    "moon": '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />',
+    "monitor": '<rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" />',
+}
+
 ICON_CHOICES = tuple((name, name.replace("-", " ").title()) for name in ICONS)
 ICON_NAMES = frozenset(ICONS)
 
@@ -249,7 +256,8 @@ def render_icon(name, css_class="ic", size=None):
     Returns `""` instead of raising, so a policy with no icon (the default)
     renders no glyph rather than a placeholder box.
     """
-    if not name or name not in ICONS:
+    body = ICONS.get(name) or UI_ICONS.get(name)
+    if not name or not body:
         return ""
     return format_html(
         '<svg class="{}" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
@@ -257,7 +265,7 @@ def render_icon(name, css_class="ic", size=None):
         '{} aria-hidden="true" focusable="false">{}</svg>',
         css_class,
         f' width="{size}" height="{size}"' if size else "",
-        mark_safe(ICONS[name]),
+        mark_safe(body),
     )
 
 

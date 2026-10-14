@@ -7,7 +7,7 @@
 <title>{% block title %}PQ Platform{% endblock %}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,6 +21,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<script>
+/* Theme: "light", "dark" or "system" (the default), remembered in localStorage. Set before the CSS so nothing flashes. */
+(function(){
+  var KEY='pqTheme', root=document.documentElement;
+  function stored(){try{var v=localStorage.getItem(KEY);return v==='light'||v==='dark'?v:'system'}catch(e){return 'system'}}
+  function dark(t){return t==='dark'||(t==='system'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)}
+  function apply(t){root.classList.toggle('dark',dark(t));var m=document.querySelector('meta[name=theme-color]');if(m)m.content=dark(t)?'#0b1220':'#ffffff'}
+  window.pqTheme={
+    get:stored,
+    set:function(t){
+      try{if(t==='system')localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}
+      if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){root.classList.add('theme-fade');setTimeout(function(){root.classList.remove('theme-fade')},450)}
+      apply(t);window.dispatchEvent(new CustomEvent('pq-theme',{detail:t}));
+    },
+    toggle:function(){window.pqTheme.set(root.classList.contains('dark')?'light':'dark')}
+  };
+  apply(stored());
+  if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(stored()==='system')apply('system')});
+})();
+</script>
 <style>
 {% include "core/css/_tokens.css" %}
 {% include "core/css/_app.css" %}

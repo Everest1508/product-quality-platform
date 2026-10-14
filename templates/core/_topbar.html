@@ -84,6 +84,11 @@
         {% icon 'chevron-down' 'switch-caret' %}
       </button>
       <div class="side-user-menu" x-show="open" x-transition.opacity.duration.100ms style="display:none">
+        <div class="theme-switch" role="group" aria-label="Theme" x-data="{ t: pqTheme.get() }" @pq-theme.window="t = $event.detail">
+          <button type="button" :class="{ 'is-on': t === 'light' }" @click.stop="pqTheme.set('light')" aria-label="Light theme">{% icon 'sun' 'side-menu-ic' %}</button>
+          <button type="button" :class="{ 'is-on': t === 'system' }" @click.stop="pqTheme.set('system')" aria-label="Match system theme">{% icon 'monitor' 'side-menu-ic' %}</button>
+          <button type="button" :class="{ 'is-on': t === 'dark' }" @click.stop="pqTheme.set('dark')" aria-label="Dark theme">{% icon 'moon' 'side-menu-ic' %}</button>
+        </div>
         <a href="{% url 'accounts:profile' %}"{% if request.resolver_match.url_name == 'profile' %} aria-current="page" style="background:var(--panel);font-weight:500;"{% endif %}>
           {% icon 'settings' 'side-menu-ic' %} Settings
         </a>
