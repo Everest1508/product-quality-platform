@@ -1,78 +1,84 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
-{% block title %}Settings — PQ Platform{% endblock %}
+{% block title %}Profile — PQ Platform{% endblock %}
 
 {% block content %}
-<div style="max-width:800px;width:100%;margin:0 auto;padding-bottom:40px;">
-  <!-- Head Header -->
-  <div class="head" style="margin-bottom:24px;">
-    <div>
-      <h1>Settings</h1>
-      <p class="text-sm text-muted" style="margin-top:4px;">Manage your profile details, email address, and notification preferences.</p>
+<div class="pf" x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','settings','notifications','shortcuts'].includes(tab)) tab='overview'">
+  <section class="pf-banner">
+    <span class="avatar pf-avatar">{{ request.user.username.0|upper }}</span>
+    <div class="pf-who">
+      <h1>{{ request.user.get_full_name|default:request.user.username }}</h1>
+      <p>@{{ request.user.username }} <span class="bdg bdg-blue">{{ request.company_role|default:"member"|title }}</span> {{ request.company.name }}
+        {% if overview.streak >= 2 %}<span class="bdg bdg-orange" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ overview.streak }}-day on-time streak</span>{% endif %}</p>
+      <p class="pf-mail">{{ request.user.email }}{% if request.user.discord_id %} · Discord {{ request.user.discord_id }}{% endif %}</p>
     </div>
+    <dl class="pf-dates">
+      <dt>Member since</dt><dd>{{ overview.joined|date:"j M Y"|default:"—" }}</dd>
+      <dt>Last sign-in</dt><dd>{{ overview.last_login|date:"j M Y"|default:"—" }}</dd>
+    </dl>
+  </section>
+
+  <div class="pf-stats">{% for label, value in overview.stats %}<div><span class="v">{{ value }}</span><span class="l">{{ label }}</span></div>{% endfor %}</div>
+
+  <div class="seg pf-tabs" role="tablist" aria-label="Profile sections">
+    <button type="button" role="tab" :class="{ 'is-on': tab==='overview' }" @click="tab='overview'; history.replaceState(null,'','#overview')">Overview</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='settings' }" @click="tab='settings'; history.replaceState(null,'','#settings')">Settings</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='notifications' }" @click="tab='notifications'; history.replaceState(null,'','#notifications')">Notifications</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='shortcuts' }" @click="tab='shortcuts'; history.replaceState(null,'','#shortcuts')">Keyboard shortcuts</button>
   </div>
 
-  <!-- User Profile Summary Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;width:100%;">
-    <div style="display:flex;align-items:center;gap:16px;min-width:0;">
-      <div class="avatar" style="width:52px;height:52px;font-size:20px;font-weight:600;flex-shrink:0;">{{ request.user.username.0|upper }}</div>
-      <div style="min-width:0;">
-        <div style="font-size:16px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-          {{ request.user.get_full_name|default:request.user.username }}
-        </div>
-        <div class="text-sm text-muted" style="margin-top:2px;">
-          @{{ request.user.username }} &middot; <span class="pill {% if request.company_role == 'owner' %}nps{% elif request.company_role == 'admin' %}medium{% elif request.company_role == 'developer' %}active{% else %}closed{% endif %}">{{ request.company_role|title }}</span>
-        </div>
-      </div>
+  <section x-show="tab==='overview'" class="pf-pane">
+    {% if overview.milestones %}<div class="card-flush pf-card">{% for m in overview.milestones %}<p class="pf-mile">{% icon 'sparkles' 'ic' %}{{ m }}</p>{% endfor %}</div>{% endif %}
+    <div class="card-flush pf-card">
+      <h2>Recent activity</h2>
+      {% for a in overview.recent %}<div class="pf-act"><span>{{ a.title }}</span><time>{{ a.created_at|timesince }} ago</time></div>
+      {% empty %}<p class="hm-empty">Nothing yet. What you do shows up here.</p>{% endfor %}
     </div>
-    <div class="text-sm text-muted" style="text-align:right;flex-shrink:0;">
-      Company: <b style="color:var(--text);">{{ request.company.name }}</b>
-    </div>
-  </div>
+  </section>
 
-  <!-- Main Settings Form -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px;width:100%;">
-    <form method="post">
+  <section x-show="tab==='settings'" class="pf-pane" style="display:none;max-width:760px">
+    <form method="post" class="card-flush pf-card pf-form">
       {% csrf_token %}
-
-      <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <h3 style="font-size:15px;font-weight:600;margin-bottom:4px;">Personal Information</h3>
-        <p class="text-sm text-muted">Update your display name and primary contact email.</p>
+      <div><h2>Personal information</h2><p class="sub">Update your display name and primary contact email.</p></div>
+      <div class="field-row">
+        <div class="field"><label for="{{ form.first_name.id_for_label }}">First name</label>{{ form.first_name }}</div>
+        <div class="field"><label for="{{ form.last_name.id_for_label }}">Last name</label>{{ form.last_name }}</div>
       </div>
-
-      <div class="grid-2 mb-4" style="gap:16px;">
-        <div class="form-group">
-          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.first_name.id_for_label }}">First name</label>
-          {{ form.first_name }}
-        </div>
-        <div class="form-group">
-          <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.last_name.id_for_label }}">Last name</label>
-          {{ form.last_name }}
-        </div>
-      </div>
-
-      <div class="form-group mb-6">
-        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.email.id_for_label }}">Email address</label>
-        {{ form.email }}
-      </div>
-
-      <div style="margin-bottom:20px;padding-top:16px;padding-bottom:16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-        <h3 style="font-size:15px;font-weight:600;margin-bottom:4px;">Notification Integrations</h3>
-        <p class="text-sm text-muted">Link external accounts for ticket assignment and alert mentions.</p>
-      </div>
-
-      <div class="form-group mb-6">
-        <label class="form-label" style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;" for="{{ form.discord_id.id_for_label }}">Discord User ID</label>
-        {{ form.discord_id }}
-        <div class="text-sm text-muted" style="margin-top:6px;line-height:1.4;">
-          Used to mention you in Discord webhook alerts when a ticket is assigned to you. Enable <b>Developer Mode</b> in Discord settings, right-click your avatar, and choose <i>"Copy User ID"</i>.
-        </div>
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;padding-top:20px;border-top:1px solid var(--border);">
-        <button type="submit" class="btn btn-primary" style="padding:9px 20px;">Save Changes</button>
-      </div>
+      <div class="field"><label for="{{ form.email.id_for_label }}">Email address</label>{{ form.email }}</div>
+      <div style="padding-top:14px;border-top:1px solid var(--line)"><h2>Notification integrations</h2><p class="sub">Link external accounts for ticket assignment and alert mentions.</p></div>
+      <div class="field"><label for="{{ form.discord_id.id_for_label }}">Discord User ID</label>{{ form.discord_id }}
+        <p class="sub">Used to mention you in Discord webhook alerts when a ticket is assigned to you. Enable <b>Developer Mode</b> in Discord settings, right-click your avatar, and choose <i>“Copy User ID”</i>.</p></div>
+      <div class="pf-save"><button type="submit" class="btn btn-primary">{% icon 'check' 'ic' %}Save changes</button></div>
     </form>
-  </div>
+  </section>
+
+  <section x-show="tab==='notifications'" class="pf-pane" style="display:none;max-width:760px">
+    <div class="card-flush pf-card">
+      <h2>What should notify you</h2>
+      <p class="sub" style="margin-bottom:6px">Turn off the kinds you don’t need. This applies in every workspace you belong to.</p>
+      <ul class="pf-switches">
+        {% for k in kinds %}
+        <li><span>{{ k.label }}{% if k.locked %} <em class="sub">always on</em>{% endif %}</span>
+          <label class="sw"><input type="checkbox" {% if k.enabled %}checked{% endif %} {% if k.locked %}disabled{% endif %} data-kind="{{ k.kind }}" aria-label="{{ k.label }}"><span class="sw-track"></span></label></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section x-show="tab==='shortcuts'" class="pf-pane" style="display:none">
+    <div class="card-flush pf-card">{% include "core/_shortcuts_list.html" %}<p class="sub" style="margin-top:14px">Shortcuts pause while you type in a field. On a Mac, ⌘ is used where other systems use Ctrl.</p></div>
+  </section>
 </div>
+<script>
+document.querySelectorAll('.pf-switches input[data-kind]').forEach(function(box){
+  box.addEventListener('change',function(){
+    var body=new URLSearchParams({kind:box.dataset.kind,enabled:box.checked?'1':'0'});
+    fetch('{% url "accounts:notification_setting" %}',{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token }}','Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d}})})
+      .then(function(x){ if(x.ok) pqToast(x.d.message,'success'); else {box.checked=!box.checked; pqToast(x.d.detail||'Could not save.','error');} })
+      .catch(function(){box.checked=!box.checked;pqToast('Could not save.','error')});
+  });
+});
+</script>
 {% endblock %}

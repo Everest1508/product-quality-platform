@@ -1,39 +1,22 @@
-<tr id="member-{{ membership.pk }}">
-  <td>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span class="avatar" style="width:28px;height:28px;font-size:11px;">{{ membership.user.username.0|upper }}</span>
-      <div>
-        <div class="text-sm font-medium">{{ membership.user.get_full_name|default:membership.user.username }}</div>
-        <div class="text-sm text-muted">{{ membership.user.email }}{% if membership.user.discord_id %} · <span class="text-sm text-muted">@{{ membership.user.discord_id }}</span>{% endif %}</div>
-      </div>
-    </div>
-  </td>
-  <td>
-    <span class="pill {% if membership.role == 'owner' %}nps{% elif membership.role == 'admin' %}medium{% elif membership.role == 'developer' %}active{% elif membership.role == 'support' %}csat{% else %}closed{% endif %}">
-      {{ membership.get_role_display }}
-    </span>
-  </td>
-  <td class="date">{{ membership.created_at|date:"M d, Y" }}</td>
-  <td>
-    <div class="row-actions">
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-      {% if membership.role != 'owner' %}
-      <button hx-get="{% url 'accounts:team_edit' pk=membership.pk %}"
-              hx-target="#member-{{ membership.pk }}"
-              hx-swap="outerHTML"
-              class="btn" style="font-size:11px;padding:3px 8px;">Edit</button>
-      {% endif %}
-      {% if membership.user != request.user and membership.role != 'owner' %}
-      <form method="post" action="{% url 'accounts:team_remove' pk=membership.pk %}"
-            hx-post="{% url 'accounts:team_remove' pk=membership.pk %}"
-            hx-target="#member-{{ membership.pk }}"
-            hx-swap="outerHTML"
-            style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" onclick="return confirmAction(this.form, 'Remove {{ membership.user.username }} from the team?')" class="btn btn-danger" style="font-size:11px;padding:3px 8px;">Remove</button>
-      </form>
-      {% endif %}
-      {% endif %}
-    </div>
-  </td>
-</tr>
+{% load icon_tags %}<article class="lrow t-{% if membership.role == 'owner' %}blue{% elif membership.role == 'admin' %}blue{% elif membership.role == 'developer' %}green{% elif membership.role == 'support' %}orange{% else %}off{% endif %}" id="member-{{ membership.pk }}" style="grid-template-columns:auto minmax(0,1.6fr) auto auto;">
+  <span class="avatar" style="width:38px;height:38px;font-size:14px;">{{ membership.user.username.0|upper }}</span>
+  <div class="lmain">
+    <div class="lt"><a href="{% url 'accounts:team_member' pk=membership.pk %}">{{ membership.user.get_full_name|default:membership.user.username }}</a>{% if membership.user == request.user %}<span class="ls" style="font-weight:400;display:inline">(you)</span>{% endif %}
+      <span class="bdg {% if membership.role == 'owner' or membership.role == 'admin' %}bdg-blue{% elif membership.role == 'developer' %}bdg-green{% elif membership.role == 'support' %}bdg-orange{% else %}bdg-outline{% endif %}">{{ membership.get_role_display }}</span>
+      {% if membership.is_leave_approver %}<span class="bdg bdg-outline">Leave approver</span>{% endif %}</div>
+    <p class="ls">{{ membership.user.email }}{% if membership.user.discord_id %} · @{{ membership.user.discord_id }}{% endif %}</p>
+  </div>
+  <div class="lmetrics"><div><span class="v" style="font-size:13px;font-weight:500">{{ membership.created_at|date:"M j, Y" }}</span><span class="l">Joined</span></div></div>
+  <div class="lactions">
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+    {% if membership.role != 'owner' %}
+    <button hx-get="{% url 'accounts:team_edit' pk=membership.pk %}" hx-target="#member-{{ membership.pk }}" hx-swap="outerHTML" class="btn btn-sm">{% icon 'edit' 'ic' %}Edit</button>
+    {% endif %}
+    {% if membership.user != request.user and membership.role != 'owner' %}
+    <form method="post" action="{% url 'accounts:team_remove' pk=membership.pk %}" hx-post="{% url 'accounts:team_remove' pk=membership.pk %}" hx-target="#member-{{ membership.pk }}" hx-swap="outerHTML" hx-confirm="Remove {{ membership.user.username }} from the team? They lose access to this workspace immediately." style="display:inline;">
+      {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">{% icon 'trash' 'ic' %}Remove</button>
+    </form>
+    {% endif %}
+    {% endif %}
+  </div>
+</article>

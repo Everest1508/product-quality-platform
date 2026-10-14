@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -325,10 +325,17 @@ class TeamEditView(CompanyAdminRequiredMixin, View):
         return redirect("accounts:team_list")
 
 
+def _profile_context(request, form):
+    from apps.accounts.overview import my_overview
+    from apps.notifications import service as notes
+
+    return {"form": form, "overview": my_overview(request.user, request.company), "kinds": notes.settings_for(request.user)}
+
+
 class ProfileView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         form = ProfileForm(instance=request.user)
-        return render(request, "accounts/profile.html", {"form": form})
+        return render(request, "accounts/profile.html", _profile_context(request, form))
 
     def post(self, request):
         form = ProfileForm(request.POST, instance=request.user)
@@ -343,7 +350,32 @@ class ProfileView(CompanyMemberRequiredMixin, View):
                 )
             messages.success(request, "Profile updated.")
             return redirect("accounts:profile")
-        return render(request, "accounts/profile.html", {"form": form})
+        return render(request, "accounts/profile.html", _profile_context(request, form))
+
+
+class NotificationSettingView(CompanyMemberRequiredMixin, View):
+    """Switch one kind of notification on or off for the signed-in person (every workspace). Answers JSON for the page's switch."""
+
+    def post(self, request):
+        from django.http import JsonResponse
+
+        from apps.notifications import service as notes
+
+        kind, enabled = request.POST.get("kind"), request.POST.get("enabled") in ("1", "true", "on")
+        if not notes.set_enabled(request.user, kind, enabled):
+            return JsonResponse({"detail": "That kind of notification can't be changed."}, status=400)
+        label = next(k["label"] for k in notes.settings_for(request.user) if k["kind"] == kind)
+        return JsonResponse({"message": f"{label}: {'on' if enabled else 'off'}."})
+
+
+class TeamMemberView(CompanyMemberRequiredMixin, View):
+    """A colleague's page: who they are and the open work of theirs the viewer is allowed to see."""
+
+    def get(self, request, pk):
+        from apps.accounts.overview import member_overview
+
+        membership = get_object_or_404(Membership.objects.select_related("user"), pk=pk, company=request.company)
+        return render(request, "accounts/team_member.html", {"m": membership, **member_overview(request.user, request.company, membership)})
 
 
 class OAuthAuthorizeView(View):

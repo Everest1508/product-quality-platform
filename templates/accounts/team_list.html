@@ -1,59 +1,38 @@
 {% extends "core/base.html" %}
-{% load dropdown_tags %}
+{% load dropdown_tags icon_tags %}
 
 {% block title %}Team — PQ Platform{% endblock %}
 
 {% block content %}
 <div x-data="{ open: {% if show_invite_modal %}true{% else %}false{% endif %} }">
-  <!-- Header -->
-  <div class="head" style="margin-bottom:16px;">
-    <div>
-      <h1>Team <span class="count">{{ page.paginator.count }} member{{ page.paginator.count|pluralize }}</span></h1>
-    </div>
-    <div class="head-actions">
-      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-      <button @click="open = true" class="btn btn-primary" style="gap:6px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add member
-      </button>
-      {% endif %}
+  <div class="pg-head">
+    <div><h1>Team</h1><p class="sub">{{ page.paginator.count }} member{{ page.paginator.count|pluralize }} · {{ owner_admin_count }} owners and admins · {{ developer_count }} developers · {{ support_viewer_count }} support and viewers</p></div>
+    <div class="pg-actions">
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}<button @click="open = true" class="btn btn-primary">{% icon 'plus' 'ic' %}Add member</button>{% endif %}
     </div>
   </div>
 
-  <!-- Role Tabs -->
-  <div class="tabs" style="margin-bottom:16px;">
-    <a href="{% url 'accounts:team_list' %}" class="tab {% if not current_role %}active{% endif %}">All</a>
-    <a href="?role=owner{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'owner' %}active{% endif %}">Owner</a>
-    <a href="?role=admin{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'admin' %}active{% endif %}">Admin</a>
-    <a href="?role=developer{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'developer' %}active{% endif %}">Developer</a>
-    <a href="?role=support{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'support' %}active{% endif %}">Support</a>
-    <a href="?role=viewer{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="tab {% if current_role == 'viewer' %}active{% endif %}">Viewer</a>
+  <div class="seg" style="margin-bottom:14px;flex-wrap:wrap">
+    <a href="{% url 'accounts:team_list' %}" class="{% if not current_role %}is-on{% endif %}">All</a>
+    <a href="?role=owner{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="{% if current_role == 'owner' %}is-on{% endif %}">Owner</a>
+    <a href="?role=admin{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="{% if current_role == 'admin' %}is-on{% endif %}">Admin</a>
+    <a href="?role=developer{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="{% if current_role == 'developer' %}is-on{% endif %}">Developer</a>
+    <a href="?role=support{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="{% if current_role == 'support' %}is-on{% endif %}">Support</a>
+    <a href="?role=viewer{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="{% if current_role == 'viewer' %}is-on{% endif %}">Viewer</a>
   </div>
 
-  <!-- Toolbar -->
-  <div class="toolbar" style="margin-bottom:16px;">
-    <form method="get" class="search-wrap" style="display:flex;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" name="q" value="{{ search }}"  aria-label="Search members" placeholder="Search members...">
+  <div class="toolbar">
+    <form method="get" class="input-icon" style="width:20rem;max-width:100%">
+      {% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ search }}" aria-label="Search members" placeholder="Search members...">
       {% if current_role %}<input type="hidden" name="role" value="{{ current_role }}">{% endif %}
       {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
     </form>
     {% dropdown "sort" "-role:Role (high first)|role:Role (low first)|name:Name A-Z|-joined:Newest first|joined:Oldest first"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th style="width:120px">Role</th>
-        <th style="width:140px">Joined</th>
-        <th style="width:110px;text-align:right;">Actions</th>
-      </tr>
-    </thead>
-    <tbody id="team-members">
-      {% include "accounts/partials/_team_list_body.html" with page=page memberships=page %}
-    </tbody>
-  </table>
+  <div class="ledger" id="team-members">
+    {% include "accounts/partials/_team_list_body.html" with page=page memberships=page %}
+  </div>
 
   {% include "core/_pagination.html" with page=page %}
 

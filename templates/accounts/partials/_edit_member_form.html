@@ -1,5 +1,5 @@
-<tr id="member-{{ membership.pk }}">
-  <td colspan="4">
+<article class="lrow lrow-edit" id="member-{{ membership.pk }}" style="grid-template-columns:1fr;">
+  <div>
     <form method="post" action="{% url 'accounts:team_edit' pk=membership.pk %}"
           hx-post="{% url 'accounts:team_edit' pk=membership.pk %}"
           hx-target="#member-{{ membership.pk }}"
@@ -50,5 +50,5 @@
         </div>
       </div>
     </form>
-  </td>
-</tr>
+  </div>
+</article>
