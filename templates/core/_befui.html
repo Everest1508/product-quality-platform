@@ -1,10 +1,10 @@
 {% comment %}
 befui's HTML build: one stylesheet and one script that define <bef-*> custom elements.
-The script is about 1 MB (React is inside it), so a page opts in with
+The script is now a small loader that fetches each component only when a page uses it, and a page opts in with
 {% block extra_head %}{% include "core/_befui.html" %}{% endblock %} instead of every page paying for it.
 {% endcomment %}
 <link rel="stylesheet" href="/befui/befui.css">
-<script src="/befui/befui.js" defer></script>
+<script type="module" src="/befui/befui.js"></script>
 <style>
 /* befui reads shadcn-style variables. Wrap befui markup in <div class="bef-theme"> and it takes our colours, light and dark.
    Its --accent and --muted mean different things from ours, so those two are set one level down. */

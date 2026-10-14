@@ -1,0 +1,1 @@
+import{r}from"./entry.js";var o=Object.defineProperty,t=(e,u)=>o(e,"name",{value:u,configurable:!0});function n(e){const u=r.useRef({value:e,previous:e});return r.useMemo(()=>(u.current.value!==e&&(u.current.previous=u.current.value,u.current.value=e),u.current.previous),[e])}t(n,"usePrevious");export{n as u};

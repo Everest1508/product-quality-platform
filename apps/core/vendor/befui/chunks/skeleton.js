@@ -1,0 +1,1 @@
+import{j as r}from"./jsx-runtime.js";import{c as n}from"./utils.js";function m({className:a,...e}){return r.jsx("div",{className:n("rounded-md bg-[linear-gradient(90deg,var(--secondary)_25%,var(--muted)_50%,var(--secondary)_75%)] bg-[length:200%_100%] animate-shimmer",a),...e})}export{m as Skeleton};

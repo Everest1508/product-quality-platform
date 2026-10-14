@@ -1,0 +1,1 @@
+import{r as i,R as n}from"./entry.js";import{u}from"./index5.js";var s=Object.defineProperty,f=(t,e)=>s(t,"name",{value:e,configurable:!0}),m=n[" useId ".trim().toString()]||(()=>{}),c=0;function r(t){const[e,o]=i.useState(m());return u(()=>{t||o(a=>a??String(c++))},[t]),t||(e?`radix-${e}`:"")}f(r,"useId");export{r as u};

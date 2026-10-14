@@ -1,0 +1,1 @@
+import{r as u}from"./entry.js";var o=Object.defineProperty,c=(r,e)=>o(r,"name",{value:e,configurable:!0});function n(r){const e=u.useRef(r);return u.useEffect(()=>{e.current=r}),u.useMemo(()=>((...a)=>{var t;return(t=e.current)==null?void 0:t.call(e,...a)}),[])}c(n,"useCallbackRef");export{n as u};

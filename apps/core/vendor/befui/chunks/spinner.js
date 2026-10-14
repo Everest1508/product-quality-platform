@@ -1,0 +1,1 @@
+import{j as a}from"./jsx-runtime.js";import{c as e}from"./utils.js";function n({className:r}){return a.jsx("span",{role:"status","aria-label":"Loading",className:e("inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent",r)})}export{n as Spinner};

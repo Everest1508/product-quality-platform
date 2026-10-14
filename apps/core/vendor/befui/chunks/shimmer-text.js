@@ -1,0 +1,1 @@
+import{j as t}from"./jsx-runtime.js";import{c as a}from"./utils.js";function n({className:r,...e}){return t.jsx("span",{className:a("animate-shimmer bg-[linear-gradient(110deg,var(--muted-foreground)_40%,var(--foreground)_50%,var(--muted-foreground)_60%)] bg-[length:200%_100%] bg-clip-text text-transparent",r),...e})}export{n as ShimmerText};

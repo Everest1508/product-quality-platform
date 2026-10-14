@@ -129,5 +129,20 @@ class BefuiAssetTest(TestCase):
         again = self.client.get("/befui/befui.js", HTTP_IF_NONE_MATCH=gz["ETag"])
         self.assertEqual(again.status_code, 304)
         self.assertEqual(self.client.get("/befui/befui.css").status_code, 200)
-        self.assertEqual(self.client.get("/befui/demos.json").status_code, 404)
-        self.assertEqual(self.client.get("/befui/..%2Fsettings.py").status_code, 404)
+        self.assertEqual(self.client.get("/befui/README.md").status_code, 404)
+        self.assertEqual(self.client.get("/befui/chunks/..%2Fbefui.css").status_code, 404)
+        self.assertEqual(self.client.get("/befui/chunks/../../../core/settings.py").status_code, 404)
+
+    def test_the_loader_and_every_chunk_it_names_are_present(self):
+        import re
+
+        from apps.core.befui import DIR
+
+        entry = (DIR / "chunks" / "entry.js").read_text()
+        names = set(re.findall(r'"\./([A-Za-z0-9_.-]+\.js)"', entry)) - {"entry.js"}
+        self.assertGreater(len(names), 150)
+        for name in names:
+            self.assertTrue((DIR / "chunks" / name).is_file(), name)
+        r = self.client.get("/befui/chunks/button.js")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("javascript", r["Content-Type"])

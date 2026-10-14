@@ -1,0 +1,1 @@
+import{j as t}from"./jsx-runtime.js";import{c as r}from"./utils.js";const m=({className:e,...o})=>t.jsx("kbd",{className:r("inline-flex h-5 min-w-5 items-center justify-center rounded border border-b-2 bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground",e),...o});export{m as Kbd};

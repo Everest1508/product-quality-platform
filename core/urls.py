@@ -18,7 +18,7 @@ urlpatterns = [
     path("offline/", offline),
     path("brand/<str:name>", brand_file),
     path("admin/", admin.site.urls),
-    path("befui/<str:name>", befui.asset),
+    path("befui/<path:name>", befui.asset),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),
