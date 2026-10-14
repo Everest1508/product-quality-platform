@@ -589,6 +589,14 @@ class TimesheetView(CompanyAdminRequiredMixin, View):
         prev_year, prev_month = service.month_shift(year, month, -1)
         next_year, next_month = service.month_shift(year, month, 1)
 
+        if request.GET.get("export") == "csv":
+            from apps.core.csvx import csv_response
+
+            return csv_response(
+                f"attendance-{year}-{month:02d}.csv", ["Employee", "Present days", "Absent days", "Leave days", "Late days", "Open days", "Total", "Average per day"],
+                [[r["user"].get_full_name() or r["user"].username, r["present_days"], r["absent_days"], r["leave_day_count"], r["late_days"], r["open_days"], r["total_formatted"], r["avg_per_day_formatted"]] for r in rows],
+            )
+
         company_total = sum(r["total_minutes"] for r in rows)
 
         return render(request, "attendance/timesheet.html", {

@@ -1715,3 +1715,32 @@ class WeekendWorkNotLateTest(TestCase):
             rec = SimpleNamespace(date=day, check_in=timezone.make_aware(datetime.combine(day, time(14, 0)), tz))
             shift = SimpleNamespace(start_time=time(10, 0))
             self.assertEqual(lateness_for(rec, shift), expected)
+
+
+class TimesheetCsvTest(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        from apps.accounts.models import Company, Membership
+
+        User = get_user_model()
+        self.co = Company.objects.create(name="Csv Co", slug="csv-co")
+        self.owner = User.objects.create_user("csvowner", password="pw")
+        self.dev = User.objects.create_user("csvdev", password="pw")
+        Membership.objects.create(user=self.owner, company=self.co, role="owner")
+        Membership.objects.create(user=self.dev, company=self.co, role="developer")
+
+    def login(self, name):
+        self.client.login(username=name, password="pw")
+        s = self.client.session
+        s["active_company_id"] = self.co.pk
+        s.save()
+
+    def test_the_timesheet_csv_is_for_admins_only(self):
+        self.login("csvdev")
+        self.assertEqual(self.client.get("/attendance/timesheet/?export=csv").status_code, 403)
+        self.client.logout()
+        self.login("csvowner")
+        r = self.client.get("/attendance/timesheet/?export=csv")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Employee,Present days", r.content.decode("utf-8-sig"))
