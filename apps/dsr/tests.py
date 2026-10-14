@@ -59,10 +59,13 @@ class DSRSystemTest(TestCase):
         self.ticket.transition_to("resolved", actor=self.member)
 
         entry = DSREntry.objects.get(ticket=self.ticket)
-        # 60 days == 1440h, which the old 5-digit field could not store.
-        self.assertGreater(entry.hours_spent, Decimal("999.99"))
+        # 60 days is 1440h open. That is kept as the open-for time (shown, never counted); the counted hours wait for the
+        # person to enter what they actually worked.
+        self.assertEqual(entry.hours_spent, Decimal("0.00"))
+        self.assertGreater(entry.elapsed_hours, Decimal("999.99"))
+        self.assertTrue(entry.needs_time)
         # And it must survive the read-back that used to explode.
-        self.assertEqual(DSREntry.objects.get(pk=entry.pk).hours_spent, entry.hours_spent)
+        self.assertEqual(DSREntry.objects.get(pk=entry.pk).elapsed_hours, entry.elapsed_hours)
 
         self.client.login(username="member", password="password")
         response = self.client.get(reverse("dashboards:index"))
