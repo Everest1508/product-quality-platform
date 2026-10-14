@@ -829,7 +829,7 @@
   input[type="date"]::-ms-clear,
   input[type="date"]::-ms-reveal{display:none !important;}
 
-  .pq-datepicker-popover{position:absolute;z-index:1000;width:280px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 25px -5px rgba(13,17,23,.1),0 8px 10px -6px rgba(13,17,23,.08);padding:14px;font-family:'Inter',-apple-system,sans-serif;display:none;animation:datepickerFadeIn .15s ease;}
+  .pq-datepicker-popover{position:absolute;z-index:1100;width:280px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 25px -5px rgba(13,17,23,.1),0 8px 10px -6px rgba(13,17,23,.08);padding:14px;font-family:'Inter',-apple-system,sans-serif;display:none;animation:datepickerFadeIn .15s ease;}
   @keyframes datepickerFadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
   .pq-datepicker-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .pq-datepicker-title{font-size:13.5px;font-weight:600;color:var(--text);}

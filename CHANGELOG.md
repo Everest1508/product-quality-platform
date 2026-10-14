@@ -10,13 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
-## [1.43.2] "Dollarbird" — 2026-10-14 · dropdowns open on top inside pop-up windows
+## [1.43.2] "Dollarbird" — 2026-10-14 · dropdowns open on top of pop-ups, and What's new shows once
 
 > In short: the dropdown lists and date pickers in pop-up windows, such as Log work in the DSR, now open in front of the window instead of behind it.
 
 ### Fixed
 
 - **Dropdowns opened behind the Log work window.** Project, category, status and date lists now appear on top of any pop-up window, so you can pick from them.
+- **What's new opened on every visit for some browsers.** It now remembers that you have read a release even when the browser blocks or clears its usual storage, so it shows once per release.
 
 ## [1.43.1] "Dotterel" — 2026-10-14 · a product switcher you can actually switch with
 

@@ -38,10 +38,21 @@ bold, code and http/https links, so the bullets go in as HTML on purpose.
   function plain(h) { return String(h).replace(/<[^>]*>/g, ' ').toLowerCase(); }
   function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
 
+  // "Seen" is remembered in localStorage and in a cookie, because either can be
+  // blocked or wiped by a browser, and then the dialog would greet every visit.
+  function seen() {
+    try { if (localStorage.getItem('pq:seen-version') === version) return true; } catch (e) {}
+    return document.cookie.split('; ').indexOf('pq_seen_version=' + version) !== -1;
+  }
+  function markSeen() {
+    try { localStorage.setItem('pq:seen-version', version); } catch (e) {}
+    document.cookie = 'pq_seen_version=' + version + '; path=/; max-age=31536000; samesite=lax';
+  }
+
   function open() {
     lastFocus = document.activeElement;
+    markSeen();
     if (!dlg.open) dlg.showModal();
-    try { localStorage.setItem('pq:seen-version', version); } catch (e) {}
     if (releases || loading) return;
     loading = true;
     fetch('/api/v1/changelog/', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
@@ -129,10 +140,8 @@ bold, code and http/https links, so the bullets go in as HTML on purpose.
   window.addEventListener('pq:changelog', open);
 
   // A new release shows itself once, a moment after the page loads, unless something else is already open.
-  try {
-    if (localStorage.getItem('pq:seen-version') !== version) {
-      setTimeout(function () { if (!document.querySelector('dialog[open]') && !document.getElementById('pq-confirm').open) open(); }, 1500);
-    }
-  } catch (e) {}
+  if (!seen()) {
+    setTimeout(function () { if (!document.querySelector('dialog[open]')) open(); }, 1500);
+  }
 })();
 </script>
