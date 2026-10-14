@@ -51,11 +51,16 @@ def product_context(request):
                 _attach_product_counts(product)
                 ctx["product"] = product
                 from apps.products.access import accessible_products
-                ctx["nav_products"] = list(
+                nav = list(
                     accessible_products(request.user, request.company)
                     .order_by("name")
                     .values("pk", "name", "icon")
                 )
+                # The product you are looking at is always in its own switcher.
+                if not any(p["pk"] == product.pk for p in nav):
+                    nav.append({"pk": product.pk, "name": product.name, "icon": product.icon})
+                    nav.sort(key=lambda p: p["name"].lower())
+                ctx["nav_products"] = nav
     except Exception:
         pass
     return ctx

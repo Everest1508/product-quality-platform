@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.43.1] "Dotterel" — 2026-10-14 · a product switcher you can actually switch with
+
+> In short: the product dropdown in the sidebar lists every product you can open, with a search box when there are many.
+
+### Better
+
+- **The product dropdown lists all your products.** Pick one straight from the sidebar, with "View all products" pinned underneath.
+- **Find a product by typing.** With more than a few products, a search box at the top of the dropdown narrows the list as you type.
+
+### Fixed
+
+- **The dropdown could show only "View all products".** The product you are on is now always in the list, and the list scrolls on its own so the link stays visible.
+
 ## [1.43.0] "Cuckoo" — 2026-10-14 · pick an icon for each product, and centred windows
 
 > In short: every product can now have its own icon, shown in the list and the product switcher, and pop-up windows open in the middle of the screen again.

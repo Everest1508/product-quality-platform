@@ -49,7 +49,9 @@
   .switch-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .switch-caret{width:12px;height:12px;stroke-width:2;color:var(--muted);flex-shrink:0;}
   .switch-tick{width:14px;height:14px;stroke-width:2.5;}
-  .switch-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:0 10px 28px rgba(13,17,23,.13);z-index:70;padding:4px;max-height:min(340px,60vh);overflow-y:auto;}
+  .switch-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:0 10px 28px rgba(13,17,23,.13);z-index:70;padding:4px;}
+  .switch-list{max-height:min(320px,50vh);overflow-y:auto;}
+  .switch-find{width:100%;margin:2px 0 4px;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;font-size:13px;}
   .side-context .switch{margin-bottom:4px;}
   .switch-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px;border:none;background:none;border-radius:6px;font:inherit;font-size:13px;color:var(--text);text-align:left;cursor:pointer;}
   .switch-item:hover{background:var(--panel);}

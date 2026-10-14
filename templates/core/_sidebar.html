@@ -53,7 +53,7 @@
   {% if product %}
   <div class="side-context">
     <nav class="nav-section" aria-label="Current product">
-    <div class="switch" x-data="{ open: false }" @keydown.escape.window="open = false">
+    <div class="switch" x-data="{ open: false, q: '' }" @keydown.escape.window="open = false">
       <button type="button" class="switch-btn" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true">
         <span class="switch-dot"></span>
         <span class="switch-glyph">{% product_icon product "switch-ic" %}</span>
@@ -61,13 +61,18 @@
         {% icon 'chevron-down' 'switch-caret' %}
       </button>
       <div class="switch-menu" x-show="open" x-transition.opacity.duration.100ms @click.outside="open = false" style="display:none">
-        {% for p in nav_products %}
-        <a href="{% url 'products:product_board' pk=p.pk %}" class="switch-item {% if p.pk == product.pk %}current{% endif %}">
-          <span class="switch-pic">{% product_icon p "switch-ic" %}</span>
-          <span class="switch-item-name">{{ p.name }}</span>
-          {% if p.pk == product.pk %}{% icon 'check' 'switch-tick' %}{% endif %}
-        </a>
-        {% endfor %}
+        {% if nav_products|length > 6 %}
+        <input type="search" class="switch-find" placeholder="Find a product" x-model="q" aria-label="Find a product" @keydown.escape="open = false">
+        {% endif %}
+        <div class="switch-list">
+          {% for p in nav_products %}
+          <a href="{% url 'products:product_board' pk=p.pk %}" class="switch-item {% if p.pk == product.pk %}current{% endif %}" data-name="{{ p.name|lower }}" x-show="!q || $el.dataset.name.includes(q.toLowerCase())">
+            <span class="switch-pic">{% product_icon p "switch-ic" %}</span>
+            <span class="switch-item-name">{{ p.name }}</span>
+            {% if p.pk == product.pk %}{% icon 'check' 'switch-tick' %}{% endif %}
+          </a>
+          {% endfor %}
+        </div>
         <a href="{% url 'products:product_list' %}" class="switch-item switch-item-all">
           <span class="switch-item-name">View all products</span>
           {% icon 'arrow-right' 'switch-icon' %}
