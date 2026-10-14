@@ -18,4 +18,4 @@ echo "Running migrations..."
 python manage.py migrate --noinput
 
 echo "Starting server..."
-exec python manage.py runserver 0.0.0.0:8011
+exec daphne -b 0.0.0.0 -p 8011 core.asgi:application

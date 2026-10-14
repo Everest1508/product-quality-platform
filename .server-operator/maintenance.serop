@@ -4,16 +4,37 @@ sudo docker compose logs --tail 200 web
 [Follow Logs]
 sudo docker compose logs -f --tail 50 web
 
-[Migrate]
-sudo docker compose exec web python manage.py migrate --noinput
-
 [Backup Database]
 sudo mkdir -p backups
 sudo cp db.sqlite3 backups/db-$(date +%F-%H%M).sqlite3
 ls -lh backups
 
+[Migrate]
+sudo docker compose exec web python manage.py migrate --noinput
+
+[Dry Run Fix DSR Hours]
+sudo docker compose exec web python manage.py fix_dsr_hours --dry-run
+
+[Fix DSR Hours]
+sudo mkdir -p backups
+sudo cp db.sqlite3 backups/db-before-dsr-fix-$(date +%F-%H%M).sqlite3
+sudo docker compose exec web python manage.py fix_dsr_hours
+sudo docker compose exec web python manage.py fix_dsr_hours --dry-run
+
+[Dry Run Reminders]
+sudo docker compose exec web python manage.py send_attendance_reminders --dry-run
+
+[Send Attendance Reminders]
+sudo docker compose exec web python manage.py send_attendance_reminders
+
+[Dry Run Automation Rules]
+sudo docker compose exec web python manage.py evaluate_rules --dry-run
+
 [Run Automation Rules]
 sudo docker compose exec web python manage.py evaluate_rules
+
+[Notify Overdue Todos]
+sudo docker compose exec web python manage.py notify_todos
 
 [Django Check]
 sudo docker compose exec web python manage.py check

@@ -6,8 +6,8 @@
 
 [![Django](https://img.shields.io/badge/Django-6.0-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![HTMX](https://img.shields.io/badge/HTMX-2.x-3366CC?style=for-the-badge&logo=htmx&logoColor=white)](https://htmx.org/)
-[![Alpine.js](https://img.shields.io/badge/Alpine.js-3.x-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=white)](https://alpinejs.dev/)
+[![HTMX](https://img.shields.io/badge/HTMX-2-3366CC?style=for-the-badge)](https://htmx.org/)
+[![Alpine](https://img.shields.io/badge/Alpine.js-3-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=black)](https://alpinejs.dev/)
 [![REST API](https://img.shields.io/badge/DRF-3.17-red?style=for-the-badge)](https://www.django-rest-framework.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
@@ -16,7 +16,7 @@
 
 **PQ Platform** bridges the chasm between production telemetry, sprint execution, customer feedback, and engineering accountability. Instead of paying for and juggling five disconnected SaaS tools (Sentry, Linear, Toggl, Zendesk, and Zapier), PQ Platform consolidates the entire developer feedback loop into a single, cohesive, blazing-fast workspace.
 
-[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Quickstart Guide](#-quickstart-guide) • [Demo Personas](#-demo-accounts--personas) • [API Reference](#-ingestion-api-reference) • [Design Philosophy](#-tech-stack--design-philosophy)
+[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Quickstart Guide](#-quickstart-guide) • [Run it](docs/running-the-project.md) • [Docs](#-documentation) • [Demo Personas](#-demo-accounts--personas) • [API Reference](#-ingestion-api-reference) • [Design Philosophy](#-tech-stack--design-philosophy)
 
 </div>
 
@@ -28,13 +28,14 @@ Engineering organizations frequently suffer from **context fragmentation**:
 1. **Telemetry is trapped in silos:** Application errors trigger alerts in error monitoring tools that never get triaged into engineering sprint boards.
 2. **Timesheets and DSRs are despised:** Engineers waste Friday afternoons manually guessing how many hours they spent on bug fixes, leading to inaccurate Daily Status Reports.
 3. **Customer feedback gets lost:** Support tickets in CS tools don't link back to specific products or underlying error occurrences.
-4. **Heavyweight frontend drag:** Modern web apps drown in massive `node_modules`, complex Webpack/Vite build matrices, and brittle hydration errors.
+4. **Slow, inconsistent interfaces:** Five tools means five different designs. PQ Platform is one app with one component set, a dark theme, and keyboard shortcuts everywhere.
 
-**PQ Platform solves this with an integrated, zero-build architecture:**
+**PQ Platform solves this with one integrated workspace:**
 - 💥 **Automated Incident-to-Ticket Flow:** Errors captured via SDK deduplicate into Error Groups. When error frequency exceeds threshold rules, the platform automatically files prioritized engineering tickets.
 - ⏱️ **Zero-Friction DSR Timesheets:** When an engineer resolves a ticket, the platform automatically logs the elapsed duration into their Daily Status Report (DSR) spreadsheet.
 - 💬 **Customer Success Operations:** Triage CSAT/NPS survey responses and bug reports directly into backlog items.
-- ⚡ **SPA Speed with Zero Build Steps:** Powered by **Django 6 + HTMX + Alpine.js**, delivering instantaneous UI swaps and silky interactions with zero npm dependencies.
+- 🧑‍💼 **People Operations:** Attendance with lateness rules, leave with paid/unpaid splitting and approvals, and payroll cycles that turn both into payslips.
+- ⚡ **Plain server-rendered Django, with a polished interface:** **Django 6** renders every page; **HTMX** and **Alpine.js** make it feel instant; hand-written CSS gives one consistent look with a light and a dark theme. No JavaScript build step.
 
 ---
 
@@ -93,8 +94,8 @@ flowchart TD
 
 ### 1. 🎯 Linear-Style Ticket Tracking & Kanban
 - **Flexible Views:** Seamless toggle between interactive **Kanban Board** and high-density **List View** with preserved search and filter parameters.
-- **Dynamic HTMX Filtering:** Filter instantly by status, priority, assignee, type, and search keyword without full page reloads.
-- **Mobile Touch Ready:** Touch fallback allows long-pressing cards on mobile and tablet devices to transition columns effortlessly.
+- **Instant Filtering:** Filter by status, priority, assignee, type, and search keyword; the filters live in the URL so a view can be shared.
+- **Drag or Keyboard:** Drag cards between columns, move them with Alt + arrow keys, or use the Move menu on touch screens.
 - **Full Lifecycle Support:** Manage tickets from `Backlog` ➔ `Todo` ➔ `In Progress` ➔ `In Review` ➔ `Resolved` ➔ `Closed`.
 
 ### 2. ⚡ Telemetry & Error Tracking (Sentry-Alternative)
@@ -104,8 +105,9 @@ flowchart TD
 - **Triage Actions:** Resolve or ignore errors directly from the dashboard or error detail views.
 
 ### 3. 📊 Automated DSR (Daily Status Report) & Timesheets
-- **Interactive Spreadsheet Grid:** Real-time editable DSR table with inline HTMX cell editing for hours, notes, and task categorizations.
-- **Automatic Duration Tracking:** Resolving or closing a ticket automatically calculates active duration and logs a `[AUTO]` DSR entry for assignees.
+- **A table of everything submitted:** Today and history in one grid grouped by day (date, task, project, category, time, status), with range and person filters, search, edit and delete in place, and an **Export CSV** button.
+- **Automatic Duration Tracking:** Resolving or closing a ticket logs an `Auto` DSR entry for assignees showing when the ticket was created and completed, with hours capped at one working day. `manage.py fix_dsr_hours` repairs older rows.
+- **One-click catch-up:** A banner lists tickets you worked on today that are not in your DSR and adds them all at suggested hours.
 - **Daily Target Progress:** Dynamic visual progress meter tracking completion toward the standard 8.0-hour daily goal.
 - **Manager & Admin Oversight:** Company leadership can view team-wide progress bars, completed task metrics, and inspect individual timesheets.
 - **Standup Formatter:** 1-click clipboard button that formats today's logged work into a clean Slack/Teams standup message.
@@ -124,7 +126,23 @@ flowchart TD
 - **Real-Time Webhook Dispatch:** Post rich embeds to product-specific Discord channels on ticket creation, status changes, and critical incidents.
 - **Native User Mentions:** Maps user profiles to Discord IDs (`<@discord_id>`) for direct attention and notification routing.
 
-### 7. 🛡️ Two-Tier Multi-Tenancy & Access Control
+### 7. 🕒 Attendance, Leave & Payroll
+- **Attendance:** One-click check-in and check-out (asking first, with your time worked), a live day counter, lateness bands that feed pay, a month sheet, a team view, correction requests that owners and admins approve, and reminders to check in and out.
+- **Leave:** Leave types with yearly allowances and per-spell caps, a live paid/unpaid preview when you apply, a team calendar, and an approvals queue where approvers can adjust dates and the split.
+- **Payroll:** Monthly salaries divided over each 27th–26th cycle's working days, cycle preview, locked runs, payslips that show how every figure was worked out, and company holidays.
+
+### 8. 🔎 Search, Notifications & Presence
+- **Ctrl K search** across tickets, errors, products and pages, limited to what you can open.
+- **Notifications** in the app (grouped by day, filterable) and as web push, with a switch per kind in your profile. **Who is online** in the top bar.
+- **Keyboard shortcuts:** `g` then a letter jumps between pages, `c` makes a ticket, `t` flips the theme, `[` folds the sidebar, `?` lists them all. They use ⌘ on a Mac and Ctrl elsewhere.
+- **What's new:** a searchable timeline of every release, each with its own name, fed by `CHANGELOG.md`.
+
+### 9. 🙂 A Friendly Interface
+- A greeting that changes with the time of day, an on-time streak, milestone messages, and small celebrations when you finish things.
+- Light and dark themes with a smooth switch, animated sidebar, tooltips on icon buttons, and a toast for every action.
+- A profile page for you and a page for each colleague, a command palette that can also run actions, and export to CSV.
+
+### 10. 🛡️ Two-Tier Multi-Tenancy & Access Control
 - **Layer 1 (Company Isolation):** Complete tenant partitioning via `Company` and `Membership` roles (`Owner`, `Admin`, `Developer`, `Support`, `Viewer`).
 - **Layer 2 (Per-Product RBAC):** Fine-grained `ProductAccess` controls ensuring developers and support agents only see products and tickets they have been explicitly granted.
 
@@ -141,7 +159,7 @@ flowchart TD
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/product-quality-platform.git
+git clone https://github.com/Everest1508/product-quality-platform.git
 cd product-quality-platform
 
 # 2. Create and activate a Python virtual environment
@@ -151,17 +169,18 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Run database migrations
-python manage.py migrate
+# 4. Migrate, load the Acme Corp demo workspace and create a superuser
+./bootstrap.sh
 
-# 5. Populate workspace with demo data (Acme Corp)
-python manage.py seed_data
-
-# 6. Start the development server
+# 5. Start the development server
 python manage.py runserver 8010
 ```
 
-Visit **[http://localhost:8010](http://localhost:8010)** in your browser.
+Visit **[http://localhost:8010](http://localhost:8010)** and sign in as `owner` / `testpass123`.
+
+Edit a template or `templates/core/css/*.css` and refresh the browser: there is nothing to build.
+**The full guide, with settings, scheduled jobs, Docker, deploying and troubleshooting, is in
+[docs/running-the-project.md](docs/running-the-project.md).**
 
 ---
 
@@ -282,6 +301,16 @@ python manage.py evaluate_rules
 python manage.py evaluate_rules --dry-run
 ```
 
+### `send_attendance_reminders`
+Reminds people to check in (a few minutes after their shift starts) and to check out (after it ends). Only people who punched in the last 30 days are nudged, never on weekends, holidays or approved leave, and each person gets each reminder at most once a day. People can switch either kind off under Profile → Notifications. Run it from cron every 5 to 10 minutes:
+
+```bash
+python manage.py send_attendance_reminders [--dry-run]
+```
+
+### `notify_todos`, `fix_dsr_hours`
+`notify_todos` sends one reminder a day about overdue to-dos (run it every morning). `fix_dsr_hours [--dry-run]` caps old auto-logged DSR rows that show more than one working day of hours.
+
 ### `seed_data`
 Resets the database and populates high-fidelity sample data across all entities:
 
@@ -296,14 +325,14 @@ python manage.py seed_data
 | Layer | Technology | Rationale |
 | :--- | :--- | :--- |
 | **Backend Framework** | **Django 6.0** | Robust ORM, built-in security protections, enterprise authentication, and bulletproof relational data modeling. |
-| **Dynamic Frontend** | **HTMX 2.x** | Enables full SPA capabilities (live search, modal drawers, in-place table updates) while writing simple, readable Django HTML templates. |
-| **Client Reactivity** | **Alpine.js 3.x** | Lightweight micro-reactivity for dropdowns, modals, and local component states without a JavaScript framework bundle. |
-| **Styling & Design** | **Modern CSS Tokens** | Zero CSS framework lock-in. Built entirely with clean CSS custom properties (`--panel`, `--border`, `--accent`) providing consistent contrast, typography, and dark/light adaptability. |
+| **Pages** | **Django templates + HTMX + Alpine.js** | Every page is rendered by Django. HTMX swaps parts of a page without a reload, and Alpine.js handles small things like menus and tabs. |
+| **Look** | **Hand-written CSS** | A token file (`templates/core/css/_tokens.css`) holds the colours for light and dark themes; every stylesheet reads those tokens. No build tool. |
+| **Live features** | **Django Channels** | WebSockets for presence, notifications and the Serop inbox. |
 | **API Layer** | **Django REST Framework** | Token-authenticated ingestion endpoints with throttling, validation, and JSON schemas. |
 | **Database** | **SQLite / PostgreSQL** | Zero-config SQLite out of the box with total migration compatibility for production PostgreSQL. |
 
-> ### 💡 Why No Node / Webpack / React?
-> We believe modern developer platforms spend too much compute and operational overhead on frontend build pipelines. By leveraging **Django 6 + HTMX + Alpine.js**, this codebase achieves **instant cold-starts, sub-30ms response times, zero asset compilation steps, and trivial deployments**.
+> ### 💡 No front-end build
+> The interface is server-rendered on purpose: one codebase, nothing to compile, and a deploy is a Python rebuild. The CSS lives in a few files under `templates/core/css/` and reads colour tokens, which is what makes the dark theme work on every page at once.
 
 ---
 
@@ -314,7 +343,12 @@ product-quality-platform/
 ├── apps/
 │   ├── accounts/       # User model, multi-tenant Company, Membership, & Auth views
 │   ├── automation/     # Auto-ticket threshold rules & cron evaluation engine
-│   ├── core/           # Middleware, tenant-scoped base models, context processors
+│   ├── attendance/     # Check-in/out, lateness, corrections, team and timesheet views
+│   ├── leave/          # Leave types, paid/unpaid split, calendar, approvals
+│   ├── payroll/        # Pay cycles, runs, payslips, salaries, holidays
+│   ├── notifications/  # In-app and web-push notifications
+│   ├── presence/       # Who is online (WebSocket)
+│   ├── core/           # Middleware, tenant-scoped base models, search, PWA
 │   ├── dashboards/     # Executive stats, needs-attention list, activity audit log
 │   ├── dsr/            # Daily Status Report spreadsheet, auto-logger, & standup export
 │   ├── errors/         # Error groups, occurrences, stack traces, & triage views
@@ -325,8 +359,11 @@ product-quality-platform/
 ├── core/
 │   ├── settings.py     # Global Django configuration & security parameters
 │   ├── urls.py         # Root URL routing table
-│   └── wsgi.py         # Production WSGI application gateway
-├── templates/          # Server-rendered HTML templates & modular HTMX partials
+│   ├── asgi.py         # ASGI app: HTTP plus the WebSocket routes
+│   └── wsgi.py         # WSGI entry point (no WebSockets)
+├── docs/               # Running the project, the feature guide, user guides
+├── templates/          # Every page, plus the shared CSS in templates/core/css/
+├── bootstrap.sh        # Migrate, seed demo data, create a superuser
 ├── docker-compose.yml  # Local container orchestration
 ├── Dockerfile          # Multi-stage production container image
 ├── entrypoint.sh       # Container migration & startup script
@@ -348,7 +385,22 @@ python manage.py test apps.tickets
 
 # Run tests for ingestion API
 python manage.py test apps.ingestion
+
 ```
+
+One test (`test_signup_creates_user`) fails on a clean checkout because the self-serve signup route does not exist; it is not a regression.
+
+---
+
+## 📚 Documentation
+
+| Where | What |
+| :--- | :--- |
+| [docs/running-the-project.md](docs/running-the-project.md) | Install, run, configure, schedule jobs, use Docker, deploy, troubleshoot. |
+| [docs/feature-guide.md](docs/feature-guide.md) | What was added, when, why, and how to use it, with a release timeline. |
+| [docs/guides/](docs/guides/README.md) | How-tos for the people using the app: attendance, DSR, tickets, home and reports, presence. |
+| [CHANGELOG.md](CHANGELOG.md) | Every release, each with its own name. The same text feeds the in-app **What's new**. |
+| [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) | How the code is organised and the rules each area follows, for anyone changing it. |
 
 ---
 
