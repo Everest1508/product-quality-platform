@@ -631,7 +631,7 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .pf-stats .v{display:block;font-size:22px;font-weight:650;font-variant-numeric:tabular-nums;}
 .pf-stats .l{font-size:12px;color:var(--muted);}
 .pf-tabs{justify-self:start;}
-.pf-pane{display:grid;gap:14px;}
+.pf-pane{display:grid;gap:14px;width:100%;margin-inline:auto;}
 .pf-card{padding:18px 20px;}
 .pf-card h2{font-size:14.5px;font-weight:600;margin-bottom:8px;}
 .pf-mile{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;}
