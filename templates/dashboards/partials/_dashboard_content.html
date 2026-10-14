@@ -9,8 +9,8 @@
 {% endif %}
 
 <div class="hm-kpis">
-  <a class="hm-kpi" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v">{{ my_ticket_count }}</span><span class="l">Open tickets</span></a>
-  <a class="hm-kpi{% if overdue_count %} is-alert{% endif %}" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v">{{ overdue_count }}</span><span class="l">Overdue</span></a>
+  <a class="hm-kpi" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ my_ticket_count }}">{{ my_ticket_count }}</span><span class="l">Open tickets</span></a>
+  <a class="hm-kpi{% if overdue_count %} is-alert{% endif %}" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ overdue_count }}">{{ overdue_count }}</span><span class="l">Overdue</span></a>
   <a class="hm-kpi" href="{% url 'dsr:dsr_sheet' %}"><span class="v">{{ dsr.dsr_hours|floatformat:"1" }}</span><span class="l">Logged this week</span></a>
   <a class="hm-kpi" href="{% url 'attendance:my_attendance' %}"><span class="v">{{ chart_week_total }}</span><span class="l">Hours this week</span></a>
 </div>
@@ -59,13 +59,14 @@
           </div>
           {% if not attendance.on_leave_today %}
             {% if rec.is_open %}
-              <form method="post" action="{% url 'attendance:punch' %}" x-data @submit="if (!confirm('Punch out for today? You will be punched out and your day will end.')) $event.preventDefault()">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
+              <form method="post" action="{% url 'attendance:punch' %}" data-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ rec.check_in|date:'U' }}000">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
             {% elif not rec and today.weekday < 5 %}
               <form method="post" action="{% url 'attendance:punch' %}">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch in</button></form>
             {% endif %}
           {% endif %}
         </div>
       {% endwith %}
+      {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-orange" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
       <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
     </section>
 

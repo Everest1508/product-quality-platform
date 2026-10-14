@@ -13,7 +13,7 @@ and out for today." The employee saw the opposite of what happened.
 <form method="post" action="{% url 'attendance:punch' %}"
       hx-post="{% url 'attendance:punch' %}"
       hx-target="#punch-control" hx-swap="outerHTML"
-      hx-disabled-elt="this">
+      hx-disabled-elt="this"{% if variant == 'out' %} hx-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ since }}"{% endif %}>
   {% csrf_token %}
   <button type="submit" class="btn punch-btn punch-btn-{{ variant }}">
     {% icon icon %} {{ label }}

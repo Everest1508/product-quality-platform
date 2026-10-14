@@ -36,7 +36,11 @@ class DashboardView(CompanyMemberRequiredMixin, View):
         data = get_personal_dashboard_data(request.user, request.company)
         todo_service.notify_overdue(request.user, request.company)
         hour = timezone.localtime().hour
+        from apps.core import kudos
+
         data["now"] = timezone.localtime()
+        data["streak"] = kudos.on_time_streak(request.company, request.user)
+        data["milestones"] = kudos.milestones(request.company, request.user)
         data["greeting"] = (
             "Good morning" if hour < 12
             else "Good afternoon" if hour < 18

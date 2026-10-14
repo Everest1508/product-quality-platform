@@ -658,3 +658,7 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .sc-grid .keys em{font-size:10px;font-style:normal;color:var(--muted);}
 kbd{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;background:var(--panel);font:500 10.5px ui-monospace,Menlo,monospace;color:var(--muted);}
 @media (max-width:760px){.pf-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.hm-mile{list-style:none;margin-top:8px;display:grid;gap:3px;}
+.hm-mile li{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;}
+.hm-mile .ic{width:15px;height:15px;color:var(--orange);}
+.hm-today .bdg .ic{width:12px;height:12px;}

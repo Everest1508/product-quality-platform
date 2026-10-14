@@ -1,4 +1,5 @@
 {% load dropdown_tags %}{% comment %}Swapped into #todo-list. Every control targets #todo-list, so nothing here may rely on an inherited hx-target.{% endcomment %}
+<span id="todo-state" data-total="{{ todo_total }}" data-done="{{ todo_done }}" hidden></span>
 <form class="td-add" hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML">
   {% csrf_token %}
   <input type="text" name="text" maxlength="300" placeholder="Add a task…" required autocomplete="off" class="td-input td-text" aria-label="New task">

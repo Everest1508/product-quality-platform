@@ -61,6 +61,7 @@ function homeHero(fallback) {
         <span><span x-text="greeting">{{ greeting }}</span>{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</span>
       </h1>
       <p class="hm-hero-line"><span x-text="typed"></span><i class="hm-caret" aria-hidden="true"></i></p>
+      {% if milestones %}<ul class="hm-mile">{% for m in milestones %}<li>{% icon 'sparkles' 'ic' %}{{ m }}</li>{% endfor %}</ul>{% endif %}
     </div>
     <div class="hm-hero-actions">
       <a href="{% url 'leave:apply' %}" class="btn">{% icon 'send' 'ic' %}Request leave</a>

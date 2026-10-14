@@ -90,8 +90,9 @@
           <button type="button" :class="{ 'is-on': t === 'dark' }" @click.stop="pqTheme.set('dark')" aria-label="Dark theme">{% icon 'moon' 'side-menu-ic' %}</button>
         </div>
         <a href="{% url 'accounts:profile' %}"{% if request.resolver_match.url_name == 'profile' %} aria-current="page" style="background:var(--panel);font-weight:500;"{% endif %}>
-          {% icon 'settings' 'side-menu-ic' %} Settings
+          {% icon 'settings' 'side-menu-ic' %} My profile
         </a>
+        <button type="button" onclick="document.getElementById('kbd-help').showModal()">{% icon 'chart' 'side-menu-ic' %} Keyboard shortcuts <kbd style="margin-left:auto">?</kbd></button>
         <form method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}
           <button type="submit">

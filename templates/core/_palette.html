@@ -32,7 +32,7 @@ highlighted without moving focus off the input.
           <div role="group" :aria-label="group.label">
             <div class="palette-group" x-text="group.label"></div>
             <template x-for="item in group.items" :key="item.url + item.title">
-              <a :href="item.url" class="palette-item" role="option"
+              <a :href="item.url" class="palette-item" role="option" @click="if (item.run) { $event.preventDefault(); close(); item.run(); return; }"
                  :id="'palette-opt-' + item.index" :aria-selected="(item.index === active).toString()"
                  :class="{ 'is-active': item.index === active }" @mousemove="active = item.index" @click="remember(); close()">
                 <span class="palette-title" x-html="hl(item.title)"></span>
@@ -50,6 +50,17 @@ highlighted without moving focus off the input.
   </div>
 </div>
 <script>
+/* Things you can do from the search box without finding the page first. */
+const ACTIONS = [
+  { title: 'New ticket', subtitle: 'c', words: 'create add bug task', url: '{% url "tickets:ticket_create" %}' },
+  { title: 'Log work in my DSR', subtitle: '', words: 'dsr timesheet report hours', url: '{% url "dsr:dsr_sheet" %}' },
+  { title: 'Punch in or out', subtitle: '', words: 'check in check out attendance clock', url: '{% url "attendance:my_attendance" %}' },
+  { title: 'Request leave', subtitle: '', words: 'time off holiday vacation', url: '{% url "leave:apply" %}' },
+  { title: 'Ask for an attendance correction', subtitle: '', words: 'forgot punch fix', url: '{% url "attendance:correction_request" %}' },
+  { title: 'My profile and settings', subtitle: 'g u', words: 'account notifications', url: '{% url "accounts:profile" %}' },
+  { title: 'Switch light and dark', subtitle: 't', words: 'theme dark mode light', url: '#', run: () => window.pqTheme.toggle() },
+  { title: 'Keyboard shortcuts', subtitle: '?', words: 'keys help', url: '#', run: () => document.getElementById('kbd-help').showModal() },
+];
 function palette() {
   return {
     open: false, query: '', groups: [], recent: [], loading: false, active: 0, timer: null, ctl: null,
@@ -80,7 +91,7 @@ function palette() {
     show() { this.open = true; this.query = ''; this.recent = this.loadRecent(); this.fetchNow(); this.$nextTick(() => this.$refs.input.focus()); },
     close() { this.open = false; if (this.ctl) this.ctl.abort(); },
     move(d) { const n = this.flat.length; if (n) this.active = (this.active + d + n) % n; },
-    go() { const it = this.flat[this.active]; if (it) { this.remember(); this.close(); window.location.href = it.url; } },
+    go() { const it = this.flat[this.active]; if (it) { this.remember(); this.close(); if (it.run) it.run(); else window.location.href = it.url; } },
     debounced() { clearTimeout(this.timer); this.timer = setTimeout(() => this.fetchNow(), 150); },
     fetchNow() {
       if (this.ctl) this.ctl.abort();
@@ -90,7 +101,10 @@ function palette() {
         .then(r => r.ok ? r.json() : { groups: [] })
         .then(d => {
           let i = 0;
-          this.groups = d.groups.map(g => ({ label: g.label, items: g.items.map(it => Object.assign({}, it, { index: i++ })) }));
+          const q = this.query.trim().toLowerCase();
+          const acts = ACTIONS.filter(a => !q || (a.title + ' ' + a.words).toLowerCase().includes(q)).slice(0, q ? 8 : 5);
+          const all = d.groups.concat(acts.length ? [{ label: 'Actions', items: acts }] : []);
+          this.groups = all.map(g => ({ label: g.label, items: g.items.map(it => Object.assign({}, it, { index: i++ })) }));
           this.active = 0; this.loading = false;
         })
         .catch(e => { if (e.name !== 'AbortError') this.loading = false; });

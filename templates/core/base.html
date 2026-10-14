@@ -210,20 +210,11 @@
 {% include "core/_presence.html" %}
 {% include "core/_notifications.html" %}
 {% include "core/_palette.html" %}
-<div id="kbd-help" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-  <div class="modal">
-    <h3>Keyboard shortcuts</h3>
-    <ul class="kbd-list">
-      <li><kbd>Ctrl</kbd><kbd>K</kbd> or <kbd>/</kbd><span>Search everything</span></li>
-      <li><kbd>c</kbd><span>New ticket</span></li>
-      <li><kbd>j</kbd> / <kbd>k</kbd><span>Next / previous ticket in a list</span></li>
-      <li><kbd>Enter</kbd><span>Open the highlighted ticket</span></li>
-      <li><kbd>e</kbd><span>Edit the ticket you are viewing</span></li>
-      <li><kbd>?</kbd><span>Show this help</span></li>
-    </ul>
-    <div class="modal-actions"><button type="button" class="btn" id="kbd-help-close">Close</button></div>
-  </div>
-</div>
+<dialog class="dlg" id="kbd-help" aria-label="Keyboard shortcuts" style="max-width:720px">
+  <div class="dlg-head"><h2>Keyboard shortcuts</h2></div>
+  <div class="dlg-body">{% include "core/_shortcuts_list.html" %}</div>
+  <div class="dlg-foot"><button type="button" class="btn" id="kbd-help-close">Close</button></div>
+</dialog>
 <script>
 (function () {
   var help = document.getElementById('kbd-help');
@@ -245,15 +236,25 @@
     el.click();
     return true;
   }
-  function closeHelp() { help.style.display = 'none'; }
+  function closeHelp() { if (help.open) help.close(); }
   document.getElementById('kbd-help-close').addEventListener('click', closeHelp);
-  help.addEventListener('mousedown', function (e) { if (e.target === help) closeHelp(); });
+  help.addEventListener('click', function (e) { if (e.target === help) closeHelp(); });
   document.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     var t = e.target;
     if (/^(input|textarea|select)$/i.test(t.tagName) || t.isContentEditable) return;
     if (e.key === 'Escape') { closeHelp(); return; }
-    if (e.key === '?') { e.preventDefault(); help.style.display = 'flex'; return; }
+    if (e.key === '?') { e.preventDefault(); if (!help.open) help.showModal(); return; }
+    if (e.key === 't') { e.preventDefault(); window.pqTheme.toggle(); return; }
+    if (e.key === '[') { e.preventDefault(); var tg = document.querySelector('[data-sidebar-toggle]'); if (tg) tg.click(); return; }
+    // "g" then a letter jumps to a page.
+    if (window.__pqG && Date.now() - window.__pqG < 1500) {
+      window.__pqG = 0;
+      var to = {h:'{% url "dashboards:index" %}', t:'{% url "tickets:ticket_board" %}', e:'{% url "errors:error_list" %}', p:'{% url "products:product_list" %}', d:'{% url "dsr:dsr_sheet" %}', a:'{% url "attendance:my_attendance" %}', l:'{% url "leave:my_leave" %}', r:'{% url "dashboards:reports" %}', m:'{% url "accounts:team_list" %}', u:'{% url "accounts:profile" %}'}[e.key.toLowerCase()];
+      if (to) { e.preventDefault(); window.location = to; }
+      return;
+    }
+    if (e.key === 'g') { window.__pqG = Date.now(); return; }
     if (e.key === 'c') {
       var n = document.querySelector('[data-shortcut="new"]');
       e.preventDefault(); window.location = n ? n.href : '{% url "tickets:ticket_create" %}';
@@ -877,18 +878,65 @@
   var dlg=document.getElementById('pq-confirm'); if(!dlg||!dlg.showModal) return; var pending=null;
   function ask(el,go){
     dlg.querySelector('[data-title]').textContent=el.dataset.confirm||'Are you sure?';
-    dlg.querySelector('[data-text]').textContent=el.dataset.confirmText||'';
+    var txt=el.dataset.confirmText||'';
+    if(el.dataset.confirmSince){var ms=Date.now()-Number(el.dataset.confirmSince);if(ms>0){var m=Math.floor(ms/60000);txt+=(txt?' ':'')+'Time worked so far: '+Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m.'}}
+    dlg.querySelector('[data-text]').textContent=txt;
     var danger=el.dataset.confirmTone!=='primary', ok=dlg.querySelector('[data-ok]');
     ok.textContent=el.dataset.confirmLabel||'Confirm'; ok.className='btn '+(danger?'btn-danger':'btn-primary');
     dlg.querySelector('[data-icon]').classList.toggle('danger',danger); pending=go; dlg.showModal();
   }
   dlg.querySelector('[data-cancel]').onclick=function(){pending=null;dlg.close()};
   dlg.querySelector('[data-ok]').onclick=function(){var g=pending;pending=null;dlg.close();if(g)g()};
+  /* hx-confirm on an htmx request opens this window instead of the browser's own box. */
+  document.addEventListener('htmx:confirm',function(e){
+    if(!e.detail.question) return; e.preventDefault();
+    var el=e.detail.elt; el.dataset.confirm=e.detail.question; ask(el,function(){e.detail.issueRequest(true)});
+  });
   document.addEventListener('submit',function(e){
     var f=e.target, src=e.submitter, el=(src&&src.dataset.confirm)?src:(f.dataset&&f.dataset.confirm?f:null);
     if(!el||f.dataset.confirmed) return; e.preventDefault();
     ask(el,function(){f.dataset.confirmed='1'; if(src&&src.name){var h=document.createElement('input');h.type='hidden';h.name=src.name;h.value=src.value;f.appendChild(h)} f.requestSubmit?f.submit():f.submit()});
   },true);
+})();
+</script>
+<script>
+/* ⌘ on a Mac, Ctrl everywhere else. */
+(function(){var mac=/mac|iphone|ipad|ipod/i.test(navigator.platform||navigator.userAgent||'');if(mac)document.querySelectorAll('.mod').forEach(function(k){k.textContent='⌘'});
+  document.querySelectorAll('.tb-search kbd').forEach(function(k){if(mac)k.textContent='⌘ K'});})();
+</script>
+<script>
+/* Small celebrations and counting numbers. Both stay still for people who prefer reduced motion. */
+(function(){
+  var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var COLORS=['#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#ef4444'];
+  window.pqConfetti=function(x,y,n){
+    if(still) return; x=x==null?innerWidth/2:x; y=y==null?innerHeight/3:y; n=n||36;
+    var layer=document.createElement('div'); layer.setAttribute('aria-hidden','true'); layer.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden';
+    for(var i=0;i<n;i++){
+      var p=document.createElement('i'), a=Math.random()*Math.PI*2, d=80+Math.random()*160;
+      p.style.cssText='position:absolute;left:'+x+'px;top:'+y+'px;width:'+(6+Math.random()*5)+'px;height:'+(4+Math.random()*6)+'px;background:'+COLORS[i%COLORS.length]+';border-radius:2px';
+      p.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d-60)+'px) rotate('+Math.random()*360+'deg)',opacity:1,offset:.45},{transform:'translate('+Math.cos(a)*d*1.2+'px,'+(Math.sin(a)*d+220)+'px) rotate('+Math.random()*720+'deg)',opacity:0}],{duration:1300+Math.random()*500,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
+      layer.appendChild(p);
+    }
+    document.body.appendChild(layer); setTimeout(function(){layer.remove()},2000);
+  };
+  function countUp(root){
+    (root||document).querySelectorAll('[data-count]').forEach(function(el){
+      var to=parseInt(el.dataset.count,10); if(isNaN(to)||el.dataset.counted) return; el.dataset.counted='1';
+      if(still||to===0){el.textContent=to;return}
+      var t0=performance.now(); el.textContent='0';
+      (function tick(t){var k=Math.min(1,(t-t0)/700);el.textContent=Math.round(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(tick)})(t0);
+    });
+  }
+  countUp();
+  var lastDone=null;
+  document.body.addEventListener('htmx:afterSwap',function(e){
+    countUp(e.target);
+    var st=document.getElementById('todo-state'); if(!st||e.target.id!=='todo-list') return;
+    var total=+st.dataset.total, done=+st.dataset.done;
+    if(lastDone!==null&&lastDone<total&&total>0&&done===total) window.pqConfetti();   // the last one just got ticked
+    lastDone=done;
+  });
 })();
 </script>
 </body>
