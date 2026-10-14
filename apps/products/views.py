@@ -363,6 +363,8 @@ class ProductApiDocsView(CompanyMemberRequiredMixin, View):
             "base_url": request.build_absolute_uri("/"),
             "endpoints": docs.build(request.build_absolute_uri("/")),
             "error_codes": docs.ERRORS,
+            "sdk_guide": docs.sdk_guide(request.build_absolute_uri("/")),
+            "sdk_check": docs.SDK_CHECK,
             "keys": product.api_keys.all(),
             "can_manage_keys": request.company_role in KEY_MANAGER_ROLES,
         })

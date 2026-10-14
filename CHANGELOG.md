@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.15.0] "Umbrellabird" — 2026-10-14 · a proper how-to for the SDK
+
+> In short: every product's API page now walks you through hooking up the SDK for your framework, and the install name is corrected to pq-befu.
+
+### New
+
+- **A "Use the SDK" section on the API page.** Pick Python, Django, Flask, FastAPI, Express, Fastify, Koa, NestJS, Electron or the browser and get the install line and the exact code, with your own address already filled in.
+- **A step-by-step SDK guide.** It covers making a key, setting it safely, hooking in, sending feedback and tickets, and checking that it arrived.
+
+### Fixed
+
+- **The install command was wrong.** The package is installed with pq-befu, not pq-sdk, and the README now says so.
+
 ## [1.14.0] "Tern" — 2026-10-14 · profile, team pages, products as a list and a calmer What's new
 
 > In short: you get a profile page with notification switches, a page for each colleague, products and the team as full-width lists, a one-column ticket page, and a What's new window you can search.

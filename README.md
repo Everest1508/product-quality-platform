@@ -176,6 +176,14 @@ pip install -r requirements.txt
 python manage.py runserver 8010
 ```
 
+### Send errors from your own app
+
+```bash
+pip install pq-befu        # Python (import pq_sdk); npm install pq-befu for Node
+```
+
+Not `pq-sdk`. Step-by-step, framework by framework: [docs/guides/using-the-sdk.md](docs/guides/using-the-sdk.md), or the **API** page of any product.
+
 Visit **[http://localhost:8010](http://localhost:8010)** and sign in as `owner` / `testpass123`.
 
 Edit a template or `templates/core/css/*.css` and refresh the browser: there is nothing to build.

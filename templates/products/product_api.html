@@ -43,6 +43,25 @@
     <p class="text-sm text-muted" style="margin:10px 0 0;">Use <code>https</code> in production. Never put a key in front-end code that anyone can read. Send from your server, or use a key you are happy to rotate.</p>
   </section>
 
+  <section class="card api-card" id="sdk" x-data="{ fw: 'python' }">
+    <h2>Use the SDK</h2>
+    <p>The SDKs do the HTTP for you and report crashes on their own. Python installs as <code>pq-befu</code> and imports as <code>pq_sdk</code>; Node installs as <code>pq-befu</code> too. Pick your framework.</p>
+    <div class="api-langs" role="tablist" aria-label="Framework">
+      {% for f in sdk_guide %}<button type="button" role="tab" :class="{ 'is-on': fw === '{{ f.key }}' }" @click="fw = '{{ f.key }}'">{{ f.label }}</button>{% endfor %}
+    </div>
+    {% for f in sdk_guide %}
+    <div x-show="fw === '{{ f.key }}'" {% if not forloop.first %}style="display:none;"{% endif %}>
+      <ol class="api-steps">
+        <li><b>Install.</b><pre><code>{{ f.install }}</code></pre></li>
+        <li><b>Make a key</b> on this product's page and keep it in an environment variable, never in source.</li>
+        {% for s in f.steps %}<li><b>{{ s.title }}.</b><pre><code>{{ s.code }}</code></pre></li>{% endfor %}
+        <li><b>Check it works.</b> {{ sdk_check }}</li>
+      </ol>
+    </div>
+    {% endfor %}
+  </section>
+
+  <h2 style="margin:18px 0 6px;">Or call the API directly</h2>
   <div class="api-langs" role="tablist" aria-label="Language">
     <button type="button" role="tab" :aria-selected="(lang === 'curl').toString()" :class="{ 'is-on': lang === 'curl' }" @click="pick('curl')">curl</button>
     <button type="button" role="tab" :aria-selected="(lang === 'python').toString()" :class="{ 'is-on': lang === 'python' }" @click="pick('python')">Python</button>

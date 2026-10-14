@@ -196,3 +196,165 @@ def build(base_url):
             }
         )
     return docs
+
+
+# --- SDK how-to, framework by framework ------------------------------------
+# Code uses {url} for the site address; the key is always read from the
+# environment so nobody pastes it into source.
+
+_PY_ENV = 'export PQ_API_KEY="YOUR_API_KEY"\nexport PQ_BASE_URL="{url}"'
+_JS_ENV = _PY_ENV
+_PY_CLIENT = (
+    "import os\nfrom pq_sdk import PQClient\n\n"
+    'pq = PQClient(api_key=os.environ["PQ_API_KEY"], base_url=os.environ["PQ_BASE_URL"])'
+)
+_JS_CLIENT = (
+    'const { PQClient } = require("pq-befu");\n\n'
+    "const pq = new PQClient({\n  apiKey: process.env.PQ_API_KEY,\n  baseUrl: process.env.PQ_BASE_URL,\n});"
+)
+
+SDK_FRAMEWORKS = [
+    {
+        "key": "python", "label": "Python (plain)", "lang": "Python",
+        "install": "pip install pq-befu",
+        "steps": [
+            ("Set the key and address", "bash", _PY_ENV),
+            ("Create one client at startup", "python", _PY_CLIENT),
+            ("Report a caught error", "python",
+             "try:\n    risky()\nexcept Exception as exc:\n    pq.capture_exception(exc)\n    raise"),
+            ("Or catch everything in a block or function", "python",
+             "from pq_sdk.hooks import capture_exceptions, auto_capture\n\n"
+            "with capture_exceptions(pq):\n    risky()\n\n@auto_capture(pq)\ndef nightly_job():\n    ..."),
+            ("Feedback and tickets", "python",
+             'pq.send_feedback(rating=5, comment="Great product!")\n'
+             'pq.create_ticket(title="Invoice PDF is blank", description="From billing", ticket_type="bug")'),
+        ],
+    },
+    {
+        "key": "django", "label": "Django", "lang": "Python",
+        "install": 'pip install "pq-befu[django]"',
+        "steps": [
+            ("Set the key and address", "bash", _PY_ENV),
+            ("Add the middleware, last in the list", "python",
+             'MIDDLEWARE = [\n    # ...\n    "pq_sdk.integrations.django.DjangoMiddleware",\n]'),
+            ("Add the settings", "python",
+             'import os\n\nPQ_SDK = {\n    "api_key": os.environ["PQ_API_KEY"],\n    "base_url": os.environ["PQ_BASE_URL"],\n    "environment": "production",\n}'),
+            ("Anywhere else in your code", "python",
+             "from pq_sdk import PQClient\nfrom django.conf import settings\n\n"
+             'pq = PQClient(settings.PQ_SDK["api_key"], settings.PQ_SDK["base_url"])\npq.send_feedback(rating=4, comment="Nice")'),
+        ],
+    },
+    {
+        "key": "flask", "label": "Flask", "lang": "Python",
+        "install": 'pip install "pq-befu[flask]"',
+        "steps": [
+            ("Set the key and address", "bash", _PY_ENV),
+            ("Attach it to the app", "python",
+             "from flask import Flask\nfrom pq_sdk.integrations.flask import FlaskIntegration\n\n"
+             "app = Flask(__name__)\n" + _PY_CLIENT + "\nFlaskIntegration(app, pq)"),
+        ],
+    },
+    {
+        "key": "fastapi", "label": "FastAPI", "lang": "Python",
+        "install": 'pip install "pq-befu[fastapi]"',
+        "steps": [
+            ("Set the key and address", "bash", _PY_ENV),
+            ("Add the middleware", "python",
+             "from fastapi import FastAPI\nfrom pq_sdk.integrations.fastapi import FastAPIMiddleware\n\n"
+             "app = FastAPI()\n" + _PY_CLIENT + "\napp.add_middleware(FastAPIMiddleware, client=pq)"),
+        ],
+    },
+    {
+        "key": "express", "label": "Express", "lang": "Node",
+        "install": "npm install pq-befu",
+        "steps": [
+            ("Set the key and address", "bash", _JS_ENV),
+            ("Register it around your routes", "javascript",
+             _JS_CLIENT + '\nconst { pqExpress } = require("pq-befu/integrations/express");\n\n'
+             'const { middleware, errorHandler } = pqExpress({ client: pq, environment: process.env.NODE_ENV });\n\n'
+             "app.use(middleware);      // before every route\n// ... your routes ...\napp.use(errorHandler);   // after every route"),
+            ("Flush before exit", "javascript", "await pq.flush();"),
+        ],
+    },
+    {
+        "key": "fastify", "label": "Fastify", "lang": "Node",
+        "install": "npm install pq-befu",
+        "steps": [
+            ("Set the key and address", "bash", _JS_ENV),
+            ("Register the plugin once", "javascript",
+             _JS_CLIENT + '\nconst { pqFastify } = require("pq-befu/integrations/fastify");\n\n'
+             "await app.register(pqFastify, { client: pq, environment: process.env.NODE_ENV });"),
+        ],
+    },
+    {
+        "key": "koa", "label": "Koa", "lang": "Node",
+        "install": "npm install pq-befu",
+        "steps": [
+            ("Set the key and address", "bash", _JS_ENV),
+            ("Add it before your routes", "javascript",
+             _JS_CLIENT + '\nconst { pqKoa } = require("pq-befu/integrations/koa");\n\n'
+             "app.use(pqKoa(pq, { environment: process.env.NODE_ENV }));\n// routes go after this line"),
+        ],
+    },
+    {
+        "key": "nestjs", "label": "NestJS", "lang": "Node",
+        "install": "npm install pq-befu @nestjs/common rxjs",
+        "steps": [
+            ("Set the key and address", "bash", _JS_ENV),
+            ("Import the module in AppModule", "typescript",
+             'import { Module } from "@nestjs/common";\nimport { PqSdkModule } from "pq-befu/integrations/nestjs";\n\n'
+             "@Module({\n  imports: [\n    PqSdkModule.forRoot({\n      apiKey: process.env.PQ_API_KEY,\n"
+             "      baseUrl: process.env.PQ_BASE_URL,\n      environment: process.env.NODE_ENV,\n    }),\n  ],\n})\nexport class AppModule {}"),
+        ],
+    },
+    {
+        "key": "electron", "label": "Electron", "lang": "Node",
+        "install": "npm install pq-befu",
+        "steps": [
+            ("Set the key in the main process only", "bash", _JS_ENV),
+            ("Main process", "javascript",
+             _JS_CLIENT + '\nconst { pqElectronMain } = require("pq-befu/integrations/electron");\n\n'
+             "pqElectronMain(pq, { environment: process.env.NODE_ENV });\n\n"
+             'new BrowserWindow({ webPreferences: { preload: require.resolve("pq-befu/preload") } });'),
+            ("Renderer (the key never reaches it)", "javascript",
+             "try { await runAction(); } catch (err) { await window.pq.captureException(err); throw err; }"),
+        ],
+    },
+    {
+        "key": "browser", "label": "Browser / worker", "lang": "Node",
+        "install": "npm install pq-befu",
+        "steps": [
+            ("Use a key you are happy to make public", "text",
+             "Anything in browser code can be read by visitors. Prefer sending from your server."),
+            ("Report from the page", "javascript",
+             'import { PQBrowserClient } from "pq-befu/browser";\n\n'
+             'const pq = new PQBrowserClient({ apiKey: PUBLIC_KEY, baseUrl: "{url}" });\n\n'
+             "try { await runAction(); } catch (err) { await pq.captureException(err); throw err; }"),
+        ],
+    },
+]
+
+SDK_CHECK = (
+    "Trigger a test error, then open Errors for this product. It shows up within a second. "
+    "Nothing there? Check that the key is active (a wrong key answers 403) and that the base URL is reachable from your server."
+)
+
+
+def sdk_guide(base_url):
+    """Framework-by-framework setup, with the site address filled in."""
+    url = base_url.rstrip("/")
+    out = []
+    for f in SDK_FRAMEWORKS:
+        out.append(
+            {
+                "key": f["key"],
+                "label": f["label"],
+                "lang": f["lang"],
+                "install": f["install"],
+                "steps": [
+                    {"title": t, "lang": lang, "code": code.replace("{url}", url)}
+                    for t, lang, code in f["steps"]
+                ],
+            }
+        )
+    return out
