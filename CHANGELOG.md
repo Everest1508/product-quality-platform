@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.48.1] "Waxwing" — 2026-10-14 · tagging, ticket page layout and New ticket in a project
+
+> In short: the list of people when you type @ is now visible, ticket pages use the full width, and New ticket remembers the project you are in.
+
+### Better
+
+- **Ticket pages use the width of the screen.** The ticket is no longer squeezed into a narrow column in the middle, with big empty sides.
+- **New ticket remembers your project.** From inside a project, the New ticket link in the top bar creates the ticket in that project, and a link with a project in it opens the form with that project already chosen.
+
+### Fixed
+
+- **The list of people when you type @ was cut off.** It now opens above the comment box, so you can see everyone you can tag.
+- **A ticket page could fail to open.** If its history had an entry made by the system rather than a person, the page showed an error instead of the ticket.
+
 ## [1.48.0] "Pewit" — 2026-10-14 · the Projects release goes live
 
 > In short: this release carries the new Projects pages, the Pod and the project log to everyone, and updates the database on its own when the app starts.

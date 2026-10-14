@@ -209,3 +209,20 @@ class ProductIconTest(ToastAfterMutationTest):
         )
         self.product.refresh_from_db()
         self.assertEqual(self.product.icon, "")
+
+
+class NewTicketKnowsTheProductTest(ToastAfterMutationTest):
+    def test_global_form_preselects_a_product_from_the_link(self):
+        body = self.client.get(reverse("tickets:ticket_create") + f"?product={self.product.pk}").content.decode()
+        self.assertRegex(body, rf'name="product" value="{self.product.pk}"[^>]*checked')
+
+    def test_a_product_the_person_cannot_open_is_not_preselected(self):
+        other = Product.objects.create(company=self.company, name="Other", slug="other")
+        Membership.objects.filter(user=self.user).update(role=Membership.Role.DEVELOPER)
+        body = self.client.get(reverse("tickets:ticket_create") + f"?product={other.pk}").content.decode()
+        self.assertNotRegex(body, rf'name="product" value="{other.pk}"[^>]*checked')
+
+    def test_the_top_bar_new_ticket_stays_in_the_product_you_are_in(self):
+        page = self.client.get(reverse("products:product_board", kwargs={"pk": self.product.pk}), follow=True).content.decode()
+        self.assertIn(reverse("products:product_ticket_create", kwargs={"pk": self.product.pk}), page)
+        self.assertIn("New ticket in Widget", page)

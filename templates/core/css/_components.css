@@ -228,7 +228,7 @@ html.sidebar-collapsed .side-search .side-kbd{display:none;}
 
 /* ---------- Ticket comments ---------- */
 .mention-wrap{position:relative;}
-.mention-list{position:absolute;left:0;right:0;top:100%;z-index:20;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(13,17,23,.14);}
+.mention-list{position:absolute;left:0;right:0;bottom:100%;z-index:20;margin:0 0 4px;max-height:240px;overflow-y:auto;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(13,17,23,.14);}
 .mention-list li{padding:7px 10px;border-radius:6px;font-size:13px;cursor:pointer;display:flex;gap:8px;align-items:baseline;}
 .mention-list li span{color:var(--muted);font-size:12px;}
 .mention-list li.is-active,.mention-list li:hover{background:var(--accent-soft);}

@@ -19,7 +19,7 @@
         <span class="tb-text">New</span>
       </button>
       <div class="side-user-menu tb-menu" x-show="open" x-transition.opacity.duration.100ms style="display:none;" @click="open = false">
-        <a href="{% url 'tickets:ticket_create' %}">{% icon 'ticket' 'side-menu-ic' %} New ticket</a>
+        <a href="{% if product %}{% url 'products:product_ticket_create' pk=product.pk %}{% else %}{% url 'tickets:ticket_create' %}{% endif %}">{% icon 'ticket' 'side-menu-ic' %} New ticket{% if product %} in {{ product.name }}{% endif %}</a>
         <a href="{% url 'leave:apply' %}">{% icon 'calendar-days' 'side-menu-ic' %} Request leave</a>
         <a href="{% url 'attendance:correction_request' %}">{% icon 'clock' 'side-menu-ic' %} Request a correction</a>
         {% if request.company_role == 'owner' or request.company_role == 'admin' %}<a href="{% url 'products:project_new' %}">{% icon 'package' 'side-menu-ic' %} New project</a>{% endif %}

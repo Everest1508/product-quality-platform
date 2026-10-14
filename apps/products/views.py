@@ -484,7 +484,7 @@ class ProductErrorCreateView(CompanyMemberRequiredMixin, View):
         require_product_access(request, product)
         _attach_product_counts(product)
         from apps.errors.forms import ErrorCreateForm
-        form = ErrorCreateForm(company=request.company, user=request.user, initial={"product": product})
+        form = ErrorCreateForm(company=request.company, user=request.user, initial={"product": product.pk})
         return render(request, "products/product_error_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):
@@ -575,7 +575,7 @@ class ProductTicketCreateView(CompanyMemberRequiredMixin, View):
         require_product_access(request, product)
         _attach_product_counts(product)
         from apps.tickets.forms import TicketCreateForm
-        form = TicketCreateForm(company=request.company, product=product, user=request.user, initial={"product": product})
+        form = TicketCreateForm(company=request.company, product=product, user=request.user, initial={"product": product.pk})
         return render(request, "products/product_ticket_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):
@@ -690,7 +690,7 @@ class ProductSurveyCreateView(CompanyMemberRequiredMixin, View):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         from apps.feedback.forms import SurveyCreateForm
-        form = SurveyCreateForm(company=request.company, initial={"product": product})
+        form = SurveyCreateForm(company=request.company, initial={"product": product.pk})
         return render(request, "products/product_survey_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):
@@ -753,7 +753,7 @@ class ProductRuleCreateView(CompanyMemberRequiredMixin, View):
         product = get_object_or_404(Product, pk=pk, company=request.company)
         require_product_access(request, product)
         from apps.automation.forms import AutoTicketRuleForm
-        form = AutoTicketRuleForm(company=request.company, initial={"product": product})
+        form = AutoTicketRuleForm(company=request.company, initial={"product": product.pk})
         return render(request, "products/product_rule_form.html", {"form": form, "product": product})
 
     def post(self, request, pk):

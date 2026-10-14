@@ -592,7 +592,7 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 @media (max-width:960px){.hm-grid{grid-template-columns:1fr;}.hm-tiles{grid-template-columns:1fr;}.hm-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
 /* ───────── Ticket page: one column, properties in a strip ───────── */
-.td-page{max-width:900px;margin:0 auto;display:grid;gap:14px;}
+.td-page{max-width:1240px;margin:0;display:grid;gap:var(--space-5);}
 .td-page .pg-head{margin-bottom:0;}
 .td-props{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);}
 .td-prop{display:grid;gap:6px;align-content:start;min-width:0;}

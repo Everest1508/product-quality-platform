@@ -549,3 +549,24 @@ class TicketFormErrorToastTest(TicketProductAccessTest):
         response = self.client.post(reverse("tickets:ticket_create"), {"title": "", "ticket_type": "bug", "priority": "nope"})
         msgs = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("Title" in m and "Priority" in m for m in msgs), msgs)
+
+
+class TicketPageWithSystemEventsTest(TestCase):
+    """A history event or comment with no person (system, deleted user) used to crash the whole ticket page."""
+
+    def test_the_ticket_page_opens_when_an_event_has_no_actor(self):
+        from apps.accounts.models import Company, Membership
+        from apps.dashboards.models import ActivityLog
+        from apps.products.models import Product
+
+        company = Company.objects.create(name="Sys", slug="sys-ev")
+        user = get_user_model().objects.create_user(username="sysu", password="pass1234")
+        Membership.objects.create(user=user, company=company, role=Membership.Role.OWNER)
+        product = Product.objects.create(company=company, name="P", slug="p-sys")
+        ticket = Ticket.objects.create(company=company, product=product, title="T", created_by=user)
+        ActivityLog.objects.create(company=company, event_type="ticket_status_changed", title=f"Ticket {ticket.key} moved",
+                                   actor=None, target_content_type="ticket", target_object_id=ticket.pk)
+        self.client.force_login(user)
+        response = self.client.get(reverse("tickets:ticket_detail", kwargs={"pk": ticket.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("System", response.content.decode())

@@ -180,7 +180,16 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
 
 class TicketCreateView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        form = TicketCreateForm(company=request.company, user=request.user)
+        # `?product=<id>` pre-selects a product, but only one this person can open.
+        initial = {}
+        wanted = request.GET.get("product", "")
+        if wanted.isdigit():
+            from apps.products.access import accessible_products
+
+            product = accessible_products(request.user, request.company).filter(pk=int(wanted)).first()
+            if product:
+                initial["product"] = product.pk
+        form = TicketCreateForm(company=request.company, user=request.user, initial=initial)
         return render(request, "tickets/ticket_form.html", {"form": form})
 
     def post(self, request):
