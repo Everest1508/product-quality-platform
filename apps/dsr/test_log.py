@@ -133,3 +133,55 @@ class NeedsTimeTest(LogBase):
         self.assertEqual(DSREntry.objects.filter(user=self.dev).count(), 2)
         self.client.post(reverse("dsr:dsr_suggestion_add_all"), {"next": "/dsr/"})
         self.assertEqual(DSREntry.objects.filter(user=self.dev).count(), 2)
+
+
+class DateSpanAndTodayWorkTest(LogBase):
+    def test_from_and_to_pick_any_span(self):
+        old = self.today - timedelta(days=20)
+        self.entry(task_name="Old one", date=old)
+        self.entry(task_name="Recent one")
+        self.login("dev")
+        r = self.client.get(reverse("dsr:dsr_sheet"), {"from": (old - timedelta(days=1)).isoformat(), "to": (old + timedelta(days=1)).isoformat()})
+        self.assertContains(r, "Old one")
+        self.assertNotContains(r, "Recent one")
+        self.assertEqual(r.context["rng"], "custom")
+
+    def test_a_backwards_span_is_put_in_order_and_the_future_is_cut_off(self):
+        self.entry(task_name="Today one")
+        self.login("dev")
+        r = self.client.get(reverse("dsr:dsr_sheet"), {"from": (self.today + timedelta(days=5)).isoformat(), "to": (self.today - timedelta(days=2)).isoformat()})
+        self.assertEqual(r.status_code, 200)
+        self.assertLessEqual(r.context["end"], self.today)
+        self.assertLessEqual(r.context["start"], r.context["end"])
+
+    def test_the_csv_export_keeps_the_span(self):
+        self.entry(task_name="Exported")
+        self.login("dev")
+        r = self.client.get(reverse("dsr:dsr_sheet"), {"from": self.today.isoformat(), "to": self.today.isoformat(), "export": "csv"})
+        self.assertEqual(r["Content-Type"].split(";")[0], "text/csv")
+        self.assertIn("Exported", r.content.decode())
+
+    def test_today_work_compares_the_dsr_with_the_time_on_the_clock(self):
+        from apps.attendance.models import AttendanceRecord
+
+        now = timezone.now()
+        AttendanceRecord.objects.create(company=self.co, user=self.dev, date=self.today, check_in=now - timedelta(hours=4), check_out=now)
+        self.entry(hours_spent=Decimal("2.00"))
+        self.login("dev")
+        w = self.client.get(reverse("dsr:dsr_sheet")).context["today_work"]
+        self.assertEqual(w["logged"], "2h 00m")
+        self.assertEqual(w["basis_word"], "worked today")
+        self.assertEqual(w["percent"], 50)
+        self.assertFalse(w["no_punch"])
+
+    def test_without_a_punch_it_is_measured_against_a_full_day_and_says_so(self):
+        self.entry(hours_spent=Decimal("1.00"))
+        self.login("dev")
+        r = self.client.get(reverse("dsr:dsr_sheet"))
+        self.assertTrue(r.context["today_work"]["no_punch"])
+        self.assertContains(r, "no punch yet today")
+
+    def test_the_everyone_view_has_no_single_person_bar(self):
+        self.login("owner")
+        r = self.client.get(reverse("dsr:dsr_sheet"), {"user_id": "all"})
+        self.assertIsNone(r.context["today_work"])

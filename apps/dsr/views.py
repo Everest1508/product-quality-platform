@@ -11,6 +11,7 @@ from django.views import View
 from apps.accounts.models import Membership
 from apps.core.mixins import CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
+from apps.attendance.models import format_minutes
 from apps.dsr.duration import MESSAGE, format_hm, parse_hours
 from apps.dsr.forms import DSREntryForm
 from apps.dsr.models import DSREntry
@@ -415,8 +416,8 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
 class DSRLogView(CompanyMemberRequiredMixin, View):
     """Everything submitted, today and before, as one table: grouped by day, searchable, with a CSV export.
 
-    `range` is today, yesterday, 7d (default) or 30d; `date` shows one day. Owners and admins can pass `user_id` (a member, or
-    `all`). Everybody else only ever sees their own rows."""
+    `range` is today, yesterday, 7d (default) or 30d; `date` shows one day; `from` and `to` (YYYY-MM-DD) pick any span, up to a year.
+    Owners and admins can pass `user_id` (a member, or `all`). Everybody else only ever sees their own rows."""
 
     MAX_ROWS = 500
 
@@ -425,9 +426,17 @@ class DSRLogView(CompanyMemberRequiredMixin, View):
         params = request.GET
         rng = params.get("range", "7d")
         one_day = _parse_date(params.get("date"), None)
+        span_from, span_to = _parse_date(params.get("from"), None), _parse_date(params.get("to"), None)
         if one_day:
             start = end = min(one_day, today)
             rng = "day"
+        elif span_from or span_to:
+            end = min(span_to or today, today)
+            start = min(span_from or end - timedelta(days=29), today)  # the future is closed to everyone
+            if start > end:
+                start, end = end, start
+            start = max(start, end - timedelta(days=365))
+            rng = "custom"
         else:
             start, end = {
                 "today": (today, today),
@@ -498,7 +507,32 @@ class DSRLogView(CompanyMemberRequiredMixin, View):
             "categories": DSREntry.Category.choices, "statuses": DSREntry.Status.choices,
             "waiting": waiting,
             "work_suggestions": suggestions(request.company, target, today) if can_log_here and rng in ("today", "7d", "30d", "yesterday") else [],
+            "today_work": None if everyone else _today_work(request.company, target, today),
         })
+
+
+def _today_work(company, person, today):
+    """How much of today's time at work has gone into the DSR.
+
+    Time at work is today's punches (less the scheduled break, as everywhere else). With no punch yet it is compared
+    with a full working day instead, and says so.
+    """
+    from apps.attendance.models import AttendanceRecord
+    from apps.attendance.service import net_minutes_for, shift_for
+
+    shift = shift_for(company)
+    record = AttendanceRecord.objects.filter(company=company, user=person, date=today).first()
+    worked = net_minutes_for(record, shift) if record and record.check_in else 0
+    logged_hours = DSREntry.objects.filter(company=company, user=person, date=today).aggregate(t=Sum("hours_spent"))["t"] or Decimal("0")
+    logged = int(round(logged_hours * 60))
+    basis, basis_minutes = ("worked today", worked) if worked else ("in a full day", shift.worked_minutes_per_day)
+    percent = min(100, int(logged * 100 / basis_minutes)) if basis_minutes else 0
+    left = max(0, basis_minutes - logged)
+    return {
+        "logged": format_minutes(logged), "basis": format_minutes(basis_minutes), "basis_word": basis, "percent": percent,
+        "left": format_minutes(left), "on_clock": bool(record and record.is_open_today), "no_punch": not worked,
+        "state": "ok" if percent >= 90 else "mid" if percent >= 50 else "low",
+    }
 
 
 def _elapsed(e):

@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.49.0] "Greenfinch" — 2026-10-14 · pick any dates on the DSR and see today's progress
+
+> In short: the Daily Status Report has From and To date pickers, and a bar showing how much of today's time at work is in your DSR.
+
+### New
+
+- **Pick any dates on the DSR.** Choose a From and a To date to see exactly that span, up to a year, and the CSV export follows the same dates.
+- **How much of today is logged.** A bar at the top shows how much of the time you have worked today is already in your DSR and how much is left, and with no punch yet it compares against a full working day.
+
 ## [1.48.1] "Waxwing" — 2026-10-14 · tagging, ticket page layout and New ticket in a project
 
 > In short: the list of people when you type @ is now visible, ticket pages use the full width, and New ticket remembers the project you are in.

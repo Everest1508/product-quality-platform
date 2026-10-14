@@ -12,7 +12,7 @@
   </div>
   <div class="pg-actions">
     <button type="button" class="btn" onclick="pqCopy(this)" data-copy="{{ summary_text }}">{% icon 'copy' 'ic' %}Copy summary</button>
-    <a class="btn" href="{{ here }}?range={{ rng }}{% if who %}&user_id={{ who }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if rng == 'day' %}&date={{ start|date:'Y-m-d' }}{% endif %}&export=csv">{% icon 'download' 'ic' %}Export CSV</a>
+    <a class="btn" href="{{ here }}?range={{ rng }}{% if who %}&user_id={{ who }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if rng == 'day' %}&date={{ start|date:'Y-m-d' }}{% endif %}{% if rng == 'custom' %}&from={{ start|date:'Y-m-d' }}&to={{ end|date:'Y-m-d' }}{% endif %}&export=csv">{% icon 'download' 'ic' %}Export CSV</a>
     {% if can_log %}<button type="button" class="btn btn-primary" onclick="dsrOpen()">{% icon 'plus' 'ic' %}Log work</button>{% endif %}
   </div>
 </div>
@@ -24,7 +24,12 @@
     <a href="{{ here }}?range=7d{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == '7d' %}is-on{% endif %}">Last 7 days</a>
     <a href="{{ here }}?range=30d{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == '30d' %}is-on{% endif %}">Last 30 days</a>
   </div>
-  <input type="hidden" name="range" value="{% if rng == 'day' %}7d{% else %}{{ rng }}{% endif %}">
+  <div class="dsr-span" role="group" aria-label="Pick dates">
+    <label>From <input type="date" name="from" class="form-input" value="{% if rng == 'custom' or rng == 'day' %}{{ start|date:'Y-m-d' }}{% endif %}" max="{{ today|date:'Y-m-d' }}" onchange="this.form.requestSubmit()"></label>
+    <label>To <input type="date" name="to" class="form-input" value="{% if rng == 'custom' or rng == 'day' %}{{ end|date:'Y-m-d' }}{% endif %}" max="{{ today|date:'Y-m-d' }}" onchange="this.form.requestSubmit()"></label>
+    {% if rng == 'custom' or rng == 'day' %}<a class="btn btn-sm" href="{{ here }}?range=7d{% if who %}&user_id={{ who }}{% endif %}">Clear</a>{% endif %}
+  </div>
+  {% if rng != 'custom' and rng != 'day' %}<input type="hidden" name="range" value="{{ rng }}">{% endif %}
   {% if privileged %}
     <select class="form-input" name="user_id" aria-label="Whose work" style="width:11rem" onchange="this.form.submit()">
       <option value="">Me</option>
@@ -35,6 +40,18 @@
   <div class="input-icon" style="width:16rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ q }}" placeholder="Search entries…" aria-label="Search entries" oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.submit()},450)"></div>
   <p class="grow"><b>{{ total_label }}</b> · {{ count }} {% if count == 1 %}entry{% else %}entries{% endif %} · {{ completed }} completed</p>
 </form>
+
+{% if today_work %}
+<section class="dsr-today is-{{ today_work.state }}" aria-label="Today's work">
+  <div class="dsr-today-text">
+    {% if today_work.no_punch %}<b>{{ today_work.logged }}</b> logged today, out of a <b>{{ today_work.basis }}</b> working day
+    {% else %}<b>{{ today_work.logged }}</b> of the <b>{{ today_work.basis }}</b> {% if target == request.user %}you have{% else %}{{ target.get_full_name|default:target.username }} has{% endif %} worked today {% if target == request.user %}is{% else %}is{% endif %} in the DSR{% endif %}
+    <span class="dsr-today-sub">{% if today_work.left != '0h 00m' %}{{ today_work.left }} not logged yet{% else %}Everything is logged{% endif %}{% if today_work.on_clock %} · still on the clock{% endif %}{% if today_work.no_punch %} · no punch yet today, so this is measured against a full working day{% endif %}</span>
+  </div>
+  <div class="dsr-today-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ today_work.percent }}"><i style="width:{{ today_work.percent }}%"></i></div>
+  <span class="dsr-today-pct">{{ today_work.percent }}%</span>
+</section>
+{% endif %}
 
 {% if not can_log and rng == 'today' and locked_reason %}<div class="hm-note is-warn" style="margin-bottom:14px">{{ locked_reason }}</div>{% endif %}
 
