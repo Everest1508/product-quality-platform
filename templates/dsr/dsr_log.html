@@ -1,0 +1,150 @@
+{% extends "core/base.html" %}
+{% load icon_tags dsr_tags %}
+
+{% block title %}Daily Status Report — PQ Platform{% endblock %}
+
+{% block content %}
+{% url 'dsr:dsr_sheet' as here %}
+<div class="pg-head">
+  <div>
+    <h1>Daily Status Report</h1>
+    <p class="sub">{% if everyone %}Everyone’s submitted work.{% elif target == request.user %}Your submitted work.{% else %}{{ target.get_full_name|default:target.username }}’s submitted work.{% endif %}</p>
+  </div>
+  <div class="pg-actions">
+    <button type="button" class="btn" onclick="pqCopy(this)" data-copy="{{ summary_text }}">{% icon 'copy' 'ic' %}Copy summary</button>
+    <a class="btn" href="{{ here }}?range={{ rng }}{% if who %}&user_id={{ who }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if rng == 'day' %}&date={{ start|date:'Y-m-d' }}{% endif %}&export=csv">{% icon 'download' 'ic' %}Export CSV</a>
+    {% if can_log %}<button type="button" class="btn btn-primary" onclick="dsrOpen()">{% icon 'plus' 'ic' %}Log work</button>{% endif %}
+  </div>
+</div>
+
+<form class="toolbar" method="get" action="{{ here }}" id="dsr-filters">
+  <div class="seg" role="group" aria-label="Range">
+    <a href="{{ here }}?range=today{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == 'today' %}is-on{% endif %}">Today</a>
+    <a href="{{ here }}?range=yesterday{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == 'yesterday' %}is-on{% endif %}">Yesterday</a>
+    <a href="{{ here }}?range=7d{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == '7d' %}is-on{% endif %}">Last 7 days</a>
+    <a href="{{ here }}?range=30d{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == '30d' %}is-on{% endif %}">Last 30 days</a>
+  </div>
+  <input type="hidden" name="range" value="{% if rng == 'day' %}7d{% else %}{{ rng }}{% endif %}">
+  {% if privileged %}
+    <select class="form-input" name="user_id" aria-label="Whose work" style="width:11rem" onchange="this.form.submit()">
+      <option value="">Me</option>
+      <option value="all"{% if who == 'all' %} selected{% endif %}>Everyone</option>
+      {% for m in members %}{% if m != request.user %}<option value="{{ m.pk }}"{% if who == m.pk|stringformat:"s" %} selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endif %}{% endfor %}
+    </select>
+  {% endif %}
+  <div class="input-icon" style="width:16rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ q }}" placeholder="Search entries…" aria-label="Search entries" oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.submit()},450)"></div>
+  <p class="grow"><b>{{ total_label }}</b> · {{ count }} {% if count == 1 %}entry{% else %}entries{% endif %} · {{ completed }} completed</p>
+</form>
+
+{% if not can_log and rng == 'today' and locked_reason %}<div class="hm-note is-warn" style="margin-bottom:14px">{{ locked_reason }}</div>{% endif %}
+
+{% if work_suggestions %}
+  <div class="alert-bar">
+    <p><b>{{ work_suggestions|length }} ticket{{ work_suggestions|length|pluralize }}</b> you worked on today {{ work_suggestions|length|pluralize:"isn’t,aren’t" }} in your DSR yet: {% for s in work_suggestions|slice:":3" %}{{ s.key }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if work_suggestions|length > 3 %}…{% endif %}.</p>
+    <button type="button" class="btn btn-sm" onclick="document.getElementById('dsr-sugg').showModal()">Review &amp; add</button>
+  </div>
+{% endif %}
+
+<div class="card-flush">
+  {% if days %}
+    <div style="overflow-x:auto;max-height:70vh">
+    <table class="tbl">
+      <thead><tr>
+        <th class="c" style="width:7.5rem">Date</th>
+        {% if everyone %}<th style="width:9rem">Employee</th>{% endif %}
+        <th style="min-width:16rem">Task</th><th style="width:9rem">Project</th><th style="width:10rem">Category</th>
+        <th class="c" style="width:6rem">Time</th><th class="c" style="width:8rem">Status</th><th class="c" style="width:6rem">Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for d in days %}{% for e in d.rows %}
+        <tr>
+          {% if forloop.first %}<td class="daycell" rowspan="{{ d.rows|length }}"><b>{% if d.is_today %}Today{% else %}{{ d.date|date:"D, j M" }}{% endif %}</b><small>{{ d.hours_label }} · {{ d.rows|length }} {% if d.rows|length == 1 %}entry{% else %}entries{% endif %}</small></td>{% endif %}
+          {% if everyone %}<td style="white-space:nowrap;font-weight:500">{{ e.person }}</td>{% endif %}
+          <td>
+            <div class="task">{% if e.ticket %}<a href="{% url 'tickets:ticket_detail' pk=e.ticket_id %}">{{ e.task_name }}</a>{% else %}{{ e.task_name }}{% endif %}
+              {% if e.is_auto_logged %}<span class="bdg bdg-blue" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
+              {% if e.source %}<span class="bdg bdg-outline" title="Submitted through the DSR MCP from {{ e.source }}">via MCP</span>{% endif %}</div>
+            {% if e.elapsed %}<p class="sub">Created {{ e.created_time|date:"j M H:i" }} → completed {{ e.completed_time|date:"j M H:i" }} · open for <b>{{ e.elapsed }}</b></p>{% endif %}
+            {% if e.notes %}<p class="sub">{{ e.notes }}</p>{% endif %}
+          </td>
+          <td>{% if e.product %}{{ e.product.name }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+          <td>{{ e.get_category_display }}</td>
+          <td class="c" style="font-weight:600;white-space:nowrap">{{ e.hours_spent|hm }}</td>
+          <td class="c"><span class="bdg {% if e.status == 'completed' %}bdg-green{% elif e.status == 'in_progress' %}bdg-blue{% elif e.status == 'blocked' %}bdg-red{% endif %}">{{ e.get_status_display }}</span></td>
+          <td class="c" style="white-space:nowrap">
+            {% if e.can_change %}
+              <button type="button" class="icon-btn" aria-label="Edit {{ e.task_name }}" data-tip="Edit" onclick="dsrOpen(this)"
+                data-id="{{ e.pk }}" data-task="{{ e.task_name }}" data-product="{{ e.product_id|default:'' }}" data-category="{{ e.category }}" data-time="{{ e.hours_spent|hm }}" data-status="{{ e.status }}" data-notes="{{ e.notes }}">{% icon 'edit' 'ic' %}</button>
+              <form method="post" action="{% url 'dsr:dsr_delete' pk=e.pk %}" style="display:inline" data-confirm="Delete this entry?" data-confirm-text="“{{ e.task_name|truncatechars:60 }}” will be removed from the DSR." data-confirm-label="Delete">
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="icon-btn danger" aria-label="Delete {{ e.task_name }}" data-tip="Delete">{% icon 'trash' 'ic' %}</button>
+              </form>
+            {% else %}<span style="color:var(--muted)">—</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}{% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="empty-state"><strong>Nothing submitted</strong>{% if q %}No entries match your search.{% else %}Nothing was logged in this period.{% endif %}
+      {% if can_log %}<button type="button" class="btn btn-primary btn-sm" onclick="dsrOpen()">{% icon 'plus' 'ic' %}Log work</button>{% endif %}</div>
+  {% endif %}
+</div>
+{% if truncated %}<p style="margin-top:8px;font-size:12px;color:var(--muted)">Showing the newest 500 entries. Narrow the range to see the rest.</p>{% endif %}
+
+{# ---- Log work / Edit entry ---- #}
+<dialog class="dlg" id="dsr-dlg">
+  <form method="post" id="dsr-form" action="{% url 'dsr:dsr_add' %}?user_id={{ target.pk }}">
+    {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div class="dlg-head"><h2 id="dsr-dlg-title">Log work</h2><p>Add what you worked on. Only your own time counts.</p></div>
+    <div class="dlg-body">
+      <div class="field"><label for="dsr-task">What did you work on?</label><input class="form-input" id="dsr-task" name="task_name" maxlength="255" required placeholder="What did you work on?"></div>
+      <div class="field-row">
+        <div class="field"><label for="dsr-product">Project</label>
+          <select class="form-input" id="dsr-product" name="product"><option value="">No product</option>{% for p in products %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="dsr-category">Category</label>
+          <select class="form-input" id="dsr-category" name="category">{% for v, l in categories %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="dsr-time">Time</label><input class="form-input" id="dsr-time" name="hours_spent" placeholder="1h 30m" required></div>
+        <div class="field"><label for="dsr-status">Status</label>
+          <select class="form-input" id="dsr-status" name="status">{% for v, l in statuses %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="field"><label for="dsr-notes">Note</label><input class="form-input" id="dsr-notes" name="notes" placeholder="Optional"></div>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary" id="dsr-submit">{% icon 'plus' 'ic' %}Add entry</button></div>
+  </form>
+</dialog>
+
+{% if work_suggestions %}
+<dialog class="dlg" id="dsr-sugg" style="max-width:640px">
+  <div class="dlg-head"><h2>Suggested from your work</h2><p>Tickets you touched or have in progress. Confirm the time to log one.</p></div>
+  <div class="dlg-body">
+    {% for s in work_suggestions %}
+      <form method="post" action="{% url 'dsr:dsr_suggestion_add' %}?user_id={{ target.pk }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><input type="hidden" name="ticket_id" value="{{ s.number }}">
+        <div style="flex:1;min-width:11rem"><div style="font-weight:500;font-size:13.5px">{{ s.key }} {{ s.title }}</div><div style="font-size:12px;color:var(--muted)">{{ s.did }}{% if s.product %} · {{ s.product }}{% endif %}</div></div>
+        <input class="form-input" name="hours" value="{{ s.hours|hm }}" style="width:6rem" aria-label="Time for {{ s.key }}">
+        <button class="btn btn-sm">{% icon 'plus' 'ic' %}Add</button>
+      </form>
+    {% endfor %}
+  </div>
+  <div class="dlg-foot"><button type="button" class="btn" onclick="this.closest('dialog').close()">Close</button></div>
+</dialog>
+{% endif %}
+
+<script>
+function pqCopy(btn){navigator.clipboard.writeText(btn.dataset.copy).then(function(){window.pqToast&&pqToast('DSR copied to the clipboard.','success')})}
+var DSR_ADD="{% url 'dsr:dsr_add' %}?user_id={{ target.pk }}";
+function dsrOpen(btn){
+  var e=btn&&btn.dataset&&btn.dataset.id?btn.dataset:null;
+  var f=document.getElementById('dsr-form'), d=document.getElementById('dsr-dlg');
+  f.reset(); f.action=e?('/dsr/'+e.id+'/update/'):DSR_ADD;
+  document.getElementById('dsr-dlg-title').textContent=e?'Edit entry':'Log work';
+  document.getElementById('dsr-submit').lastChild.textContent=e?'Save changes':'Add entry';
+  if(e){['task','product','category','time','status','notes'].forEach(function(k){var el=document.getElementById('dsr-'+k);if(el&&e[k]!==undefined)el.value=e[k]})}
+  d.showModal(); setTimeout(function(){document.getElementById('dsr-task').focus()},50);
+}
+</script>
+{% endblock %}

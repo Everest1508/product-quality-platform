@@ -19,6 +19,13 @@ from apps.dsr.service import submission_window, suggestions
 User = get_user_model()
 
 
+def _back(request, fallback):
+    """Where to go after a write: the page it was made from (a site-relative `next`), else the sheet for that day."""
+    from apps.core.redirects import safe_next
+
+    return redirect(safe_next(request.POST.get("next")) or fallback)
+
+
 def _parse_date(date_str, default):
     if not date_str:
         return default
@@ -178,7 +185,7 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
             if request.headers.get("HX-Request") == "true":
                 return JsonResponse({"ok": False, "error": reason}, status=403)
             messages.error(request, reason)
-            return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
+            return _back(request, f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
 
         status = request.POST.get("status", entry.status)
         category = request.POST.get("category", entry.category)
@@ -226,7 +233,7 @@ class DSREntryUpdateView(CompanyMemberRequiredMixin, View):
         if request.headers.get("HX-Request") == "true":
             return render(request, "dsr/partials/_dsr_row.html", {"entry": entry, "can_submit": True, "products": products.order_by("name"), "category_choices": DSREntry.Category.choices, "status_choices": DSREntry.Status.choices})
 
-        return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
+        return _back(request, f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
 
 
 class DSREntryDeleteView(CompanyMemberRequiredMixin, View):
@@ -243,7 +250,7 @@ class DSREntryDeleteView(CompanyMemberRequiredMixin, View):
             if request.headers.get("HX-Request") == "true":
                 return JsonResponse({"ok": False, "error": reason}, status=403)
             messages.error(request, reason)
-            return redirect(f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
+            return _back(request, f"/dsr/?date={entry.date.isoformat()}&user_id={entry.user.id}")
 
         entry_date = entry.date
         target_user = entry.user
@@ -263,7 +270,7 @@ class DSREntryDeleteView(CompanyMemberRequiredMixin, View):
             context = _get_dsr_context(request.company, target_user, entry_date, is_privileged)
             return render(request, "dsr/partials/_dsr_table.html", context)
 
-        return redirect(f"/dsr/?date={entry_date.isoformat()}&user_id={target_user.id}")
+        return _back(request, f"/dsr/?date={entry_date.isoformat()}&user_id={target_user.id}")
 
 
 class DSREntryAddView(CompanyMemberRequiredMixin, View):
@@ -287,7 +294,7 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
             if request.headers.get("HX-Request") == "true":
                 context = _get_dsr_context(request.company, target_user, target_date, is_privileged)
                 return render(request, "dsr/partials/_dsr_table.html", context)
-            return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
+            return _back(request, f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
 
         from apps.products.access import accessible_products
 
@@ -326,7 +333,7 @@ class DSREntryAddView(CompanyMemberRequiredMixin, View):
             context["add_open"] = True
             return render(request, "dsr/partials/_dsr_table.html", context)
 
-        return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
+        return _back(request, f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
 
 
 
@@ -352,7 +359,7 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             if request.headers.get("HX-Request") == "true":
                 context = _get_dsr_context(request.company, target_user, target_date, is_privileged)
                 return render(request, "dsr/partials/_dsr_table.html", context)
-            return redirect(f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
+            return _back(request, f"/dsr/?date={target_date.isoformat()}&user_id={target_user.id}")
 
         can_submit, reason = submission_window(target_date, is_privileged)
         if not can_submit:
@@ -403,3 +410,98 @@ class DSRSuggestionAddView(CompanyMemberRequiredMixin, View):
             },
         )
         return respond()
+
+
+class DSRLogView(CompanyMemberRequiredMixin, View):
+    """Everything submitted, today and before, as one table: grouped by day, searchable, with a CSV export.
+
+    `range` is today, yesterday, 7d (default) or 30d; `date` shows one day. Owners and admins can pass `user_id` (a member, or
+    `all`). Everybody else only ever sees their own rows."""
+
+    MAX_ROWS = 500
+
+    def get(self, request):
+        today = timezone.localdate()
+        params = request.GET
+        rng = params.get("range", "7d")
+        one_day = _parse_date(params.get("date"), None)
+        if one_day:
+            start = end = min(one_day, today)
+            rng = "day"
+        else:
+            start, end = {
+                "today": (today, today),
+                "yesterday": (today - timedelta(days=1),) * 2,
+                "30d": (today - timedelta(days=29), today),
+            }.get(rng, (today - timedelta(days=6), today))
+            if rng not in ("today", "yesterday", "30d"):
+                rng = "7d"
+        privileged = _is_privileged(request.user, request.company)
+        who = params.get("user_id", "")
+        everyone = privileged and who == "all"
+        if privileged and who and who != "all":
+            target = get_object_or_404(User, pk=who, memberships__company=request.company)
+        else:
+            target = request.user
+        qs = DSREntry.objects.filter(company=request.company, date__gte=start, date__lte=end).select_related("user", "product", "ticket", "ticket__product")
+        if not everyone:
+            qs = qs.filter(user=target)
+        q = (params.get("q") or "").strip()
+        if q:
+            from django.db.models import Q
+
+            qs = qs.filter(Q(task_name__icontains=q) | Q(notes__icontains=q) | Q(product__name__icontains=q))
+        total_rows = qs.count()
+        entries = list(qs.order_by("-date", "user__username", "-created_at")[: self.MAX_ROWS])
+
+        if params.get("export") == "csv":
+            from apps.core.csvx import csv_response
+
+            return csv_response(
+                f"dsr-{start}-to-{end}.csv", ["Date", "Employee", "Task", "Project", "Category", "Hours", "Status", "Notes"],
+                [[e.date.isoformat(), e.user.get_full_name() or e.user.username, e.task_name, e.product.name if e.product else "", e.get_category_display(), e.hours_spent, e.get_status_display(), e.notes] for e in entries],
+            )
+
+        days, lines = {}, []
+        for e in entries:
+            can_change = (e.user_id == request.user.pk or privileged) and submission_window(e.date, privileged)[0]
+            e.can_change = can_change
+            e.person = e.user.get_full_name() or e.user.username
+            e.elapsed = _elapsed(e)
+            d = days.setdefault(e.date, {"date": e.date, "rows": [], "hours": Decimal("0.00")})
+            d["rows"].append(e)
+            d["hours"] += e.hours_spent
+        day_list = list(days.values())
+        total = sum((d["hours"] for d in day_list), Decimal("0.00"))
+        for d in day_list:
+            d["hours_label"] = format_hm(d["hours"]) if d["hours"] else "0m"
+            d["is_today"] = d["date"] == today
+            lines.append(f"📅 {d['date'].strftime('%a, %-d %b')}: {format_hm(d['hours'])}, {len(d['rows'])} task{'s' if len(d['rows']) != 1 else ''}")
+        for e in entries:
+            lines.append(f"- {e.date.strftime('%-d %b')} {e.person + ': ' if everyone else ''}{e.task_name} ({e.get_category_display()}) - {format_hm(e.hours_spent)} [{e.get_status_display()}]")
+
+        can_log, locked = submission_window(today, privileged)
+        from apps.products.access import accessible_products
+
+        products = accessible_products(target, request.company).order_by("name")
+        can_log_here = can_log and (target == request.user or privileged)
+        return render(request, "dsr/dsr_log.html", {
+            "rng": rng, "start": start, "end": end, "today": today, "q": q, "everyone": everyone, "target": target,
+            "privileged": privileged, "who": "all" if everyone else (str(target.pk) if target != request.user else ""),
+            "members": User.objects.filter(memberships__company=request.company).order_by("username") if privileged else [],
+            "days": day_list, "count": len(entries), "completed": sum(1 for e in entries if e.status == "completed"),
+            "total_label": format_hm(total) if total else "0m", "truncated": total_rows > self.MAX_ROWS,
+            "summary_text": "\n".join(lines) if entries else "No tasks recorded for this period.",
+            "can_log": can_log_here, "locked_reason": locked, "products": products,
+            "categories": DSREntry.Category.choices, "statuses": DSREntry.Status.choices,
+            "work_suggestions": suggestions(request.company, target, today) if can_log_here and rng in ("today", "7d", "30d", "yesterday") else [],
+        })
+
+
+def _elapsed(e):
+    """How long the ticket behind an auto-logged row was open: "3h 20m", or "11d 1h" past two days. Empty when unknown."""
+    if not (e.created_time and e.completed_time):
+        return ""
+    minutes = max(0, int((e.completed_time - e.created_time).total_seconds() // 60))
+    days, rest = divmod(minutes, 1440)
+    return f"{days}d {rest // 60}h" if days >= 2 else format_hm(Decimal(minutes) / 60)

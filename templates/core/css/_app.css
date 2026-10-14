@@ -199,8 +199,9 @@
 
   .form-group{margin-bottom:16px;}
   .form-group label,.form-group .dd-label{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;}
-  .form-input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13.5px;color:var(--text);background:var(--surface);}
-  .form-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg);}
+  .form-input{width:100%;min-height:36px;padding:7px 11px;border:1px solid var(--border-strong);border-radius:var(--radius);font-size:13.5px;color:var(--text);background:var(--surface);transition:border-color .15s,box-shadow .15s;}
+  .form-input::placeholder{color:var(--muted-2);}
+  .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-ring);}
   select.form-input{appearance:auto;}
   textarea.form-input{resize:vertical;min-height:80px;}
 

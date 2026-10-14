@@ -1,5 +1,6 @@
 {% load static %}
 {% load toast_tags %}
+{% load icon_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -865,5 +866,30 @@
 })();
 </script>
 
+<script>window.pqToast=function(text,tags){window.dispatchEvent(new CustomEvent('django-message',{detail:{text:text,tags:tags||'info'}}))};</script>
+<dialog class="dlg" id="pq-confirm" style="max-width:400px">
+  <div class="dlg-head"><span class="dlg-icon" data-icon>{% icon 'triangle-alert' 'ic' %}</span><h2 data-title>Are you sure?</h2><p data-text></p></div>
+  <div class="dlg-foot" style="padding-top:16px"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn btn-primary" data-ok>Confirm</button></div>
+</dialog>
+<script>
+/* Anything with data-confirm asks first: <form data-confirm="Delete this entry?" data-confirm-text="This cannot be undone."> or a submit button carrying the same. */
+(function(){
+  var dlg=document.getElementById('pq-confirm'); if(!dlg||!dlg.showModal) return; var pending=null;
+  function ask(el,go){
+    dlg.querySelector('[data-title]').textContent=el.dataset.confirm||'Are you sure?';
+    dlg.querySelector('[data-text]').textContent=el.dataset.confirmText||'';
+    var danger=el.dataset.confirmTone!=='primary', ok=dlg.querySelector('[data-ok]');
+    ok.textContent=el.dataset.confirmLabel||'Confirm'; ok.className='btn '+(danger?'btn-danger':'btn-primary');
+    dlg.querySelector('[data-icon]').classList.toggle('danger',danger); pending=go; dlg.showModal();
+  }
+  dlg.querySelector('[data-cancel]').onclick=function(){pending=null;dlg.close()};
+  dlg.querySelector('[data-ok]').onclick=function(){var g=pending;pending=null;dlg.close();if(g)g()};
+  document.addEventListener('submit',function(e){
+    var f=e.target, src=e.submitter, el=(src&&src.dataset.confirm)?src:(f.dataset&&f.dataset.confirm?f:null);
+    if(!el||f.dataset.confirmed) return; e.preventDefault();
+    ask(el,function(){f.dataset.confirmed='1'; if(src&&src.name){var h=document.createElement('input');h.type='hidden';h.name=src.name;h.value=src.value;f.appendChild(h)} f.requestSubmit?f.submit():f.submit()});
+  },true);
+})();
+</script>
 </body>
 </html>
