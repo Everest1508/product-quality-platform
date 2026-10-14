@@ -460,48 +460,6 @@ class VersionFooterUiTest(TestCase):
         body = self.client.get("/tickets/").content.decode()
         self.assertIn("side-version:focus-visible", body)
 
-    def test_dialog_opens_on_this_version_rather_than_the_whole_file(self):
-        """`releases.slice(1)` is what keeps 56 bullets off the first screen."""
-        self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        self.assertIn("releases.slice(1)", body)
-        self.assertIn("var older = releases.slice(1);", body)
-
-    def test_older_releases_are_a_disclosure_not_a_dead_end(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        self.assertIn("changelog-older", body)
-        self.assertIn("aria-expanded", body)
-        self.assertIn("aria-controls=\"pq-changelog-older-list\"", body)
-
-    def test_type_filters_are_real_buttons_with_pressed_state(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        self.assertIn('id="pq-changelog-filters"', body)
-        self.assertIn('aria-label="Filter changes by type"', body)
-        self.assertIn('aria-pressed="', body)
-
-    def test_dates_are_formatted_for_a_reader_not_shown_as_iso_columns(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        self.assertIn("function fmtDate", body)
-        self.assertIn("esc(fmtDate(rel.date))", body)
-
-    def test_header_states_how_many_changes_are_in_this_version(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        # The phrase is assembled from a pluralising helper, so assert its parts
-        # rather than a string that never appears contiguously.
-        self.assertIn("plural(total, 'change', 'changes')", body)
-        self.assertIn("' in this version'", body)
-        self.assertIn('id="pq-changelog-sub"', body)
-
-    def test_filtering_is_keyboard_and_mouse_driven_from_the_body(self):
-        self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        self.assertIn("data-filter", body)
-        self.assertIn("closest('#pq-changelog-older')", body)
-
 
 
 class BrandFileTests(TestCase):
@@ -671,13 +629,34 @@ class ChangelogDialogDesignTest(TestCase):
     def body(self):
         return self.client.get("/tickets/").content.decode()
 
-    def test_the_dialog_shows_the_summary_and_colored_sections(self):
-        body = self.body()
-        self.assertIn("changelog-summary", body)
-        self.assertIn("cl-sec cl-sec-", body)
-        self.assertIn("cl-lead", body)
 
-    def test_older_releases_fold_away(self):
-        body = self.body()
-        self.assertIn('<details class="changelog-rel is-old">', body)
-        self.assertIn("releaseHtml(rel, 'h4', true)", body)
+
+class ReleaseNameTest(TestCase):
+    def test_a_release_can_carry_a_name_and_the_name_is_optional(self):
+        text = '# Changelog\n\n## [1.2.0] "Heron" — 2026-10-04 · first\n\n### New\n- **A.** x\n\n## [1.1.0] — 2026-10-03 · second\n\n### New\n- **B.** y\n'
+        named, plain = parse_changelog(text)
+        self.assertEqual((named["tag"], named["name"], named["title"]), ("1.2.0", "Heron", "first"))
+        self.assertEqual((plain["tag"], plain["name"]), ("1.1.0", ""))
+
+    def test_every_numbered_release_in_the_shipped_file_has_a_unique_name(self):
+        changelog_module._cache.clear()
+        named = [r for r in changelog_module.get_changelog() if r["released"]]
+        self.assertTrue(all(r["name"] for r in named), [r["tag"] for r in named if not r["name"]])
+        names = [r["name"] for r in named]
+        self.assertEqual(len(names), len(set(names)), "two releases share a name")
+        self.assertEqual(changelog_module.get_version_info()["name"], named[0]["name"])
+
+
+class ChangelogDialogTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("dlg2", "d2@t.local", "pass1234")
+        company = Company.objects.create(name="C2", slug="c2")
+        Membership.objects.create(user=self.user, company=company, role="owner")
+        self.client.force_login(self.user)
+
+    def test_the_whats_new_window_has_search_type_filters_paged_older_releases_and_shows_once(self):
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn('id="pq-changelog"', body)
+        for marker in ('id="cl-search"', 'id="cl-chips"', 'id="cl-older"', "cl-card", "pq:seen-version", "inert"):
+            self.assertIn(marker, body)
+        self.assertIn(f'data-version="{settings.APP_VERSION}"', body)

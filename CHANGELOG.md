@@ -10,7 +10,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
-## [1.11.0] — 2026-10-12 · a toast for every action, and an audit trail behind it
+## [1.14.0] "Tern" — 2026-10-14 · profile, team pages, products as a list and a calmer What's new
+
+> In short: you get a profile page with notification switches, a page for each colleague, products and the team as full-width lists, a one-column ticket page, and a What's new window you can search.
+
+### New
+- **A profile page.** It shows your numbers, your recent activity, your settings, which notifications you get, and every keyboard shortcut, on four tabs.
+- **You choose what notifies you.** Each kind of notification has its own switch, and it applies in every workspace you belong to.
+- **Every team member has their own page.** Click a name in Team to see their streak, their numbers and the open work of theirs that you are allowed to see.
+- **What's new opens by itself once for each release.** After that it stays one click away in the sidebar, where you can search it and filter it by type.
+
+### Better
+- **Products and the team are lists, not cards.** Each one is a single full-width strip with its numbers and actions on the same line.
+- **The ticket page is one column.** Status, priority, assignee and deadline sit in a strip at the top, then the description and the comments.
+- **Notifications are grouped by day.** Each one has an icon for its kind.
+
+## [1.13.0] "Swift" — 2026-10-14 · a DSR that is one table, and honest hours for long tickets
+
+> In short: the DSR is one table of everything submitted, and a ticket that was open a long time asks for the time you really worked on it.
+
+### New
+- **The DSR is one table of everything submitted.** Today and earlier days sit together, grouped by day with a total, and you can filter by range or person and search.
+- **You can export the DSR to a spreadsheet.** The Export CSV button saves whatever range, person and search you are looking at.
+- **Add everything you worked on in one click.** A banner lists the tickets you touched today and adds them all at sensible hours.
+- **A long-open ticket asks for your real time.** When you resolve a ticket that was open for more than a working day, a message and a small window ask how long you worked on it today, and only that counts.
+
+### Better
+- **A long-open ticket no longer adds weeks to your day.** Its row shows how long it was open, marked as not counted, so the real elapsed time is still there to read.
+- **Every delete asks first.** A small window says what will be removed before anything is deleted.
+- **Punching out asks first and shows your time.** The window says you will be punched out for today and how long you have worked so far.
+
+## [1.12.0] "Robin" — 2026-10-14 · a new look, dark mode and keyboard shortcuts
+
+> In short: the whole app has a fresher look with a dark theme, a redesigned Home, and many more keyboard shortcuts.
+
+### New
+- **A dark theme.** Switch between light, dark and your system's setting from the account menu, or press t, and the change fades in smoothly.
+- **A redesigned Home.** A greeting that follows the time of day types out a line for you, with your numbers, work, today, to-do list, week, leave and DSR below it.
+- **Keyboard shortcuts for moving around.** Press g and then a letter to jump to a page, [ to fold the sidebar, and ? to see every shortcut.
+- **The search box can do things.** Press Ctrl or ⌘ K and type leave, log or punch to jump straight to the action.
+- **An on-time streak and milestones.** Home and your profile show how many working days in a row you checked in on time, and mark anniversaries and round numbers of resolved tickets.
+- **Small celebrations and counting numbers.** Confetti appears when you resolve a ticket or tick your last to-do, and the numbers on Home count up.
+- **Attendance reminders.** You are nudged shortly after your shift starts if you have not checked in, and again after it ends if you have not checked out.
+
+### Better
+- **Buttons, fields and tables share one fresh style.** Corners, borders, focus rings and icons match across every page.
+
+## [1.11.0] "Quail" — 2026-10-12 · a toast for every action, and an audit trail behind it
 
 > In short: every action now confirms itself with a pop-up message, more of your changes are written to the activity log, and the punch notifications show Indian time with the late fee or how your day went.
 
@@ -28,7 +74,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **Check-in and check-out times show Indian time again.** A 10:02 punch used to read "Checked in at 04:32 AM" in the pop-up and the notification, because the stored time was read back as UTC. It now shows the real Indian time wherever the punch is announced.
 
-## [1.10.0] — 2026-10-09 · priorities, overdue alerts and to-dos in your DSR
+## [1.10.0] "Plover" — 2026-10-09 · priorities, overdue alerts and to-dos in your DSR
 
 > In short: your to-dos now have a priority, show in red when they are overdue, remind you once a day, and land in today's DSR when you finish them.
 
@@ -43,7 +89,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **The to-do card has a cleaner look.** Sharper borders, a blue focus ring and tidy badges.
 
-## [1.9.0] — 2026-10-09 · a fuller home page, and the DSR works on a phone
+## [1.9.0] "Osprey" — 2026-10-09 · a fuller home page, and the DSR works on a phone
 
 > In short: the home page now opens with the numbers that matter today and shows your recent activity, and adding a DSR entry and opening dropdowns now work on a phone or in the installed app.
 
@@ -62,7 +108,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **You can add a DSR entry on a phone again.** The add form on an empty day was wider than the screen and half hidden.
 - **The DSR page no longer stretches wider than a phone screen.** A hidden label was pushing the whole page sideways, which also made dropdowns and the layout behave oddly in the installed app.
 
-## [1.8.0] — 2026-10-09 · a bigger to-do list and a due-soon card
+## [1.8.0] "Nightjar" — 2026-10-09 · a bigger to-do list and a due-soon card
 
 > In short: your home page to-do list is bigger and smarter, and a new card shows the tickets that are due soon.
 
@@ -75,7 +121,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **The to-do list is bigger and easier to use.** It now takes half the row, shows how many tasks are done with a progress bar, and has a Clear done button.
 
-## [1.7.2] — 2026-10-09 · a tidier ticket page and messages that say what changed
+## [1.7.2] "Martin" — 2026-10-09 · a tidier ticket page and messages that say what changed
 
 > In short: the ticket details panel is cleaner, and the pop-up messages now tell you exactly what changed.
 
@@ -84,7 +130,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **The ticket details panel is easier to read.** Status, assignees and deadline now sit under their labels at full width, and the repeated status badge, name list and "No deadline" text are gone.
 - **Ticket messages say what changed.** They now name the ticket and show the change, like "CHA-006: status Open → In progress" or "CHA-006 assigned to Ritesh Mahale".
 
-## [1.7.1] — 2026-10-09 · clearer ticket errors and tighter project privacy
+## [1.7.1] "Lark" — 2026-10-09 · clearer ticket errors and tighter project privacy
 
 > In short: creating a ticket with assignees no longer fails for people who cannot open the project, forms now tell you what went wrong, and the Customer Success page only shows your own projects.
 
@@ -100,7 +146,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **The Customer Success page only shows projects you have been added to.** It used to list every project, survey and response in the company to every member.
 
-## [1.7.0] — 2026-10-09 · a to-do list on your home page
+## [1.7.0] "Kestrel" — 2026-10-09 · a to-do list on your home page
 
 > In short: the home page now has a private to-do card where you can write down what you want to get done and tick it off.
 
@@ -108,7 +154,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **A to-do card on the home page.** Type a task, press Add, tick it when it is done or remove it. Only you can see your list.
 
-## [1.6.1] — 2026-10-08 · messages show up again
+## [1.6.1] "Jay" — 2026-10-08 · messages show up again
 
 > In short: the confirmation messages that pop up after you check in or out work again, and your open DSR tasks now show on the home page.
 
@@ -120,7 +166,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **Confirmation messages show again after you check in or out.** Messages like "Checked in at 10:02 AM." were being lost and never appeared on screen. They now pop up, and the same fix brings back messages after other saves.
 
-## [1.6.0] — 2026-10-07 · create tickets from your AI tool
+## [1.6.0] "Ibis" — 2026-10-07 · create tickets from your AI tool
 
 > In short: type /ticket or /dsr-ticket in your AI tool to create tickets without opening the app, and the DSR table is easier to use.
 
@@ -139,7 +185,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **The DSR table's dropdown menus are no longer cut off.** Menus near the edge of the table now open fully.
 - **Editable cells in the DSR table now look editable.** You can tell at a glance which cells you can click and change.
 
-## [1.5.0] — 2026-10-07 · build your DSR from your AI tool, and a table you can read
+## [1.5.0] "Heron" — 2026-10-07 · build your DSR from your AI tool, and a table you can read
 
 > In short: type /dsr in your AI tool to build today's DSR from your real work, log time in minutes, and read the DSR sheet as a table again.
 
@@ -160,7 +206,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **The DSR connection cannot reach anything else.** The sign-in token the AI tool uses only works for your DSR, so it cannot read Server Operator teams or shared-server passwords, and Server Operator tokens cannot be used for the DSR.
 
-## [1.4.0] — 2026-10-06 · team week, late preview, shortcuts and smarter search
+## [1.4.0] "Grebe" — 2026-10-06 · team week, late preview, shortcuts and smarter search
 
 > In short: admins get a week view of the whole team, the check-in card shows what being late would cost, tickets can be followed, and search explains its matches.
 
@@ -179,7 +225,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **Search tells you why something matched.** Results show a short piece of the description, comment or error detail with your words highlighted.
 - **Narrow a search with words.** Add `in:tickets`, `in:errors`, `assignee:me` or `status:open` to what you type. The search box also remembers your last five searches.
 
-## [1.3.0] — 2026-10-06 · a top bar, a bento home, and office hours of 10 to 6:30
+## [1.3.0] "Falcon" — 2026-10-06 · a top bar, a bento home, and office hours of 10 to 6:30
 
 > In short: a new top bar with search, online, notifications and your account, a home page of charts, a redesigned Products page, and the office day now ends at 6:30 PM.
 
@@ -203,7 +249,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **Messages after quick actions now appear.** Saving, deleting or punching from a page that updates in place used to queue the message for a later page. Creating an API key and deleting tickets in bulk had no message at all.
 - **The Recent days box on My attendance no longer disappears.** On a window shorter than the page it collapsed to nothing. It now keeps its size and the page scrolls.
 
-## [1.2.2] — 2026-10-05 · a live countdown on the punch card
+## [1.2.2] "Egret" — 2026-10-05 · a live countdown on the punch card
 
 > In short: the punch card shows plain time with no circle, and once you check in it counts down to the end of your full day.
 
@@ -216,7 +262,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **No more circle.** Before you check in the card shows the time in large numbers. After you check out it shows the hours you worked. A thin bar under the countdown shows how far through the day you are.
 - **The check-in and check-out buttons are full width.** They sit under the card text.
 
-## [1.2.1] — 2026-10-05 · products on the DSR
+## [1.2.1] "Dunlin" — 2026-10-05 · products on the DSR
 
 > In short: you can say which product a DSR entry was for, and the form starts empty after each entry.
 
@@ -234,7 +280,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **The form still held your last entry.** After adding a task, the text of that task was left in the form. It now starts empty. If an entry fails, what you typed stays so you can fix it.
 - **Category and status colors on DSR rows never showed.** They now do.
 
-## [1.2.0] — 2026-10-04 · tickets named after their product
+## [1.2.0] "Condor" — 2026-10-04 · tickets named after their product
 
 > In short: every ticket now has a readable name like AUM-014, and My attendance and this What's new window were redesigned.
 
@@ -258,7 +304,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - DSR entries written before this release still show the old # number in their task text. New entries use the ticket name.
 
-## [1.1.0] — 2026-10-04 · alerts, search, reports and a new look
+## [1.1.0] "Bittern" — 2026-10-04 · alerts, search, reports and a new look
 
 > In short: you get told about things, can find anything with Ctrl K, see who is online, and the whole app was redrawn to work on a phone and install like an app.
 
@@ -322,7 +368,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 - **Passwords and tokens in captured errors are hidden.** They are removed before the data is stored.
 - **A production setup refuses to start on the built-in secret keys.**
 
-## [1.0.1] — 2026-10-02 · punch panel, forgotten check-outs & leave caps
+## [1.0.1] "Albatross" — 2026-10-02 · punch panel, forgotten check-outs & leave caps
 
 Every earlier release note is kept below this one. The reasoning behind all of
 it, and the questions still open, are in [context.md](context.md).
