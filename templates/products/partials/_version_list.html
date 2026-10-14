@@ -1,0 +1,21 @@
+{% for version in versions %}
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="text-sm font-medium">{{ version.version_string }}</span>
+    {% if version.is_current %}<span class="pill active" style="font-size:11px;">Current</span>{% endif %}
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="date">{{ version.released_at|date:"M d, Y" }}</span>
+    <form method="post" action="{% url 'products:version_delete' pk=version.product_id version_pk=version.pk %}"
+          hx-post="{% url 'products:version_delete' pk=version.product_id version_pk=version.pk %}"
+          hx-target="#version-list" hx-swap="innerHTML"
+          hx-confirm="Delete version {{ version.version_string }}?"
+          style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm" style="font-size:11px;color:var(--red);padding:2px 6px;">×</button>
+    </form>
+  </div>
+</div>
+{% empty %}
+<p class="text-sm text-muted" style="text-align:center;padding:16px;">No versions yet.</p>
+{% endfor %}

@@ -4,7 +4,7 @@ Only people who actually use attendance (a punch in the last 30 days) are nudged
 approved leave, and each person gets each kind at most once a day. Switching the kind off in the profile mutes it,
 because everything goes through `notifications.service.notify`.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -45,7 +45,7 @@ def send(company, now=None, dry_run=False):
             kind, title, body = Notification.Kind.ATTENDANCE_CHECKOUT, "Don’t forget to check out", f"Your shift ended at {shift.end_time:%-I:%M %p}. Check out so your hours are right."
         if kind is None:
             continue
-        if Notification.objects.filter(company=company, user=user, kind=kind, created_at__date=today).exists():
+        if Notification.objects.filter(company=company, user=user, kind=kind, created_at__gte=_at(today, time.min)).exists():
             continue
         sent += 1
         if not dry_run:

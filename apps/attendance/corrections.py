@@ -12,7 +12,7 @@ go through the same checks.
   the record as edited, logs it, and tells the employee.
 """
 
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -36,8 +36,6 @@ def build_datetime(day, clock, next_day=False):
     """`clock` ('HH:MM' or a time) on `day` as an aware datetime, or None if empty."""
     if clock in (None, ""):
         return None
-    if not isinstance(clock, (str, time)):
-        raise CorrectionError("Times need the form HH:MM.")
     if isinstance(clock, str):
         try:
             clock = datetime.strptime(clock.strip(), "%H:%M").time()
@@ -71,7 +69,7 @@ def can_decide(approver, correction):
 
 
 def request_correction(user, company, day, check_in, check_out, reason):
-    reason = reason.strip() if isinstance(reason, str) else ""
+    reason = (reason or "").strip()
     today = timezone.localdate()
     if day > today:
         raise CorrectionError("You can only correct a day that has already started.")

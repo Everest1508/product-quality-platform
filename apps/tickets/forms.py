@@ -10,19 +10,23 @@ class TicketCreateForm(forms.ModelForm):
                   "assignees", "deadline"]
         widgets = {
             "title": forms.TextInput(attrs={
+                "class": "form-input",
                 "placeholder": "Brief summary of the issue",
             }),
             "description": forms.Textarea(attrs={
+                "class": "form-input",
                 "rows": 5,
                 "placeholder": "Detailed description...",
             }),
-            "ticket_type": forms.Select(attrs={}),
-            "priority": forms.Select(attrs={}),
-            "product": forms.Select(attrs={}),
+            "ticket_type": forms.Select(attrs={"class": "form-input"}),
+            "priority": forms.Select(attrs={"class": "form-input"}),
+            "product": forms.Select(attrs={"class": "form-input"}),
             "assignees": forms.SelectMultiple(attrs={
+                "class": "form-input",
                 "size": 6,
             }),
             "deadline": forms.DateTimeInput(attrs={
+                "class": "form-input",
                 "type": "datetime-local",
             }),
         }
@@ -52,28 +56,22 @@ class TicketCreateForm(forms.ModelForm):
 
 
 class TicketEditForm(forms.ModelForm):
-    def __init__(self, *args, company=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Only people who can open the ticket may be assigned to it.
-        if company is not None:
-            from apps.tickets import mentions
-
-            self.fields["assignees"].queryset = mentions.candidates(self.instance, company)
-
     class Meta:
         model = Ticket
         fields = ["title", "description", "ticket_type", "priority", "status",
                   "assignees", "deadline"]
         widgets = {
-            "title": forms.TextInput(attrs={}),
-            "description": forms.Textarea(attrs={"rows": 5}),
-            "ticket_type": forms.Select(attrs={}),
-            "priority": forms.Select(attrs={}),
-            "status": forms.Select(attrs={}),
+            "title": forms.TextInput(attrs={"class": "form-input"}),
+            "description": forms.Textarea(attrs={"class": "form-input", "rows": 5}),
+            "ticket_type": forms.Select(attrs={"class": "form-input"}),
+            "priority": forms.Select(attrs={"class": "form-input"}),
+            "status": forms.Select(attrs={"class": "form-input"}),
             "assignees": forms.SelectMultiple(attrs={
+                "class": "form-input",
                 "size": 6,
             }),
             "deadline": forms.DateTimeInput(attrs={
+                "class": "form-input",
                 "type": "datetime-local",
             }),
         }
@@ -85,6 +83,7 @@ class TicketDeadlineForm(forms.ModelForm):
         fields = ["deadline"]
         widgets = {
             "deadline": forms.DateTimeInput(attrs={
+                "class": "form-input",
                 "type": "datetime-local",
             }),
         }
@@ -93,6 +92,7 @@ class TicketDeadlineForm(forms.ModelForm):
 class TicketCommentForm(forms.Form):
     body = forms.CharField(
         widget=forms.Textarea(attrs={
+            "class": "form-input",
             "rows": 3,
             "placeholder": "Add a comment...",
         }),

@@ -119,18 +119,14 @@ class TicketKeyScreensTest(TestCase):
         self.client.login(username="own", password="pass1234")
 
     def test_list_board_and_detail_show_the_key(self):
-        listing = self.client.get("/ui-api/v1/tickets/").json()
-        self.assertEqual([t["key"] for t in listing["items"]], ["AUM-001"])
-        board = self.client.get("/ui-api/v1/tickets/", {"view": "board"}).json()
-        self.assertEqual([t["key"] for c in board["columns"] for t in c["tickets"]], ["AUM-001"])
-        detail = self.client.get(f"/ui-api/v1/tickets/{self.ticket.pk}/").json()
-        self.assertEqual(detail["ticket"]["key"], "AUM-001")
+        for url in (reverse("tickets:ticket_list"), reverse("tickets:ticket_board"),
+                    reverse("tickets:ticket_detail", args=[self.ticket.pk])):
+            self.assertContains(self.client.get(url), "AUM-001")
 
     def test_creating_a_ticket_reports_its_key(self):
-        res = self.client.post("/ui-api/v1/tickets/",
-                               {"title": "Second", "ticket_type": "bug", "priority": "medium", "product": self.product.pk},
-                               content_type="application/json")
-        self.assertEqual((res.status_code, res.json()["key"]), (201, "AUM-002"))
+        res = self.client.post(reverse("products:product_ticket_create", args=[self.product.pk]),
+                               {"title": "Second", "ticket_type": "bug", "priority": "medium"}, follow=True)
+        self.assertContains(res, "Ticket AUM-002 created")
 
     def test_search_finds_by_key_in_any_spelling(self):
         for q in ("AUM-001", "aum-1", "AUM001", "aum 1"):
@@ -150,18 +146,16 @@ class TicketKeyScreensTest(TestCase):
 
     def test_product_form_validates_and_saves_the_key(self):
         other = Product.objects.create(company=self.company, name="Other App", slug="other-app")
-        url = f"/ui-api/v1/products/{self.product.pk}/"
-        body = {"name": "AU-Marketing", "default_environment": "production"}
-        patch = lambda key: self.client.patch(url, {**body, "key": key}, content_type="application/json")
-        bad = patch(other.key)
-        self.assertEqual(bad.status_code, 400)
-        self.assertIn("already uses", bad.json()["errors"]["key"][0])
-        worse = patch("1x!")
-        self.assertIn("starting with a letter", worse.json()["errors"]["key"][0])
-        self.assertEqual(patch("mkt").status_code, 200)
+        url = reverse("products:product_edit", args=[self.product.pk])
+        bad = self.client.post(url, {"name": "AU-Marketing", "key": other.key, "default_environment": "production"})
+        self.assertContains(bad, "already uses")
+        worse = self.client.post(url, {"name": "AU-Marketing", "key": "1x!", "default_environment": "production"})
+        self.assertContains(worse, "starting with a letter")
+        ok = self.client.post(url, {"name": "AU-Marketing", "key": "mkt", "default_environment": "production"})
+        self.assertEqual(ok.status_code, 302)
         self.product.refresh_from_db()
         self.assertEqual(self.product.key, "MKT")
-        self.assertEqual(self.client.get("/ui-api/v1/tickets/").json()["items"][0]["key"], "MKT-001")
+        self.assertContains(self.client.get(reverse("tickets:ticket_list")), "MKT-001")
 
 
 class KeySuggestEndpointTest(TestCase):
@@ -174,7 +168,7 @@ class KeySuggestEndpointTest(TestCase):
         self.product = Product.objects.create(company=self.company, name="AU-Marketing", slug="aum")
 
     def suggest(self, **params):
-        return self.client.get("/ui-api/v1/products/key-suggestion/", params)
+        return self.client.get(reverse("products:product_key_suggest"), params)
 
     def test_suggests_from_the_name_as_it_is_typed(self):
         self.client.login(username="own", password="pass1234")
@@ -192,3 +186,9 @@ class KeySuggestEndpointTest(TestCase):
     def test_only_owners_and_admins_can_ask(self):
         self.client.login(username="dev", password="pass1234")
         self.assertEqual(self.suggest(name="Anything").status_code, 403)
+
+    def test_the_create_form_wires_the_name_to_the_prefix(self):
+        self.client.login(username="own", password="pass1234")
+        body = self.client.get(reverse("products:product_create")).content.decode()
+        self.assertIn("product-name", body)
+        self.assertIn(reverse("products:product_key_suggest"), body)

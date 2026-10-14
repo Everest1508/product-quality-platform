@@ -1,0 +1,17 @@
+{% load icon_tags %}<article class="lrow lr-nomark t-{% if rule.is_active %}green{% else %}off{% endif %}">
+  <div class="lmain">
+    <div class="lt"><a href="{% url 'automation:rule_edit' pk=rule.pk %}">{{ rule.name }}</a></div>
+    <p class="ls">{% if rule.product %}{{ rule.product.name }}{% else %}All products{% endif %} · {{ rule.threshold_count }} errors in {{ rule.window_minutes }}m{% if rule.severity %} ({{ rule.severity }}){% endif %} · {{ rule.get_action_display }}</p>
+  </div>
+  <div class="lmetrics"><div><span class="v">{{ rule.trigger_count }}</span><span class="l">Fired</span></div></div>
+  <form method="post" action="{% url 'automation:rule_toggle' pk=rule.pk %}" hx-post="{% url 'automation:rule_toggle' pk=rule.pk %}" hx-target="closest article" hx-swap="outerHTML">
+    {% csrf_token %}<button type="submit" style="background:none;border:none;padding:0;cursor:pointer;" aria-label="{% if rule.is_active %}Disable{% else %}Enable{% endif %} {{ rule.name }}">
+      {% if rule.is_active %}<span class="bdg bdg-green">Active</span>{% else %}<span class="bdg">Disabled</span>{% endif %}</button>
+  </form>
+  <div class="lactions">
+    <a href="{% url 'automation:rule_edit' pk=rule.pk %}" class="btn btn-sm">{% icon 'edit' 'ic' %}Edit</a>
+    <form method="post" action="{% url 'automation:rule_delete' pk=rule.pk %}" hx-post="{% url 'automation:rule_delete' pk=rule.pk %}" hx-target="closest article" hx-swap="outerHTML" hx-confirm="Delete this rule?" data-confirm-text="Tickets it already made are kept. This cannot be undone." data-confirm-label="Delete">
+      {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">{% icon 'trash' 'ic' %}Delete</button>
+    </form>
+  </div>
+</article>

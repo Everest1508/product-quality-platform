@@ -6,8 +6,8 @@
 
 [![Django](https://img.shields.io/badge/Django-6.0-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![HTMX](https://img.shields.io/badge/HTMX-2-3366CC?style=for-the-badge)](https://htmx.org/)
+[![Alpine](https://img.shields.io/badge/Alpine.js-3-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=black)](https://alpinejs.dev/)
 [![REST API](https://img.shields.io/badge/DRF-3.17-red?style=for-the-badge)](https://www.django-rest-framework.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
@@ -35,7 +35,7 @@ Engineering organizations frequently suffer from **context fragmentation**:
 - ⏱️ **Zero-Friction DSR Timesheets:** When an engineer resolves a ticket, the platform automatically logs the elapsed duration into their Daily Status Report (DSR) spreadsheet.
 - 💬 **Customer Success Operations:** Triage CSAT/NPS survey responses and bug reports directly into backlog items.
 - 🧑‍💼 **People Operations:** Attendance with lateness rules, leave with paid/unpaid splitting and approvals, and payroll cycles that turn both into payslips.
-- ⚡ **A fast React front end on a plain Django back end:** **Django 6** serves a JSON API, auth, ingestion and WebSockets; the whole UI is **React 19 + Tailwind 4** built from [befui](https://befui.vercel.app/) components, with light and dark themes.
+- ⚡ **Plain server-rendered Django, with a polished interface:** **Django 6** renders every page; **HTMX** and **Alpine.js** make it feel instant; hand-written CSS gives one consistent look with a light and a dark theme. No JavaScript build step.
 
 ---
 
@@ -152,7 +152,6 @@ flowchart TD
 
 ### Prerequisites
 - **Python 3.12+**
-- **Node 22+** (only to build the front end)
 - **SQLite 3** (Default) or PostgreSQL
 - Git
 
@@ -170,19 +169,24 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Build the React front end (Django serves frontend/dist at /ui/)
-(cd frontend && npm ci && npm run build)
-
-# 5. Migrate, load the Acme Corp demo workspace and create a superuser
+# 4. Migrate, load the Acme Corp demo workspace and create a superuser
 ./bootstrap.sh
 
-# 6. Start the development server
+# 5. Start the development server
 python manage.py runserver 8010
 ```
 
+### Send errors from your own app
+
+```bash
+pip install pq-befu        # Python (import pq_sdk); npm install pq-befu for Node
+```
+
+Not `pq-sdk`. Step-by-step, framework by framework: [docs/guides/using-the-sdk.md](docs/guides/using-the-sdk.md), or the **API** page of any product.
+
 Visit **[http://localhost:8010](http://localhost:8010)** and sign in as `owner` / `testpass123`.
 
-For front-end work keep `npm run dev` running in `frontend/` (it rebuilds on save) and run `npm test` for the tests.
+Edit a template or `templates/core/css/*.css` and refresh the browser: there is nothing to build.
 **The full guide, with settings, scheduled jobs, Docker, deploying and troubleshooting, is in
 [docs/running-the-project.md](docs/running-the-project.md).**
 
@@ -197,7 +201,7 @@ Run the entire application in a container with persistent SQLite storage:
 docker-compose up --build
 ```
 
-The image builds the front end in a Node stage, so no local Node is needed. The application will be accessible at **[http://localhost:8011](http://localhost:8011)**.
+The application will be accessible at **[http://localhost:8011](http://localhost:8011)**.
 
 ---
 
@@ -329,14 +333,14 @@ python manage.py seed_data
 | Layer | Technology | Rationale |
 | :--- | :--- | :--- |
 | **Backend Framework** | **Django 6.0** | Robust ORM, built-in security protections, enterprise authentication, and bulletproof relational data modeling. |
-| **Frontend** | **React 19 + Vite + TypeScript** | One single-page app (`frontend/`) with TanStack Query for data and React Router for pages. Django renders only the page that boots it. |
-| **Components & Styling** | **befui + Tailwind 4** | Copy-paste Radix components (tables, tabs, pickers, kanban, sidebar, command palette) themed by CSS variables, with a light and a dark theme. Add one with `scripts/befui_add.py <name>`. |
+| **Pages** | **Django templates + HTMX + Alpine.js** | Every page is rendered by Django. HTMX swaps parts of a page without a reload, and Alpine.js handles small things like menus and tabs. |
+| **Look** | **Hand-written CSS** | A token file (`templates/core/css/_tokens.css`) holds the colours for light and dark themes; every stylesheet reads those tokens. No build tool. |
 | **Live features** | **Django Channels** | WebSockets for presence, notifications and the Serop inbox. |
 | **API Layer** | **Django REST Framework** | Token-authenticated ingestion endpoints with throttling, validation, and JSON schemas. |
 | **Database** | **SQLite / PostgreSQL** | Zero-config SQLite out of the box with total migration compatibility for production PostgreSQL. |
 
-> ### 💡 Why a separate front end now?
-> The app began as server-rendered HTML with HTMX and Alpine.js. As it grew (kanban, pickers, live presence, a dark theme) a single component library and typed API made the interface faster to change and far easier to test. The Django side kept every rule, permission check and model: the React app talks to it through session-authenticated JSON endpoints under `/ui-api/v1/`, and the SDK ingestion API under `/api/v1/` is unchanged.
+> ### 💡 No front-end build
+> The interface is server-rendered on purpose: one codebase, nothing to compile, and a deploy is a Python rebuild. The CSS lives in a few files under `templates/core/css/` and reads colour tokens, which is what makes the dark theme work on every page at once.
 
 ---
 
@@ -352,7 +356,6 @@ product-quality-platform/
 │   ├── payroll/        # Pay cycles, runs, payslips, salaries, holidays
 │   ├── notifications/  # In-app and web-push notifications
 │   ├── presence/       # Who is online (WebSocket)
-│   ├── uiapi/          # JSON API for the React app (/ui-api/v1/)
 │   ├── core/           # Middleware, tenant-scoped base models, search, PWA
 │   ├── dashboards/     # Executive stats, needs-attention list, activity audit log
 │   ├── dsr/            # Daily Status Report spreadsheet, auto-logger, & standup export
@@ -366,10 +369,8 @@ product-quality-platform/
 │   ├── urls.py         # Root URL routing table
 │   ├── asgi.py         # ASGI app: HTTP plus the WebSocket routes
 │   └── wsgi.py         # WSGI entry point (no WebSockets)
-├── docs/               # Running the project, user guides, befui notes
-├── frontend/           # React app: src/pages, src/components/ui (befui), src/shell
-├── scripts/            # befui_add.py: copy a befui component into the front end
-├── templates/          # Only the page that boots React, and the offline page
+├── docs/               # Running the project, the feature guide, user guides
+├── templates/          # Every page, plus the shared CSS in templates/core/css/
 ├── bootstrap.sh        # Migrate, seed demo data, create a superuser
 ├── docker-compose.yml  # Local container orchestration
 ├── Dockerfile          # Multi-stage production container image
@@ -393,8 +394,6 @@ python manage.py test apps.tickets
 # Run tests for ingestion API
 python manage.py test apps.ingestion
 
-# Front end tests and type check
-(cd frontend && npm test && npx tsc --noEmit)
 ```
 
 One test (`test_signup_creates_user`) fails on a clean checkout because the self-serve signup route does not exist; it is not a regression.
@@ -406,12 +405,10 @@ One test (`test_signup_creates_user`) fails on a clean checkout because the self
 | Where | What |
 | :--- | :--- |
 | [docs/running-the-project.md](docs/running-the-project.md) | Install, run, configure, schedule jobs, use Docker, deploy, troubleshoot. |
-| [docs/hosting-the-frontend-on-vercel.md](docs/hosting-the-frontend-on-vercel.md) | Optional: host the React app on Vercel and Django on your server. |
 | [docs/feature-guide.md](docs/feature-guide.md) | What was added, when, why, and how to use it, with a release timeline. |
 | [docs/guides/](docs/guides/README.md) | How-tos for the people using the app: attendance, DSR, tickets, home and reports, presence. |
 | [CHANGELOG.md](CHANGELOG.md) | Every release, each with its own name. The same text feeds the in-app **What's new**. |
 | [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) | How the code is organised and the rules each area follows, for anyone changing it. |
-| [docs/befui-suggestions.md](docs/befui-suggestions.md) | Notes on the befui components and the local changes made to them. |
 
 ---
 

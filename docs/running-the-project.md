@@ -5,12 +5,11 @@ put it on a server. For what the app does, see the [README](../README.md) and th
 
 ## The short version
 
-You need **Python 3.12 or newer**, **Node 22 or newer** and **Git**. From a fresh clone:
+You need **Python 3.12 or newer** and **Git**. From a fresh clone:
 
 ```bash
 python3 -m venv venv && source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-(cd frontend && npm ci && npm run build)               # the React app, built into frontend/dist
 ./bootstrap.sh                                         # migrate + demo data + a superuser
 python manage.py runserver 8010
 ```
@@ -24,14 +23,12 @@ If you skip `./bootstrap.sh`, run `python manage.py migrate` and then `python ma
 
 | Piece | What it is | Where it runs |
 |---|---|---|
-| **Django** (`apps/`, `core/`) | Login, the JSON API (`/ui-api/v1/` for the app, `/api/v1/` for SDKs), WebSockets, background commands. | `runserver` is an ASGI server (daphne) so it serves WebSockets too. |
-| **React app** (`frontend/`) | Every screen. Built by Vite into `frontend/dist`. | Django serves the built files at `/ui/`, so there is no second server to start. |
+| **Django** (`apps/`, `core/`) | Pages, login, the ingestion API (`/api/v1/` for SDKs), WebSockets, background commands. | `runserver` is an ASGI server (daphne) so it serves WebSockets too. |
+| **Pages** | Server-rendered templates in `templates/`, with HTMX and Alpine.js for the interactive parts and plain CSS in `templates/core/css/`. | Django renders them; there is nothing to build. |
 | **SQLite** (`db.sqlite3`) | The database. Created by `migrate`. | A file in the project folder. |
 | **Redis** (optional) | Carries live updates between several server processes. | Not needed for one process. |
 
-Django renders only the one page that boots React (`templates/uiapi/shell.html`) and an offline page. Everything else
-is React talking to the JSON API, so a change to a screen is a change under `frontend/`, and the browser needs a rebuilt
-`frontend/dist` to see it.
+Every page is a Django view that renders a template. To change how a page looks, edit its template or the CSS under `templates/core/css/` and refresh the browser.
 
 ## Step by step
 
@@ -46,18 +43,7 @@ pip install -r requirements.txt
 The project's commands are written `python manage.py ...`. If you do not activate the virtualenv, use
 `venv/bin/python manage.py ...` instead.
 
-### 2. The front end
-
-```bash
-cd frontend
-npm ci            # installs exactly what package-lock.json says
-npm run build     # type-checks, then builds into frontend/dist
-cd ..
-```
-
-Without `frontend/dist` every page shows only the message "The new frontend has not been built".
-
-### 3. Database and demo data
+### 2. Database and demo data
 
 ```bash
 ./bootstrap.sh              # migrate, reseed the "Acme Corp" demo workspace, create a superuser
@@ -66,12 +52,12 @@ Without `frontend/dist` every page shows only the message "The new frontend has 
 ```
 
 `bootstrap.sh` also creates a superuser named `root` (password `testpass123`, change it with `SUPERUSER_PASSWORD=...`).
-The app has no admin site, so you only need it for the Django shell. The demo people are listed in the
+It can also sign in to the Django admin at `/admin/`. The demo people are listed in the
 [README](../README.md#-demo-accounts--personas).
 
 To start over, delete `db.sqlite3` and run `./bootstrap.sh` again.
 
-### 4. Start it
+### 3. Start it
 
 ```bash
 python manage.py runserver 8010
@@ -79,36 +65,12 @@ python manage.py runserver 8010
 
 Sign in at <http://localhost:8010>. A user with no company is sent to **Company setup** to create one.
 
-## Working on the front end
-
-Two terminals:
-
-```bash
-# terminal 1: Django
-python manage.py runserver 8010
-
-# terminal 2: rebuild the React app whenever a file changes
-cd frontend && npm run dev
-```
-
-`npm run dev` runs `vite build --watch`, so after each save refresh the browser to see the change. Other commands:
-
-| Command (in `frontend/`) | What it does |
-|---|---|
-| `npm test` | Runs the component and page tests (Vitest). |
-| `npx tsc --noEmit` | Type-checks without building. |
-| `npm run build` | Type-checks and builds `frontend/dist`. |
-
-The components come from [befui](https://befui.vercel.app) and are copied into `frontend/src/components/ui`.
-Add one with `python scripts/befui_add.py <name>`.
-
 ## Running the tests
 
 ```bash
 python manage.py test apps                       # everything, about 5 minutes
 python manage.py test apps.tickets               # one app
 python manage.py test apps.core.tests.ReleaseNameTest   # one test class
-(cd frontend && npm test)                        # the React tests
 ```
 
 One backend test, `test_signup_creates_user`, fails on a clean checkout because the self-serve signup route does not
@@ -150,7 +112,7 @@ There is no `.env` file support; export the variables or put them in your servic
 docker-compose up --build
 ```
 
-This builds the React app in a Node stage, starts Redis, runs the migrations and serves the site with daphne on
+This builds the Python image, starts Redis, runs the migrations and serves the site with daphne on
 <http://localhost:8011>. The database file `db.sqlite3` and the `media/` folder are mounted from the project folder, so
 they survive a rebuild. To load the demo data into the container:
 
@@ -160,28 +122,17 @@ docker-compose exec web python manage.py seed_data
 
 Change `DJANGO_SECRET_KEY` and the other values in `docker-compose.yml` before using it for anything real.
 
-## Keeping it fast
-
-- **The app files are small and cached.** `app.js` is about 125 KB sent compressed, each page loads its own small file the first
-  time you open it, and a repeat visit only asks "has it changed?" (a tiny 304). If you put nginx in front and serve `/ui/` yourself,
-  turn on `gzip on;` for `application/javascript text/css application/json`, and cache `page-*.js` for a long time (their names change
-  when their content does) but not `app.js` or `app.css`.
-- **Turn `DJANGO_DEBUG` off in production.** With it on, Django keeps a record of every database query in memory, which slows the
-  server down the longer it runs. It needs your own `DJANGO_SECRET_KEY` and `SHARED_SERVER_ENCRYPTION_KEY` (see above).
-- **Use the compose file as it is.** It starts the server with daphne, not the development server.
-
 ## Putting it on a server
 
 1. Set `DJANGO_DEBUG=False`, `DJANGO_SECRET_KEY`, `SHARED_SERVER_ENCRYPTION_KEY`, `DJANGO_ALLOWED_HOSTS` and
    `CSRF_TRUSTED_ORIGINS`.
-2. Build the front end (`npm ci && npm run build` in `frontend/`) on the server, or use the Docker image, which does it.
-3. Run it with an ASGI server so WebSockets work: `daphne -b 0.0.0.0 -p 8011 core.asgi:application`.
+2. Run it with an ASGI server so WebSockets work: `daphne -b 0.0.0.0 -p 8011 core.asgi:application`.
    Do not use plain gunicorn with the WSGI app for the real site, because live presence and notifications need WebSockets.
-4. Put a proxy such as nginx in front with HTTPS, and pass the `Upgrade` header for `/ws/` (see
+3. Put a proxy such as nginx in front with HTTPS, and pass the `Upgrade` header for `/ws/` (see
    [Live presence and alerts](guides/presence-and-alerts.md)).
-5. Set `REDIS_URL` if you run more than one process.
-6. Add the scheduled commands from the table above.
-7. Back up `db.sqlite3`. For heavier use, switch to PostgreSQL in `core/settings.py`.
+4. Set `REDIS_URL` if you run more than one process.
+5. Add the scheduled commands from the table above.
+6. Back up `db.sqlite3`. For heavier use, switch to PostgreSQL in `core/settings.py`.
 
 The `.server-operator/` folder has deploy and maintenance command files for the Server Operator tool (deploys, health check, backups, dry runs of the scheduled commands) and a crontab example; see its README.
 
@@ -189,8 +140,6 @@ The `.server-operator/` folder has deploy and maintenance command files for the 
 
 | What you see | Likely cause and fix |
 |---|---|
-| The page says "The new frontend has not been built", or `/ui/...` files are not found. | The front end is not built. Run `cd frontend && npm ci && npm run build`. |
-| A change to a screen does not show. | Rebuild with `npm run build` (or keep `npm run dev` running) and refresh. |
 | "Online now" says **Every 25s**, or `/ws/...` is a 404. | The server is not an ASGI server, or the proxy drops the `Upgrade` header. Use `runserver`/`daphne` and see the presence guide. |
 | Sign-in or a form says CSRF verification failed. | Your address is not in `CSRF_TRUSTED_ORIGINS`. |
 | `ImproperlyConfigured: ... must be set when DJANGO_DEBUG is off`. | Set `DJANGO_SECRET_KEY` and `SHARED_SERVER_ENCRYPTION_KEY`. |

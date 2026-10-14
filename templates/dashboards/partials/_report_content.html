@@ -1,0 +1,200 @@
+{% load event_tags %}
+<p class="text-sm text-muted mb-4">{{ start_date|date:"M j, Y" }} to {{ end_date|date:"M j, Y" }}{% if scope == 'mine' %}, your activity only{% endif %}. Arrows compare with the same number of days just before.</p>
+
+<div class="rk-row">
+  {% for k in kpis %}
+  <div class="rk tone-{{ k.tone }}">
+    <div class="rk-label">{{ k.label }}</div>
+    <div class="rk-value">{{ k.value }}</div>
+    <div class="rk-delta {{ k.dir }}">
+      {% if k.dir == 'up' %}&#9650;{% elif k.dir == 'down' %}&#9660;{% else %}&ndash;{% endif %}
+      {% if k.pct is not None %}{{ k.pct }}%{% elif k.dir == 'up' %}new{% else %}no change{% endif %}
+      <small>vs {{ k.before }} before</small>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="bento">
+  {% if daily_bars %}
+  <section class="tile w-8">
+    <div class="tile-head"><h2>Day by day</h2><span class="count-badge">{{ daily_bars|length }} day{{ daily_bars|length|pluralize }}</span></div>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Tickets created</span>
+      <span><i style="background:var(--green)"></i>Tickets resolved</span>
+      <span><i style="background:var(--red);opacity:.75"></i>Errors captured</span>
+      <span><i style="background:var(--purple);opacity:.8"></i>Errors resolved</span>
+    </div>
+    <div class="cols" role="img" aria-label="Daily tickets and errors, created and resolved">
+      {% for d in daily_bars %}
+      <div class="cols-day" title="{{ d.date|date:'M j' }}: {{ d.row.tickets_created }} tickets created, {{ d.row.tickets_resolved }} resolved, {{ d.row.errors_captured }} errors captured, {{ d.row.errors_resolved }} resolved">
+        <span class="cols-bar created{% if not d.row.tickets_created %} zero{% endif %}" style="height:{{ d.created }}%"></span>
+        <span class="cols-bar resolved{% if not d.row.tickets_resolved %} zero{% endif %}" style="height:{{ d.resolved }}%"></span>
+        <span class="cols-bar captured{% if not d.row.errors_captured %} zero{% endif %}" style="height:{{ d.captured }}%"></span>
+        <span class="cols-bar fixed{% if not d.row.errors_resolved %} zero{% endif %}" style="height:{{ d.fixed }}%"></span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="cols-axis" aria-hidden="true">
+      {% for d in daily_bars %}<span>{% if d.label %}{{ d.date|date:"M j" }}{% endif %}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="tile w-4">
+    <div class="tile-head"><h2>How much got finished</h2></div>
+    <div class="ring-row">
+      <div class="ring" style="--p:{{ resolution_rate|default:0 }}"><b>{% if resolution_rate is None %}&ndash;{% else %}{{ resolution_rate }}%{% endif %}</b></div>
+      <div class="ring-copy"><strong>Tickets</strong>{{ tickets_resolved }} resolved out of {{ tickets_created }} created. {{ tickets_in_progress }} moved to in progress.</div>
+    </div>
+    <div class="ring-row">
+      <div class="ring" style="--p:{{ error_fix_rate|default:0 }}"><b>{% if error_fix_rate is None %}&ndash;{% else %}{{ error_fix_rate }}%{% endif %}</b></div>
+      <div class="ring-copy"><strong>Errors</strong>{{ errors_resolved }} resolved out of {{ errors_captured }} captured. {{ errors_ignored }} ignored.</div>
+    </div>
+  </section>
+
+  <section class="tile w-6">
+    <div class="tile-head"><h2>Busiest products</h2><span class="text-sm text-muted">tickets, errors and feedback</span></div>
+    {% for r in product_bars %}
+    <div class="hbar">
+      <span class="hbar-name" title="{{ r.product.name }}">{{ r.product.name }}</span>
+      <span class="hbar-track"><span class="hbar-fill" style="width:{{ r.pct }}%"></span></span>
+      <span class="hbar-num">{{ r.total }}</span>
+    </div>
+    {% empty %}<p class="text-sm text-muted">No product activity in this range.</p>{% endfor %}
+  </section>
+
+  <section class="tile w-6">
+    <div class="tile-head"><h2>What happened most</h2><span class="text-sm text-muted">{{ total_events }} event{{ total_events|pluralize }}</span></div>
+    {% for e in event_mix %}
+    <div class="hbar">
+      <span class="hbar-name" title="{{ e.label }}">{{ e.label }}</span>
+      <span class="hbar-track"><span class="hbar-fill green" style="width:{{ e.pct }}%"></span></span>
+      <span class="hbar-num">{{ e.count }}</span>
+    </div>
+    {% empty %}<p class="text-sm text-muted">Nothing was logged in this range.</p>{% endfor %}
+    <p class="text-sm text-muted" style="margin:12px 0 0;">Feedback {{ feedback_received }} &middot; survey answers {{ survey_responses }} &middot; assigned {{ tickets_assigned }}</p>
+  </section>
+</div>
+
+{% if product_rows %}
+<details class="card mb-6 report-fold">
+  <summary class="flex-between" style="cursor:pointer;list-style:none;"><h2 style="font-size:15px;font-weight:600;margin:0;">Numbers by product</h2><span class="count-badge">{{ product_rows|length }} Products</span></summary>
+  <div style="margin-top:12px;overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th style="text-align:center;">Tickets Created</th>
+        <th style="text-align:center;">Tickets Resolved</th>
+        <th style="text-align:center;">Errors Captured</th>
+        <th style="text-align:center;">Errors Resolved</th>
+        <th style="text-align:center;">Feedback</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in product_rows %}
+      <tr>
+        <td class="font-medium" style="color:var(--text);">{{ row.product.name }}</td>
+        <td style="text-align:center;">{{ row.tickets_created }}</td>
+        <td style="text-align:center;" class="text-sm font-medium">{{ row.tickets_resolved }}</td>
+        <td style="text-align:center;">{{ row.errors_captured }}</td>
+        <td style="text-align:center;" class="text-sm font-medium">{{ row.errors_resolved }}</td>
+        <td style="text-align:center;">{{ row.feedback }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
+{% endif %}
+
+{% if daily %}
+<details class="card mb-6 report-fold">
+  <summary class="flex-between" style="cursor:pointer;list-style:none;"><h2 style="font-size:15px;font-weight:600;margin:0;">Numbers by day</h2><span class="count-badge">{{ daily|length }} Days</span></summary>
+  <div style="margin-top:12px;overflow-x:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th style="text-align:center;">Tickets Created</th>
+        <th style="text-align:center;">Resolved</th>
+        <th style="text-align:center;">Closed</th>
+        <th style="text-align:center;">Errors Captured</th>
+        <th style="text-align:center;">Errors Resolved</th>
+        <th style="text-align:center;">Feedback</th>
+        <th style="text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in daily %}
+      <tr>
+        <td class="date">{{ row.date|date:"M d, Y" }}</td>
+        <td style="text-align:center;">{{ row.tickets_created }}</td>
+        <td style="text-align:center;">{{ row.tickets_resolved }}</td>
+        <td style="text-align:center;">{{ row.tickets_closed }}</td>
+        <td style="text-align:center;">{{ row.errors_captured }}</td>
+        <td style="text-align:center;">{{ row.errors_resolved }}</td>
+        <td style="text-align:center;">{{ row.feedback }}</td>
+        <td style="text-align:right;" class="font-medium">{{ row.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
+{% endif %}
+
+{% if recent %}
+<div class="card">
+  <div class="flex-between mb-3">
+    <h2 style="font-size:15px;font-weight:600;margin:0;">Recent Activity Log</h2>
+    <span class="count-badge">{{ recent|length }} Events</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:150px">Time</th>
+        <th style="width:190px">Event</th>
+        <th>Details</th>
+        <th style="width:150px">Actor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in recent %}
+      {% with url=entry|event_url %}
+      <tr {% if url %}onclick="window.location='{{ url }}'" style="cursor:pointer;" class="clickable-row"{% endif %}>
+        <td class="date">{{ entry.created_at|date:"M d, Y g:i A" }}</td>
+        <td><span class="pill {{ entry.event_type|event_pill }}">{{ entry.get_event_type_display }}</span></td>
+        <td>
+          <div class="font-medium text-sm" style="color:var(--text);display:flex;align-items:center;gap:6px;">
+            {{ entry.title }}
+            {% if url %}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            {% endif %}
+          </div>
+          {% if entry.description %}<div class="text-sm text-muted" style="margin-top:2px;">{{ entry.description }}</div>{% endif %}
+        </td>
+        <td>
+          {% if entry.actor %}
+            <span class="assignee">
+              <span class="avatar">{{ entry.actor.username.0|upper }}</span>{{ entry.actor.get_full_name|default:entry.actor.username }}
+            </span>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endwith %}
+      {% empty %}
+      <tr><td colspan="4" class="empty" style="text-align:center;padding:32px;"><p class="text-sm text-muted">No activity in this range.</p></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty" style="padding:40px;text-align:center;">
+  <h3 style="font-size:16px;font-weight:600;margin-bottom:4px;">No activity</h3>
+  <p class="text-sm text-muted">Nothing was logged in this date range.</p>
+</div>
+{% endif %}

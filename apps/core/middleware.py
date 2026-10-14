@@ -1,6 +1,9 @@
+import json
+
 from django.conf import settings
 
 from apps.accounts.models import Membership
+from apps.core.templatetags.toast_tags import TOAST_TAGS
 
 
 class CurrentCompanyMiddleware:
@@ -26,4 +29,28 @@ class CurrentCompanyMiddleware:
                 request.company_role = membership.role
 
         response = self.get_response(request)
+        return response
+
+
+class HtmxMessagesMiddleware:
+    """Hand queued Django messages to htmx as an `HX-Trigger` toast event.
+
+    An htmx swap renders a fragment, not the shell, so the toast seed in
+    base.html never runs and the message would surface on some later page.
+    Redirects and full pages that already consumed the queue are skipped.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.headers.get("HX-Request") != "true" or response.status_code in (301, 302, 303, 307, 308):
+            return response
+        storage = getattr(request, "_messages", None)
+        if storage is None or storage.used or "HX-Trigger" in response.headers:
+            return response
+        items = [{"text": str(m), "tags": m.tags if m.tags in TOAST_TAGS else "info"} for m in storage]
+        if items:
+            response.headers["HX-Trigger"] = json.dumps({"django-message": {"messages": items}})
         return response

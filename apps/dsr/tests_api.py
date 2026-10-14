@@ -143,3 +143,10 @@ class DSRApiRealTimeTest(DSRApiTest):
         row = self.api.get(reverse("dsr_api:activities")).json()[0]
         self.assertTrue(row["touched"])
         self.assertEqual(len(row["events"]), 1)
+
+    def test_mcp_rows_show_a_pill_and_manual_rows_do_not(self):
+        self.post(task_name="From the MCP", source="git", source_id="crm:today")
+        DSREntry.objects.create(company=self.company, user=self.dev, date=self.today, task_name="By hand", hours_spent=1, is_auto_logged=False)
+        self.client.login(username="dev", password="pass1234")
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        self.assertEqual(body.count("via MCP"), 1)

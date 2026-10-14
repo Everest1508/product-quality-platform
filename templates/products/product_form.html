@@ -1,0 +1,156 @@
+{% extends "core/base.html" %}
+{% load dropdown_tags %}
+
+{% block title %}{% if editing %}Edit Product{% else %}New Product{% endif %} — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:product_list' %}">Products</a>
+  <span class="sep">/</span>
+  {% if editing %}
+  <a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+  <span class="sep">/</span>
+  <span class="current">Edit</span>
+  {% else %}
+  <span class="current">New Product</span>
+  {% endif %}
+</nav>
+
+<div class="head">
+  <h1>{% if editing %}Edit Product{% else %}New Product{% endif %}</h1>
+  <div class="head-actions">
+    <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>
+  </div>
+</div>
+
+<div class="card form-card">
+  <div class="form-card-head">
+    <div class="stat-icon blue">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.5v7L12 21 3 15.5v-7L12 3Z"/><path d="M3.5 8.5 12 13l8.5-4.5"/><path d="M12 13v8"/></svg>
+    </div>
+    <div>
+      <h2>{% if editing %}Edit {{ product.name|default:"Product" }}{% else %}Register a new product{% endif %}</h2>
+      <p>{% if editing %}Update product details and integrations.{% else %}Start tracking errors, tickets, and feedback for your application.{% endif %}</p>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-section">
+          <div class="form-section-label">Product Info</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input id="name" type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-input" placeholder="My App" required autofocus {% if not editing %}oninput="window.dispatchEvent(new CustomEvent('product-name', { detail: this.value }))"{% endif %}>
+              {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+              <span class="dd-label">Default Environment</span>
+              {% dropdown "default_environment" "production:Production|staging:Staging"|opts form.default_environment.value placeholder="Production" label="Default Environment" %}
+            </div>
+          </div>
+          {% comment %}
+          The prefix follows the name while it is being typed, until someone edits the
+          prefix by hand. An existing product keeps its prefix when renamed, because
+          every ticket name already uses it.
+          {% endcomment %}
+          <div class="form-group" x-data="{ key: '{{ form.key.value|default:'' }}', auto: {% if form.key.value %}false{% else %}true{% endif %}, busy: false,
+                 suggest(name) {
+                   if (!this.auto) return;
+                   clearTimeout(this._t);
+                   this._t = setTimeout(() => {
+                     if (!name.trim()) { this.key = ''; return; }
+                     this.busy = true;
+                     fetch('{% url 'products:product_key_suggest' %}?name=' + encodeURIComponent(name){% if editing %} + '&product={{ product.pk }}'{% endif %}, { credentials: 'same-origin' })
+                       .then(r => r.ok ? r.json() : null)
+                       .then(d => { if (d && this.auto) this.key = d.key; })
+                       .catch(() => {})
+                       .finally(() => { this.busy = false; });
+                   }, 250);
+                 } }"
+               @product-name.window="suggest($event.detail)">
+            <label for="key">Ticket prefix</label>
+            <input id="key" type="text" name="key" x-model="key" @input="auto = false; key = key.toUpperCase().replace(/[^A-Z0-9]/g, '')" maxlength="6" class="form-input" placeholder="Made from the name" autocomplete="off" style="max-width:240px;text-transform:uppercase;">
+            {% if form.key.errors %}<p class="field-error">{{ form.key.errors.0 }}</p>{% endif %}
+            <p class="field-hint">Tickets are named with it, for example <b x-text="(key || 'ABC') + '-001'"></b>. <span x-show="auto && key" style="display:none;">Taken from the name. Type here to choose your own.</span>{% if editing %} Changing it renames every ticket of this product, so old links in chat will not match the new name.{% endif %}</p>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-input" rows="3" placeholder="Optional description">{{ form.description.value|default:'' }}</textarea>
+            <p class="field-hint">Shown on the product dashboard so teammates know what this product is.</p>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-label">Notifications</div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="discord_webhook_url">Discord Webhook URL</label>
+            <input id="discord_webhook_url" type="password" name="discord_webhook_url" value="{{ form.discord_webhook_url.value|default:'' }}" class="form-input" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+            <p class="field-hint">Get notified about tickets, errors, and feedback in a Discord channel. Can be added later.</p>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Project Milestones (Completion Dates)</span>
+            <button type="button" class="btn btn-sm" onclick="addMilestoneRow()" style="font-size:11.5px;padding:2px 8px;">+ Add Flow Node</button>
+          </div>
+          <div id="milestone-form-container" style="display:flex;flex-direction:column;gap:10px;">
+            <div class="milestone-form-row grid-2" style="gap:10px;">
+              <div class="form-group" style="margin:0;">
+                <input type="text" name="milestone_title" class="form-input" aria-label="Milestone title" placeholder="Phase 1: MVP Release">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <input type="date" name="milestone_date" class="form-input" aria-label="Target date" aria-label="Target date">
+              </div>
+            </div>
+          </div>
+          <p class="field-hint" style="margin-top:8px;">Define target release milestones with completion dates. They will render as a visual flowchart roadmap on your product dashboard.</p>
+        </div>
+
+        <script>
+        function addMilestoneRow() {
+          var container = document.getElementById('milestone-form-container');
+          if (!container) return;
+          var div = document.createElement('div');
+          div.className = 'milestone-form-row grid-2';
+          div.style.gap = '10px';
+          div.innerHTML = '<div class="form-group" style="margin:0;"><input type="text" name="milestone_title" class="form-input" aria-label="Milestone title" placeholder="Next Phase Title"></div><div class="form-group" style="margin:0;"><input type="date" name="milestone_date" class="form-input" aria-label="Target date" aria-label="Target date"></div>';
+          container.appendChild(div);
+        }
+        </script>
+
+        <div class="form-actions">
+          <a href="{% url 'products:product_list' %}" class="btn">Cancel</a>
+          <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Product{% endif %}</button>
+        </div>
+      </form>
+    </div>
+
+    <aside class="form-aside">
+      <div class="form-aside-title">What this product gives you</div>
+      <ul>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          Error tracking with severity triage
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2c0 .5-.4 1-.9 1.2a1.6 1.6 0 0 0 0 4.6c.5.2.9.7.9 1.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2c0-.5.4-1 .9-1.2a1.6 1.6 0 0 0 0-4.6C3.4 9.5 3 9 3 8.5Z"/><path d="M9 6v12"/></svg>
+          Ticketing with kanban workflow
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.7 8l6 .8-4.4 4.1 1.1 5.9L12 15.9l-5.4 2.9 1.1-5.9L3.3 8.8l6-.8Z"/></svg>
+          CSAT &amp; NPS surveys
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8L9 4l-3 8H2"/></svg>
+          Discord alerts for all of the above
+        </li>
+      </ul>
+      <div class="form-aside-note">Teammate access and more webhooks can be added later from the product page.</div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

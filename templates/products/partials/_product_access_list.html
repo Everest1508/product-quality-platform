@@ -1,0 +1,37 @@
+{% for member in all_members %}
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="avatar" style="width:28px;height:28px;font-size:11px;">{{ member.username.0|upper }}</span>
+    <div>
+      <div class="text-sm font-medium">{{ member.get_full_name|default:member.username }}</div>
+      <div class="text-sm text-muted">{{ member.email }}</div>
+    </div>
+  </div>
+  <div>
+    {% if member.pk in allocated_ids %}
+      {% if member != request.user %}
+      <form method="post" action="{% url 'products:product_access_remove' pk=product.pk user_pk=member.pk %}"
+            hx-post="{% url 'products:product_access_remove' pk=product.pk user_pk=member.pk %}"
+            hx-target="#product-access-list" hx-swap="innerHTML">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm" style="font-size:11px;color:var(--red);padding:3px 8px;">Remove</button>
+      </form>
+      {% else %}
+      <span class="pill active" style="font-size:11px;">You</span>
+      {% endif %}
+    {% else %}
+      {% if is_privileged %}
+      <form method="post" action="{% url 'products:product_access_add' pk=product.pk %}"
+            hx-post="{% url 'products:product_access_add' pk=product.pk %}"
+            hx-target="#product-access-list" hx-swap="innerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ member.pk }}">
+        <button type="submit" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">Allocate</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% empty %}
+<p class="text-sm text-muted" style="text-align:center;padding:16px;">No team members.</p>
+{% endfor %}

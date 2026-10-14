@@ -10,6 +10,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.42.0] "Bobolink" — 2026-10-14 · back to the fast, simple pages, with a how-to for the SDK
+
+> In short: the app is back to pages that load straight from the server in its new look, with dark mode, a friendlier Home, and a step-by-step SDK guide for every framework.
+
+### New
+
+- **Dark mode and a refreshed look everywhere.** Switch themes from the top bar, and every page, table and window follows.
+- **A friendlier Home and a one-table DSR.** The greeting types itself out, and the DSR sheet shows each day as a single table with honest hours for long tickets.
+- **Keyboard shortcuts that work on Mac, Windows and Linux.** The full list is in your profile, and the command palette can run actions.
+- **An SDK guide for each framework.** Pick Python, Django, Flask, FastAPI, Express, Fastify, Koa, NestJS, Electron or the browser on a product's API page, or open the SDK guide tab in your profile beside Settings.
+- **A box before you punch out.** It tells you the day is ending and shows the total time worked.
+- **A confirmation before anything is deleted.** Every delete now says what will be removed and asks first.
+
+### Better
+
+- **Pages are plain server pages again.** There is nothing extra to download or build, so the app opens faster and works the same everywhere.
+- **Reporting errors from your app no longer waits on Discord.** The message is sent in the background, so a slow Discord cannot delay your app.
+- **API keys no longer write to the database on every request.** The last used time is refreshed at most once a minute.
+
+### Fixed
+
+- **The install command was wrong.** The SDK is installed with pq-befu, not pq-sdk, and the README now says so.
+
 ## [1.41.0] "Redstart" — 2026-10-14 · the app can be hosted on its own address
 
 > In short: the app can now run on a separate host such as Vercel while the server stays where it is, and signing out no longer needs a page form.

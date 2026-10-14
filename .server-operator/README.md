@@ -10,17 +10,17 @@ square brackets starts a command, and the lines under it are what runs, in order
 
 ## How a deploy works now
 
-The React front end is built inside the image (the `Dockerfile` has a Node stage), so a deploy
-is just a rebuild: no separate front-end host, no `collectstatic`. `entrypoint.sh` runs
-`migrate` every time the container starts, so a deploy also migrates.
+The app is server-rendered Django with HTMX and Alpine (no Node, no front-end build, no `collectstatic`),
+so a deploy is just a rebuild of the Python image. `entrypoint.sh` runs `migrate` every time the
+container starts, so a deploy also migrates.
 
 - **`[Deploy Quick]`** pulls and rebuilds only `web`. Redis keeps running, so the outage is short.
 - **`[Deploy Full]`** backs up `db.sqlite3` first, then takes everything down and rebuilds. Use it
   when `docker-compose.yml` or the Redis service changed.
 - Both use `git pull --ff-only`, which stops with a message instead of silently discarding local
   edits on the server (the old command stashed them). If it stops, look at `git status` on the server.
-- **`[Health Check]`** after a deploy: the login page and `/ui/app.js` should both answer `200`.
-  A missing `/ui/app.js` means the front end was not built into the image.
+- **`[Health Check]`** after a deploy: the login page and the home page should both answer a page
+  (`200`, or `302` when asking for the home page while signed out).
 
 ## After the first deploy of a new release
 

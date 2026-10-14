@@ -1,0 +1,112 @@
+{% load dashboard_extras icon_tags %}
+
+{% if is_privileged %}
+  <div class="hm-attn">
+    {% if leave_approval_count %}<a href="{% url 'leave:approvals' %}"><b>{{ leave_approval_count }}</b> leave to approve</a>{% endif %}
+    {% if team.open_errors %}<a href="{% url 'errors:error_list' %}"><b>{{ team.open_errors }}</b> open errors</a>{% endif %}
+    {% if team.open_tickets %}<a href="{% url 'tickets:ticket_board' %}"><b>{{ team.open_tickets }}</b> open tickets</a>{% endif %}
+  </div>
+{% endif %}
+
+<div class="hm-kpis">
+  <a class="hm-kpi" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ my_ticket_count }}">{{ my_ticket_count }}</span><span class="l">Open tickets</span></a>
+  <a class="hm-kpi{% if overdue_count %} is-alert{% endif %}" href="{% url 'tickets:ticket_board' %}?assigned=me"><span class="v" data-count="{{ overdue_count }}">{{ overdue_count }}</span><span class="l">Overdue</span></a>
+  <a class="hm-kpi" href="{% url 'dsr:dsr_sheet' %}"><span class="v">{{ dsr.dsr_hours|floatformat:"1" }}</span><span class="l">Logged this week</span></a>
+  <a class="hm-kpi" href="{% url 'attendance:my_attendance' %}"><span class="v">{{ chart_week_total }}</span><span class="l">Hours this week</span></a>
+</div>
+
+<div class="hm-grid">
+  <section class="hm-card hm-work" x-data="{ tab: 'assigned' }">
+    <div class="hm-tabs" role="tablist" aria-label="My work">
+      <button type="button" role="tab" :aria-selected="tab === 'assigned'" :class="{ 'is-on': tab === 'assigned' }" @click="tab = 'assigned'">Assigned{% if my_ticket_count %} ({{ my_ticket_count }}){% endif %}</button>
+      <button type="button" role="tab" :aria-selected="tab === 'due'" :class="{ 'is-on': tab === 'due' }" @click="tab = 'due'">Due soon{% if due_soon %} ({{ due_soon|length }}){% endif %}</button>
+    </div>
+    <div x-show="tab === 'assigned'">
+      {% if my_tickets %}
+        <ul class="hm-rows">
+          {% for t in my_tickets|slice:":6" %}
+            <li><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span class="t">{{ t.title|truncatechars:70 }}</span><span class="m">{{ t.product.name }} · {{ t.get_status_display }}</span></a></li>
+          {% endfor %}
+        </ul>
+        <a class="hm-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
+      {% else %}<p class="hm-empty">No open tickets assigned to you. Nice.</p>{% endif %}
+    </div>
+    <div x-show="tab === 'due'" style="display:none;">
+      {% if due_soon %}
+        <ul class="hm-rows">
+          {% for t in due_soon %}
+            <li><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span class="t">{{ t.key }} {{ t.title|truncatechars:60 }}</span>
+              <span class="chip-d{% if t.is_overdue %} is-late{% endif %}">{% if t.is_overdue %}Overdue{% else %}{{ t.deadline|date:"M j" }}{% endif %}</span></a></li>
+          {% endfor %}
+        </ul>
+      {% else %}<p class="hm-empty">Nothing is due in the next 7 days.</p>{% endif %}
+    </div>
+  </section>
+
+  <div class="hm-side">
+    <section class="hm-card hm-today">
+      {% with rec=attendance.record %}
+        <div class="hm-today-row">
+          <div>
+            <h2>Today</h2>
+            <p class="hm-sub">
+              {% if attendance.on_leave_today %}On approved leave
+              {% elif rec.is_open %}Working since {{ rec.check_in|date:"g:i A" }}
+              {% elif rec %}{{ rec.worked_hours|floatformat:"1" }}h · {{ rec.check_in|date:"g:i A" }} → {{ rec.check_out|date:"g:i A" }}
+              {% elif today.weekday >= 5 %}Weekend
+              {% else %}Not punched in{% endif %}
+            </p>
+          </div>
+          {% if not attendance.on_leave_today %}
+            {% if rec.is_open %}
+              <form method="post" action="{% url 'attendance:punch' %}" data-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ rec.check_in|date:'U' }}000">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
+            {% elif not rec and today.weekday < 5 %}
+              <form method="post" action="{% url 'attendance:punch' %}">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch in</button></form>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% endwith %}
+      {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-orange" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
+      <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
+    </section>
+
+    <section class="hm-card" id="todo-card">
+      <h2>My to-do <span class="hm-sub-inline">only you can see this</span></h2>
+      <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"></div>
+    </section>
+  </div>
+</div>
+
+<div class="hm-tiles">
+  <section class="hm-card">
+    <div class="hm-tile-head"><h2>This week</h2><span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span></div>
+    <div class="hm-bars" role="img" aria-label="Hours worked each day this week">
+      {% for d in chart_week %}
+        <div class="hm-bar{% if d.today %} is-today{% endif %}{% if d.future %} is-future{% endif %}{% if d.met %} is-met{% endif %}" title="{{ d.label }}: {{ d.hours }}">
+          <span class="hm-bar-track"><i style="height:{{ d.pct }}%"></i></span>
+          <span class="hm-bar-lab">{{ d.label }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="hm-card hm-tile">
+    <div class="hm-tile-head"><h2>{% icon 'calendar-days' 'ic' %}Leave</h2></div>
+    <ul class="hm-leave">
+      {% for b in leave_balances|slice:":3" %}
+        <li>
+          <div class="r"><span>{{ b.policy.name }}</span><span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> left{% endif %}</span></div>
+          <span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{% if b.is_unlimited %}100{% else %}{% widthratio b.approved b.limit 100 %}{% endif %}%"></i></span>
+        </li>
+      {% empty %}<li class="hm-empty">No leave policies configured yet.</li>{% endfor %}
+    </ul>
+    <a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a>
+  </section>
+
+  <section class="hm-card hm-tile">
+    <div class="hm-tile-head"><h2>{% icon 'file-text' 'ic' %}DSR</h2></div>
+    <div class="hm-big">{{ dsr.dsr_hours|floatformat:"1" }}<small>h</small></div>
+    <p class="hm-sub">{{ dsr.dsr_entries }} {% if dsr.dsr_entries == 1 %}entry{% else %}entries{% endif %} this week{% if dsr.dsr_open_count %} · {{ dsr.dsr_open_count }} still open{% endif %}</p>
+    <a class="hm-more" href="{% url 'dsr:dsr_sheet' %}">Open DSR sheet →</a>
+  </section>
+</div>

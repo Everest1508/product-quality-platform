@@ -1,0 +1,31 @@
+{% extends "core/base.html" %}
+{% block title %}Report Error{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Report Error</h1>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      {% if field.is_hidden %}
+        {{ field }}
+      {% else %}
+      <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <p class="text-sm" style="color:var(--red);margin-top:4px;">{{ field.errors.0 }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+    <div class="flex-between" style="margin-top:20px;">
+      <a href="{% url 'errors:error_list' %}" class="btn">Cancel</a>
+      <button type="submit" class="btn btn-primary">Report Error</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

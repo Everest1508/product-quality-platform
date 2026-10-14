@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}{{ m.user.get_full_name|default:m.user.username }} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="pf">
+  <a href="{% url 'accounts:team_list' %}" class="btn btn-ghost btn-sm" style="justify-self:start">{% icon 'arrow-left' 'ic' %}Team</a>
+  <section class="pf-banner">
+    <span class="avatar pf-avatar">{{ m.user.username.0|upper }}</span>
+    <div class="pf-who">
+      <h1>{{ m.user.get_full_name|default:m.user.username }}{% if m.user == request.user %} <span style="font-size:13px;font-weight:400;color:var(--muted)">(you)</span>{% endif %}</h1>
+      <p>@{{ m.user.username }} <span class="bdg bdg-blue">{{ m.get_role_display }}</span>{% if m.is_leave_approver %}<span class="bdg bdg-outline">Leave approver</span>{% endif %}
+        {% if streak >= 2 %}<span class="bdg bdg-orange">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span>{% endif %}</p>
+      {% if show_email %}<p class="pf-mail">{{ m.user.email }}</p>{% endif %}
+    </div>
+    <dl class="pf-dates"><dt>Joined</dt><dd>{{ m.created_at|date:"j M Y" }}</dd></dl>
+  </section>
+  <div class="pf-stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div><span class="v">{{ open_count }}</span><span class="l">Open tickets you can see</span></div>
+    <div><span class="v">{{ resolved_30d }}</span><span class="l">Resolved in 30 days</span></div>
+  </div>
+  {% if milestones %}<div class="card-flush pf-card">{% for x in milestones %}<p class="pf-mile">{% icon 'sparkles' 'ic' %}{{ x }}</p>{% endfor %}</div>{% endif %}
+  <div class="card-flush pf-card">
+    <h2>Open work</h2>
+    {% for t in tickets %}<div class="pf-act"><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span style="font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)">{{ t.key }}</span> {{ t.title }}</a><span class="bdg bdg-outline">{{ t.get_status_display }}</span></div>
+    {% empty %}<p class="hm-empty">No open tickets assigned to them in the products you can see.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

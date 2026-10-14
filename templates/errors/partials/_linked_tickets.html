@@ -1,0 +1,12 @@
+<div class="card">
+  <h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">Linked tickets</h3>
+  {% for t in linked_tickets %}
+  <a href="{% url 'tickets:ticket_detail' pk=t.pk %}" class="linked-row">
+    <span class="linked-key">{{ t.key }}</span>
+    <span class="linked-title">{{ t.title|truncatechars:60 }}</span>
+    <span class="pill {{ t.status }}">{{ t.get_status_display }}</span>
+  </a>
+  {% empty %}
+  <p class="text-sm text-muted" style="margin:0;">No ticket was raised from this error yet.</p>
+  {% endfor %}
+</div>

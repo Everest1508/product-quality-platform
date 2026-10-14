@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% load dropdown_tags %}
+
+{% block title %}Products — PQ Platform{% endblock %}
+
+{% block content %}
+{% load icon_tags %}
+<div class="pg-head">
+  <div>
+    <h1>Products</h1>
+    <p class="sub">{{ summary.products }} product{{ summary.products|pluralize }} · {{ summary.open_errors }} open error{{ summary.open_errors|pluralize }} · {{ summary.open_tickets }} open ticket{{ summary.open_tickets|pluralize }}{% if summary.attention %} · <b style="color:var(--red)">{{ summary.attention }} need attention</b>{% endif %}</p>
+  </div>
+  <div class="pg-actions">
+    {% if request.company_role == 'owner' or request.company_role == 'admin' %}<a href="{% url 'products:product_create' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New product</a>{% endif %}
+  </div>
+</div>
+
+<div class="toolbar">
+  <form method="get" class="input-icon" style="width:20rem;max-width:100%">
+    {% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ search }}" aria-label="Search products" placeholder="Search products...">
+    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+  </form>
+  {% dropdown "sort" "name:Name A-Z|-name:Name Z-A|-created:Newest first|created:Oldest first|-versions:Most versions"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
+</div>
+
+<div id="product-list-container">
+  {% include "products/partials/_product_list_body.html" with page=page %}
+</div>
+
+{% include "core/_pagination.html" with page=page %}
+
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} products</footer>
+
+<script>
+function buildUrl(params) {
+  var url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  for (var key in params) {
+    url.searchParams.delete(key);
+    if (params[key]) url.searchParams.set(key, params[key]);
+  }
+  return url.toString();
+}
+</script>
+{% endblock %}

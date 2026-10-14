@@ -1,0 +1,64 @@
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+from apps.accounts.models import Company, Membership
+from apps.dsr.models import DSREntry
+
+User = get_user_model()
+
+
+class DSRLogRowTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.user = User.objects.create_user("dev", "d@t.local", "pass1234")
+        Membership.objects.create(user=self.user, company=self.company, role="developer")
+        self.client.login(username="dev", password="pass1234")
+        today = timezone.localdate()
+        self.a = DSREntry.objects.create(company=self.company, user=self.user, date=today, task_name="Plan", category="meeting", hours_spent=1, status="in_progress", is_auto_logged=False)
+        self.b = DSREntry.objects.create(company=self.company, user=self.user, date=today, task_name="Fix", category="bug_fix", hours_spent=2, status="completed", is_auto_logged=False)
+
+    def test_each_row_is_its_own_form(self):
+        """Radios with one name and no form are a single group on the page, so a
+        choice in one row used to clear the others."""
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        for entry in (self.a, self.b):  # one delete form per row, each asking first
+            self.assertEqual(body.count(f'action="/dsr/{entry.pk}/delete/"'), 1)
+        self.assertGreaterEqual(body.count('data-confirm="Delete this entry?"'), 2)
+
+    def test_manual_rows_are_not_tagged_auto(self):
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        self.assertNotIn(">Auto<", body)
+
+    def test_inline_edit_returns_a_row_that_is_still_editable(self):
+        res = self.client.post(
+            reverse("dsr:dsr_update", kwargs={"pk": self.a.pk}),
+            {"task_name": "Plan sprint", "category": "meeting", "hours_spent": "1.5", "status": "blocked", "notes": ""},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.a.refresh_from_db()
+        self.assertEqual((self.a.task_name, str(self.a.hours_spent), self.a.status), ("Plan sprint", "1.50", "blocked"))
+        body = res.content.decode()
+        self.assertIn('name="hours_spent"', body)
+        self.assertIn("hx-post", body)
+
+    def test_time_can_be_typed_in_minutes_and_shows_as_hm(self):
+        url = reverse("dsr:dsr_update", kwargs={"pk": self.a.pk})
+        res = self.client.post(url, {"hours_spent": "45m"}, HTTP_HX_REQUEST="true")
+        self.a.refresh_from_db()
+        self.assertEqual(str(self.a.hours_spent), "0.75")
+        self.assertIn('value="45m"', res.content.decode())
+        self.client.post(url, {"hours_spent": "1h 30m"}, HTTP_HX_REQUEST="true")
+        self.a.refresh_from_db()
+        self.assertEqual(str(self.a.hours_spent), "1.50")
+        self.client.post(url, {"hours_spent": "soon"}, HTTP_HX_REQUEST="true")
+        self.a.refresh_from_db()
+        self.assertEqual(str(self.a.hours_spent), "1.50")
+
+    def test_sheet_total_row_and_add_form_accept_minutes(self):
+        self.client.post(reverse("dsr:dsr_add"), {"task_name": "Quick call", "category": "meeting", "status": "completed", "hours_spent": "20 min"})
+        self.assertEqual(str(DSREntry.objects.get(task_name="Quick call").hours_spent), "0.33")
+        body = self.client.get(reverse("dsr:dsr_sheet")).content.decode()
+        self.assertIn("<b>3h 20m</b>", body)

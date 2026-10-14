@@ -1,0 +1,151 @@
+{% extends "payroll/base.html" %}
+
+{% block pay_name %}Payroll setup{% endblock %}
+
+{% block pay_subtitle %}
+<p class="text-sm text-muted" style="margin-top:4px;">
+  Enter a monthly salary per person. Payroll divides it by the cycle's working days,
+  so weekends and holidays are already excluded. Tick only real staff.
+</p>
+{% endblock %}
+
+{% block pay_actions %}
+<div class="head-actions">
+  <a href="{% url 'payroll:preview' %}" class="btn btn-primary">Preview cycle</a>
+</div>
+{% endblock %}
+
+{% block pay_body %}
+<div class="pay-stats">
+  <div class="card stat">
+    <div class="val">{{ on_payroll_count }}</div>
+    <div class="label">On payroll</div>
+  </div>
+  <div class="card stat">
+    <div class="val">{{ off_payroll_count }}</div>
+    <div class="label">Not on payroll</div>
+  </div>
+  <div class="card stat">
+    <div class="val">{{ working_days }}</div>
+    <div class="label">Working days<br>{{ cycle_start|date:"j M" }}–{{ cycle_end|date:"j M" }}</div>
+  </div>
+  <div class="card stat">
+    <div class="val sm">{{ cycle_gross|floatformat:0 }}</div>
+    <div class="label">Projected this cycle</div>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <div class="pay-grid pay-head">
+    <div>Employee</div>
+    <div>On payroll</div>
+    <div>Monthly salary</div>
+    <div>Effective from</div>
+    <div>This cycle</div>
+    <div></div>
+  </div>
+
+  {% for row in rows %}
+  <form method="post" class="pay-grid pay-row{% if not row.profile or not row.profile.is_on_payroll %} off{% endif %}">
+    {% csrf_token %}
+    <input type="hidden" name="membership" value="{{ row.membership.pk }}">
+
+    <div class="pay-who">
+      <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
+      <span class="who-text">
+        <span class="who-name">
+          {{ row.user.get_full_name|default:row.user.username }}
+          <span class="pay-role">{{ row.membership.role }}</span>
+        </span>
+        <span class="sub">{{ row.user.username }}</span>
+      </span>
+    </div>
+
+    <div>
+      <label class="pay-switch">
+        {{ row.form.is_on_payroll }}
+        <span class="track"></span>
+        <span class="state">On</span>
+      </label>
+    </div>
+
+    <div x-data="{
+          salary: '{{ row.form.monthly_salary.value|default_if_none:'' }}',
+          days: {{ working_days }},
+          get daily() {
+            const v = parseFloat(this.salary);
+            return v > 0 && this.days > 0 ? (v / this.days).toFixed(2) : null;
+          }
+        }">
+      <div class="pay-money">
+        <input type="number" step="0.01" min="0" class="form-input" name="monthly_salary"
+               value="{{ row.form.monthly_salary.value|default_if_none:'' }}"
+               x-model="salary" placeholder="24000"
+               aria-label="{{ row.user.username }} monthly salary">
+        <span class="cur">/mo</span>
+        {{ row.form.currency }}
+      </div>
+      <div class="pay-derived" x-show="daily !== null">
+        <b x-text="daily"></b>/day
+        <span>&middot; <span x-text="salary"></span> ÷ <span x-text="days"></span> days</span>
+      </div>
+      <div class="pay-derived" x-show="daily === null">Not set</div>
+    </div>
+
+    <div class="pay-date">
+      {{ row.form.effective_from }}
+      <div class="pay-hint">
+        {% if row.history|length > 1 %}
+          {{ row.history|length }} rates on record
+        {% elif row.profile %}
+          Since {{ row.profile.effective_from|date:"j M Y" }}
+        {% else %}
+          Not set yet
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="pay-estimate">
+      {% if row.estimate %}
+        <span class="amt">{{ row.estimate.gross }}</span>
+        <span class="days">· {{ row.estimate.payable_days|floatformat:"-2" }} days</span>
+        {% if row.estimate.unpaid_leave_days %}
+          <div class="cut">−{{ row.estimate.unpaid_leave_days }} unpaid</div>
+        {% endif %}
+      {% else %}
+        <span class="text-muted">—</span>
+        <div class="pay-hint">
+          {% if row.profile %}From {{ row.profile.effective_from|date:"j M" }}{% else %}Not on payroll{% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="pay-save">
+      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+    </div>
+  </form>
+  {% empty %}
+  <div class="empty">
+    <h3>No team members yet</h3>
+    <p>Add people to the company and they will appear here, ready for a salary.</p>
+  </div>
+  {% endfor %}
+
+  {% if on_payroll_count %}
+  <div class="pay-total">
+    <span>
+      <strong>{{ on_payroll_count }} on payroll</strong>
+      <span class="text-muted" style="font-size:12.5px;">&middot; projecting {{ cycle_start|date:"j M" }}–{{ cycle_end|date:"j M" }}</span>
+    </span>
+    <span class="amt">{{ cycle_gross|floatformat:0 }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="pay-note">
+  <span><b>On payroll</b> is the only thing that puts someone in a run — the switch decides, not their role.</span>
+  <span>Changing <b>effective from</b> starts a new rate from that day; saving the same date edits the current one.</span>
+  <span>Generated and locked runs are never rewritten, so past payslips keep the rate that applied then.</span>
+  <span>Weekends and <a href="{% url 'payroll:holidays' %}">holidays</a> are excluded from the divisor, and only unpaid leave reduces pay.</span>
+</div>
+{% endblock %}

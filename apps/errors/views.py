@@ -1,23 +1,312 @@
-from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from apps.core.mixins import CompanyMemberRequiredMixin
-from apps.ingestion.models import ErrorGroup
-from apps.products.access import require_error_group_access
-from apps.uiapi.shell import render_shell
+from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
+from apps.dashboards.service import log_activity
+from apps.errors import trends
+from apps.errors.forms import ErrorCreateForm
+from apps.ingestion.models import ErrorGroup, ErrorOccurrence
+from apps.products.access import (
+    accessible_error_groups,
+    accessible_products,
+    require_error_group_access,
+)
+from apps.tickets.models import Ticket
 
 
-class ErrorShellView(CompanyMemberRequiredMixin, View):
-    """The list and report pages, served by the React shell."""
+def _error_redirect(error_group):
+    if error_group.product_id:
+        return "products:product_error_detail", {"pk": error_group.product_id, "error_pk": error_group.pk}
+    return "errors:error_detail", {"pk": error_group.pk}
 
+
+ERROR_SORT_MAP = {
+    "last_seen": "last_seen",
+    "-last_seen": "-last_seen",
+    "severity": "severity",
+    "-severity": "-severity",
+    "count": "occurrence_count",
+    "-count": "-occurrence_count",
+    "title": "title",
+    "-title": "-title",
+}
+
+
+class ErrorListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        return render_shell(request)
+        qs = accessible_error_groups(request.user, request.company).select_related("product")
+
+        product_id = request.GET.get("product")
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+
+        status = request.GET.get("status")
+        if status:
+            qs = qs.filter(status=status)
+
+        severity = request.GET.get("severity")
+        if severity:
+            qs = qs.filter(severity=severity)
+
+        search = request.GET.get("q", "").strip()
+        if search:
+            qs = qs.filter(title__icontains=search)
+
+        # Counted before the tab narrows the list, so the badge always shows how many exist.
+        regressed_count = qs.filter(regression_count__gt=0).count()
+        regressed = request.GET.get("regressed") == "1"
+        if regressed:
+            qs = qs.filter(regression_count__gt=0)
+
+        sort = request.GET.get("sort", "-last_seen")
+        order = ERROR_SORT_MAP.get(sort, "-last_seen")
+        qs = qs.order_by(order)
+
+        paginator = Paginator(qs, 25)
+        page_num = request.GET.get("page", 1)
+        page = paginator.get_page(page_num)
+        page.object_list = trends.attach_trends(page.object_list)
+        open_count = qs.exclude(status__in=("resolved", "ignored")).count()
+
+        products = accessible_products(request.user, request.company)
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "errors/partials/_error_list_body.html", {
+                "page": page,
+                "open_count": open_count,
+            })
+
+        return render(request, "errors/error_list.html", {
+            "page": page,
+            "open_count": open_count,
+            "products": products,
+            "current_product": product_id,
+            "current_status": status,
+            "current_severity": severity,
+            "search": search,
+            "current_sort": sort,
+            "regressed": regressed,
+            "regressed_count": regressed_count,
+        })
+
+
+def linked_tickets(request, error_group):
+    """Tickets raised from this error, limited to ones the person may open."""
+    from apps.products.access import accessible_tickets
+
+    return list(
+        accessible_tickets(request.user, request.company)
+        .filter(linked_error_group=error_group)
+        .select_related("product")
+        .order_by("-created_at")
+    )
 
 
 class ErrorDetailView(CompanyMemberRequiredMixin, View):
-    """The detail page, served by the React shell once the person may open it."""
-
     def get(self, request, pk):
-        group = get_object_or_404(ErrorGroup.objects.select_related("product"), pk=pk, company=request.company)
-        require_error_group_access(request, group)
-        return render_shell(request)
+        error_group = get_object_or_404(
+            ErrorGroup.objects.select_related("product"),
+            pk=pk,
+            company=request.company,
+        )
+        require_error_group_access(request, error_group)
+        occurrences = error_group.occurrences.all()[:50]
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "errors/partials/_occurrence_list.html", {
+                "occurrences": occurrences,
+            })
+
+        return render(request, "errors/error_detail.html", {
+            "error_group": error_group,
+            "occurrences": occurrences,
+            "status_choices": ErrorGroup.STATUS_CHOICES,
+            "trend": trends.detail_trend(error_group),
+            "first_version": error_group.first_version,
+            "linked_tickets": linked_tickets(request, error_group),
+        })
+
+
+class ErrorStatusView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=target_pk,
+            company=request.company,
+        )
+        require_error_group_access(request, error_group)
+        new_status = request.POST.get("status")
+        valid_choices = [c[0] for c in ErrorGroup.STATUS_CHOICES]
+        if new_status in valid_choices:
+            old_status = error_group.status
+            error_group.status = new_status
+            error_group.save(update_fields=["status"])
+            log_activity(
+                request.company, "error_status_changed",
+                f"Error #{error_group.pk} status changed",
+                description=f"{old_status} → {new_status}",
+                actor=request.user,
+                target_content_type="error",
+                target_object_id=error_group.pk,
+                metadata={"product_id": error_group.product_id, "from": old_status, "to": new_status},
+            )
+            messages.success(request, f"Status changed to '{new_status}'.")
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "errors/partials/_error_status_badge.html", {
+                "error_group": error_group,
+            })
+        url_name, kwargs = _error_redirect(error_group)
+        return redirect(url_name, **kwargs)
+
+
+class ErrorIgnoreView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=target_pk,
+            company=request.company,
+        )
+        require_error_group_access(request, error_group)
+        error_group.status = "ignored"
+        error_group.save(update_fields=["status"])
+        log_activity(
+            request.company, "error_ignored",
+            f"Error #{error_group.pk} ignored",
+            description=error_group.title,
+            actor=request.user,
+            target_content_type="error",
+            target_object_id=error_group.pk,
+            metadata={"product_id": error_group.product_id},
+        )
+        messages.success(request, "Error group ignored.")
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "errors/partials/_error_status_badge.html", {
+                "error_group": error_group,
+            })
+        url_name, kwargs = _error_redirect(error_group)
+        return redirect(url_name, **kwargs)
+
+
+class ErrorResolveView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=target_pk,
+            company=request.company,
+        )
+        require_error_group_access(request, error_group)
+        error_group.status = "resolved"
+        error_group.save(update_fields=["status"])
+        log_activity(
+            request.company, "error_resolved",
+            f"Error #{error_group.pk} resolved",
+            description=error_group.title,
+            actor=request.user,
+            target_content_type="error",
+            target_object_id=error_group.pk,
+            metadata={"product_id": error_group.product_id},
+        )
+        messages.success(request, "Error group resolved.")
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "errors/partials/_error_status_badge.html", {
+                "error_group": error_group,
+            })
+        url_name, kwargs = _error_redirect(error_group)
+        return redirect(url_name, **kwargs)
+
+
+class ErrorCreateView(CompanyMemberRequiredMixin, View):
+    def get(self, request):
+        initial = {}
+        product_id = request.GET.get("product")
+        if product_id:
+            initial["product"] = product_id
+        form = ErrorCreateForm(company=request.company, user=request.user, initial=initial)
+        return render(request, "errors/error_form.html", {"form": form})
+
+    def post(self, request):
+        form = ErrorCreateForm(request.POST, company=request.company, user=request.user)
+        if form.is_valid():
+            group = form.save(company=request.company, user=request.user)
+            messages.success(request, f"Error #{group.pk} created.")
+            url_name, kwargs = _error_redirect(group)
+            return redirect(url_name, **kwargs)
+        return render(request, "errors/error_form.html", {"form": form})
+
+
+class ErrorConvertToTicketView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=target_pk,
+            company=request.company,
+        )
+        require_error_group_access(request, error_group)
+        ticket = Ticket.objects.create(
+            company=request.company,
+            title=f"Error: {error_group.title}",
+            description=(
+                f"Auto-created from error #{error_group.pk}.\n\n"
+                f"Fingerprint: {error_group.fingerprint}\n"
+                f"Severity: {error_group.severity}\n"
+                f"Occurrences: {error_group.occurrence_count}\n"
+                f"Affected users: {error_group.affected_user_count}"
+            ),
+            ticket_type="bug",
+            priority="high" if error_group.severity in ("critical", "high") else "medium",
+            source="manual",
+            created_by=request.user,
+            product=error_group.product,
+            linked_error_group=error_group,
+        )
+        log_activity(
+            request.company, "ticket_created",
+            f"Ticket {ticket.key} created from error #{error_group.pk}",
+            description=ticket.title,
+            actor=request.user,
+            target_content_type="ticket",
+            target_object_id=ticket.pk,
+            metadata={"product_id": error_group.product_id, "error_group_id": error_group.pk},
+        )
+        messages.success(request, f"Ticket {ticket.key} created from error #{error_group.pk}.")
+        url_name, kwargs = _error_redirect(error_group)
+        return redirect(url_name, **kwargs)
+
+
+class ErrorDeleteView(CompanyAdminRequiredMixin, View):
+    def post(self, request, pk, error_pk=None):
+        target_pk = error_pk or pk
+        error_group = get_object_or_404(
+            ErrorGroup,
+            pk=target_pk,
+            company=request.company,
+        )
+        require_error_group_access(request, error_group)
+        error_id = error_group.pk
+        product_id = error_group.product_id
+        title = error_group.title
+        error_group.delete()
+        log_activity(
+            request.company, "error_deleted",
+            f"Error #{error_id} deleted",
+            description=title,
+            actor=request.user,
+            target_content_type="error",
+            target_object_id=error_id,
+            metadata={"product_id": product_id},
+        )
+        messages.success(request, f"Error #{error_id} deleted.")
+
+        if product_id:
+            return redirect("products:product_errors", pk=product_id)
+        return redirect("errors:error_list")

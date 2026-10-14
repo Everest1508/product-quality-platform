@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% load dropdown_tags icon_tags %}
+
+{% block title %}Surveys — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Surveys <span class="count">{{ page.paginator.count }} total</span></h1>
+  <div class="head-actions">
+    <a href="{% url 'feedback:survey_create' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New survey</a>
+  </div>
+</div>
+
+<div class="tabs">
+  <a href="{% url 'feedback:survey_list' %}" class="tab {% if not current_status and not current_type %}active{% endif %}">All</a>
+  <a href="?status=active" class="tab {% if current_status == 'active' %}active{% endif %}">Active</a>
+  <a href="?status=draft" class="tab {% if current_status == 'draft' %}active{% endif %}">Draft</a>
+  <a href="?status=closed" class="tab {% if current_status == 'closed' %}active{% endif %}">Closed</a>
+  <span style="color:var(--border);margin:0 4px;">|</span>
+  <a href="?type=nps" class="tab {% if current_type == 'nps' %}active{% endif %}">NPS</a>
+  <a href="?type=csat" class="tab {% if current_type == 'csat' %}active{% endif %}">CSAT</a>
+  <a href="?type=ces" class="tab {% if current_type == 'ces' %}active{% endif %}">CES</a>
+</div>
+
+<div class="toolbar">
+  <form method="get" class="search-wrap" style="display:flex;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" name="q" value="{{ search }}"  aria-label="Search surveys" placeholder="Search surveys...">
+    {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+    {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+  </form>
+  {% dropdown "sort" "-created:Newest first|created:Oldest first|name:Name A-Z|-responses:Most responses"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
+</div>
+
+<div class="ledger" id="survey-list-body">
+  {% include "feedback/partials/_survey_list_body.html" with page=page %}
+</div>
+
+{% include "core/_pagination.html" with page=page %}
+
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} surveys</footer>
+
+<script>
+function buildUrl(params) {
+  var url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  for (var key in params) {
+    url.searchParams.delete(key);
+    if (params[key]) url.searchParams.set(key, params[key]);
+  }
+  return url.toString();
+}
+</script>
+{% endblock %}

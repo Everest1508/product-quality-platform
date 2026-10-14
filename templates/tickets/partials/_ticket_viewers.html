@@ -1,0 +1,7 @@
+{# Who else has this ticket open right now, from the live presence feed. #}
+<div class="ticket-viewers" x-data="{ id: {{ ticket.pk }} }" x-show="$store.presence && $store.presence.users.some(u => u.ticket_id === id && u.user_id !== $store.presence.meId)" style="display:none;" aria-live="polite">
+  <span class="viewer-eyes" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+  </span>
+  <span x-text="$store.presence ? $store.presence.users.filter(u => u.ticket_id === id && u.user_id !== $store.presence.meId).map(u => u.name).join(', ') + ' also viewing' : ''"></span>
+</div>

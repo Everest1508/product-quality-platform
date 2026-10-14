@@ -1,0 +1,63 @@
+{% if attention.critical_errors %}
+<div class="dash-group">
+  <div class="dash-group-label">Critical errors</div>
+  {% for e in attention.critical_errors %}
+  <div class="dash-row">
+    <span class="sev-dot critical"></span>
+    <a class="lead" href="{% if e.product %}{% url 'products:product_error_detail' pk=e.product.pk error_pk=e.pk %}{% else %}{% url 'errors:error_detail' pk=e.pk %}{% endif %}">{{ e.title }}{% if e.product %} <span class="prod">· {{ e.product.name }}</span>{% endif %}</a>
+    <span class="meta">{{ e.occurrence_count }}× · {{ e.severity|upper }}</span>
+    <span class="dash-acts">
+      <button class="dash-act" hx-post="{% url 'errors:error_resolve' pk=e.pk %}" hx-swap="none"
+              hx-on::after-request="event.detail.successful && htmx.trigger(document.body,'dash:refresh')">Resolve</button>
+      <button class="dash-act muted" hx-post="{% url 'errors:error_ignore' pk=e.pk %}" hx-swap="none"
+              hx-on::after-request="event.detail.successful && htmx.trigger(document.body,'dash:refresh')">Ignore</button>
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if attention.stale_tickets %}
+<div class="dash-group">
+  <div class="dash-group-label">Stale tickets</div>
+  {% for t in attention.stale_tickets %}
+  <div class="dash-row">
+    <span class="sev-dot stale"></span>
+    <a class="lead" href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}">{{ t.key }} {{ t.title }}{% if t.product %} <span class="prod">· {{ t.product.name }}</span>{% endif %}</a>
+    <span class="meta" title="{{ t.updated_at|date:'M j, Y, g:i A' }}">{{ t.updated_at|timesince }}</span>
+    <span class="dash-acts">
+      {% if not t.assignees.all %}
+      <button class="dash-act" hx-post="{% url 'tickets:ticket_assign' pk=t.pk %}" hx-vals='{"assignees": "{{ request.user.pk }}"}' hx-swap="none"
+              hx-on::after-request="event.detail.successful && htmx.trigger(document.body,'dash:refresh')">Assign to me</button>
+      {% else %}
+      <span class="dash-act muted" style="cursor:default;">{{ t.assignees.all.0.get_full_name|default:t.assignees.all.0.username }}</span>
+      {% endif %}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if attention.unassigned_tickets %}
+<div class="dash-group">
+  <div class="dash-group-label">Unassigned tickets</div>
+  {% for t in attention.unassigned_tickets %}
+  <div class="dash-row">
+    <span class="sev-dot unassigned"></span>
+    <a class="lead" href="{% if t.product %}{% url 'products:product_ticket_detail' pk=t.product.pk ticket_pk=t.pk %}{% else %}{% url 'tickets:ticket_detail' pk=t.pk %}{% endif %}">{{ t.key }} {{ t.title }}{% if t.product %} <span class="prod">· {{ t.product.name }}</span>{% endif %}</a>
+    <span class="meta" title="{{ t.updated_at|date:'M j, Y, g:i A' }}">{{ t.updated_at|timesince }}</span>
+    <span class="dash-acts">
+      <button class="dash-act" hx-post="{% url 'tickets:ticket_assign' pk=t.pk %}" hx-vals='{"assignees": "{{ request.user.pk }}"}' hx-swap="none"
+              hx-on::after-request="event.detail.successful && htmx.trigger(document.body,'dash:refresh')">Assign to me</button>
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not attention.critical_errors and not attention.stale_tickets and not attention.unassigned_tickets %}
+<div class="empty-line">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 6px;"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/></svg>
+  All caught up — nothing needs attention.
+</div>
+{% endif %}

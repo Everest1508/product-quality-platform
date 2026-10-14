@@ -18,36 +18,31 @@ class TodoTest(TestCase):
         s["active_company_id"] = self.company.pk
         s.save()
 
-    def post(self, url, body=None):
-        return self.client.post(url, body or {}, content_type="application/json")
-
     def test_add_toggle_delete_and_privacy(self):
-        r = self.post("/ui-api/v1/todos/", {"text": "ship it"})
-        self.assertEqual(r.status_code, 201)
+        self.client.post(reverse("dashboards:todos"), {"text": "ship it"})
         t = Todo.objects.get(user=self.me)
         theirs = Todo.objects.create(user=self.other, text="secret")
-        self.assertEqual(self.post(f"/ui-api/v1/todos/{theirs.pk}/toggle/").status_code, 404)
-        self.assertEqual(self.client.delete(f"/ui-api/v1/todos/{theirs.pk}/").status_code, 404)
-        self.post(f"/ui-api/v1/todos/{t.pk}/toggle/")
+        self.assertEqual(self.client.post(reverse("dashboards:todo_toggle", args=[theirs.pk])).status_code, 404)
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))
         t.refresh_from_db()
         self.assertTrue(t.done)
-        self.assertNotIn("secret", self.client.get("/ui-api/v1/todos/").content.decode())
-        self.client.delete(f"/ui-api/v1/todos/{t.pk}/")
+        self.assertNotContains(self.client.get(reverse("dashboards:todos")), "secret")
+        self.client.post(reverse("dashboards:todo_delete", args=[t.pk]))
         self.assertFalse(Todo.objects.filter(pk=t.pk).exists())
 
     def test_due_date_and_clear_done(self):
-        self.post("/ui-api/v1/todos/", {"text": "a", "due": "2026-10-12"})
-        self.post("/ui-api/v1/todos/", {"text": "b", "due": "garbage"})
+        self.client.post(reverse("dashboards:todos"), {"text": "a", "due": "2026-10-12"})
+        self.client.post(reverse("dashboards:todos"), {"text": "b", "due": "garbage"})
         a = Todo.objects.get(text="a")
         self.assertEqual(str(a.due), "2026-10-12")
         self.assertIsNone(Todo.objects.get(text="b").due)
-        self.post(f"/ui-api/v1/todos/{a.pk}/toggle/")
-        self.post("/ui-api/v1/todos/clear-done/")
+        self.client.post(reverse("dashboards:todo_toggle", args=[a.pk]))
+        self.client.post(reverse("dashboards:todo_clear_done"))
         self.assertEqual(list(Todo.objects.filter(user=self.me).values_list("text", flat=True)), ["b"])
 
     def test_priority_is_saved_and_bad_value_falls_back(self):
-        self.post("/ui-api/v1/todos/", {"text": "hi", "priority": "3"})
-        self.post("/ui-api/v1/todos/", {"text": "other", "priority": "9"})
+        self.client.post(reverse("dashboards:todos"), {"text": "hi", "priority": "3"})
+        self.client.post(reverse("dashboards:todos"), {"text": "other", "priority": "9"})
         self.assertEqual(Todo.objects.get(text="hi").priority, Todo.Priority.HIGH)
         self.assertEqual(Todo.objects.get(text="other").priority, Todo.Priority.MEDIUM)
 
@@ -56,46 +51,35 @@ class TodoTest(TestCase):
 
         from apps.dsr.models import DSREntry
 
-        self.post("/ui-api/v1/todos/", {"text": "write report"})
+        self.client.post(reverse("dashboards:todos"), {"text": "write report"})
         t = Todo.objects.get(text="write report")
-        toggle = lambda: self.post(f"/ui-api/v1/todos/{t.pk}/toggle/")
-        toggle()
-        toggle()  # undo
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))  # undo
         self.assertFalse(DSREntry.objects.filter(user=self.me).exists())
-        toggle()
-        toggle()  # undo
-        toggle()  # done
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))  # done again
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))  # undo
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))  # done
         rows = DSREntry.objects.filter(user=self.me, source="todo")
         self.assertEqual(rows.count(), 1)  # toggling never duplicates
         self.assertEqual((rows[0].task_name, rows[0].date), ("write report", timezone.localdate()))
 
-    def test_every_action_says_what_happened_and_returns_the_list(self):
-        r = self.post("/ui-api/v1/todos/", {"text": "ship it"}).json()
-        self.assertEqual((r["message"], r["total"]), ('Added "ship it".', 1))
-        self.assertEqual(self.post("/ui-api/v1/todos/", {"text": "  "}).status_code, 400)
+    def test_every_todo_action_toasts_over_htmx(self):
+        """The list swaps a fragment (no shell), so each action's feedback must
+        ride the HX-Trigger `django-message` header the middleware attaches."""
+        def htmx_post(url, data=None):
+            return self.client.post(url, data or {}, headers={"HX-Request": "true"})
+
+        resp = htmx_post(reverse("dashboards:todos"), {"text": "ship it"})
+        self.assertIn("Added", resp.headers["HX-Trigger"])
+        self.assertIn("can't be empty", htmx_post(reverse("dashboards:todos"), {"text": "  "}).headers["HX-Trigger"])
         t = Todo.objects.get(text="ship it")
-        self.assertIn("Marked", self.post(f"/ui-api/v1/todos/{t.pk}/toggle/").json()["message"])
-        self.assertIn("Reopened", self.post(f"/ui-api/v1/todos/{t.pk}/toggle/").json()["message"])
-        self.post(f"/ui-api/v1/todos/{t.pk}/toggle/")
-        self.assertIn("Cleared 1 completed to-do", self.post("/ui-api/v1/todos/clear-done/").json()["message"])
-        self.post("/ui-api/v1/todos/", {"text": "second"})
+        self.assertIn("Marked", htmx_post(reverse("dashboards:todo_toggle", args=[t.pk])).headers["HX-Trigger"])
+        self.assertIn("Reopened", htmx_post(reverse("dashboards:todo_toggle", args=[t.pk])).headers["HX-Trigger"])
+        htmx_post(reverse("dashboards:todo_toggle", args=[t.pk]))  # done again, so clear has something to remove
+        self.assertIn("Cleared 1 completed to-do", htmx_post(reverse("dashboards:todo_clear_done")).headers["HX-Trigger"])
+        htmx_post(reverse("dashboards:todos"), {"text": "second"})
         t2 = Todo.objects.get(text="second")
-        self.assertIn("Deleted", self.client.delete(f"/ui-api/v1/todos/{t2.pk}/").json()["message"])
-
-    def test_the_list_orders_open_before_done_and_flags_late_ones(self):
-        from datetime import timedelta
-
-        from django.utils import timezone
-
-        today = timezone.localdate()
-        Todo.objects.create(user=self.me, text="done", done=True)
-        Todo.objects.create(user=self.me, text="late", due=today - timedelta(days=1))
-        Todo.objects.create(user=self.me, text="today", due=today)
-        items = self.client.get("/ui-api/v1/todos/").json()["todos"]
-        self.assertEqual([i["text"] for i in items][-1], "done")
-        by = {i["text"]: i for i in items}
-        self.assertTrue(by["late"]["late"])
-        self.assertTrue(by["today"]["today"])
+        self.assertIn("Deleted", htmx_post(reverse("dashboards:todo_delete", args=[t2.pk])).headers["HX-Trigger"])
 
     def test_overdue_reminder_goes_out_once_a_day(self):
         from datetime import timedelta

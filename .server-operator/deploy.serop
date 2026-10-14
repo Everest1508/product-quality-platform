@@ -15,7 +15,7 @@ sudo docker compose logs --tail 40 web
 
 [Health Check]
 curl -s -o /dev/null -w "login page: %{http_code}\n" http://localhost:8011/login/
-curl -s -o /dev/null -w "front end:  %{http_code}\n" http://localhost:8011/ui/app.js
+curl -s -o /dev/null -w "home page:  %{http_code}\n" http://localhost:8011/
 sudo docker compose ps
 
 [Reset To Latest Main]

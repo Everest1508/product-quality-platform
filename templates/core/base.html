@@ -1,0 +1,948 @@
+{% load static %}
+{% load toast_tags %}
+{% load icon_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}PQ Platform{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PQ Platform">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 5 23 23' fill='none' stroke='%231A5BFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='16' cy='16' r='9'/%3E%3Ccircle cx='16' cy='16' r='3.6'/%3E%3Cpath d='M19.5 19.5L26 26'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<script>
+/* Theme: "light", "dark" or "system" (the default), remembered in localStorage. Set before the CSS so nothing flashes. */
+(function(){
+  var KEY='pqTheme', root=document.documentElement;
+  function stored(){try{var v=localStorage.getItem(KEY);return v==='light'||v==='dark'?v:'system'}catch(e){return 'system'}}
+  function dark(t){return t==='dark'||(t==='system'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)}
+  function apply(t){root.classList.toggle('dark',dark(t));var m=document.querySelector('meta[name=theme-color]');if(m)m.content=dark(t)?'#0b1220':'#ffffff'}
+  window.pqTheme={
+    get:stored,
+    set:function(t){
+      try{if(t==='system')localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}
+      if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){root.classList.add('theme-fade');setTimeout(function(){root.classList.remove('theme-fade')},450)}
+      apply(t);window.dispatchEvent(new CustomEvent('pq-theme',{detail:t}));
+    },
+    toggle:function(){window.pqTheme.set(root.classList.contains('dark')?'light':'dark')}
+  };
+  apply(stored());
+  if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(stored()==='system')apply('system')});
+})();
+</script>
+<style>
+{% include "core/css/_tokens.css" %}
+{% include "core/css/_app.css" %}
+{% include "core/css/_components.css" %}
+{% include "core/css/_pages.css" %}
+{% include "core/css/_responsive.css" %}
+</style>
+{% block extra_head %}{% endblock %}
+<script>
+  document.addEventListener('htmx:configRequest', function(evt) {
+    var h = (evt.detail && evt.detail.headers) || evt.headers;
+    if (h) h['X-CSRFToken'] = '{{ csrf_token }}';
+  });
+  // The app-wide choice control. <details> can open and close on its own and the
+  // radios post without JS, but it cannot relabel its own trigger after a choice
+  // is made, so that one job is done here. Registered on alpine:init, which runs
+  // before Alpine walks the DOM — that is the correct use of the hook (define a
+  // component); it is reading the DOM from it that is too early.
+  document.addEventListener('alpine:init', function () {
+    Alpine.data('dd', function () {
+      return {
+        init() {
+          this.sync();
+          this.$el.addEventListener('change', () => {
+            this.sync();
+            this.go();
+          });
+        },
+        // A list page's filter usually sits outside any form and navigates on
+        // change instead of submitting. Those already used window.buildUrl, so
+        // reuse it rather than inventing a second URL builder per control.
+        go() {
+          const param = this.$el.dataset.navigate;
+          if (param) {
+            const picked = this.$el.querySelector('input:checked');
+            if (picked && typeof window.buildUrl === 'function') {
+              window.location = window.buildUrl({ [param]: picked.value });
+            }
+            return;
+          }
+          // A quick-edit control that used to carry onchange="this.form.submit()".
+          // requestSubmit() rather than submit() so the button's validation and
+          // the submit event still fire.
+          if (this.$el.dataset.submit) {
+            const form = this.$el.closest('form');
+            if (form) {
+              if (form.requestSubmit) form.requestSubmit();
+              else form.submit();
+            }
+          }
+        },
+        sync() {
+          const out = this.$el.querySelector('[data-dd-label]');
+          if (!out) return;
+          const picked = this.$el.querySelectorAll('input:checked');
+          const placeholder = this.$el.dataset.placeholder || '';
+          if (picked.length === 1) {
+            out.textContent = picked[0].dataset.label || placeholder;
+          } else if (picked.length > 1 && this.$el.dataset.multiple) {
+            out.textContent = picked.length + ' selected';
+          } else {
+            out.textContent = placeholder;
+          }
+        },
+      };
+    });
+  });
+  // One menu open at a time. <details> knows nothing about its siblings, so opening
+  // a second filter left the first one open on top of it. `toggle` does not bubble,
+  // so listen in the capture phase. Clicking elsewhere, pressing Escape and picking
+  // a single-choice option all close the menu too.
+  (function () {
+    function openMenus() { return document.querySelectorAll('details.dd-wrap[open]'); }
+    document.addEventListener('toggle', function (e) {
+      var t = e.target;
+      if (!t.matches || !t.matches('details.dd-wrap') || !t.open) return;
+      openMenus().forEach(function (d) { if (d !== t) d.removeAttribute('open'); });
+    }, true);
+    document.addEventListener('click', function (e) {
+      // e.target === d is a tap on the phone backdrop (the details' ::before), which should close it too.
+      openMenus().forEach(function (d) { if (!d.contains(e.target) || e.target === d) d.removeAttribute('open'); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      openMenus().forEach(function (d) {
+        d.removeAttribute('open');
+        var s = d.querySelector('summary'); if (s) s.focus();
+      });
+    });
+    document.addEventListener('change', function (e) {
+      var d = e.target.closest && e.target.closest('details.dd-wrap');
+      if (d && e.target.type === 'radio') d.removeAttribute('open');
+    });
+  })();
+  function buildPageUrl(pageNum) {
+    var url = new URL(window.location.href);
+    url.searchParams.set('page', pageNum);
+    return url.toString();
+  }
+  try { if (localStorage.getItem('pqSidebarCollapsed') === '1') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}
+</script>
+</head>
+<body>
+
+{% if request.user.is_authenticated %}
+<div class="shell">
+  {% include "core/_sidebar.html" %}
+  <div class="main-col">
+    {% include "core/_topbar.html" %}
+  <div class="main">
+    {% block content %}{% endblock %}
+  </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-sidebar-toggle]')) {
+      var collapsed = root.classList.toggle('sidebar-collapsed');
+      try { localStorage.setItem('pqSidebarCollapsed', collapsed ? '1' : '0'); } catch (err) {}
+    }
+    if (e.target.closest('[data-sidebar-open]')) root.classList.add('sidebar-open');
+    if (e.target.closest('[data-sidebar-close]')) root.classList.remove('sidebar-open');
+    var changelogBtn = e.target.closest('[data-changelog-open]');
+    if (changelogBtn) {
+      window.dispatchEvent(new CustomEvent('pq:changelog', { detail: { trigger: changelogBtn } }));
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') root.classList.remove('sidebar-open');
+  });
+
+  // Tooltips for the collapsed rail. One fixed element, not a ::after on each
+  // item: the sidebar scrolls, and anything that sticks out of a scrolling box
+  // is clipped, which is why the old CSS tooltips never showed for most items.
+  var tip = document.createElement('div');
+  tip.className = 'side-tip'; tip.setAttribute('role', 'tooltip'); tip.hidden = true;
+  document.body.appendChild(tip);
+  var SELECTOR = '.sidebar .side-item, .sidebar .side-brand, .sidebar .side-search, .sidebar .side-collapse, .sidebar .switch-btn, .sidebar .side-user-btn';
+  function labelOf(el) {
+    var bits = ['data-label', 'aria-label'];
+    for (var i = 0; i < bits.length; i++) { var v = el.getAttribute(bits[i]); if (v) return v; }
+    var inner = el.querySelector('.side-label, .switch-name, .side-user-name');
+    return inner ? inner.textContent.trim() : '';
+  }
+  function showTip(el) {
+    if (!root.classList.contains('sidebar-collapsed') || window.innerWidth <= 860) return;
+    var text = labelOf(el); if (!text) return;
+    var badge = el.querySelector('.side-badge');
+    if (badge && badge.offsetParent !== null && badge.textContent.trim()) text += '  ' + badge.textContent.trim();
+    tip.textContent = text; tip.hidden = false;
+    var r = el.getBoundingClientRect();
+    tip.style.left = (r.right + 10) + 'px';
+    tip.style.top = (r.top + r.height / 2 - tip.offsetHeight / 2) + 'px';
+  }
+  function hideTip() { tip.hidden = true; }
+  document.addEventListener('pointerover', function (e) { var el = e.target.closest && e.target.closest(SELECTOR); if (el) showTip(el); else hideTip(); });
+  document.addEventListener('focusin', function (e) { var el = e.target.closest && e.target.closest(SELECTOR); if (el) showTip(el); });
+  document.addEventListener('focusout', hideTip);
+  document.addEventListener('click', hideTip);
+  window.addEventListener('scroll', hideTip, true);
+})();
+</script>
+{% include "core/_changelog_modal.html" %}
+{% include "core/_presence.html" %}
+{% include "core/_notifications.html" %}
+{% include "core/_palette.html" %}
+<dialog class="dlg" id="kbd-help" aria-label="Keyboard shortcuts" style="max-width:720px">
+  <div class="dlg-head"><h2>Keyboard shortcuts</h2></div>
+  <div class="dlg-body">{% include "core/_shortcuts_list.html" %}</div>
+  <div class="dlg-foot"><button type="button" class="btn" id="kbd-help-close">Close</button></div>
+</dialog>
+<script>
+(function () {
+  var help = document.getElementById('kbd-help');
+  var active = -1;
+  function items() { return Array.prototype.slice.call(document.querySelectorAll('.kanban-card, tr.clickable-row')); }
+  function select(i) {
+    var list = items();
+    if (!list.length) return;
+    list.forEach(function (el) { el.classList.remove('kbd-active'); });
+    active = Math.max(0, Math.min(list.length - 1, i));
+    list[active].classList.add('kbd-active');
+    list[active].scrollIntoView({ block: 'nearest' });
+  }
+  function openActive() {
+    var el = items()[active];
+    if (!el) return false;
+    var a = el.querySelector('a[href*="/tickets/"]');
+    if (a) { window.location = a.href; return true; }
+    el.click();
+    return true;
+  }
+  function closeHelp() { if (help.open) help.close(); }
+  document.getElementById('kbd-help-close').addEventListener('click', closeHelp);
+  help.addEventListener('click', function (e) { if (e.target === help) closeHelp(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if (/^(input|textarea|select)$/i.test(t.tagName) || t.isContentEditable) return;
+    if (e.key === 'Escape') { closeHelp(); return; }
+    if (e.key === '?') { e.preventDefault(); if (!help.open) help.showModal(); return; }
+    if (e.key === 't') { e.preventDefault(); window.pqTheme.toggle(); return; }
+    if (e.key === '[') { e.preventDefault(); var tg = document.querySelector('[data-sidebar-toggle]'); if (tg) tg.click(); return; }
+    // "g" then a letter jumps to a page.
+    if (window.__pqG && Date.now() - window.__pqG < 1500) {
+      window.__pqG = 0;
+      var to = {h:'{% url "dashboards:index" %}', t:'{% url "tickets:ticket_board" %}', e:'{% url "errors:error_list" %}', p:'{% url "products:product_list" %}', d:'{% url "dsr:dsr_sheet" %}', a:'{% url "attendance:my_attendance" %}', l:'{% url "leave:my_leave" %}', r:'{% url "dashboards:reports" %}', m:'{% url "accounts:team_list" %}', u:'{% url "accounts:profile" %}'}[e.key.toLowerCase()];
+      if (to) { e.preventDefault(); window.location = to; }
+      return;
+    }
+    if (e.key === 'g') { window.__pqG = Date.now(); return; }
+    if (e.key === 'c') {
+      var n = document.querySelector('[data-shortcut="new"]');
+      e.preventDefault(); window.location = n ? n.href : '{% url "tickets:ticket_create" %}';
+    } else if (e.key === 'e') {
+      var ed = document.querySelector('[data-shortcut="edit"]');
+      if (ed) { e.preventDefault(); window.location = ed.href; }
+    } else if (e.key === 'j' || e.key === 'k') {
+      if (!items().length) return;
+      e.preventDefault(); select(active + (e.key === 'j' ? 1 : -1));
+    } else if (e.key === 'Enter' && active >= 0) {
+      if (openActive()) e.preventDefault();
+    }
+  });
+})();
+</script>
+
+{% else %}
+<div class="auth-shell">
+  {% block content_full_only %}{% endblock %}
+</div>
+{% endif %}
+
+{% if messages %}
+{% comment %} The seed has to exist before the container's x-init runs, so it goes above
+   it. Escaped for a <script> block by toast_payload, not by hand. {% endcomment %}
+{% toast_payload messages "toast-seed" %}
+{% endif %}
+
+<script>
+// PWA: register the worker, offer install, and say so when the connection drops.
+(function () {
+  function notify(text, tags) {
+    window.dispatchEvent(new CustomEvent('django-message', { detail: { text: text, tags: tags || 'info' } }));
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+    });
+  }
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = false; });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-pwa-install]') || !deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(function () {
+      deferredPrompt = null;
+      document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = true; });
+    });
+  });
+  window.addEventListener('appinstalled', function () {
+    document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = true; });
+  });
+  window.addEventListener('offline', function () { notify('You are offline. Changes will not save until you reconnect.', 'error'); });
+  window.addEventListener('online', function () { notify('Back online.', 'success'); });
+  document.addEventListener('htmx:sendError', function () { notify('Network error. Check your connection and try again.', 'error'); });
+})();
+</script>
+
+<script>
+// Wrap bare tables in a scroll container so wide tables scroll inside their card
+// instead of widening the page. Runs on load and after every htmx swap. The
+// wrapper has no styling above 860px, so desktop layout is unchanged.
+(function () {
+  function wrap(root) {
+    (root || document).querySelectorAll('table').forEach(function (t) {
+      var p = t.parentElement;
+      if (!p || p.classList.contains('table-scroll') || t.closest('.pq-datepicker-popover')) return;
+      var w = document.createElement('div');
+      w.className = 'table-scroll';
+      p.insertBefore(w, t);
+      w.appendChild(t);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function () { wrap(); });
+  document.addEventListener('htmx:afterSettle', function (e) { wrap(e.target); });
+})();
+</script>
+
+<div id="toast-container"
+     x-data="{ messages: [], push(m) { this.messages.push(m); setTimeout(() => this.messages.shift(), 4000) } }"
+     x-init="const seed = document.getElementById('toast-seed'); if (seed) { JSON.parse(seed.textContent).forEach(m => push(m)) }"
+     x-on:django-message.window="($event.detail.messages || [$event.detail]).forEach(m => push(m))">
+  <template x-for="(msg, i) in messages" :key="i">
+    <div class="toast" :class="msg.tags" x-text="msg.text" x-show="true"
+         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+  </template>
+</div>
+
+<div id="pq-confirm-modal" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3>Are you sure?</h3>
+    <p id="pq-confirm-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="pq-confirm-cancel">Cancel</button>
+      <button type="button" class="btn btn-danger" id="pq-confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('pq-confirm-modal');
+  var messageEl = document.getElementById('pq-confirm-message');
+  var okBtn = document.getElementById('pq-confirm-ok');
+  var cancelBtn = document.getElementById('pq-confirm-cancel');
+  var pendingForm = null;
+
+  window.confirmAction = function(form, message) {
+    if (form.dataset.pqConfirmed === '1') {
+      delete form.dataset.pqConfirmed;
+      return true;
+    }
+    pendingForm = form;
+    messageEl.textContent = message || 'Are you sure?';
+    modal.style.display = 'flex';
+    return false;
+  };
+
+  function closeConfirmModal() {
+    modal.style.display = 'none';
+    pendingForm = null;
+  }
+  window.closeConfirmModal = closeConfirmModal;
+
+  okBtn.addEventListener('click', function() {
+    if (pendingForm) {
+      pendingForm.dataset.pqConfirmed = '1';
+      try {
+        pendingForm.requestSubmit();
+      } catch (e) {
+        pendingForm.submit();
+      }
+    }
+  });
+  cancelBtn.addEventListener('click', closeConfirmModal);
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeConfirmModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeConfirmModal();
+  });
+})();
+
+// Bulk ticket delete with selection mode
+(function() {
+  var bulkBtn = document.getElementById('bulk-delete-btn');
+  var bulkCount = document.getElementById('bulk-delete-count');
+  var selectAll = document.getElementById('select-all-tickets');
+  var selectModeBtn = document.getElementById('select-mode-btn');
+  var bulkDeleteUrl = bulkBtn ? bulkBtn.getAttribute('onclick').match(/'([^']+)'/)[1] : null;
+
+  function updateBulkBtn() {
+    var checked = document.querySelectorAll('.ticket-select:checked');
+    if (checked.length > 0) {
+      bulkBtn.style.display = 'inline-flex';
+      bulkCount.textContent = checked.length;
+    } else {
+      bulkBtn.style.display = 'none';
+    }
+  }
+
+  function isSelectionMode() {
+    return document.body.classList.contains('selection-mode');
+  }
+
+  document.querySelectorAll('.ticket-select').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      updateBulkBtn();
+      if (selectAll) {
+        var all = document.querySelectorAll('.ticket-select');
+        selectAll.checked = all.length > 0 && document.querySelectorAll('.ticket-select:checked').length === all.length;
+      }
+    });
+  });
+
+  if (selectAll) {
+    selectAll.addEventListener('change', function() {
+      var val = this.checked;
+      document.querySelectorAll('.ticket-select').forEach(function(cb) { cb.checked = val; });
+      updateBulkBtn();
+    });
+  }
+
+  window.toggleSelectMode = function() {
+    if (isSelectionMode()) {
+      document.body.classList.remove('selection-mode');
+      if (selectModeBtn) selectModeBtn.textContent = 'Select';
+      bulkBtn.style.display = 'none';
+      document.querySelectorAll('.ticket-select').forEach(function(cb) { cb.checked = false; });
+      if (selectAll) selectAll.checked = false;
+      document.querySelectorAll('.kanban-card').forEach(function(card) { card.setAttribute('draggable', 'true'); });
+    } else {
+      document.body.classList.add('selection-mode');
+      if (selectModeBtn) selectModeBtn.textContent = 'Cancel';
+      document.querySelectorAll('.kanban-card').forEach(function(card) { card.setAttribute('draggable', 'false'); });
+    }
+  };
+
+  function toast(text, tags) {
+    window.dispatchEvent(new CustomEvent('django-message', {detail: {text: text, tags: tags}}));
+  }
+  window.bulkDeleteTickets = function(url) {
+    var checked = document.querySelectorAll('.ticket-select:checked');
+    if (checked.length === 0) return;
+    var msg = 'Delete ' + checked.length + ' ticket' + (checked.length > 1 ? 's' : '') + '? This cannot be undone.';
+    if (!confirm(msg)) return;
+    var ids = [];
+    checked.forEach(function(cb) { ids.push(cb.value); });
+    var formData = new FormData();
+    ids.forEach(function(id) { formData.append('ticket_ids[]', id); });
+    var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrf) {
+      var metaCsrf = document.querySelector('meta[name=csrf-token]');
+      if (metaCsrf) csrf = { value: metaCsrf.content };
+    }
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf ? csrf.value : '' },
+      body: formData
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.deleted > 0) {
+        checked.forEach(function(cb) {
+          var card = cb.closest('.kanban-card') || cb.closest('tr');
+          if (card) card.remove();
+        });
+        document.querySelectorAll('.kanban-cards').forEach(function(cards) {
+          if (cards.querySelectorAll('.kanban-card').length === 0 && !cards.querySelector('.kanban-empty')) {
+            var empty = document.createElement('div');
+            empty.className = 'kanban-empty';
+            empty.textContent = 'No tickets';
+            cards.appendChild(empty);
+          }
+        });
+        var countEl = document.querySelector('.count');
+        if (countEl) {
+          var total = parseInt(countEl.textContent) - data.deleted;
+          if (total < 0) total = 0;
+          countEl.textContent = total + ' ticket' + (total !== 1 ? 's' : '');
+        }
+        window.toggleSelectMode();
+        toast(data.deleted + ' ticket' + (data.deleted > 1 ? 's' : '') + ' deleted.', 'success');
+      } else {
+        toast(data.error || 'No tickets were deleted.', 'error');
+      }
+    }).catch(function() { toast('Could not delete tickets.', 'error'); });
+  };
+})();
+
+// Custom Datepicker Component Script
+(function() {
+  var activeInput = null;
+  var currentMonth = new Date().getMonth();
+  var currentYear = new Date().getFullYear();
+
+  var popover = document.createElement('div');
+  popover.className = 'pq-datepicker-popover';
+  popover.innerHTML = `
+    <div class="pq-datepicker-presets">
+      <button type="button" class="pq-datepicker-preset" data-preset="today">Today</button>
+      <button type="button" class="pq-datepicker-preset" data-preset="yesterday">Yesterday</button>
+      <button type="button" class="pq-datepicker-preset" data-preset="7days">Last 7d</button>
+      <button type="button" class="pq-datepicker-preset" data-preset="30days">Last 30d</button>
+    </div>
+    <div class="pq-datepicker-head">
+      <div class="pq-datepicker-title"></div>
+      <div class="pq-datepicker-nav">
+        <button type="button" class="pq-prev">&larr;</button>
+        <button type="button" class="pq-next">&rarr;</button>
+      </div>
+    </div>
+    <div class="pq-datepicker-grid">
+      <div class="pq-datepicker-day-name">Su</div>
+      <div class="pq-datepicker-day-name">Mo</div>
+      <div class="pq-datepicker-day-name">Tu</div>
+      <div class="pq-datepicker-day-name">We</div>
+      <div class="pq-datepicker-day-name">Th</div>
+      <div class="pq-datepicker-day-name">Fr</div>
+      <div class="pq-datepicker-day-name">Sa</div>
+    </div>
+    <div class="pq-datepicker-days pq-datepicker-grid"></div>
+  `;
+  document.body.appendChild(popover);
+
+  var titleEl = popover.querySelector('.pq-datepicker-title');
+  var daysEl = popover.querySelector('.pq-datepicker-days');
+  var prevBtn = popover.querySelector('.pq-prev');
+  var nextBtn = popover.querySelector('.pq-next');
+
+  function renderCalendar(year, month, selectedValue) {
+    titleEl.textContent = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+    daysEl.innerHTML = '';
+
+    var firstDay = new Date(year, month, 1).getDay();
+    var totalDays = new Date(year, month + 1, 0).getDate();
+    var prevMonthDays = new Date(year, month, 0).getDate();
+    var todayStr = new Date().toISOString().split('T')[0];
+
+    for (var i = firstDay - 1; i >= 0; i--) {
+      var d = document.createElement('div');
+      d.className = 'pq-datepicker-day muted';
+      d.textContent = prevMonthDays - i;
+      daysEl.appendChild(d);
+    }
+
+    for (var day = 1; day <= totalDays; day++) {
+      var d = document.createElement('div');
+      d.className = 'pq-datepicker-day';
+      d.textContent = day;
+      var monthStr = String(month + 1).padStart(2, '0');
+      var dayStr = String(day).padStart(2, '0');
+      var dateStr = year + '-' + monthStr + '-' + dayStr;
+
+      if (dateStr === todayStr) d.classList.add('today');
+      if (dateStr === selectedValue) d.classList.add('selected');
+
+      d.dataset.date = dateStr;
+      d.addEventListener('click', function(e) {
+        selectDate(this.dataset.date);
+      });
+      daysEl.appendChild(d);
+    }
+  }
+
+  function selectDate(dateStr) {
+    if (!activeInput) return;
+    activeInput.value = dateStr;
+    activeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+    if (typeof activeInput.onchange === 'function') {
+      activeInput.onchange();
+    }
+    hidePopover();
+  }
+
+  function positionPopover(input) {
+    var rect = input.getBoundingClientRect();
+    popover.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+    popover.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 300) + 'px';
+    popover.style.display = 'block';
+  }
+
+  function hidePopover() {
+    popover.style.display = 'none';
+    activeInput = null;
+  }
+
+  prevBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar(currentYear, currentMonth, activeInput ? activeInput.value : '');
+  });
+
+  nextBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar(currentYear, currentMonth, activeInput ? activeInput.value : '');
+  });
+
+  popover.querySelectorAll('.pq-datepicker-preset').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var preset = this.dataset.preset;
+      var now = new Date();
+      var target = new Date();
+
+      if (preset === 'yesterday') target.setDate(now.getDate() - 1);
+      else if (preset === '7days') target.setDate(now.getDate() - 6);
+      else if (preset === '30days') target.setDate(now.getDate() - 29);
+
+      var year = target.getFullYear();
+      var month = String(target.getMonth() + 1).padStart(2, '0');
+      var day = String(target.getDate()).padStart(2, '0');
+      selectDate(year + '-' + month + '-' + day);
+    });
+  });
+
+  document.addEventListener('click', function(e) {
+    var target = e.target;
+    if (target.tagName === 'INPUT' && target.type === 'date') {
+      e.preventDefault();
+      activeInput = target;
+      var parts = target.value ? target.value.split('-') : [];
+      if (parts.length === 3) {
+        currentYear = parseInt(parts[0], 10);
+        currentMonth = parseInt(parts[1], 10) - 1;
+      } else {
+        var now = new Date();
+        currentYear = now.getFullYear();
+        currentMonth = now.getMonth();
+      }
+      renderCalendar(currentYear, currentMonth, target.value);
+      positionPopover(target);
+    } else if (!popover.contains(target)) {
+      hidePopover();
+    }
+  }, true);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'date' && (e.key === ' ' || e.key === 'Enter')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  window.addEventListener('resize', hidePopover);
+  window.addEventListener('scroll', hidePopover, true);
+})();
+
+// Custom Select Dropdown Component Script
+(function() {
+  var activeSelect = null;
+  var selectPopover = document.createElement('div');
+  selectPopover.className = 'pq-select-popover';
+  document.body.appendChild(selectPopover);
+
+  function renderDropdown(selectEl) {
+    selectPopover.innerHTML = '';
+    var options = Array.from(selectEl.options);
+    var selectedValue = selectEl.value;
+
+    if (options.length > 8) {
+      var searchWrap = document.createElement('div');
+      searchWrap.className = 'pq-select-search';
+      var searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.placeholder = 'Search options...';
+      searchInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      searchInput.addEventListener('input', function() {
+        var query = this.value.toLowerCase();
+        selectPopover.querySelectorAll('.pq-select-item').forEach(function(item) {
+          var text = item.textContent.toLowerCase();
+          item.style.display = text.includes(query) ? 'flex' : 'none';
+        });
+      });
+      searchWrap.appendChild(searchInput);
+      selectPopover.appendChild(searchWrap);
+      setTimeout(function() { searchInput.focus(); }, 50);
+    }
+
+    var listWrap = document.createElement('div');
+    options.forEach(function(opt) {
+      if (opt.disabled) return;
+      var item = document.createElement('div');
+      item.className = 'pq-select-item' + (opt.value === selectedValue ? ' selected' : '');
+      item.textContent = opt.text;
+      item.dataset.value = opt.value;
+
+      item.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectEl.value = this.dataset.value;
+        selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof selectEl.onchange === 'function') {
+          selectEl.onchange();
+        }
+        hideSelectPopover();
+      });
+
+      listWrap.appendChild(item);
+    });
+    selectPopover.appendChild(listWrap);
+  }
+
+  function positionSelectPopover(selectEl) {
+    var rect = selectEl.getBoundingClientRect();
+    selectPopover.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+    selectPopover.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 320) + 'px';
+    selectPopover.style.minWidth = Math.max(rect.width, 160) + 'px';
+    selectPopover.style.display = 'block';
+  }
+
+  function hideSelectPopover() {
+    selectPopover.style.display = 'none';
+    activeSelect = null;
+  }
+
+  document.addEventListener('click', function(e) {
+    var target = e.target;
+    if (target.tagName === 'SELECT') {
+      e.preventDefault();
+      if (activeSelect === target && selectPopover.style.display === 'block') {
+        hideSelectPopover();
+        return;
+      }
+      activeSelect = target;
+      renderDropdown(target);
+      positionSelectPopover(target);
+    } else if (!selectPopover.contains(target)) {
+      hideSelectPopover();
+    }
+  }, true);
+
+  document.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'SELECT') {
+      e.preventDefault();
+    }
+  }, true);
+
+  window.addEventListener('resize', hideSelectPopover);
+  window.addEventListener('scroll', hideSelectPopover, true);
+})();
+
+// Custom Tooltip Component Script
+(function() {
+  var tooltipEl = document.createElement('div');
+  tooltipEl.className = 'pq-tooltip';
+  tooltipEl.innerHTML = '<span class="pq-tooltip-text"></span><div class="pq-tooltip-arrow top"></div>';
+  document.body.appendChild(tooltipEl);
+
+  var textEl = tooltipEl.querySelector('.pq-tooltip-text');
+  var arrowEl = tooltipEl.querySelector('.pq-tooltip-arrow');
+  var currentTarget = null;
+
+  function showTooltip(el) {
+    var text = el.getAttribute('data-tooltip') || el.getAttribute('title') || el.getAttribute('data-native-title');
+    if (!text || !text.trim()) return;
+
+    if (el.hasAttribute('title')) {
+      el.setAttribute('data-native-title', el.getAttribute('title'));
+      el.removeAttribute('title');
+    }
+
+    currentTarget = el;
+    textEl.innerHTML = text;
+
+    var rect = el.getBoundingClientRect();
+    tooltipEl.style.display = 'block';
+
+    var tooltipRect = tooltipEl.getBoundingClientRect();
+    var top = rect.top + window.scrollY - tooltipRect.height - 7;
+    var left = rect.left + window.scrollX + (rect.width / 2) - (tooltipRect.width / 2);
+    var position = 'top';
+
+    if (top < window.scrollY + 8) {
+      top = rect.bottom + window.scrollY + 7;
+      position = 'bottom';
+    }
+
+    left = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8));
+
+    arrowEl.className = 'pq-tooltip-arrow ' + position;
+    tooltipEl.style.top = top + 'px';
+    tooltipEl.style.left = left + 'px';
+    tooltipEl.classList.add('show');
+  }
+
+  function hideTooltip() {
+    tooltipEl.classList.remove('show');
+    if (currentTarget && currentTarget.hasAttribute('data-native-title')) {
+      currentTarget.setAttribute('title', currentTarget.getAttribute('data-native-title'));
+    }
+    currentTarget = null;
+  }
+
+  document.addEventListener('mouseover', function(e) {
+    var target = e.target.closest('[data-tooltip], [title], [data-native-title]');
+    if (target) {
+      showTooltip(target);
+    }
+  }, true);
+
+  document.addEventListener('mouseout', function(e) {
+    var target = e.target.closest('[data-tooltip], [title], [data-native-title]');
+    if (target) {
+      hideTooltip();
+    }
+  }, true);
+
+  window.addEventListener('scroll', hideTooltip, true);
+})();
+
+// Global Debounced Live Search Script
+(function() {
+  var searchTimeout = null;
+  document.addEventListener('input', function(e) {
+    var target = e.target;
+    if (target.tagName === 'INPUT' && target.name === 'q') {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function() {
+        if (typeof window.buildUrl === 'function') {
+          window.location = window.buildUrl({ q: target.value });
+        } else if (target.form) {
+          try {
+            target.form.requestSubmit();
+          } catch(err) {
+            target.form.submit();
+          }
+        }
+      }, 300);
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.querySelector('input[name="q"]');
+    if (searchInput && searchInput.value) {
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('q')) {
+        searchInput.focus();
+        var len = searchInput.value.length;
+        searchInput.setSelectionRange(len, len);
+      }
+    }
+  });
+})();
+</script>
+
+<script>window.pqToast=function(text,tags){window.dispatchEvent(new CustomEvent('django-message',{detail:{text:text,tags:tags||'info'}}))};</script>
+<dialog class="dlg" id="pq-confirm" style="max-width:400px">
+  <div class="dlg-head"><span class="dlg-icon" data-icon>{% icon 'triangle-alert' 'ic' %}</span><h3 data-title>Are you sure?</h3><p data-text></p></div>
+  <div class="dlg-foot" style="padding-top:16px"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn btn-primary" data-ok>Confirm</button></div>
+</dialog>
+<script>
+/* Anything with data-confirm asks first: <form data-confirm="Delete this entry?" data-confirm-text="This cannot be undone."> or a submit button carrying the same. */
+(function(){
+  var dlg=document.getElementById('pq-confirm'); if(!dlg||!dlg.showModal) return; var pending=null;
+  function ask(el,go){
+    dlg.querySelector('[data-title]').textContent=el.dataset.confirm||'Are you sure?';
+    var txt=el.dataset.confirmText||'';
+    if(el.dataset.confirmSince){var ms=Date.now()-Number(el.dataset.confirmSince);if(ms>0){var m=Math.floor(ms/60000);txt+=(txt?' ':'')+'Time worked so far: '+Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m.'}}
+    dlg.querySelector('[data-text]').textContent=txt;
+    var danger=el.dataset.confirmTone!=='primary', ok=dlg.querySelector('[data-ok]');
+    ok.textContent=el.dataset.confirmLabel||'Confirm'; ok.className='btn '+(danger?'btn-danger':'btn-primary');
+    dlg.querySelector('[data-icon]').classList.toggle('danger',danger); pending=go; dlg.showModal();
+  }
+  dlg.querySelector('[data-cancel]').onclick=function(){pending=null;dlg.close()};
+  dlg.querySelector('[data-ok]').onclick=function(){var g=pending;pending=null;dlg.close();if(g)g()};
+  /* hx-confirm on an htmx request opens this window instead of the browser's own box. */
+  document.addEventListener('htmx:confirm',function(e){
+    if(!e.detail.question) return; e.preventDefault();
+    var el=e.detail.elt; el.dataset.confirm=e.detail.question; ask(el,function(){e.detail.issueRequest(true)});
+  });
+  document.addEventListener('submit',function(e){
+    var f=e.target, src=e.submitter, el=(src&&src.dataset.confirm)?src:(f.dataset&&f.dataset.confirm?f:null);
+    if(!el||f.dataset.confirmed) return; e.preventDefault();
+    ask(el,function(){f.dataset.confirmed='1'; if(src&&src.name){var h=document.createElement('input');h.type='hidden';h.name=src.name;h.value=src.value;f.appendChild(h)} f.requestSubmit?f.submit():f.submit()});
+  },true);
+})();
+</script>
+<script>
+/* ⌘ on a Mac, Ctrl everywhere else. */
+(function(){var mac=/mac|iphone|ipad|ipod/i.test(navigator.platform||navigator.userAgent||'');if(mac)document.querySelectorAll('.mod').forEach(function(k){k.textContent='⌘'});
+  document.querySelectorAll('.tb-search kbd').forEach(function(k){if(mac)k.textContent='⌘ K'});})();
+</script>
+<script>
+/* Small celebrations and counting numbers. Both stay still for people who prefer reduced motion. */
+(function(){
+  var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var COLORS=['#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#ef4444'];
+  window.pqConfetti=function(x,y,n){
+    if(still) return; x=x==null?innerWidth/2:x; y=y==null?innerHeight/3:y; n=n||36;
+    var layer=document.createElement('div'); layer.setAttribute('aria-hidden','true'); layer.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden';
+    for(var i=0;i<n;i++){
+      var p=document.createElement('i'), a=Math.random()*Math.PI*2, d=80+Math.random()*160;
+      p.style.cssText='position:absolute;left:'+x+'px;top:'+y+'px;width:'+(6+Math.random()*5)+'px;height:'+(4+Math.random()*6)+'px;background:'+COLORS[i%COLORS.length]+';border-radius:2px';
+      p.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d-60)+'px) rotate('+Math.random()*360+'deg)',opacity:1,offset:.45},{transform:'translate('+Math.cos(a)*d*1.2+'px,'+(Math.sin(a)*d+220)+'px) rotate('+Math.random()*720+'deg)',opacity:0}],{duration:1300+Math.random()*500,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
+      layer.appendChild(p);
+    }
+    document.body.appendChild(layer); setTimeout(function(){layer.remove()},2000);
+  };
+  function countUp(root){
+    (root||document).querySelectorAll('[data-count]').forEach(function(el){
+      var to=parseInt(el.dataset.count,10); if(isNaN(to)||el.dataset.counted) return; el.dataset.counted='1';
+      if(still||to===0){el.textContent=to;return}
+      var t0=performance.now(); el.textContent='0';
+      (function tick(t){var k=Math.min(1,(t-t0)/700);el.textContent=Math.round(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(tick)})(t0);
+    });
+  }
+  countUp();
+  var lastDone=null;
+  document.body.addEventListener('htmx:afterSwap',function(e){
+    countUp(e.target);
+    var st=document.getElementById('todo-state'); if(!st||e.target.id!=='todo-list') return;
+    var total=+st.dataset.total, done=+st.dataset.done;
+    if(lastDone!==null&&lastDone<total&&total>0&&done===total) window.pqConfetti();   // the last one just got ticked
+    lastDone=done;
+  });
+})();
+</script>
+<script>
+/* Icon-only buttons and links get their name as a tooltip. */
+(function(){function tip(root){(root||document).querySelectorAll('.icon-btn[aria-label],.tb-icon[aria-label],.topbar-burger[aria-label],button[aria-label].tb-btn').forEach(function(el){if(!el.hasAttribute('data-tip'))el.setAttribute('data-tip',el.getAttribute('aria-label'))})}
+  tip(); document.body.addEventListener('htmx:afterSwap',function(e){tip(e.target)});})();
+</script>
+</body>
+</html>

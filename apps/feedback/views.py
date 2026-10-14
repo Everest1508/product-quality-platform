@@ -1,30 +1,271 @@
-from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Avg, Count
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views import View
 
 from apps.core.mixins import CompanyMemberRequiredMixin
-from apps.feedback.models import Survey
+from apps.dashboards.service import log_activity
+from apps.feedback.forms import SurveyCreateForm, SurveyResponseForm
+from apps.feedback.models import SentimentRecord, Survey, SurveyResponse
 from apps.products.access import accessible_products
-from apps.uiapi.shell import render_shell
+from apps.products.models import Product
 
 
-class SurveyShellView(CompanyMemberRequiredMixin, View):
-    """The list, create form and CS hub, served by the React shell."""
+SURVEY_SORT_MAP = {
+    "created": "created_at",
+    "-created": "-created_at",
+    "name": "name",
+    "-name": "-name",
+    "responses": "response_count",
+    "-responses": "-response_count",
+}
 
+
+class SurveyListView(CompanyMemberRequiredMixin, View):
     def get(self, request):
-        return render_shell(request)
+        qs = Survey.objects.filter(company=request.company).select_related("product", "created_by")
+
+        status = request.GET.get("status")
+        if status:
+            qs = qs.filter(status=status)
+
+        survey_type = request.GET.get("type")
+        if survey_type:
+            qs = qs.filter(survey_type=survey_type)
+
+        search = request.GET.get("q", "").strip()
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        sort = request.GET.get("sort", "-created")
+        order = SURVEY_SORT_MAP.get(sort, "-created_at")
+        qs = qs.order_by(order)
+
+        paginator = Paginator(qs, 25)
+        page = paginator.get_page(request.GET.get("page", 1))
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "feedback/partials/_survey_list_body.html", {
+                "page": page,
+            })
+
+        return render(request, "feedback/survey_list.html", {
+            "page": page,
+            "current_status": status,
+            "current_type": survey_type,
+            "search": search,
+            "current_sort": sort,
+        })
+
+
+class SurveyCreateView(CompanyMemberRequiredMixin, View):
+    def get(self, request):
+        form = SurveyCreateForm(company=request.company)
+        return render(request, "feedback/survey_form.html", {"form": form, "editing": False})
+
+    def post(self, request):
+        form = SurveyCreateForm(request.POST, company=request.company)
+        if form.is_valid():
+            survey = form.save(commit=False)
+            survey.company = request.company
+            survey.created_by = request.user
+            survey.save()
+            log_activity(
+                request.company, "survey_created",
+                f"Survey '{survey.name}' created",
+                actor=request.user,
+                target_content_type="survey",
+                target_object_id=survey.pk,
+                metadata={"product_id": survey.product_id},
+            )
+            messages.success(request, f"Survey '{survey.name}' created.")
+            return redirect("feedback:survey_detail", pk=survey.pk)
+        return render(request, "feedback/survey_form.html", {"form": form, "editing": False})
 
 
 class SurveyDetailView(CompanyMemberRequiredMixin, View):
-    """404 unless the survey is in this company and on a product the person may open."""
-
     def get(self, request, pk):
-        get_object_or_404(Survey, pk=pk, company=request.company, product__in=accessible_products(request.user, request.company))
-        return render_shell(request)
+        survey = get_object_or_404(
+            Survey.objects.select_related("product", "created_by"),
+            pk=pk,
+            company=request.company,
+        )
+        responses = survey.responses.all()[:50]
+        avg_score = survey.compute_avg_score()
+        nps_score = survey.compute_nps()
+        response_count = survey.response_count
+
+        response_distribution = {}
+        for s in survey.score_range():
+            count = survey.responses.filter(score=s).count()
+            response_distribution[s] = count
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "feedback/partials/_survey_detail_content.html", {
+                "survey": survey,
+                "responses": responses,
+                "avg_score": avg_score,
+                "nps_score": nps_score,
+                "response_count": response_count,
+                "response_distribution": response_distribution,
+            })
+
+        return render(request, "feedback/survey_detail.html", {
+            "survey": survey,
+            "responses": responses,
+            "avg_score": avg_score,
+            "nps_score": nps_score,
+            "response_count": response_count,
+            "response_distribution": response_distribution,
+        })
+
+
+class SurveyToggleView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        survey = get_object_or_404(Survey, pk=pk, company=request.company)
+        if survey.status == "draft":
+            survey.status = "active"
+        elif survey.status == "active":
+            survey.status = "closed"
+        else:
+            survey.status = "draft"
+        survey.save(update_fields=["status", "updated_at"])
+        log_activity(
+            request.company, "survey_toggled",
+            f"Survey '{survey.name}' status changed",
+            description=survey.get_status_display(),
+            actor=request.user,
+            target_content_type="survey",
+            target_object_id=survey.pk,
+            metadata={"product_id": survey.product_id, "status": survey.status},
+        )
+        messages.success(request, f"Survey status changed to '{survey.get_status_display()}'.")
+        return redirect("feedback:survey_detail", pk=survey.pk)
+
+
+class SurveyDeleteView(CompanyMemberRequiredMixin, View):
+    def post(self, request, pk):
+        survey = get_object_or_404(Survey, pk=pk, company=request.company)
+        name = survey.name
+        survey.delete()
+        log_activity(
+            request.company, "survey_deleted",
+            f"Survey '{name}' deleted",
+            actor=request.user,
+            target_content_type="survey",
+            target_object_id=pk,
+        )
+        messages.success(request, f"Survey '{name}' deleted.")
+        return redirect("feedback:survey_list")
 
 
 class PublicSurveyView(View):
-    """The public link. No login; the page itself is the React shell, which fetches an active survey or says it is not open."""
-
     def get(self, request, pk):
-        get_object_or_404(Survey, pk=pk, status="active")
-        return render_shell(request)
+        survey = get_object_or_404(
+            Survey.objects.select_related("product"),
+            pk=pk,
+            status="active",
+        )
+        form = SurveyResponseForm(initial={"score": 5})
+        return render(request, "feedback/survey/public_survey.html", {
+            "survey": survey,
+            "form": form,
+            "score_range": survey.score_range(),
+        })
+
+    def post(self, request, pk):
+        survey = get_object_or_404(Survey, pk=pk, status="active")
+        form = SurveyResponseForm(request.POST)
+
+        if form.is_valid():
+            response = SurveyResponse.objects.create(
+                survey=survey,
+                company=survey.company,
+                score=form.cleaned_data["score"],
+                comment=form.cleaned_data.get("comment", ""),
+                contact_name=form.cleaned_data.get("contact_name", ""),
+                contact_email=form.cleaned_data.get("contact_email", ""),
+            )
+            log_activity(
+                survey.company, "survey_response",
+                f"Survey response received: {response.score}",
+                description=f"Response to '{survey.name}'",
+                target_content_type="survey_response",
+                target_object_id=response.pk,
+                metadata={"survey_id": survey.pk, "product_id": survey.product_id, "score": response.score},
+            )
+            return render(request, "feedback/survey/survey_thankyou.html", {
+                "survey": survey,
+            })
+
+        return render(request, "feedback/survey/public_survey.html", {
+            "survey": survey,
+            "form": form,
+            "score_range": survey.score_range(),
+        })
+
+
+class CustomerSuccessHubView(CompanyMemberRequiredMixin, View):
+    def get(self, request):
+        company = request.company
+        products = accessible_products(request.user, company)
+
+        sentiment_records = SentimentRecord.objects.filter(
+            company=company, product__in=products
+        ).select_related("product").order_by("-recorded_at")
+
+        surveys = Survey.objects.filter(company=company, product__in=products).select_related("product")
+        active_surveys = surveys.filter(status="active")
+        closed_surveys = surveys.filter(status="closed")
+
+        visible_responses = SurveyResponse.objects.filter(company=company, survey__product__in=products)
+        total_responses = visible_responses.count()
+        avg_all = visible_responses.aggregate(avg=Avg("score"))["avg"]
+
+        product_stats = []
+        for product in products:
+            product_surveys = surveys.filter(product=product)
+            product_responses = SurveyResponse.objects.filter(
+                survey__product=product
+            )
+            resp_count = product_responses.count()
+            avg = product_responses.aggregate(avg=Avg("score"))["avg"]
+            product_stats.append({
+                "product": product,
+                "survey_count": product_surveys.count(),
+                "response_count": resp_count,
+                "avg_score": round(avg, 1) if avg else None,
+            })
+
+        sentiment_by_product = {}
+        for product in products:
+            records = sentiment_records.filter(product=product)
+            if records.exists():
+                sentiment_by_product[product.pk] = [
+                    {"date": r.recorded_at.isoformat(), "score": float(r.score), "source": r.source}
+                    for r in records[:30]
+                ]
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "feedback/partials/_cs_hub_content.html", {
+                "products": products,
+                "product_stats": product_stats,
+                "active_surveys": active_surveys,
+                "sentiment_by_product": sentiment_by_product,
+                "total_responses": total_responses,
+                "avg_all": round(avg_all, 1) if avg_all else None,
+            })
+
+        return render(request, "feedback/cs_hub.html", {
+            "products": products,
+            "product_stats": product_stats,
+            "active_surveys": active_surveys,
+            "closed_surveys": closed_surveys,
+            "sentiment_records": sentiment_records,
+            "sentiment_by_product": sentiment_by_product,
+            "total_responses": total_responses,
+            "avg_all": round(avg_all, 1) if avg_all else None,
+        })

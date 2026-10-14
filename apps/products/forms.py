@@ -33,14 +33,17 @@ class ProductCreateForm(TicketKeyMixin, forms.ModelForm):
         fields = ["name", "key", "description", "default_environment", "discord_webhook_url"]
         widgets = {
             "name": forms.TextInput(attrs={
+                "class": "form-input",
                 "placeholder": "My App",
             }),
             "description": forms.Textarea(attrs={
+                "class": "form-input",
                 "rows": 3,
                 "placeholder": "Optional description",
             }),
-            "default_environment": forms.Select(attrs={}),
+            "default_environment": forms.Select(attrs={"class": "form-input"}),
             "discord_webhook_url": forms.URLInput(attrs={
+                "class": "form-input",
                 "placeholder": "https://discord.com/api/webhooks/...",
             }),
         }
@@ -73,9 +76,9 @@ class ProductEditForm(TicketKeyMixin, forms.ModelForm):
         model = Product
         fields = ["name", "key", "description", "default_environment", "discord_webhook_url"]
         widgets = {
-            "name": forms.TextInput(attrs={}),
-            "description": forms.Textarea(attrs={"rows": 3}),
-            "default_environment": forms.Select(attrs={}),
+            "name": forms.TextInput(attrs={"class": "form-input"}),
+            "description": forms.Textarea(attrs={"class": "form-input", "rows": 3}),
+            "default_environment": forms.Select(attrs={"class": "form-input"}),
         }
 
 
@@ -85,9 +88,11 @@ class VersionCreateForm(forms.ModelForm):
         fields = ["version_string", "is_current"]
         widgets = {
             "version_string": forms.TextInput(attrs={
+                "class": "form-input",
                 "placeholder": "1.0.0",
             }),
             "is_current": forms.CheckboxInput(attrs={
+                "class": "form-input",
                 "style": "width:auto;",
             }),
         }

@@ -1,0 +1,30 @@
+{# One of your own correction requests: the day, the times you asked for, why, and where it stands. #}
+<article class="corr-item">
+  <header>
+    <span class="corr-day">{{ c.date|date:"D, M j" }}</span>
+    <span class="pill {% if c.status == 'approved' %}resolved{% elif c.status == 'pending' %}open{% else %}closed{% endif %}">{{ c.get_status_display }}</span>
+    <span class="corr-sent" title="{{ c.created_at|date:'M j, g:i A' }}">sent {{ c.created_at|date:"M j, g:i A" }}</span>
+  </header>
+  <div class="corr-chips">
+    <span class="corr-chip{% if not c.requested_check_in %} is-same{% endif %}">
+      <i>In</i>
+      {% if c.requested_check_in %}
+        {% if c.original_check_in %}<s>{{ c.original_check_in|date:"g:i A" }}</s>{% endif %}<b>{{ c.requested_check_in|date:"g:i A" }}</b>
+      {% else %}<em>unchanged</em>{% endif %}
+    </span>
+    <span class="corr-chip{% if not c.requested_check_out %} is-same{% endif %}">
+      <i>Out</i>
+      {% if c.requested_check_out %}
+        {% if c.original_check_out %}<s>{{ c.original_check_out|date:"g:i A" }}</s>{% endif %}<b>{{ c.requested_check_out|date:"g:i A" }}</b>{% if c.requested_check_out.date != c.date %}<small>next day</small>{% endif %}
+      {% else %}<em>unchanged</em>{% endif %}
+    </span>
+  </div>
+  {% if c.reason %}<p class="corr-why">&ldquo;{{ c.reason }}&rdquo;</p>{% endif %}
+  {% if c.decision_note %}<p class="corr-note-line"><b>Note:</b> {{ c.decision_note }}</p>{% endif %}
+  {% if c.is_pending %}
+  <form method="post" action="{% url 'attendance:correction_cancel' c.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm">Cancel request</button>
+  </form>
+  {% endif %}
+</article>

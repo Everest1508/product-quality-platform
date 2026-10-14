@@ -26,17 +26,12 @@ if not DEBUG:
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-# Where the React app is hosted when it is NOT served by this site (for example https://app.example.com on Vercel).
-# Comma-separated origins. Leave it empty when Django serves the app itself, which is the default.
-FRONTEND_ORIGINS = [o.strip().rstrip("/") for o in os.environ.get("FRONTEND_ORIGINS", "").split(",") if o.strip()]
-# A page on one of these origins opens the WebSockets, whose Origin check uses ALLOWED_HOSTS, so their hostnames join it.
-ALLOWED_HOSTS += [o.split("://", 1)[-1].split("/")[0] for o in FRONTEND_ORIGINS]
-
 INSTALLED_APPS = [
     # First, so `manage.py runserver` is daphne's ASGI server and serves the
     # WebSocket routes (/ws/presence/, /ws/inbox/) as well as HTTP. Without it
     # runserver is plain WSGI and every WebSocket gets a 404.
     "daphne",
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -44,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "rest_framework",
+    "django_htmx",
     "corsheaders",
     "channels",
     "allauth",
@@ -65,21 +61,21 @@ INSTALLED_APPS = [
     "apps.serop",
     "apps.presence",
     "apps.notifications",
-    "apps.uiapi",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "apps.core.spa_cors.SpaCorsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "apps.core.middleware.HtmxMessagesMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "apps.core.middleware.CurrentCompanyMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -94,6 +90,10 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.core.context_processors.product_context",
+                "apps.core.context_processors.workspace_context",
+                "apps.core.context_processors.version_context",
+                "apps.notifications.context_processors.webpush",
             ],
         },
     },
@@ -139,9 +139,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.41.0")
-
-FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.42.0")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth
@@ -167,8 +165,6 @@ ACCOUNT_LOGIN_BY_PASSWORD_ENABLED = True
 
 # Django REST Framework
 REST_FRAMEWORK = {
-    # JSON only: no browsable-API HTML page.
-    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": [],
     # Ingestion views set their own per-key throttle (apps.ingestion.views).
@@ -183,15 +179,7 @@ REST_FRAMEWORK = {
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS",
     "https://crm.beforth.in,http://localhost:8011,http://127.0.0.1:8011",
-).split(",") + FRONTEND_ORIGINS
-
-# Cookies. With the app on another address the login cookie must be shared with it: set COOKIE_DOMAIN to the parent domain
-# (".example.com" when the app is app.example.com and this site is api.example.com), which keeps both "same-site" so browsers
-# still send it. COOKIE_SAMESITE can be "None" for a front end on an unrelated domain, but Safari and Chrome block those cookies.
-COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN") or None
-SESSION_COOKIE_DOMAIN = CSRF_COOKIE_DOMAIN = COOKIE_DOMAIN
-SESSION_COOKIE_SAMESITE = CSRF_COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "Lax")
-SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = bool(FRONTEND_ORIGINS) and not DEBUG or os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes")
+).split(",")
 
 # CORS — scoped to the Serop desktop app's bearer-token-authenticated API only.
 # These paths carry no cookies, so allowing any origin on them is safe; the

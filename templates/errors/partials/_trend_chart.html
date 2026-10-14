@@ -1,0 +1,30 @@
+{% comment %}
+Detail chart: one bar per day for the last 30 days, then the same occurrences
+split by release. `trend` comes from errors.trends.detail_trend.
+{% endcomment %}
+<div class="card trend-card">
+  <div class="flex-between mb-4">
+    <div class="text-sm font-medium">Last {{ trend.days }} days</div>
+    <div class="text-sm text-muted">{{ trend.total }} occurrence{{ trend.total|pluralize }}{% if trend.peak %} · busiest day {{ trend.peak }}{% endif %}</div>
+  </div>
+  {% if error_group.is_regression or error_group.regression_count %}
+  <p class="trend-note {% if error_group.status == 'open' or error_group.status == 'investigating' %}is-red{% endif %}">
+    Came back after being resolved {{ error_group.regression_count }} time{{ error_group.regression_count|pluralize }}{% if error_group.regressed_at %}, most recently {{ error_group.regressed_at|date:"M j" }}{% endif %}.
+  </p>
+  {% endif %}
+  {% if first_version %}<p class="text-sm text-muted" style="margin:0 0 10px;">First seen in release <strong>{{ first_version.version_string }}</strong>.</p>{% endif %}
+  <div class="trend-bars" role="img" aria-label="Occurrences per day for the last {{ trend.days }} days">
+    {% for b in trend.bars %}
+    <div class="trend-col" title="{{ b.date|date:'D, M j' }}: {{ b.count }}"><i style="height:{{ b.pct }}%"></i></div>
+    {% endfor %}
+  </div>
+  <div class="trend-axis"><span>{{ trend.bars.0.date|date:"M j" }}</span><span>Today</span></div>
+  {% if trend.by_version %}
+  <table class="trend-versions">
+    <thead><tr><th>Release</th><th style="text-align:right;">Occurrences</th></tr></thead>
+    <tbody>
+      {% for v in trend.by_version %}<tr><td>{{ v.version }}</td><td style="text-align:right;">{{ v.count }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>

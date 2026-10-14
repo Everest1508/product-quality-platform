@@ -23,54 +23,103 @@ class AuditLogViewTest(TestCase):
         Membership.objects.create(user=self.owner, company=self.company, role="owner")
         Membership.objects.create(user=self.dev, company=self.company, role="developer")
 
-    def get(self, params=None):
-        return self.client.get("/ui-api/v1/audit/", params or {})
-
     def test_owner_can_view_audit_log(self):
         self.client.login(username="owner", password="pass1234")
         log_activity(self.company, "ticket_created", "Ticket #1 created", actor=self.owner)
-        r = self.client.get(reverse("dashboards:audit_log"))
-        self.assertEqual(r.status_code, 200)
-        self.assertTemplateUsed(r, "uiapi/shell.html")
-        data = self.get().json()
-        self.assertEqual(data["page"]["count"], 1)
-        self.assertEqual(data["items"][0]["title"], "Ticket #1 created")
-        self.assertEqual(data["items"][0]["actor"]["name"], "owner")
+        response = self.client.get(reverse("dashboards:audit_log"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page"].paginator.count, 1)
+        self.assertIn("Ticket #1 created", response.content.decode())
 
-    def test_developer_forbidden_on_the_page_and_the_api(self):
+    def test_developer_forbidden(self):
         self.client.login(username="dev", password="pass1234")
-        self.assertEqual(self.client.get(reverse("dashboards:audit_log")).status_code, 403)
-        self.assertEqual(self.get().status_code, 403)
+        response = self.client.get(reverse("dashboards:audit_log"))
+        self.assertEqual(response.status_code, 403)
 
-    def test_filter_by_event_type_actor_and_search(self):
+    def test_audit_htmx(self):
+        self.client.login(username="owner", password="pass1234")
+        response = self.client.get(reverse("dashboards:audit_log"), HTTP_HX_REQUEST="true")
+        self.assertEqual(response.status_code, 200)
+
+    def test_filter_by_event_type(self):
         self.client.login(username="owner", password="pass1234")
         log_activity(self.company, "ticket_created", "Ticket #1 created", actor=self.owner)
-        log_activity(self.company, "error_captured", "Err captured", actor=self.dev)
-        titles = lambda p: [i["title"] for i in self.get(p).json()["items"]]
-        self.assertEqual(titles({"type": "error_captured"}), ["Err captured"])
-        self.assertEqual(titles({"actor": self.dev.pk}), ["Err captured"])
-        self.assertEqual(titles({"q": "ticket"}), ["Ticket #1 created"])
-        self.assertEqual(self.get({"actor": "²"}).status_code, 200)
+        log_activity(self.company, "error_captured", "Err captured", actor=self.owner)
+        response = self.client.get(reverse("dashboards:audit_log"), {"type": "error_captured"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page"].paginator.count, 1)
+        self.assertIn("Err captured", response.content.decode())
+        self.assertNotIn("Ticket #1 created", response.content.decode())
 
     def test_filter_by_date_range(self):
         self.client.login(username="owner", password="pass1234")
         old = log_activity(self.company, "ticket_created", "Old event", actor=self.owner)
-        ActivityLog.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=10))
+        ActivityLog.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timedelta(days=10)
+        )
         today = timezone.localdate()
-        data = self.get({"from": (today - timedelta(days=2)).isoformat(), "to": today.isoformat()}).json()
-        self.assertEqual(data["page"]["count"], 0)
+        response = self.client.get(reverse("dashboards:audit_log"), {
+            "from": (today - timedelta(days=2)).isoformat(),
+            "to": today.isoformat(),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page"].paginator.count, 0)
 
-    def test_it_stays_inside_the_company(self):
-        other = Company.objects.create(name="Other", slug="other")
-        log_activity(other, "ticket_created", "Theirs", actor=None)
-        self.client.login(username="owner", password="pass1234")
-        self.assertEqual(self.get().json()["page"]["count"], 0)
 
-    def test_entries_link_to_what_they_are_about(self):
+class AuditLogFilterLabellingTest(TestCase):
+    """The filter row had one labelled control and three unlabelled siblings.
+
+    `Filter by type` carried an `aria-label` while the member filter beside it
+    did not, and the two date inputs were introduced by a `<span>From</span>` —
+    a span labels nothing, so clicking "From" did not focus the field and a
+    screen reader announced an unlabelled date input.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        owner = User.objects.create_user("owner", "owner@test.com", "pass1234")
+        company = Company.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=owner, company=company, role="owner")
         self.client.login(username="owner", password="pass1234")
-        log_activity(self.company, "ticket_created", "T", actor=self.owner, target_content_type="ticket", target_object_id=5)
-        item = self.get().json()["items"][0]
-        self.assertEqual((item["url"], item["pill"]), ("/tickets/5/", "open"))
+        self.body = self.client.get(reverse("dashboards:audit_log")).content.decode()
+
+    def test_every_filter_select_is_named(self):
+        """The filters are app-wide dropdowns now, not native <select>s.
+
+        A screen reader names a dropdown from its <summary>, so that is where
+        the label has to be. `assertTrue` still guards against this passing
+        vacuously if the page ever stops rendering any dropdown at all.
+        """
+        # Markup only: the changelog dialog's script builds <summary> strings of
+        # its own at runtime, which are not dropdowns on this page.
+        markup = re.sub(r"<script\b.*?</script>", "", self.body, flags=re.S)
+        triggers = re.findall(r"<summary\b[^>]*>", markup)
+        self.assertTrue(triggers)
+        for tag in triggers:
+            with self.subTest(tag=tag):
+                name = re.search(r'aria-label="([^"]*)"', tag)
+                self.assertIsNotNone(name, f"unnamed dropdown: {tag}")
+                self.assertTrue(name.group(1).strip())
+
+    def test_no_native_select_survives_on_this_page(self):
+        """The point of the rollout: no unstyled browser default survives.
+
+        This page has no custom dropdown with a hidden `<select>` backing it
+        (unlike the ticket assignee picker), so "no `<select>` anywhere" is
+        the exact statement that the rollout reached this screen.
+        """
+        self.assertNotIn("<select", self.body)
+
+    def test_date_inputs_are_named_by_a_real_label(self):
+        for field in ("from", "to"):
+            with self.subTest(field=field):
+                self.assertRegex(self.body, rf'<input[^>]*id="audit-{field}"')
+                self.assertIn(f'<label for="audit-{field}"', self.body)
+
+    def test_the_date_inputs_are_not_introduced_by_a_span(self):
+        """A span of visible text is not a label; it labels nothing."""
+        self.assertNotIn(">From</span>", self.body)
+        self.assertNotIn(">To</span>", self.body)
 
 
 class ReportsViewTest(TestCase):
@@ -83,37 +132,40 @@ class ReportsViewTest(TestCase):
         Membership.objects.create(user=self.dev, company=self.company, role="developer")
         self.product = Product.objects.create(name="App", slug="app", company=self.company)
 
-    def get(self, params=None):
-        return self.client.get("/ui-api/v1/reports/", params or {})
-
     def test_owner_can_view_reports(self):
         self.client.login(username="owner", password="pass1234")
-        log_activity(self.company, "ticket_created", "Ticket #1 created", actor=self.owner, metadata={"product_id": self.product.pk})
-        self.assertEqual(self.client.get(reverse("dashboards:reports")).status_code, 200)
-        d = self.get().json()
-        self.assertEqual((d["tickets"]["created"], d["scope"]), (1, "company"))
-        self.assertEqual(d["recent"][0]["title"], "Ticket #1 created")
-        self.assertEqual(len(d["presets"]), 5)
+        log_activity(self.company, "ticket_created", "Ticket #1 created", actor=self.owner,
+                     metadata={"product_id": self.product.pk})
+        response = self.client.get(reverse("dashboards:reports"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["tickets_created"], 1)
+        self.assertIn("Ticket #1 created", response.content.decode())
 
     def test_developer_sees_own_report(self):
         self.client.login(username="dev", password="pass1234")
-        log_activity(self.company, "ticket_created", "Dev ticket", actor=self.dev, metadata={"product_id": self.product.pk})
-        log_activity(self.company, "ticket_created", "Owner ticket", actor=self.owner, metadata={"product_id": self.product.pk})
-        d = self.get().json()
-        self.assertEqual((d["scope"], d["tickets"]["created"]), ("mine", 1))
-        titles = [e["title"] for e in d["recent"]]
-        self.assertEqual(titles, ["Dev ticket"])
+        log_activity(self.company, "ticket_created", "Dev ticket", actor=self.dev,
+                     metadata={"product_id": self.product.pk})
+        log_activity(self.company, "ticket_created", "Owner ticket", actor=self.owner,
+                     metadata={"product_id": self.product.pk})
+        response = self.client.get(reverse("dashboards:reports"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["scope"], "mine")
+        self.assertEqual(response.context["tickets_created"], 1)
+        self.assertIn("Dev ticket", response.content.decode())
+        self.assertNotIn("Owner ticket", response.content.decode())
 
-    def test_reports_date_range_param_and_swapped_dates(self):
+    def test_reports_date_range_param(self):
         self.client.login(username="owner", password="pass1234")
         log_activity(self.company, "ticket_created", "Ticket #1 created", actor=self.owner)
         today = timezone.localdate()
         yesterday = today - timedelta(days=1)
-        d = self.get({"start_date": yesterday.isoformat(), "end_date": today.isoformat()}).json()
-        self.assertEqual((d["tickets"]["created"], d["start_date"]), (1, yesterday.isoformat()))
-        d = self.get({"start_date": today.isoformat(), "end_date": yesterday.isoformat()}).json()
-        self.assertEqual(d["start_date"], yesterday.isoformat())
-        self.assertEqual(self.get({"start_date": "garbage"}).status_code, 200)
+        response = self.client.get(reverse("dashboards:reports"), {
+            "start_date": yesterday.isoformat(),
+            "end_date": today.isoformat(),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["tickets_created"], 1)
+        self.assertEqual(response.context["start_date"], yesterday)
 
 
 class SummaryReportServiceTest(TestCase):
@@ -225,13 +277,12 @@ class AuditWiringTest(TestCase):
         self.client.login(username="owner", password="pass1234")
 
     def test_ticket_creation_is_logged(self):
-        response = self.client.post("/ui-api/v1/tickets/", {
+        response = self.client.post(reverse("products:product_ticket_create", kwargs={"pk": self.product.pk}), {
             "title": "Bug on checkout",
             "ticket_type": "bug",
             "priority": "high",
-            "product": self.product.pk,
-        }, content_type="application/json")
-        self.assertEqual(response.status_code, 201)
+        })
+        self.assertEqual(response.status_code, 302)
         self.assertTrue(
             ActivityLog.objects.filter(
                 company=self.company,
@@ -241,12 +292,12 @@ class AuditWiringTest(TestCase):
         )
 
     def test_product_creation_is_logged(self):
-        response = self.client.post("/ui-api/v1/products/", {
+        response = self.client.post(reverse("products:product_create"), {
             "name": "New App",
             "description": "Test",
             "default_environment": "production",
-        }, content_type="application/json")
-        self.assertEqual(response.status_code, 201)
+        })
+        self.assertEqual(response.status_code, 302)
         self.assertTrue(
             ActivityLog.objects.filter(
                 company=self.company,

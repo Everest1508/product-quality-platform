@@ -413,6 +413,55 @@ class VersionApiTest(TestCase):
             self.assertEqual(section["count"], len(section["items"]))
 
 
+class VersionFooterUiTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.user = get_user_model().objects.create_user(username="owner", password="pass1234")
+        Membership.objects.create(user=self.user, company=self.company, role=Membership.Role.OWNER)
+
+    def test_sidebar_shows_a_clickable_version(self):
+        self.client.force_login(self.user)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn("data-changelog-open", body)
+        self.assertIn('aria-haspopup="dialog"', body)
+        self.assertIn(f"v{settings.APP_VERSION}", body)
+
+    def test_version_label_describes_what_the_button_does(self):
+        self.client.force_login(self.user)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn(f'aria-label="What\'s new in v{settings.APP_VERSION}"', body)
+
+    def test_dialog_is_present_and_reads_from_the_api(self):
+        self.client.force_login(self.user)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn('id="pq-changelog"', body)
+        self.assertIn("/api/v1/changelog/", body)
+        self.assertIn('role="dialog"', body)
+
+    def test_dialog_sits_outside_the_clipped_sidebar(self):
+        """.sidebar is overflow-x:hidden; a dialog inside it would be clipped."""
+        self.client.force_login(self.user)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertGreater(body.index('id="pq-changelog"'), body.index('class="shell"'))
+
+    def test_trigger_dispatches_the_event_the_dialog_listens_for(self):
+        self.client.force_login(self.user)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn("[data-changelog-open]", body)
+        self.assertIn("pq:changelog", body)
+
+    def test_logged_out_pages_have_no_version_footer(self):
+        body = self.client.get("/login/").content.decode()
+        self.assertNotIn("data-changelog-open", body)
+        self.assertNotIn('id="pq-changelog"', body)
+
+    def test_trigger_is_reachable_by_keyboard(self):
+        self.client.force_login(self.user)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn("side-version:focus-visible", body)
+
+
+
 class BrandFileTests(TestCase):
     def test_favicon_and_touch_icon_are_served(self):
         for url, kind in (("/favicon.ico", "image/"), ("/brand/favicon-32.png", "image/png"),
@@ -457,8 +506,7 @@ class PwaTests(TestCase):
         r = self.client.get("/login/")
         self.assertContains(r, 'rel="manifest"')
         self.assertContains(r, "viewport-fit=cover")
-        # The worker is registered by the React entry (frontend/src/lib/pwa.ts), which every shell page loads.
-        self.assertContains(r, "/ui/app.js")
+        self.assertContains(r, "serviceWorker.register('/sw.js'")
 
 
 class TemplateCommentTest(TestCase):
@@ -476,6 +524,32 @@ class TemplateCommentTest(TestCase):
                 line = text.count("\n", 0, match.start()) + 1
                 offenders.append(f"{path.relative_to(settings.BASE_DIR)}:{line}")
         self.assertEqual(offenders, [], "use {% comment %} for notes that span lines")
+
+
+class ShortAgoTest(TestCase):
+    """`short_ago` keeps table cells to one line."""
+
+    def test_keeps_only_the_largest_unit(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.core.templatetags.time_tags import short_ago
+
+        value = timezone.now() - timedelta(days=2, hours=3)
+        self.assertEqual(short_ago(value), "2 days ago")
+
+    def test_a_moment_ago(self):
+        from django.utils import timezone
+
+        from apps.core.templatetags.time_tags import short_ago
+
+        self.assertEqual(short_ago(timezone.now()), "just now")
+
+    def test_empty_value(self):
+        from apps.core.templatetags.time_tags import short_ago
+
+        self.assertEqual(short_ago(None), "")
 
 
 class ChangelogSummaryTest(TestCase):
@@ -544,6 +618,19 @@ class ShippedChangelogTest(TestCase):
                         self.assertRegex(lead.group(1), r"[.!?]$", item[:80])
 
 
+class ChangelogDialogDesignTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("dlg", "d@t.local", "pass1234")
+        Company.objects.create(name="C", slug="c")
+        company = Company.objects.get(slug="c")
+        Membership.objects.create(user=self.user, company=company, role="owner")
+        self.client.force_login(self.user)
+
+    def body(self):
+        return self.client.get("/tickets/").content.decode()
+
+
+
 class ReleaseNameTest(TestCase):
     def test_a_release_can_carry_a_name_and_the_name_is_optional(self):
         text = '# Changelog\n\n## [1.2.0] "Heron" — 2026-10-04 · first\n\n### New\n- **A.** x\n\n## [1.1.0] — 2026-10-03 · second\n\n### New\n- **B.** y\n'
@@ -560,46 +647,30 @@ class ReleaseNameTest(TestCase):
         self.assertEqual(changelog_module.get_version_info()["name"], named[0]["name"])
 
 
-class UiAssetsTest(TestCase):
+class ChangelogDialogTest(TestCase):
     def setUp(self):
-        import tempfile
-        from pathlib import Path
+        self.user = get_user_model().objects.create_user("dlg2", "d2@t.local", "pass1234")
+        company = Company.objects.create(name="C2", slug="c2")
+        Membership.objects.create(user=self.user, company=company, role="owner")
+        self.client.force_login(self.user)
 
-        from apps.core import ui_assets
+    def test_the_whats_new_window_has_search_type_filters_paged_older_releases_and_shows_once(self):
+        body = self.client.get("/tickets/").content.decode()
+        self.assertIn('id="pq-changelog"', body)
+        for marker in ('id="cl-search"', 'id="cl-chips"', 'id="cl-older"', "cl-card", "pq:seen-version", "inert"):
+            self.assertIn(marker, body)
+        self.assertIn(f'data-version="{settings.APP_VERSION}"', body)
 
-        ui_assets._gzipped.clear()
-        self.dist = Path(tempfile.mkdtemp())
-        (self.dist / "app.js").write_text("console.log('hello');" * 200)
-        (self.dist / "page-AbC123.js").write_text("export default 1;")
 
-    def get(self, name, **headers):
+class ErrorPagesTest(TestCase):
+    def test_a_missing_page_and_a_crash_get_calm_pages_with_a_way_home(self):
         from django.test import override_settings
 
-        with override_settings(FRONTEND_DIST=self.dist):
-            return self.client.get(f"/ui/{name}", **headers)
+        with override_settings(DEBUG=False, ALLOWED_HOSTS=["testserver"]):
+            r = self.client.get("/definitely/not/here/")
+        self.assertEqual(r.status_code, 404)
+        self.assertContains(r, "couldn’t find that page", status_code=404)
+        self.assertContains(r, 'href="/dashboards/"', status_code=404)
+        from django.template.loader import render_to_string
 
-    def test_a_browser_that_accepts_gzip_gets_the_smaller_file(self):
-        import gzip
-
-        r = self.get("app.js", HTTP_ACCEPT_ENCODING="gzip, br")
-        self.assertEqual(r["Content-Encoding"], "gzip")
-        self.assertLess(len(r.content), len("console.log('hello');" * 200) // 4)
-        self.assertEqual(gzip.decompress(r.content).decode(), "console.log('hello');" * 200)
-        plain = self.get("app.js")
-        self.assertNotIn("Content-Encoding", plain)
-        self.assertEqual(b"".join(plain.streaming_content), ("console.log('hello');" * 200).encode())
-
-    def test_an_unchanged_file_is_a_304_and_a_changed_one_is_sent_again(self):
-        first = self.get("app.js", HTTP_ACCEPT_ENCODING="gzip")
-        again = self.get("app.js", HTTP_ACCEPT_ENCODING="gzip", HTTP_IF_NONE_MATCH=first["ETag"])
-        self.assertEqual((again.status_code, again.content), (304, b""))
-        (self.dist / "app.js").write_text("changed" * 50)
-        self.assertEqual(self.get("app.js", HTTP_ACCEPT_ENCODING="gzip", HTTP_IF_NONE_MATCH=first["ETag"]).status_code, 200)
-
-    def test_cache_rules_differ_for_the_entry_file_and_hashed_pages(self):
-        self.assertEqual(self.get("app.js")["Cache-Control"], "no-cache")
-        self.assertIn("immutable", self.get("page-AbC123.js")["Cache-Control"])
-
-    def test_only_real_files_directly_in_the_build_folder_are_served(self):
-        self.assertEqual(self.get("missing.js").status_code, 404)
-        self.assertEqual(self.get("..%2Fsettings.py").status_code, 404)
+        self.assertIn("Something went wrong", render_to_string("500.html"))

@@ -14,25 +14,13 @@ shows up in a list, in search, or in a count.
 
 ## Find things fast
 
-* Press **Ctrl K** (Cmd K on a Mac) or **/** to search tickets, errors, products and pages.
+* Press **Ctrl K** (Cmd K on a Mac) or **/** to search tickets, errors, products and pages, or to run an action such as requesting leave.
+* Press **?** to see every keyboard shortcut. **g** then a letter jumps to a page, **t** switches light and dark, and **[** folds the sidebar.
   Typing a ticket number jumps straight to it.
 * The bell in the sidebar lists what is waiting for you: assignments, mentions,
   decisions on your leave.
 * Collapse the sidebar with the arrow at the bottom. Hover any icon to see its name.
   A blue dot on an icon means something is waiting there.
-
-## Keyboard shortcuts
-
-Press **?** anywhere to see them all, or open **Keyboard shortcuts** under your profile. A few to start with:
-
-| Keys | What it does |
-|---|---|
-| **g** then **h**, **t**, **d**, **a** | Go to Home, Tickets, DSR or Attendance. |
-| **c** | Create a ticket. |
-| **t** | Switch between light and dark. |
-| **[** | Fold or open the sidebar. |
-
-They use ⌘ on a Mac and Ctrl on Windows and Linux, and pause while you type in a field.
 
 ## Install it on your phone
 

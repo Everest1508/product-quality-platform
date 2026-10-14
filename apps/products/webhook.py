@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -7,8 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 def send_discord_webhook(webhook_url, embed, content=""):
+    """Fire and forget: a slow Discord must not hold up the request that caused it."""
     if not webhook_url:
         return
+    threading.Thread(target=_post_webhook, args=(webhook_url, embed, content), daemon=True).start()
+
+
+def _post_webhook(webhook_url, embed, content=""):
     webhook_url = webhook_url.strip()
     payload = {"embeds": [embed]}
     if content:
@@ -20,7 +26,7 @@ def send_discord_webhook(webhook_url, embed, content=""):
     try:
         resp = urlopen(req, timeout=5)
         return resp.status == 204
-    except URLError as e:
+    except (URLError, OSError) as e:
         logger.warning("Discord webhook failed: %s", e)
         return False
 

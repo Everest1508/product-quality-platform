@@ -1,0 +1,100 @@
+{% extends "core/base.html" %}
+{% load dropdown_tags %}
+
+{% block title %}Daily Status Report (DSR) — PQ Platform{% endblock %}
+
+{% block content %}
+<script>
+// Chips in the manual-entry form copy their data-* into the fields. Plain
+// buttons, so the form still works without them.
+function dsrFill(btn) {
+  var d = btn.dataset, el = document.getElementById(d.target);
+  if (el) { el.value = d.value; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); }
+  if (d.categoryTarget) {
+    var c = document.getElementById(d.categoryTarget);
+    if (c) { c.value = d.category; c.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+}
+// Quick-time chips: set hour and minute dropdowns from data-h / data-m.
+function dsrTime(btn) {
+  var d = btn.dataset;
+  var hEl = document.getElementById(d.hrs);
+  var mEl = document.getElementById(d.min);
+  if (hEl) { hEl.value = d.h; hEl.dispatchEvent(new Event('change', { bubbles: true })); }
+  if (mEl) { mEl.value = d.m; mEl.dispatchEvent(new Event('change', { bubbles: true })); }
+}
+</script>
+<style>
+  .sheet-input{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:5px;font-size:13px;color:var(--text);background:transparent;outline:none;transition:all .15s ease;}
+  .sheet-input:hover{border-color:var(--border);background:var(--surface);}
+  .sheet-input:focus{border-color:var(--blue);background:var(--surface);box-shadow:0 0 0 2px var(--blue-bg);}
+  .sheet-input.num-input{font-weight:600;text-align:center;}
+  
+  .sheet-select{width:100%;padding:4px 8px;border:1px solid var(--line);border-radius:5px;font-size:12px;color:var(--text);background:var(--surface);outline:none;cursor:pointer;font-weight:500;transition:all .15s ease;}
+  .sheet-select:hover{border-color:var(--border);}
+  .sheet-select:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg);}
+  
+  /* Category Pill Colors */
+  .sheet-select.category-select.ticket{color:var(--accent-strong);background:var(--accent-soft);border-color:var(--accent-line);}
+  .sheet-select.category-select.bug_fix{color:#b91c1c;background:#fef2f2;border-color:#fecaca;}
+  .sheet-select.category-select.feature{color:#6d28d9;background:#f5f3ff;border-color:#ddd6fe;}
+  .sheet-select.category-select.code_review{color:#047857;background:#ecfdf5;border-color:#a7f3d0;}
+  .sheet-select.category-select.meeting{color:#b45309;background:#fffbeb;border-color:#fde68a;}
+  .sheet-select.category-select.documentation{color:#0e7490;background:#ecfeff;border-color:#a5f3fc;}
+  .sheet-select.category-select.administration{color:#6b7280;background:#f9fafb;border-color:#d1d5db;}
+  
+  /* Status Colors */
+  .sheet-select.status-select.completed{color:var(--green);font-weight:600;background:#f0fdf4;border-color:#bbf7d0;}
+  .sheet-select.status-select.in_progress{color:var(--blue);font-weight:600;background:var(--accent-soft);border-color:var(--accent-line);}
+  .sheet-select.status-select.blocked{color:var(--red);font-weight:600;background:#fef2f2;border-color:#fecaca;}
+</style>
+
+<nav class="breadcrumbs">
+  <a href="{% url 'dsr:dsr_sheet' %}">DSR</a>
+  <span class="sep">/</span>
+  <span class="current">Daily Status Report</span>
+</nav>
+
+<div class="head" style="margin-bottom:16px;">
+  <div>
+    <h1>Daily Status Report (DSR) <span class="count">{{ selected_date|date:"M j, Y" }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">What you worked on today and for how long.</p>
+  </div>
+</div>
+
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <form method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"
+        hx-get="{% url 'dsr:dsr_sheet' %}"
+        hx-target="#dsr-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">
+    
+    <div style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:12px;font-weight:500;color:var(--muted);" for="date">Date:</label>
+      <input id="date" type="date" name="date" class="form-input" value="{{ selected_date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}" style="padding:5px 10px;font-size:13px;" onchange="this.form.requestSubmit()">
+    </div>
+
+    {% if is_privileged and members %}
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span class="dd-label" style="font-size:12px;font-weight:500;color:var(--muted);">Employee</span>
+      {% dropdown "user_id" members|obj_pairs:"pk:get_full_name" target_user.pk placeholder="Select an employee" label="Employee" submit=True %}
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-sm">Refresh</button>
+  </form>
+
+  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+    <a href="{% url 'dsr:dsr_sheet' %}?date={{ prev_date|date:'Y-m-d' }}{% if target_user != request.user %}&user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm" title="Previous Day">← {{ prev_date|date:"M j" }}</a>
+    <a href="{% url 'dsr:dsr_sheet' %}{% if target_user != request.user %}?user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm {% if selected_date == today %}btn-primary{% endif %}">Today</a>
+    <a href="{% url 'dsr:dsr_sheet' %}?date={{ yesterday|date:'Y-m-d' }}{% if target_user != request.user %}&user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm {% if selected_date == yesterday %}btn-primary{% endif %}">Yesterday</a>
+    {% if next_date > today %}
+    <a href="{% url 'dsr:dsr_sheet' %}?date={{ next_date|date:'Y-m-d' }}{% if target_user != request.user %}&user_id={{ target_user.pk }}{% endif %}" class="btn btn-sm" title="Next Day">{{ next_date|date:"M j" }} →</a>
+    {% endif %}
+  </div>
+</div>
+
+<div id="dsr-content">
+  {% include "dsr/partials/_dsr_table.html" %}
+</div>
+{% endblock %}

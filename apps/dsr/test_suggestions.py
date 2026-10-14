@@ -145,3 +145,77 @@ class SuggestionTest(Base):
             self.did(self.ticket(f"t{i}"), event="ticket_commented")
         self.assertEqual(len(self.suggest()), 8)
 
+
+class AddViewTest(Base):
+    url = lambda self: reverse("dsr:dsr_suggestion_add")
+
+    def setUp(self):
+        super().setUp()
+        self.t = self.ticket("Login bug")
+        self.did(self.t, event="ticket_commented")
+        self.client.login(username="dev", password="pass1234")
+
+    def add(self, **extra):
+        data = {"ticket_id": self.t.pk, "hours": "1.5", "date": self.today.isoformat()}
+        data.update(extra)
+        return self.client.post(self.url(), data)
+
+    def test_minutes_are_accepted(self):
+        self.add(hours="45m")
+        self.assertEqual(DSREntry.objects.get().hours_spent, Decimal("0.75"))
+
+    def test_it_logs_the_ticket_with_the_confirmed_hours(self):
+        self.add()
+        e = DSREntry.objects.get()
+        self.assertEqual((e.user, e.ticket, e.hours_spent, e.category, e.is_auto_logged), (self.dev, self.t, Decimal("1.50"), "bug_fix", False))
+        self.assertEqual(e.task_name, f"{self.t.key} Login bug")
+
+    def test_the_htmx_reply_is_the_refreshed_table_without_that_suggestion(self):
+        page = self.client.post(self.url(), {"ticket_id": self.t.pk, "hours": "1", "date": self.today.isoformat()}, headers={"HX-Request": "true"})
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, "From your work today")
+        self.assertContains(page, "Login bug")
+
+    def test_a_ticket_that_was_not_suggested_is_refused(self):
+        other = self.ticket("Unrelated")
+        self.add(ticket_id=other.pk)
+        self.assertEqual(DSREntry.objects.count(), 0)
+
+    def test_a_ticket_in_a_product_you_cannot_open_is_refused(self):
+        secret = self.ticket("secret", product=self.hidden)
+        self.add(ticket_id=secret.pk)
+        self.assertEqual(DSREntry.objects.count(), 0)
+
+    def test_bad_hours_are_refused(self):
+        for bad in ("", "abc", "0", "-1", "25", "NaN"):
+            self.add(hours=bad)
+        self.assertEqual(DSREntry.objects.count(), 0)
+
+    def test_a_closed_day_cannot_be_added_to_by_an_employee(self):
+        yesterday = self.today - timedelta(days=1)
+        self.did(self.t, event="ticket_commented", day=yesterday)
+        self.add(date=yesterday.isoformat())
+        self.assertEqual(DSREntry.objects.count(), 0)
+
+    def test_an_admin_can_add_for_a_colleague_on_a_closed_day(self):
+        yesterday = self.today - timedelta(days=1)
+        self.did(self.t, event="ticket_commented", day=yesterday)
+        self.client.login(username="owner", password="pass1234")
+        self.add(date=yesterday.isoformat(), user_id=self.dev.pk)
+        self.assertEqual(DSREntry.objects.get().user, self.dev)
+
+    def test_an_employee_cannot_add_for_a_colleague(self):
+        self.did(self.t, user=self.other_dev, event="ticket_commented")
+        self.add(user_id=self.other_dev.pk)
+        self.assertEqual(DSREntry.objects.get().user, self.dev)  # the user_id was ignored
+
+    def test_the_sheet_shows_the_panel_to_the_person_who_can_use_it(self):
+        page = self.client.get(reverse("dsr:dsr_sheet"))
+        self.assertContains(page, "Suggested from your work")
+        self.assertContains(page, "Login bug")
+        past = self.client.get(reverse("dsr:dsr_sheet"), {"date": (self.today - timedelta(days=1)).isoformat()})
+        self.assertNotContains(past, "Suggested from your work")
+
+    def test_double_submitting_does_not_log_twice(self):
+        self.add(); self.add()
+        self.assertEqual(DSREntry.objects.count(), 1)  # the second is no longer a suggestion

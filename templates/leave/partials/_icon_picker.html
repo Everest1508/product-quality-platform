@@ -1,0 +1,36 @@
+{% load icon_tags %}
+{% comment %}
+Icon picker for one leave-policy row. Native <details>, so it needs no JS and
+stays collapsed to a single glyph until the admin opens it.
+
+`selected` is the policy's current icon name ("" for the add row, which is
+pre-checked to "No icon"). Radios are inside a <details>, which browsers still
+submit when collapsed, so the choice is posted with the rest of the row.
+
+A <select> cannot render SVG, hence a grid of radio tiles rather than a
+dropdown listing icon names.
+{% endcomment %}
+{% icon_choices as icon_picker %}
+<div class="lp-pick">
+  <details>
+    <summary class="lp-pick-btn" aria-label="Choose an icon for this leave type"
+             title="{% if selected %}{{ selected }}{% else %}No icon{% endif %}">
+      {% if selected %}{% icon selected "lp-icon-glyph" %}
+      {% else %}<span class="lp-icon-blank" aria-hidden="true">&#8212;</span>{% endif %}
+    </summary>
+    <div class="lp-pick-menu">
+      {% for name, label, glyph in icon_picker %}
+      <label class="lp-icon-opt" title="{{ label }}">
+        <input type="radio" name="icon" value="{{ name }}" {% if selected == name %}checked{% endif %}>
+        <span class="lp-icon-cell">{{ glyph }}</span>
+        <span class="lp-sr">{{ label }}</span>
+      </label>
+      {% endfor %}
+      <label class="lp-icon-opt" title="No icon">
+        <input type="radio" name="icon" value="" {% if not selected %}checked{% endif %}>
+        <span class="lp-icon-cell lp-icon-blank" aria-hidden="true">&#8212;</span>
+        <span class="lp-sr">No icon</span>
+      </label>
+    </div>
+  </details>
+</div>

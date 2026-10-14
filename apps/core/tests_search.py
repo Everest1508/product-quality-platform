@@ -113,3 +113,9 @@ class SearchTest(TestCase):
     def test_signed_out_visitors_get_nothing(self):
         self.client.logout()
         self.assertNotEqual(self.client.get(reverse("search"), {"q": "invoice"}).status_code, 200)
+
+    def test_the_page_carries_the_palette_and_a_search_button(self):
+        self.client.login(username="dev", password="pass1234")
+        page = self.client.get(reverse("dashboards:index"), follow=True).content.decode()
+        self.assertIn('role="combobox"', page)
+        self.assertIn("pq-palette", page)

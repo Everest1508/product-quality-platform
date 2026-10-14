@@ -6,7 +6,7 @@ The top tile greets you and shows the time from your own device, so it is right
 wherever you are. The line under the greeting changes daily. Press the arrow
 next to it for another one. That swaps only the line, not the page.
 
-Below it are your tiles: today's punch, leave balances, your DSR week,
+Below it are your tiles: today's punch, pay, leave balances, your DSR week,
 tickets assigned to you. Owners and admins also see leave waiting for approval
 and company totals.
 

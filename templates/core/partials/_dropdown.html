@@ -1,0 +1,37 @@
+{% comment %}
+One choice control for the whole app, in the same idiom as the leave icon
+picker: a native <details> holding radios (or checkboxes, when multiple).
+
+Why <details> and not a hand-rolled listbox:
+  * Radios inside a collapsed <details> are still submitted, so the value posts
+    with the form when JavaScript is off. A <div>-and-<span> menu does not.
+  * Radios fire a native `change` event, so every `hx-trigger="change"` form
+    keeps filtering without being touched.
+  * Arrow keys, form semantics and the mobile picker come from the platform.
+
+The only thing <details> cannot do on its own is relabel the closed button after
+a choice is made, so the trigger carries `x-data="dd"` and Alpine syncs the text
+from the checked input. Server-rendered `closed_label` is the no-JS fallback and
+is already correct on first paint.
+{% endcomment %}
+<div class="dd" x-data="dd" data-placeholder="{{ placeholder }}" data-multiple="{% if multiple %}1{% endif %}"{% if navigate %} data-navigate="{{ name }}"{% endif %}{% if submit %} data-submit="1"{% endif %}>
+  <details class="dd-wrap">
+    <summary class="dd-btn{% if trigger_class %} {{ trigger_class }}{% endif %}" aria-label="{{ field_label }}" title="{{ field_label }}">
+      <span class="dd-val" data-dd-label>{{ closed_label }}</span>
+      <span class="dd-caret" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div class="dd-menu">
+      {% for value, text in options %}
+      <label class="dd-opt" title="{{ text }}">
+        <input type="{{ input_type }}" name="{{ name }}" value="{{ value }}" data-label="{{ text }}"{% if value in selected %} checked{% endif %}>
+        <span class="dd-tick" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg>
+        </span>
+        <span class="dd-text">{{ text }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </details>
+</div>

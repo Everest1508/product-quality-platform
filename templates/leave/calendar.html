@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+
+{% block title %}Leave calendar — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'leave:my_leave' %}">Leave</a>
+  <span class="sep">/</span>
+  <span class="current">Calendar</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Leave calendar <span class="count">{{ month_label }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Who is off and when, with company holidays. Solid is approved, dashed is still waiting for a decision.</p>
+  </div>
+  <div class="head-actions">
+    <a href="?month={{ prev_month }}" class="btn btn-sm" aria-label="Previous month">&larr;</a>
+    <a href="{% url 'leave:calendar' %}" class="btn btn-sm {% if is_current %}btn-primary{% endif %}">This month</a>
+    <a href="?month={{ next_month }}" class="btn btn-sm" aria-label="Next month">&rarr;</a>
+    <a href="{% url 'leave:apply' %}" class="btn btn-sm btn-primary">Apply for leave</a>
+  </div>
+</div>
+
+<div class="lc-legend" aria-hidden="true">
+  <span><i class="lc-key is-approved"></i> Off</span>
+  <span><i class="lc-key is-pending"></i> Waiting</span>
+  <span><i class="lc-key is-holiday"></i> Company holiday</span>
+</div>
+
+<section class="card lc" aria-label="{{ month_label }}">
+  <div class="lc-head" aria-hidden="true">
+    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+  </div>
+  <div class="lc-grid">
+    {% for week in cal.weeks %}{% for day in week %}
+    <div class="lc-day{% if not day.in_month %} is-other{% endif %}{% if day.is_weekend %} is-weekend{% endif %}{% if day.is_today %} is-today{% endif %}{% if day.holiday %} is-holiday{% endif %}">
+      <div class="lc-num">
+        <span>{{ day.date.day }}</span>
+        {% if day.off_count >= 3 %}<em class="lc-busy" title="{{ day.off_count }} of {{ cal.team }} are off">{{ day.off_count }} off</em>{% endif %}
+      </div>
+      {% if day.holiday %}<div class="lc-hol" title="{{ day.holiday }}">{{ day.holiday }}</div>{% endif %}
+      {% for e in day.entries|slice:":3" %}
+      <div class="lc-chip is-{{ e.status }}{% if e.user_id == me_id %} is-me{% endif %}" title="{{ e.name }}{% if e.policy %} · {{ e.policy }}{% endif %}{% if e.half %} · half day{% endif %}{% if e.status == 'pending' %} · waiting for a decision{% endif %}">
+        <span class="lc-av">{{ e.initial }}</span>{{ e.first }}{% if e.half %} ½{% endif %}
+      </div>
+      {% endfor %}
+      {% if day.entries|length > 3 %}<div class="lc-more">+{{ day.entries|length|add:"-3" }} more</div>{% endif %}
+    </div>
+    {% endfor %}{% endfor %}
+  </div>
+</section>
+
+{# On a phone the grid is unreadable, so the same data is a list of the days that have something. #}
+<section class="card lc-agenda" aria-label="Days with leave or holidays">
+  {% for day in cal.agenda %}
+  <div class="lc-agenda-day{% if day.is_today %} is-today{% endif %}">
+    <div class="lc-agenda-date"><b>{{ day.date|date:"D" }}</b><span>{{ day.date|date:"M j" }}</span></div>
+    <div class="lc-agenda-body">
+      {% if day.holiday %}<div class="lc-hol">{{ day.holiday }}</div>{% endif %}
+      {% for e in day.entries %}
+      <div class="lc-chip is-{{ e.status }}{% if e.user_id == me_id %} is-me{% endif %}"><span class="lc-av">{{ e.initial }}</span>{{ e.name }}{% if e.half %} ½{% endif %}{% if e.policy %} · {{ e.policy }}{% endif %}{% if e.status == 'pending' %} · waiting{% endif %}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty"><h3>Nobody is off in {{ month_label }}</h3></div>
+  {% endfor %}
+</section>
+{% endblock %}

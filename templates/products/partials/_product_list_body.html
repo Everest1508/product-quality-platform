@@ -1,0 +1,38 @@
+{% load icon_tags %}
+{% if page %}
+<div class="ledger">
+  {% for product in page %}
+  <article class="lrow t-{% if product.card_data.health == 'healthy' %}green{% elif product.card_data.health == 'critical' %}red{% elif product.card_data.health == 'warning' %}orange{% else %}off{% endif %}">
+    <span class="lmark">{{ product.name|slice:":1"|upper }}</span>
+    <div class="lmain">
+      <div class="lt"><a href="{% url 'products:product_detail' pk=product.pk %}">{{ product.name }}</a>
+        {% if product.key %}<span class="bdg bdg-outline">{{ product.key }}</span>{% endif %}
+        <span class="bdg {% if product.card_data.health == 'healthy' %}bdg-green{% elif product.card_data.health == 'critical' %}bdg-red{% elif product.card_data.health == 'warning' %}bdg-orange{% endif %}">{{ product.card_data.health|title }}</span></div>
+      <p class="ls">{% if product.description %}{{ product.description|truncatechars:120 }}{% else %}No description yet.{% endif %}</p>
+    </div>
+    <div class="lmetrics">
+      <div><span class="v{% if not product.card_data.open_errors %} is-zero{% endif %}">{{ product.card_data.open_errors }}</span><span class="l">Errors</span></div>
+      <div><span class="v{% if not product.card_data.open_tickets %} is-zero{% endif %}">{{ product.card_data.open_tickets }}</span><span class="l">Tickets</span></div>
+      <div><span class="v">{{ product.version_cnt }}</span><span class="l">Versions</span></div>
+      <div><span class="v">{{ product.api_key_cnt }}</span><span class="l">Keys</span></div>
+    </div>
+    <div class="lspark" title="Error occurrences, last 7 days: {{ product.week_errors }}">
+      <span class="lspark-bars" aria-hidden="true">{% for h in product.spark %}<i style="height:{{ h }}%"></i>{% endfor %}</span>
+      <span class="l">{{ product.week_errors }} errors this week</span>
+    </div>
+    <div class="lactions">
+      <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="btn btn-sm">{% icon 'chart' 'ic' %}Dashboard</a>
+      <a href="{% url 'products:product_detail' pk=product.pk %}" class="btn btn-sm btn-primary">Open</a>
+      {% if request.company_role == 'owner' or request.company_role == 'admin' %}
+        <a href="{% url 'products:product_edit' pk=product.pk %}" class="icon-btn" aria-label="Edit {{ product.name }}">{% icon 'edit' 'ic' %}</a>
+        <form method="post" action="{% url 'products:product_delete' pk=product.pk %}" style="display:inline" data-confirm="Delete {{ product.name }}?" data-confirm-text="Its tickets, errors and keys go with it. This cannot be undone." data-confirm-label="Delete">
+          {% csrf_token %}<button class="icon-btn danger" aria-label="Delete {{ product.name }}">{% icon 'trash' 'ic' %}</button>
+        </form>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-flush"><div class="empty-state"><strong>No products found</strong>{% if search %}Try a different search term.{% else %}Add a product to start tracking errors and feedback.{% endif %}</div></div>
+{% endif %}

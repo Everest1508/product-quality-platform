@@ -6,12 +6,12 @@ from apps.products.webhook import notify_error_captured
 
 class ErrorCreateForm(forms.Form):
     product = forms.ModelChoiceField(queryset=None, widget=forms.HiddenInput())
-    title = forms.CharField(max_length=500, widget=forms.TextInput(attrs={"placeholder": "Error title"}))
-    error_type = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"placeholder": "e.g. TypeError, ValueError"}))
-    severity = forms.ChoiceField(choices=ErrorGroup.SEVERITY_CHOICES, initial="medium", widget=forms.Select(attrs={}))
-    stacktrace = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 4, "placeholder": "Paste stacktrace here (optional)"}))
-    environment = forms.CharField(max_length=20, initial="production", widget=forms.TextInput(attrs={}))
-    page = forms.CharField(max_length=500, required=False, widget=forms.TextInput(attrs={"placeholder": "Page URL where error occurred"}))
+    title = forms.CharField(max_length=500, widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Error title"}))
+    error_type = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. TypeError, ValueError"}))
+    severity = forms.ChoiceField(choices=ErrorGroup.SEVERITY_CHOICES, initial="medium", widget=forms.Select(attrs={"class": "form-input"}))
+    stacktrace = forms.CharField(required=False, widget=forms.Textarea(attrs={"class": "form-input", "rows": 4, "placeholder": "Paste stacktrace here (optional)"}))
+    environment = forms.CharField(max_length=20, initial="production", widget=forms.TextInput(attrs={"class": "form-input"}))
+    page = forms.CharField(max_length=500, required=False, widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Page URL where error occurred"}))
 
     def __init__(self, *args, company=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)

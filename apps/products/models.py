@@ -214,8 +214,12 @@ class APIKey(models.Model):
             from django.utils import timezone
             if api_key.expires_at and api_key.expires_at <= timezone.now():
                 return None
-            api_key.last_used_at = timezone.now()
-            api_key.save(update_fields=["last_used_at"])
+            now = timezone.now()
+            # One write a minute is plenty for "last used", and every request
+            # used to take a database write lock just to stamp it.
+            if not api_key.last_used_at or (now - api_key.last_used_at).total_seconds() > 60:
+                cls.objects.filter(pk=api_key.pk).update(last_used_at=now)
+                api_key.last_used_at = now
             return api_key
         except cls.DoesNotExist:
             return None

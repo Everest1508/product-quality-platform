@@ -195,3 +195,125 @@ class DecisionTest(Base):
         self.assertEqual(AttendanceCorrection.objects.get().status, "cancelled")
         with self.assertRaisesMessage(corrections.CorrectionError, "already been dealt with"):
             corrections.cancel(self.c.pk, self.dev)
+
+
+class ViewsTest(Base):
+    def setUp(self):
+        super().setUp()
+        self.rec = self.record(check_in=at(self.day, 10))
+
+    def post_request(self, user="dev", **extra):
+        self.client.login(username=user, password="pass1234")
+        data = {"date": self.day.isoformat(), "check_out": "18:30", "reason": "forgot"}
+        data.update(extra)
+        return self.client.post(reverse("attendance:correction_request"), data)
+
+    def test_the_form_prefills_the_day_and_shows_what_is_recorded(self):
+        self.client.login(username="dev", password="pass1234")
+        page = self.client.get(reverse("attendance:correction_request"), {"date": self.day.isoformat()})
+        self.assertContains(page, f'value="{self.day:%Y-%m-%d}"')
+        self.assertContains(page, "10:00 AM")
+
+    def test_a_valid_request_is_saved_and_the_person_is_sent_back(self):
+        response = self.post_request()
+        self.assertRedirects(response, reverse("attendance:my_attendance"))
+        c = AttendanceCorrection.objects.get()
+        self.assertEqual((c.user, c.company, c.requested_check_out), (self.dev, self.company, at(self.day, 18, 30)))
+
+    def test_after_midnight_puts_the_check_out_on_the_next_day(self):
+        self.record(date=self.day - timedelta(days=1), check_in=at(self.day - timedelta(days=1), 22))
+        self.post_request(date=(self.day - timedelta(days=1)).isoformat(), check_out="06:00", out_next_day="1")
+        self.assertEqual(AttendanceCorrection.objects.get().requested_check_out, at(self.day, 6))
+
+    def test_a_bad_request_shows_the_message_and_keeps_what_was_typed(self):
+        response = self.post_request(reason="")
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "Say why", status_code=400)
+        self.assertContains(response, 'value="18:30"', status_code=400)
+        self.assertEqual(AttendanceCorrection.objects.count(), 0)
+
+    def test_garbage_times_are_a_message_not_a_crash(self):
+        self.assertEqual(self.post_request(check_out="soon").status_code, 400)
+
+    def test_the_queue_is_for_owners_and_admins(self):
+        self.post_request()
+        self.client.login(username="dev", password="pass1234")
+        self.assertEqual(self.client.get(reverse("attendance:corrections")).status_code, 403)
+        self.client.login(username="owner", password="pass1234")
+        page = self.client.get(reverse("attendance:corrections"))
+        self.assertContains(page, "forgot")
+        self.assertContains(page, "6:30 PM")
+
+    def test_an_owner_approves_through_the_queue(self):
+        self.post_request()
+        c = AttendanceCorrection.objects.get()
+        self.client.login(username="owner", password="pass1234")
+        self.client.post(reverse("attendance:correction_decision", args=[c.pk, "approve"]), {"note": "ok"})
+        self.rec.refresh_from_db()
+        self.assertEqual(self.rec.check_out, at(self.day, 18, 30))
+
+    def test_a_developer_cannot_decide_through_the_url(self):
+        self.post_request()
+        c = AttendanceCorrection.objects.get()
+        self.client.login(username="dev", password="pass1234")
+        self.assertEqual(self.client.post(reverse("attendance:correction_decision", args=[c.pk, "approve"])).status_code, 403)
+        c.refresh_from_db()
+        self.assertTrue(c.is_pending)
+
+    def test_another_workspaces_request_is_a_404(self):
+        c = AttendanceCorrection.objects.create(company=self.other, user=self.outsider, date=self.day, reason="x")
+        self.client.login(username="owner", password="pass1234")
+        self.assertEqual(self.client.post(reverse("attendance:correction_decision", args=[c.pk, "approve"])).status_code, 404)
+
+    def test_an_unknown_action_is_refused(self):
+        self.post_request()
+        c = AttendanceCorrection.objects.get()
+        self.client.login(username="owner", password="pass1234")
+        self.assertEqual(self.client.post(reverse("attendance:correction_decision", args=[c.pk, "delete"])).status_code, 403)
+
+    def test_cancelling_someone_elses_request_is_a_404(self):
+        self.post_request()
+        c = AttendanceCorrection.objects.get()
+        self.client.login(username="admin", password="pass1234")
+        self.assertEqual(self.client.post(reverse("attendance:correction_cancel", args=[c.pk])).status_code, 404)
+
+    def test_cancelling_my_request_writes_an_audit_row(self):
+        self.post_request()
+        c = AttendanceCorrection.objects.get()
+        self.client.login(username="dev", password="pass1234")
+        self.client.post(reverse("attendance:correction_cancel", args=[c.pk]))
+        c.refresh_from_db()
+        self.assertEqual(c.status, "cancelled")
+        row = ActivityLog.objects.get(event_type="attendance_correction_cancelled")
+        self.assertEqual(row.company, self.company)
+        self.assertEqual(row.actor, self.dev)
+        self.assertIn("forgot", row.description)
+
+    def test_the_sidebar_counts_what_is_waiting_for_admins_only(self):
+        self.post_request()
+        self.client.login(username="owner", password="pass1234")
+        page = self.client.get(reverse("attendance:corrections")).content.decode()
+        self.assertIn('data-label="Corrections"', page)
+        self.assertRegex(page, r'Corrections</span>\s*<span class="side-badge">1</span>')
+        self.client.login(username="dev", password="pass1234")
+        self.assertNotIn('data-label="Corrections"', self.client.get(reverse("attendance:my_attendance")).content.decode())
+
+    def test_my_attendance_lists_my_requests_and_offers_the_form(self):
+        self.post_request()
+        page = self.client.get(reverse("attendance:my_attendance")).content.decode()
+        self.assertIn("Your correction requests", page)
+        self.assertIn("Request a correction", page)
+
+    def test_the_forgotten_day_warning_links_to_the_form_for_that_day(self):
+        self.client.login(username="dev", password="pass1234")
+        page = self.client.get(reverse("attendance:my_attendance")).content.decode()
+        self.assertIn(f"?date={self.day:%Y-%m-%d}", page)
+
+    def test_the_admin_edit_still_applies_the_same_rules(self):
+        self.client.login(username="owner", password="pass1234")
+        far = self.day + timedelta(days=1)
+        self.client.post(reverse("attendance:attendance_edit", args=[self.rec.pk]), {
+            "check_in": f"{far:%Y-%m-%d}T10:00", "check_out": "",
+        })
+        self.rec.refresh_from_db()
+        self.assertEqual(timezone.localtime(self.rec.check_in).date(), self.day)

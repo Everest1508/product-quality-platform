@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}
+
+{% block title %}Edit Attendance — PQ Platform{% endblock %}
+
+{% block content %}
+{% comment %}
+Standalone correction form. Reached from a plain link (the calendar grid has no
+room for an inline form) and it posts back to `AttendanceEditView`, which is
+also what the inline rows use.
+{% endcomment %}
+<nav class="breadcrumbs">
+  <a href="{% url 'attendance:team_attendance' %}">Attendance</a>
+  <span class="sep">/</span>
+  <a href="{% url 'attendance:timesheet_detail' record.user.pk %}">Timesheet</a>
+  <span class="sep">/</span>
+  <span class="current">{{ record.date|date:"M d, Y" }}</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Edit attendance</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">
+      {{ record.user.get_full_name|default:record.user.username }} ·
+      {{ record.date|date:"l, F d, Y" }}
+    </p>
+  </div>
+</div>
+
+{% if record.is_stale %}
+<div class="card" style="padding:12px 16px;margin-bottom:16px;border-left:3px solid var(--orange);">
+  <strong>No check-out was recorded.</strong>
+  <span class="text-sm text-muted">
+    Checked in on {{ record.date|date:"M d" }} and left open
+    {{ record.open_days }} day(s), so the hours shown are counted from check-in
+    and capped at one working day ({{ record.effective_formatted }}). Clearing
+    the check-out box keeps it open.
+  </span>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:760px;">
+  {% include "attendance/partials/_record_edit_form.html" with record=record shift=shift next=next %}
+</div>
+
+<p class="text-sm text-muted" style="margin-top:12px;">
+  <a href="{% if next %}{{ next }}{% else %}{% url 'attendance:team_attendance' %}{% endif %}">Cancel</a>
+</p>
+{% endblock %}

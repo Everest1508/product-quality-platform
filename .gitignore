@@ -9,6 +9,6 @@ media/
 staticfiles/
 .pytest_cache/
 pq_sdk/
-frontend/node_modules/
-frontend/dist/
-frontend/dist-hosted/
+
+# Build leftovers from the React line of work
+frontend/

@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+{% load dropdown_tags %}
+
+{% block title %}Audit Log — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head" style="margin-bottom:20px;">
+  <div>
+    <h1>Audit Log <span class="count">{{ page.paginator.count }} event{{ page.paginator.count|pluralize }}</span></h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Chronological system activity feed, security actions, and team audit logs.</p>
+  </div>
+</div>
+
+<div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
+    <form method="get" class="search-wrap" style="display:flex;max-width:280px;width:100%;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" name="q" value="{{ search }}"  aria-label="Search event titles" placeholder="Search event titles...">
+      {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+      {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
+      {% if current_from %}<input type="hidden" name="from" value="{{ current_from }}">{% endif %}
+      {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
+    </form>
+
+    {% dropdown "type" event_types current_type placeholder="All event types" label="Filter by type" navigate=True empty_value="" %}
+
+    {% dropdown "actor" members|obj_pairs:"pk:get_full_name" current_actor placeholder="Any member" label="Filter by member" navigate=True empty_value="" %}
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:4px;">
+      <label for="audit-from" class="text-sm text-muted" style="font-size:12px;">From</label>
+      <input type="date" id="audit-from" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <label for="audit-to" class="text-sm text-muted" style="font-size:12px;">To</label>
+      <input type="date" id="audit-to" class="filter-select" style="padding:5px 8px;font-size:12.5px;" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
+    </div>
+    {% if search or current_type or current_actor or current_from or current_to %}
+    <a href="{% url 'dashboards:audit_log' %}" class="btn btn-sm" style="font-size:12px;color:var(--red);">Clear</a>
+    {% endif %}
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:160px">Timestamp</th>
+      <th style="width:180px">Event Type</th>
+      <th>Details & Description</th>
+      <th style="width:170px">Actor</th>
+    </tr>
+  </thead>
+  <tbody id="audit-log-body">
+    {% include "dashboards/partials/_audit_log_rows.html" with page=page %}
+  </tbody>
+</table>
+
+{% include "core/_pagination.html" with page=page %}
+
+<footer class="note">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} audit log events</footer>
+
+<script>
+function buildUrl(params) {
+  var url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  for (var key in params) {
+    url.searchParams.delete(key);
+    if (params[key]) url.searchParams.set(key, params[key]);
+  }
+  return url.toString();
+}
+</script>
+{% endblock %}

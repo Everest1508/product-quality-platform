@@ -1,0 +1,35 @@
+{% for rule in page %}
+<tr>
+  <td>
+    <a href="{% url 'automation:rule_edit' pk=rule.pk %}" class="title">{{ rule.name }}</a>
+  </td>
+  <td class="text-sm">{{ rule.threshold_count }} errors in {{ rule.window_minutes }}m{% if rule.severity %} ({{ rule.severity }}){% endif %}</td>
+  <td class="text-sm">{{ rule.get_action_display }}</td>
+  <td>
+    <form method="post" action="{% url 'automation:rule_toggle' pk=rule.pk %}"
+          hx-post="{% url 'automation:rule_toggle' pk=rule.pk %}"
+          hx-target="closest tr" hx-swap="outerHTML">
+      {% csrf_token %}
+      <button type="submit" style="background:none;border:none;padding:0;cursor:pointer;">
+        {% if rule.is_active %}<span class="pill active">Active</span>
+        {% else %}<span class="pill closed">Disabled</span>{% endif %}
+      </button>
+    </form>
+  </td>
+  <td class="text-sm">{{ rule.trigger_count }}</td>
+  <td>
+    <div style="display:flex;gap:6px;">
+      <a href="{% url 'automation:rule_edit' pk=rule.pk %}" class="btn" style="font-size:11px;padding:3px 8px;">Edit</a>
+      <form method="post" action="{% url 'automation:rule_delete' pk=rule.pk %}"
+            hx-post="{% url 'automation:rule_delete' pk=rule.pk %}"
+            hx-target="closest tr" hx-swap="outerHTML"
+            hx-confirm="Delete this rule?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="font-size:11px;padding:3px 8px;">Delete</button>
+      </form>
+    </div>
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="empty"><h3>No rules found</h3><p>{% if search %}Try a different search term.{% else %}Create rules to automatically create tickets from error thresholds.{% endif %}</p></td></tr>
+{% endfor %}

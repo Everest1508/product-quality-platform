@@ -239,6 +239,29 @@ BRAND_MARK = (
     '<path d="M15 15l6.5 6.5" />'
 )
 
+# Interface glyphs (theme switch and the like). Separate from ICONS so they do not appear in the leave policy picker.
+UI_ICONS = {
+    "sun": '<circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />',
+    "moon": '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />',
+    "compass": '<circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5z" />',
+    "flame": '<path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-9z" />',
+    "send": '<path d="M21 3 10 14M21 3l-7 18-4-7-7-4z" />',
+    "log-in": '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 8l4 4-4 4M14 12H3" />',
+    "plus": '<path d="M12 5v14M5 12h14" />',
+    "trash": '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" />',
+    "edit": '<path d="M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19z" /><path d="M14 7l3 3" />',
+    "search": '<circle cx="11" cy="11" r="6" /><path d="M20 20l-4.5-4.5" />',
+    "download": '<path d="M12 4v12M7 11l5 5 5-5M4 20h16" />',
+    "refresh": '<path d="M20 11a8 8 0 0 0-14.5-3.5M4 4v4h4M4 13a8 8 0 0 0 14.5 3.5M20 20v-4h-4" />',
+    "copy": '<rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M15 5H6.5A1.5 1.5 0 0 0 5 6.5V15" />',
+    "arrow-left": '<path d="M19 12H5M11 6l-6 6 6 6" />',
+    "bell": '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />',
+    "inbox": '<path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z" />',
+    "zap": '<path d="M13 3 5 13.5h6L10 21l9-11h-6z" />',
+    "chart": '<path d="M18 20V10M12 20V4M6 20v-6" />',
+    "monitor": '<rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" />',
+}
+
 ICON_CHOICES = tuple((name, name.replace("-", " ").title()) for name in ICONS)
 ICON_NAMES = frozenset(ICONS)
 
@@ -249,7 +272,8 @@ def render_icon(name, css_class="ic", size=None):
     Returns `""` instead of raising, so a policy with no icon (the default)
     renders no glyph rather than a placeholder box.
     """
-    if not name or name not in ICONS:
+    body = ICONS.get(name) or UI_ICONS.get(name)
+    if not name or not body:
         return ""
     return format_html(
         '<svg class="{}" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
@@ -257,7 +281,7 @@ def render_icon(name, css_class="ic", size=None):
         '{} aria-hidden="true" focusable="false">{}</svg>',
         css_class,
         f' width="{size}" height="{size}"' if size else "",
-        mark_safe(ICONS[name]),
+        mark_safe(body),
     )
 
 

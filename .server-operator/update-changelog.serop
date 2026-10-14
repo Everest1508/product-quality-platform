@@ -1,0 +1,6 @@
+[Update Changelog]
+sudo git pull
+sudo docker compose cp CHANGELOG.md web:/app/CHANGELOG.md
+
+[Check Changelog]
+sudo docker compose exec web head -n 30 /app/CHANGELOG.md

@@ -1,0 +1,5 @@
+{% if error_group.status == 'open' %}<span class="pill open">Open</span>
+{% elif error_group.status == 'investigating' %}<span class="pill progress">Investigating</span>
+{% elif error_group.status == 'resolved' %}<span class="pill resolved">Resolved</span>
+{% elif error_group.status == 'ignored' %}<span class="pill closed">Ignored</span>
+{% endif %}

@@ -1,0 +1,138 @@
+{% load icon_tags %}
+{% comment %}
+What's new. A window with one card per release on a timeline: the newest open, older ones collapsed and paged, a search box and
+type filters that look through every release. Opened by the sidebar footer button (it dispatches "pq:changelog") and shown by
+itself once per release per browser. Content comes from /api/v1/changelog/, which escapes everything and only re-adds
+bold, code and http/https links, so the bullets go in as HTML on purpose.
+{% endcomment %}
+<dialog class="dlg cl" id="pq-changelog" aria-labelledby="cl-title" data-version="{{ app_version }}" style="max-width:680px">
+  <div class="cl-head">
+    <h2 id="cl-title"><span class="cl-spark">{% icon 'sparkles' 'ic' %}</span>What's new in <span class="cl-ver">v{{ app_version }}</span></h2>
+    <p id="cl-sub"></p>
+    <button type="button" class="icon-btn cl-x" id="cl-close" aria-label="Close">{% icon 'x' 'ic' %}</button>
+  </div>
+  <div class="cl-body">
+    <div class="cl-tools" id="cl-tools" hidden>
+      <div class="input-icon" style="width:14rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" id="cl-search" placeholder="Search changes…" aria-label="Search the changelog" autocomplete="off"></div>
+      <div class="cl-chips" id="cl-chips" role="group" aria-label="Filter changes by type"></div>
+    </div>
+    <p class="cl-note" id="cl-note">Loading…</p>
+    <ol class="cl-list" id="cl-list"></ol>
+    <button type="button" class="btn btn-sm" id="cl-older" hidden></button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  var dlg = document.getElementById('pq-changelog');
+  if (!dlg || !dlg.showModal) return;
+  var list = document.getElementById('cl-list'), note = document.getElementById('cl-note'), chips = document.getElementById('cl-chips');
+  var tools = document.getElementById('cl-tools'), search = document.getElementById('cl-search'), olderBtn = document.getElementById('cl-older');
+  var sub = document.getElementById('cl-sub'), version = dlg.dataset.version, PAGE = 6;
+  var releases = null, filter = '', needle = '', showOlder = false, shown = PAGE, expanded = {}, loading = false, lastFocus = null;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var KIND = { added: 'cl-k-new', changed: 'cl-k-better', fixed: 'cl-k-fixed', security: 'cl-k-sec' };
+
+  function esc(v) { var d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
+  function day(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? (+m[3]) + ' ' + MONTHS[+m[2] - 1] + ' ' + m[1] : (iso || ''); }
+  function plain(h) { return String(h).replace(/<[^>]*>/g, ' ').toLowerCase(); }
+  function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
+
+  function open() {
+    lastFocus = document.activeElement;
+    if (!dlg.open) dlg.showModal();
+    try { localStorage.setItem('pq:seen-version', version); } catch (e) {}
+    if (releases || loading) return;
+    loading = true;
+    fetch('/api/v1/changelog/', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) { releases = (d.releases || []).filter(function (r) { return r.released; }); loading = false; render(); })
+      .catch(function () { loading = false; note.textContent = 'Couldn’t load the changelog.'; });
+  }
+  function close() { dlg.classList.add('is-closing'); setTimeout(function () { dlg.classList.remove('is-closing'); if (dlg.open) dlg.close(); if (lastFocus && lastFocus.focus) lastFocus.focus(); }, 200); }
+
+  // Sections of a release after the type filter and the search; empty when nothing in it matches.
+  function view(r) {
+    var out = [];
+    (r.sections || []).forEach(function (s) {
+      if (filter && s.slug !== filter) return;
+      var items = (s.items || []).filter(function (h) { return !needle || plain(h).indexOf(needle) > -1 || (r.title || '').toLowerCase().indexOf(needle) > -1; });
+      if (items.length) out.push({ slug: s.slug, label: s.label || s.name, items: items });
+    });
+    return out;
+  }
+
+  function body(r, sections) {
+    var h = '';
+    if (r.summary) h += '<p class="cl-summary">' + esc(r.summary.replace(/^In short:\s*/i, '').replace(/^./, function (c) { return c.toUpperCase(); })) + '</p>';
+    sections.forEach(function (s) {
+      h += '<h4 class="cl-sec ' + (KIND[s.slug] || '') + '">' + esc(s.label) + '</h4><ul>' + s.items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul>';
+    });
+    return h;
+  }
+
+  function card(r, sections, idx, isOpen, latest) {
+    var n = sections.reduce(function (a, s) { return a + s.items.length; }, 0);
+    return '<li class="cl-card' + (isOpen ? ' is-open' : '') + '" style="animation-delay:' + Math.min(idx, 8) * 55 + 'ms">' +
+      '<button type="button" class="cl-card-head" data-tag="' + esc(r.tag) + '" aria-expanded="' + isOpen + '">' +
+        '<span class="cl-card-main"><span class="cl-card-top"><b>v' + esc(r.tag) + '</b>' + (r.name ? '<span class="bdg bdg-blue">' + esc(r.name) + '</span>' : '') +
+        (latest ? '<span class="bdg bdg-green">Latest</span>' : '') + '<span class="cl-date">' + esc(day(r.date)) + '</span></span>' +
+        (r.title ? '<span class="cl-title">' + esc(r.title) + '</span>' : '') + '</span>' +
+        '<span class="cl-count">' + plural(n, 'change', 'changes') + '</span><span class="cl-chev" aria-hidden="true"></span></button>' +
+      '<div class="cl-card-body"' + (isOpen ? '' : ' inert') + '><div><div class="cl-card-inner">' + body(r, sections) + '</div></div></div></li>';
+  }
+
+  function render() {
+    if (!releases.length) { note.textContent = 'No changelog entries yet.'; return; }
+    note.hidden = true; tools.hidden = false;
+    var latest = releases[0];
+    sub.innerHTML = (latest.name ? '<b>“' + esc(latest.name) + '”</b> ' : '') + esc(latest.title || '');
+    // Counts per kind across every release.
+    var kinds = {}, order = [];
+    releases.forEach(function (r) { (r.sections || []).forEach(function (s) { if (!kinds[s.slug]) { kinds[s.slug] = { label: s.label || s.name, n: 0 }; order.push(s.slug); } kinds[s.slug].n += (s.items || []).length; }); });
+    chips.innerHTML = '<button type="button" class="cl-chip' + (filter ? '' : ' is-on') + '" data-kind="">All</button>' + order.map(function (k) {
+      return '<button type="button" class="cl-chip' + (filter === k ? ' is-on' : '') + '" data-kind="' + esc(k) + '">' + esc(kinds[k].label) + ' <i>' + kinds[k].n + '</i></button>';
+    }).join('');
+
+    var filtering = !!(filter || needle), html = '', rest = [], idx = 0;
+    var views = releases.map(function (r) { return { r: r, s: view(r) }; });
+    if (filtering) {
+      views = views.filter(function (v) { return v.s.length; });
+      if (!views.length) { note.hidden = false; note.textContent = 'Nothing matches. Try another word or type.'; }
+      else note.hidden = true;
+      views.forEach(function (v) { html += card(v.r, v.s, idx++, true, false); });
+      olderBtn.hidden = true;
+    } else {
+      note.hidden = true;
+      html += card(latest, views[0].s, idx++, expanded[latest.tag] !== false, true);
+      rest = views.slice(1);
+      if (showOlder) rest.slice(0, shown).forEach(function (v) { html += card(v.r, v.s, idx++, !!expanded[v.r.tag], false); });
+      if (rest.length && !showOlder) { olderBtn.hidden = false; olderBtn.textContent = 'Older releases (' + rest.length + ')'; }
+      else if (showOlder && shown < rest.length) { olderBtn.hidden = false; olderBtn.textContent = 'Show ' + Math.min(PAGE, rest.length - shown) + ' more'; }
+      else olderBtn.hidden = true;
+    }
+    list.innerHTML = html;
+  }
+
+  list.addEventListener('click', function (e) {
+    var b = e.target.closest('.cl-card-head'); if (!b) return;
+    var li = b.parentNode, nowOpen = !li.classList.contains('is-open'), tag = b.dataset.tag;
+    li.classList.toggle('is-open', nowOpen); b.setAttribute('aria-expanded', nowOpen);
+    var bd = li.querySelector('.cl-card-body'); if (nowOpen) bd.removeAttribute('inert'); else bd.setAttribute('inert', '');
+    expanded[tag] = nowOpen;
+  });
+  chips.addEventListener('click', function (e) { var b = e.target.closest('.cl-chip'); if (!b) return; filter = b.dataset.kind; render(); });
+  search.addEventListener('input', function () { needle = search.value.trim().toLowerCase(); render(); });
+  olderBtn.addEventListener('click', function () { if (!showOlder) showOlder = true; else shown += PAGE; render(); });
+  document.getElementById('cl-close').addEventListener('click', close);
+  dlg.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) close(); });
+  window.addEventListener('pq:changelog', open);
+
+  // A new release shows itself once, a moment after the page loads, unless something else is already open.
+  try {
+    if (localStorage.getItem('pq:seen-version') !== version) {
+      setTimeout(function () { if (!document.querySelector('dialog[open]') && !document.getElementById('pq-confirm').open) open(); }, 1500);
+    }
+  } catch (e) {}
+})();
+</script>
