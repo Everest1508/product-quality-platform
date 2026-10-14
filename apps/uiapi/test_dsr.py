@@ -352,3 +352,41 @@ class LogApiTest(DsrBase):
         self.assertEqual(row["to_time"], "17:30")
         self.assertRegex(row["from_time"], r"^\d{1,2} \w{3} \d\d:\d\d$")
         self.assertEqual(row["elapsed"], "3d 0h")  # how long it really took, even though the hours column is capped
+
+
+class NeedsTimeApiTest(DsrBase):
+    def log(self, **params):
+        return self.client.get("/ui-api/v1/dsr/log/", params)
+
+    def make_long(self):
+        t = Ticket.objects.create(company=self.acme, product=self.p_open, title="Slow one", status="in_progress")
+        t.set_assignees([self.dev])
+        Ticket.objects.filter(pk=t.pk).update(created_at=timezone.now() - timedelta(days=11, hours=1))
+        t.refresh_from_db()
+        return t
+
+    def test_resolving_a_long_ticket_tells_the_person_to_add_their_time_and_the_row_asks_for_it(self):
+        t = self.make_long()
+        self.login("dev")
+        r = self.post(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "resolved"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["dsr"], {"needs_time": True, "key": t.key, "elapsed": "11d 1h"})
+        row = self.log(range="today").json()["rows"][0]
+        self.assertEqual((row["needs_time"], row["hours"], row["elapsed"], row["editable"]), (True, "0m", "11d 1h", True))
+        self.assertEqual(self.log(range="today").json()["total"], "0m")  # it counts nothing yet
+
+    def test_entering_the_time_counts_it(self):
+        t = self.make_long()
+        self.login("dev")
+        self.post(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "resolved"})
+        entry = DSREntry.objects.get(ticket=t)
+        r = self.client.patch(f"/ui-api/v1/dsr/entries/{entry.pk}/", {"hours_spent": "2h 30m"}, content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        d = self.log(range="today").json()
+        self.assertEqual((d["total"], d["rows"][0]["needs_time"]), ("2h 30m", False))
+
+    def test_a_short_ticket_does_not_ask(self):
+        t = Ticket.objects.create(company=self.acme, product=self.p_open, title="Quick", status="in_progress")
+        t.set_assignees([self.dev])
+        self.login("dev")
+        self.assertNotIn("dsr", self.post(f"/ui-api/v1/tickets/{t.pk}/status/", {"status": "resolved"}).json())

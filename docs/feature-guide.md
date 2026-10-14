@@ -171,12 +171,16 @@ in the [release timeline](#release-timeline) at the end.
   suggested hours; **Review** lets you change each time first.
 
 ### Honest hours for resolved tickets
-- **Added:** 1.33.0 "Rook" (2026-10-13).
-- **Why:** a ticket open for weeks logged weeks of hours (even about 1000) when it was resolved.
-- **How:** a resolved ticket now logs at most one working day and shows "Created … → completed … · open for 11d 1h"
-  under the task (the open-for part came in 1.39.1 "Wigeon"), so the real elapsed time is still visible. Older rows keep
-  their full hours unless an admin chooses to cap them with `python manage.py fix_dsr_hours --dry-run`, checking the list,
-  then running it without `--dry-run`. That step is optional.
+- **Added:** capped in 1.33.0 "Rook"; shows how long a ticket was open in 1.39.1 "Wigeon"; asks for your real time in
+  1.40.0 "Nightingale" (2026-10-13).
+- **Why:** a ticket open for weeks logged weeks of hours (even about 1000) when it was resolved, but the real time taken
+  is still worth seeing.
+- **How:** a ticket open for less than a working day logs that time as before. A ticket open for longer logs **0** counted
+  time and shows "Created … → completed … · open for 11d 1h (not counted)". When you resolve it a message tells you to add
+  the time you worked on it today, the DSR opens a small window for it, and a banner plus an **Add time** button stay until
+  you enter it. Only the time you enter counts. Older rows keep their full hours until an admin runs
+  `python manage.py fix_dsr_hours --dry-run`, reads the list, then runs it without `--dry-run`: that moves those hours into the
+  open-for time and stops them counting. That step is optional.
 
 ---
 
@@ -253,6 +257,7 @@ in the [release timeline](#release-timeline) at the end.
 
 | Version | Name | Date | What it was about |
 |---|---|---|---|
+| 1.40.0 | Nightingale | 2026-10-13 | Long-open tickets ask for your real time |
 | 1.39.1 | Wigeon | 2026-10-13 | How long a ticket was open, shown in the DSR |
 | 1.39.0 | Thrasher | 2026-10-13 | What's new shown once per release |
 | 1.38.1 | Bluethroat | 2026-10-13 | A smoother What's new |

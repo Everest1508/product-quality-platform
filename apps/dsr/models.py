@@ -56,6 +56,10 @@ class DSREntry(models.Model):
 
     created_time = models.DateTimeField(null=True, blank=True)
     completed_time = models.DateTimeField(null=True, blank=True)
+    # How long the ticket behind an auto-logged row was open, created to completed. Shown on the DSR but never counted:
+    # `hours_spent` is what counts, and for a ticket open longer than a working day it stays 0 until the person types
+    # in the time they actually worked on it.
+    elapsed_hours = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True)
     hours_spent = models.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -84,6 +88,11 @@ class DSREntry(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date} - {self.task_name}"
+
+    @property
+    def needs_time(self):
+        """An auto-logged long ticket whose worked time has not been entered yet."""
+        return self.is_auto_logged and self.elapsed_hours is not None and self.hours_spent == 0
 
     @property
     def time_taken_formatted(self):

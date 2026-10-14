@@ -43,9 +43,9 @@ class DSRSystemTest(TestCase):
         self.assertEqual(entry.status, "completed")
         self.assertGreater(entry.hours_spent, Decimal("0"))
 
-    def test_a_long_open_ticket_logs_at_most_one_working_day_but_keeps_both_moments(self):
-        """A ticket that sat open for 60 days used to log 1440 hours. It now logs one working day and keeps the
-        created and completed times, so the DSR shows when it started and finished."""
+    def test_a_long_open_ticket_shows_how_long_it_was_open_but_counts_no_time_until_the_person_enters_theirs(self):
+        """A ticket open for 60 days used to log 1440 hours. It now records that it was open that long (shown, never
+        counted) and claims 0 hours until the person types in the time they worked on it."""
         old = timezone.now() - timedelta(days=60)
         Ticket.objects.filter(pk=self.ticket.pk).update(created_at=old)
         self.ticket.refresh_from_db()
@@ -53,14 +53,27 @@ class DSRSystemTest(TestCase):
         self.ticket.transition_to("resolved", actor=self.member)
 
         entry = DSREntry.objects.get(ticket=self.ticket)
-        self.assertEqual(entry.hours_spent, Decimal("7.50"))  # the default shift, 10:00-18:30 less a 60 minute break
+        self.assertEqual(entry.hours_spent, Decimal("0.00"))
+        self.assertGreaterEqual(entry.elapsed_hours, Decimal("1439.99"))
+        self.assertTrue(entry.needs_time)
         self.assertEqual(entry.created_time, old)
         self.assertIsNotNone(entry.completed_time)
-        self.assertEqual(DSREntry.objects.get(pk=entry.pk).hours_spent, entry.hours_spent)
+
+        # Entering real time counts it, and resolving again does not wipe what was entered.
+        DSREntry.objects.filter(pk=entry.pk).update(hours_spent=Decimal("2.50"))
+        self.ticket.transition_to("resolved", actor=self.member)
+        entry.refresh_from_db()
+        self.assertEqual(entry.hours_spent, Decimal("2.50"))
+        self.assertFalse(entry.needs_time)
 
         self.client.login(username="member", password="password")
-        response = self.client.get("/ui-api/v1/dashboard/")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client.get("/ui-api/v1/dashboard/").status_code, 200)
+
+    def test_a_short_ticket_still_logs_its_elapsed_time(self):
+        self.ticket.transition_to("resolved", actor=self.member)
+        entry = DSREntry.objects.get(ticket=self.ticket)
+        self.assertGreater(entry.hours_spent, Decimal("0"))
+        self.assertFalse(entry.needs_time)
 
     def test_hours_survive_a_wide_round_trip(self):
         """99999h was the widest figure anyone actually asked for."""
@@ -79,7 +92,7 @@ class DSRSystemTest(TestCase):
 
 
 class FixDsrHoursCommandTest(TestCase):
-    def test_it_caps_only_inflated_auto_entries(self):
+    def test_it_keeps_the_open_for_time_and_stops_inflated_auto_entries_counting(self):
         from io import StringIO
 
         from django.core.management import call_command
@@ -97,4 +110,9 @@ class FixDsrHoursCommandTest(TestCase):
         call_command("fix_dsr_hours", stdout=StringIO())
         for e in (big, small, manual):
             e.refresh_from_db()
-        self.assertEqual((big.hours_spent, small.hours_spent, manual.hours_spent), (Decimal("7.50"), Decimal("2.00"), Decimal("20.00")))
+        self.assertEqual((big.hours_spent, small.hours_spent, manual.hours_spent), (Decimal("0.00"), Decimal("2.00"), Decimal("20.00")))
+        self.assertEqual(big.elapsed_hours, Decimal("1440.00"))  # how long it took is kept, it just no longer counts
+        self.assertIsNone(small.elapsed_hours)
+        call_command("fix_dsr_hours", stdout=StringIO())  # running it again changes nothing
+        big.refresh_from_db()
+        self.assertEqual((big.hours_spent, big.elapsed_hours), (Decimal("0.00"), Decimal("1440.00")))

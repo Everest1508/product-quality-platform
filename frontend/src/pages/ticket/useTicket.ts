@@ -55,12 +55,13 @@ export function useTicketActions(id: number) {
       const before = cached();
       setBusy('status');
       try {
-        await api.post(`tickets/${id}/status/`, { status });
+        const r = await api.post<{ dsr?: { needs_time?: boolean; elapsed?: string } }>(`tickets/${id}/status/`, { status });
         await qc.invalidateQueries({ queryKey: ['ticket', id] });
         refreshLists();
         const label = (key: string) => before?.statuses.find(([k]) => k === key)?.[1] ?? key;
         if (status === 'resolved' || status === 'closed') confetti();
         toast(`${before?.ticket.key ?? ''}: status ${before?.ticket.status_label ?? ''} → ${label(status)}.`, 'success');
+        if (r?.dsr?.needs_time) toast(`${before?.ticket.key ?? 'This ticket'} was open for ${r.dsr.elapsed}. Add the time you worked on it today in your DSR.`, 'warning');
         return true;
       } catch (e) {
         toast(reason(e), 'error');

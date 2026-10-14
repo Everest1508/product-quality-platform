@@ -52,7 +52,10 @@ def auto_log_ticket_dsr(ticket, actor=None):
 
     day_hours = Decimal(shift_for(ticket.company).worked_minutes_per_day) / Decimal(60)
     elapsed_hours = Decimal(str(max(0, (now - start_time).total_seconds()))) / Decimal(3600)
-    hours_spent = max(Decimal("0.25"), min(elapsed_hours, day_hours or Decimal("8"))).quantize(Decimal("0.01"))
+    day_hours = day_hours or Decimal("8")
+    # A ticket open longer than a working day says how long it was open but claims no time: the person enters what they
+    # worked on it, and only that counts towards the DSR.
+    long_ticket = elapsed_hours > day_hours
 
     target_users = list(ticket.assignees.all())
     if not target_users:
@@ -68,6 +71,11 @@ def auto_log_ticket_dsr(ticket, actor=None):
         task_name = f"[{ticket.product.name}] {task_name}"
 
     for user in target_users:
+        existing = DSREntry.objects.filter(company=ticket.company, user=user, ticket=ticket, date=log_date).first()
+        if long_ticket:
+            hours_spent = existing.hours_spent if existing else Decimal("0.00")  # keep time the person already entered
+        else:
+            hours_spent = max(Decimal("0.25"), elapsed_hours).quantize(Decimal("0.01"))
         DSREntry.objects.update_or_create(
             company=ticket.company,
             user=user,
@@ -79,6 +87,7 @@ def auto_log_ticket_dsr(ticket, actor=None):
                 "category": category,
                 "created_time": start_time,
                 "completed_time": now,
+                "elapsed_hours": elapsed_hours.quantize(Decimal("0.01")),
                 "hours_spent": hours_spent,
                 "status": DSREntry.Status.COMPLETED,
                 "is_auto_logged": True,
@@ -290,3 +299,27 @@ def add_suggested(company, actor, target_user, day, ticket_id, hours):
         metadata={"user_id": entry.user_id, "date": entry.date.isoformat(), "product_id": entry.product_id},
     )
     return entry, f"Added {ticket.key} with {format_hm(hours)}."
+
+
+def _fmt_hm(hours):
+    from apps.dsr.duration import format_hm
+
+    return format_hm(hours)
+
+
+def elapsed_label(e):
+    """How long the ticket was open: "3h 20m", or "11d 1h" past two days. Empty when it is not known."""
+    if e.elapsed_hours is not None:
+        minutes = int(e.elapsed_hours * 60)
+    elif e.created_time and e.completed_time:
+        minutes = max(0, int((e.completed_time - e.created_time).total_seconds() // 60))
+    else:
+        return ""
+    days, rest = divmod(minutes, 1440)
+    return f"{days}d {rest // 60}h" if days >= 2 else _fmt_hm(Decimal(minutes) / 60)
+
+
+def pending_time_entry(company, user, ticket):
+    """Today's auto-logged row for this ticket and person if it is waiting for the time they worked, else None."""
+    entry = DSREntry.objects.filter(company=company, user=user, ticket=ticket, date=timezone.localdate()).first()
+    return entry if entry is not None and entry.needs_time else None

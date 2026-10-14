@@ -24,20 +24,23 @@ is just a rebuild: no separate front-end host, no `collectstatic`. `entrypoint.s
 
 ## After the first deploy of a new release
 
-1. `[Dry Run Fix DSR Hours]` shows old auto-logged rows with more than a working day of hours. Applying `[Fix DSR Hours]` is optional: leaving them as they are keeps the full elapsed hours in the Time column, and new auto-logged rows are capped at one working day but show how long the ticket was open.
+1. `[Dry Run Fix DSR Hours]` shows old auto-logged rows with more than a working day of hours. `[Fix DSR Hours]` makes them stop counting while keeping their open-for time; it is optional (see below).
 2. `[Dry Run Reminders]` during working hours to see how many reminders would go out.
 3. `[Dry Run Automation Rules]` to see which rules would file tickets.
 
 ## Reading the DSR fix
 
 `[Dry Run Fix DSR Hours]` prints one line per row, for example
-`65 [Neomed] #9: Delivery Boy Tracking is not working : 1567.38h -> 7.50h`: the row id, the product,
-the ticket and its hours before and after. The last line says how many would be capped. Every row it
-lists was logged automatically when a ticket was resolved and holds more than one working day, so a
-long open ticket no longer counts as weeks of work. Two lines with the same ticket are usually two
-people (one row per assignee), not a duplicate. `[Fix DSR Hours]` backs up the database, applies the
-cap, then runs the dry run again; it should end with nothing left to cap. It never touches hours a
-person typed in. Reports and payslips already made are not recalculated.
+`65 [Neomed] #9: Delivery Boy Tracking is not working: open for 1567.38h -> counts 0h, open-for time kept`: the row id,
+the product, the ticket and how long it was open. The last line says how many would stop counting. Every row it lists
+was logged automatically when a ticket was resolved and holds more than one working day, which is the old behaviour
+of counting a whole open ticket as worked time.
+
+`[Fix DSR Hours]` backs up the database, then moves each of those hours into the row's **open-for** time (still shown
+on the DSR, marked "not counted") and sets the counted hours to 0, so nobody's DSR total is inflated. It runs the dry run
+again afterwards and should find nothing. It never touches hours a person typed in. Two lines with the same ticket are
+usually two people (one row per assignee). Reports and payslips already made are not recalculated. Running it is
+optional: until you do, those old rows keep counting their full hours. New tickets behave this way on their own.
 
 ## When a pull fails
 

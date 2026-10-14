@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.40.0] "Nightingale" — 2026-10-13 · long-open tickets ask for your real time
+
+> In short: a ticket that was open for a long time shows how long it took, but counts no time in your DSR until you enter the time you really worked on it.
+
+### New
+- **You are asked for your time on a long-open ticket.** When you resolve a ticket that was open for more than a working day, a message tells you to add the time you worked on it today, and the DSR opens a small window to enter it.
+- **A banner stays on the DSR until you add the time.** The row shows an Add time button, and only the time you enter counts.
+
+### Better
+- **A long-open ticket no longer adds weeks to your day.** Its row shows how long it was open, such as "open for 11d 1h", marked as not counted, so the real elapsed time is still there to read.
+- **The cleanup command keeps the open-for time.** Old rows with huge hours stop counting but still show how long they took, instead of being cut to a fixed number.
+
 ## [1.39.1] "Wigeon" — 2026-10-13 · how long a ticket was open
 
 > In short: an auto-logged DSR row now says how long its ticket was open, so the real elapsed time is never lost.

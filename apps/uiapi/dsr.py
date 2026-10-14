@@ -54,13 +54,7 @@ def _moment(value, day):
     return local.strftime("%H:%M") if local.date() == day else local.strftime("%-d %b %H:%M")
 
 
-def _elapsed(e):
-    """How long the ticket was open, created to completed: "3h 20m", or "11d 1h" past two days. Empty when either moment is missing."""
-    if not (e.created_time and e.completed_time):
-        return ""
-    minutes = max(0, int((e.completed_time - e.created_time).total_seconds() // 60))
-    days, rest = divmod(minutes, 1440)
-    return f"{days}d {rest // 60}h" if days >= 2 else format_hm(Decimal(minutes) / 60)
+_elapsed = service.elapsed_label
 
 
 def entry_json(e):
@@ -69,7 +63,7 @@ def entry_json(e):
         "status": e.status, "status_label": e.get_status_display(), "hours": format_hm(e.hours_spent),
         "hours_value": str(e.hours_spent), "notes": e.notes, "auto": e.is_auto_logged,
         "source": e.source, "source_id": e.source_id,
-        "from_time": _moment(e.created_time, e.date), "elapsed": _elapsed(e),
+        "from_time": _moment(e.created_time, e.date), "elapsed": _elapsed(e), "needs_time": e.needs_time,
         "to_time": _moment(e.completed_time, e.date),
         "product": {"id": e.product_id, "name": e.product.name} if e.product_id else None,
         "ticket": {"id": e.ticket_id, "key": e.ticket.key,

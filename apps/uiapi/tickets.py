@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from apps.dsr import service as dsr_service
 from apps.dashboards.models import ActivityLog
 from apps.products.access import (
     accessible_products,
@@ -234,7 +235,11 @@ class TicketStatusAPIView(CompanyAPIView):
         error = ticket_service.change_status(ticket, request.data.get("status"), request.user, request.company)
         if error:
             return Response({"detail": error}, status=400)
-        return Response({"ok": True, "status": ticket.status})
+        body = {"ok": True, "status": ticket.status}
+        waiting = dsr_service.pending_time_entry(request.company, request.user, ticket)
+        if waiting is not None:  # a long-open ticket just logged to this person's DSR: tell them to add the time they worked
+            body["dsr"] = {"needs_time": True, "key": ticket.key, "elapsed": dsr_service.elapsed_label(waiting)}
+        return Response(body)
 
 
 def detail_response(request, ticket, status=200, **extra):

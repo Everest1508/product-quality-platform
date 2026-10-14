@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/lib/toast';
 import { ExportLink } from '@/components/ExportLink';
 import { EntryDialog } from './Entries';
+import { NeedsTimeBanner, NeedsTimeDialog, useNeedsTimePrompt } from './NeedsTime';
 import { useDsrActions, useDsrLog } from './useDsr';
 import type { LogRow } from './types';
 
@@ -34,6 +35,8 @@ export function DsrPage() {
   const query = useDsrLog({ range, user, q });
   const act = useDsrActions(user);
   const log = query.data;
+  const waiting = (log?.rows ?? []).filter((r) => r.needs_time && r.editable);
+  const [needsOpen, setNeedsOpen] = useNeedsTimePrompt(waiting);
   const [dialog, setDialog] = useState<{ entry?: LogRow } | null>(params.get('log') ? {} : null);
   const [confirm, setConfirm] = useState<LogRow | null>(null);
   useEffect(() => {
@@ -93,6 +96,7 @@ export function DsrPage() {
           </div>
         </div>
       )}
+      <NeedsTimeBanner rows={waiting} onOpen={() => setNeedsOpen(true)} />
       {!log.can_log && log.range === 'today' && <Alert variant="warning">{log.locked_reason}</Alert>}
 
       <Card className="overflow-hidden p-0 [&>div]:max-h-[70vh]">
@@ -130,13 +134,19 @@ export function DsrPage() {
                         {r.auto && <Badge variant="info" title="Added automatically when the ticket was resolved">Auto</Badge>}
                         {r.source && <Badge variant="outline" title={`Submitted through the DSR MCP from ${r.source}`}>via MCP</Badge>}
                       </div>
-                      {r.from_time && r.to_time && <p className="mt-0.5 text-xs text-muted-foreground">Created {r.from_time} → completed {r.to_time}{r.elapsed && <> · open for <b className="font-medium text-foreground">{r.elapsed}</b></>}</p>}
+                      {r.from_time && r.to_time && <p className="mt-0.5 text-xs text-muted-foreground">Created {r.from_time} → completed {r.to_time}{r.elapsed && <> · open for <b className="font-medium text-foreground">{r.elapsed}</b>{r.needs_time && ' (not counted)'}</>}</p>}
                       <p className="mt-0.5 text-xs text-muted-foreground md:hidden" aria-hidden>{[r.product?.name, r.category_label].filter(Boolean).join(' · ')}</p>
                       {r.notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.notes}</p>}
                     </TableCell>
                     <TableCell className="text-sm max-md:hidden">{r.product?.name ?? <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell className="text-sm max-md:hidden">{r.category_label}</TableCell>
-                    <TableCell className="whitespace-nowrap text-center font-semibold tabular-nums">{r.hours}</TableCell>
+                    <TableCell className="whitespace-nowrap text-center font-semibold tabular-nums">
+                      {r.needs_time ? (
+                        r.editable
+                          ? <Button size="sm" variant="outline" className="border-warning/50 text-warning" onClick={() => setDialog({ entry: r })}><PlusIcon />Add time</Button>
+                          : <span className="text-xs font-normal text-muted-foreground" title="The time the ticket was open is not counted">not counted</span>
+                      ) : r.hours}
+                    </TableCell>
                     <TableCell className="text-center"><Badge variant={STATUS[r.status] ?? 'default'}>{r.status_label}</Badge></TableCell>
                     <TableCell className="whitespace-nowrap text-center">
                       {r.editable ? (
@@ -155,6 +165,7 @@ export function DsrPage() {
       </Card>
       {log.truncated && <p className="text-xs text-muted-foreground">Showing the newest 500 entries. Narrow the range to see the rest.</p>}
 
+      <NeedsTimeDialog rows={waiting} act={act} open={needsOpen} onOpenChange={setNeedsOpen} />
       {dialog && <EntryDialog log={log} act={act} entry={dialog.entry} open onOpenChange={(o) => !o && setDialog(null)} />}
       <AlertDialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)} destructive title="Delete this entry?" description="This cannot be undone." confirmLabel="Delete" onConfirm={() => confirm && act.remove(confirm.id)} />
     </div>

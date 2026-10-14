@@ -55,8 +55,9 @@ export function Board({ data, queryKey, selecting, selected, onSelect, onDelete,
       // A refetch already in flight would otherwise snap the card back for a moment.
       await qc.cancelQueries({ queryKey });
       qc.setQueryData<BoardResponse>(queryKey, (cur) => (cur ? applyMove(cur, t.id, to) : cur));
-      await api.post(`tickets/${t.id}/status/`, { status: to });
+      const r = await api.post<{ dsr?: { needs_time?: boolean; elapsed?: string } }>(`tickets/${t.id}/status/`, { status: to });
       toast(`${t.key}: status ${t.status_label} → ${labelOf(to)}.`, 'success');
+      if (r?.dsr?.needs_time) toast(`${t.key} was open for ${r.dsr.elapsed}. Add the time you worked on it today in your DSR.`, 'warning');
       qc.invalidateQueries({ queryKey: ['bootstrap'] });
       qc.invalidateQueries({ queryKey: ['product-nav'] });
     } catch (e) {

@@ -144,3 +144,25 @@ it('a banner offers every suggested ticket in one click', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Add all' }));
   await waitFor(() => expect(post).toHaveBeenCalledWith(expect.stringContaining('dsr/suggestions/add-all/'), {}));
 });
+
+const longRow = () => row({ id: 9, task_name: '[Neomed] #9: Delivery tracking', hours: '0m', hours_value: '0.00', auto: true, elapsed: '11d 1h', needs_time: true, ticket: { id: 9, key: 'NEO-009', url: '/tickets/9/' } });
+
+it('a long-open ticket asks for the time worked: banner, a window that opens once, and saving counts it', async () => {
+  sessionStorage.clear();
+  const { patch } = setup(log({ rows: [longRow()] }));
+  const dialog = await screen.findByRole('dialog');
+  expect(screen.getByRole('status', { hidden: true })).toHaveTextContent(/open for 11d 1h/); // the banner sits behind the window
+  expect(dialog).toHaveTextContent(/how long did you work on this ticket today/i);
+  await userEvent.type(screen.getByLabelText(/time worked on/i), '2h 30m');
+  await userEvent.click(screen.getByRole('button', { name: 'Save time' }));
+  await waitFor(() => expect(patch).toHaveBeenCalledWith('dsr/entries/9/', { hours_spent: '2h 30m' }));
+});
+
+it('the long-ticket window does not open again for the same row, and an old row just says not counted', async () => {
+  sessionStorage.setItem('pq:dsr-needs-time', JSON.stringify([9]));
+  setup(log({ rows: [longRow(), { ...longRow(), id: 10, date: '2026-10-12', editable: false }] }));
+  await screen.findByRole('status');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByText('not counted')).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: /add time/i }).length).toBeGreaterThan(0);
+});
