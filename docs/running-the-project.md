@@ -150,7 +150,7 @@ There is no `.env` file support; export the variables or put them in your servic
 docker-compose up --build
 ```
 
-This builds the React app in a Node stage, starts Redis, runs the migrations and serves the site on
+This builds the React app in a Node stage, starts Redis, runs the migrations and serves the site with daphne on
 <http://localhost:8011>. The database file `db.sqlite3` and the `media/` folder are mounted from the project folder, so
 they survive a rebuild. To load the demo data into the container:
 
@@ -159,6 +159,16 @@ docker-compose exec web python manage.py seed_data
 ```
 
 Change `DJANGO_SECRET_KEY` and the other values in `docker-compose.yml` before using it for anything real.
+
+## Keeping it fast
+
+- **The app files are small and cached.** `app.js` is about 125 KB sent compressed, each page loads its own small file the first
+  time you open it, and a repeat visit only asks "has it changed?" (a tiny 304). If you put nginx in front and serve `/ui/` yourself,
+  turn on `gzip on;` for `application/javascript text/css application/json`, and cache `page-*.js` for a long time (their names change
+  when their content does) but not `app.js` or `app.css`.
+- **Turn `DJANGO_DEBUG` off in production.** With it on, Django keeps a record of every database query in memory, which slows the
+  server down the longer it runs. It needs your own `DJANGO_SECRET_KEY` and `SHARED_SERVER_ENCRYPTION_KEY` (see above).
+- **Use the compose file as it is.** It starts the server with daphne, not the development server.
 
 ## Putting it on a server
 

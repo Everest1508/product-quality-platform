@@ -558,3 +558,48 @@ class ReleaseNameTest(TestCase):
         names = [r["name"] for r in named]
         self.assertEqual(len(names), len(set(names)), "two releases share a name")
         self.assertEqual(changelog_module.get_version_info()["name"], named[0]["name"])
+
+
+class UiAssetsTest(TestCase):
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+
+        from apps.core import ui_assets
+
+        ui_assets._gzipped.clear()
+        self.dist = Path(tempfile.mkdtemp())
+        (self.dist / "app.js").write_text("console.log('hello');" * 200)
+        (self.dist / "page-AbC123.js").write_text("export default 1;")
+
+    def get(self, name, **headers):
+        from django.test import override_settings
+
+        with override_settings(FRONTEND_DIST=self.dist):
+            return self.client.get(f"/ui/{name}", **headers)
+
+    def test_a_browser_that_accepts_gzip_gets_the_smaller_file(self):
+        import gzip
+
+        r = self.get("app.js", HTTP_ACCEPT_ENCODING="gzip, br")
+        self.assertEqual(r["Content-Encoding"], "gzip")
+        self.assertLess(len(r.content), len("console.log('hello');" * 200) // 4)
+        self.assertEqual(gzip.decompress(r.content).decode(), "console.log('hello');" * 200)
+        plain = self.get("app.js")
+        self.assertNotIn("Content-Encoding", plain)
+        self.assertEqual(b"".join(plain.streaming_content), ("console.log('hello');" * 200).encode())
+
+    def test_an_unchanged_file_is_a_304_and_a_changed_one_is_sent_again(self):
+        first = self.get("app.js", HTTP_ACCEPT_ENCODING="gzip")
+        again = self.get("app.js", HTTP_ACCEPT_ENCODING="gzip", HTTP_IF_NONE_MATCH=first["ETag"])
+        self.assertEqual((again.status_code, again.content), (304, b""))
+        (self.dist / "app.js").write_text("changed" * 50)
+        self.assertEqual(self.get("app.js", HTTP_ACCEPT_ENCODING="gzip", HTTP_IF_NONE_MATCH=first["ETag"]).status_code, 200)
+
+    def test_cache_rules_differ_for_the_entry_file_and_hashed_pages(self):
+        self.assertEqual(self.get("app.js")["Cache-Control"], "no-cache")
+        self.assertIn("immutable", self.get("page-AbC123.js")["Cache-Control"])
+
+    def test_only_real_files_directly_in_the_build_folder_are_served(self):
+        self.assertEqual(self.get("missing.js").status_code, 404)
+        self.assertEqual(self.get("..%2Fsettings.py").status_code, 404)

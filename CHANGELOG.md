@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.40.1] "Skylark" — 2026-10-14 · much faster loading
+
+> In short: pages open much faster, and opening another page of the app downloads almost nothing.
+
+### Better
+- **The first load is about five times smaller.** The app is now split into pages that load when you first open them, and the files are sent compressed, so the first screen downloads about a fifth of what it did.
+- **Opening another page, or refreshing, downloads almost nothing.** The browser only checks whether the app changed, and reuses what it already has.
+- **The search box no longer calls the server on every page.** It only asks when you open it.
+- **The Docker version starts the server directly.** It no longer runs the development server with its file watcher.
+
 ## [1.40.0] "Nightingale" — 2026-10-13 · long-open tickets ask for your real time
 
 > In short: a ticket that was open for a long time shows how long it took, but counts no time in your DSR until you enter the time you really worked on it.

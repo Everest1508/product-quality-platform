@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { matchPath, Route, Routes, useLocation } from 'react-router-dom';
 import { useBootstrap } from '@/lib/bootstrap';
 import { showFlash } from '@/lib/toast';
@@ -7,6 +7,9 @@ import { AppShell } from '@/shell/AppShell';
 import { CrashBoundary } from '@/components/fun/CrashBoundary';
 import { NotFound } from '@/components/fun/NotFound';
 import { Toaster } from '@/shell/Toaster';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const pageLoading = <div className="space-y-4 p-1" data-testid="page-loading"><Skeleton className="h-9 w-64" /><Skeleton className="h-72 w-full" /></div>;
 
 // Pages that work without a login (a survey's public link, later the sign-in pages) get no sidebar and no bootstrap.
 export function Gate() {
@@ -14,11 +17,13 @@ export function Gate() {
   if (publicRoutes.some((r) => matchPath(r.path as string, pathname))) {
     return (
       <>
+        <Suspense fallback={pageLoading}>
         <Routes>
           {publicRoutes.map((r) => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}
         </Routes>
+        </Suspense>
         <Toaster />
       </>
     );
@@ -49,12 +54,14 @@ function PrivateApp() {
     <>
       <AppShell>
         <CrashBoundary key={pathname}>
+        <Suspense fallback={pageLoading}>
         <Routes>
           {shellRoutes.map((r) => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
         </CrashBoundary>
       </AppShell>
       <Toaster />

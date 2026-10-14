@@ -43,11 +43,13 @@ export function highlight(text: string, query: string): (string | { mark: string
   return out.length ? out : [text];
 }
 
-export function useSearch(query: string): { groups: SearchGroup[]; loading: boolean } {
+// `enabled` is false while the search box is closed, so opening a page does not ask the server for results nobody sees.
+export function useSearch(query: string, enabled = true): { groups: SearchGroup[]; loading: boolean } {
   const { urls } = useBootstrapData();
   const [groups, setGroups] = useState<SearchGroup[]>([]);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
+    if (!enabled) return;
     const ctl = new AbortController();
     const q = query.trim();
     setLoading(true);
@@ -71,6 +73,6 @@ export function useSearch(query: string): { groups: SearchGroup[]; loading: bool
       clearTimeout(timer);
       ctl.abort();
     };
-  }, [query, urls.search]);
+  }, [query, urls.search, enabled]);
   return { groups, loading };
 }

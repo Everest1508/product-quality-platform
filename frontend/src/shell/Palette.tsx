@@ -24,7 +24,7 @@ function Marked({ text, query }: { text: string; query: string }) {
 export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange(open: boolean): void }) {
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
-  const { groups, loading } = useSearch(query);
+  const { groups, loading } = useSearch(query, open);
   const to = useGo();
   const actions = matchActions(query);
 
