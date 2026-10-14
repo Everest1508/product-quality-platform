@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { openNotification } from '@/lib/openNotification';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getNotifications, markAllRead, type Filter, type Notice } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -24,10 +25,12 @@ const dayLabel = (iso: string) => {
 };
 
 function Row({ n }: { n: Notice }) {
+  const navigate = useNavigate();
   const Icon = KIND_ICON[n.kind] ?? BellIcon;
   return (
     <a
       href={n.url}
+      onClick={(e) => openNotification(e, n, navigate)}
       className={cn('flex items-start gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-muted', !n.read && 'bg-accent/40')}
     >
       <span aria-hidden className={cn('mt-0.5 grid size-8 shrink-0 place-items-center rounded-full [&_svg]:size-4', n.read ? 'bg-secondary text-muted-foreground' : 'bg-primary/15 text-primary')}><Icon /></span>

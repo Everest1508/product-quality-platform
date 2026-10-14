@@ -497,3 +497,58 @@ class CsvExportApiTest(TeamApiBase):
         r = self.client.get("/ui-api/v1/attendance/timesheet/?export=csv")
         self.assertEqual(r.status_code, 200)
         self.assertIn("Employee,Present days", r.content.decode("utf-8-sig"))
+
+
+class HostedFrontendTest(TeamApiBase):
+    """The React app on its own address (Vercel): CORS for just that origin, a token endpoint and a JSON sign-out."""
+
+    ORIGIN = "https://app.example.com"
+
+    def test_the_listed_origin_may_call_the_api_with_cookies_and_others_may_not(self):
+        from django.test import override_settings
+
+        with override_settings(FRONTEND_ORIGINS=[self.ORIGIN]):
+            ok = self.client.get("/ui-api/v1/auth/csrf/", HTTP_ORIGIN=self.ORIGIN)
+            self.assertEqual(ok["Access-Control-Allow-Origin"], self.ORIGIN)
+            self.assertEqual(ok["Access-Control-Allow-Credentials"], "true")
+            self.assertIn("Origin", ok["Vary"])
+            self.assertNotIn("Access-Control-Allow-Origin", self.client.get("/ui-api/v1/auth/csrf/", HTTP_ORIGIN="https://evil.example"))
+            self.assertNotIn("Access-Control-Allow-Origin", self.client.get("/ui-api/v1/auth/csrf/"))
+            # Not a path the web app uses, so even the listed origin gets nothing.
+            self.assertNotIn("Access-Control-Allow-Origin", self.client.get("/api/v1/errors/capture/", HTTP_ORIGIN=self.ORIGIN))
+
+    def test_a_preflight_is_answered_for_the_listed_origin_only(self):
+        from django.test import override_settings
+
+        with override_settings(FRONTEND_ORIGINS=[self.ORIGIN]):
+            r = self.client.options("/ui-api/v1/dsr/entries/", HTTP_ORIGIN=self.ORIGIN, HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST", HTTP_ACCESS_CONTROL_REQUEST_HEADERS="x-csrftoken")
+            self.assertEqual(r.status_code, 204)
+            self.assertIn("X-CSRFToken", r["Access-Control-Allow-Headers"])
+            self.assertIn("POST", r["Access-Control-Allow-Methods"])
+            other = self.client.options("/ui-api/v1/dsr/entries/", HTTP_ORIGIN="https://evil.example", HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST")
+            self.assertNotIn("Access-Control-Allow-Origin", other)
+
+    def test_nothing_is_added_when_no_front_end_origin_is_configured(self):
+        r = self.client.get("/ui-api/v1/auth/csrf/", HTTP_ORIGIN=self.ORIGIN)
+        self.assertNotIn("Access-Control-Allow-Origin", r)
+
+    def test_the_csrf_endpoint_gives_a_token_and_sets_the_cookie(self):
+        r = self.client.get("/ui-api/v1/auth/csrf/")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()["csrf"])
+        self.assertIn("csrftoken", r.cookies)
+
+    def test_json_sign_out_ends_the_session_and_says_where_to_go(self):
+        self.login("dev")
+        self.assertEqual(self.client.get("/ui-api/v1/profile/").status_code, 200)
+        r = self.client.post("/ui-api/v1/auth/logout/", {}, content_type="application/json")
+        self.assertEqual((r.status_code, r.json()["redirect"]), (200, "/login/"))
+        self.assertIn(self.client.get("/ui-api/v1/profile/").status_code, (401, 403))
+
+    def test_sign_in_works_through_the_token_endpoint(self):
+        from django.test import Client
+
+        c = Client(enforce_csrf_checks=True, HTTP_ORIGIN="http://testserver")
+        token = c.get("/ui-api/v1/auth/csrf/").json()["csrf"]
+        r = c.post("/ui-api/v1/auth/login/", {"username": "dev", "password": "pass1234"}, content_type="application/json", HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(r.status_code, 200, r.content)

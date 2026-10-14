@@ -1,12 +1,13 @@
 import { ChevronDownIcon, KeyboardIcon, LogOutIcon, UserIcon } from '@/components/ui/icons';
 import { useBootstrapData } from '@/lib/bootstrap';
+import { signOut } from '@/lib/signOut';
 import { ThemeSwitch } from './ThemeSwitch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Kbd } from '@/components/ui/kbd';
 import { Avatar } from '@/components/ui/avatar';
 
 export function AccountMenu() {
-  const { user, urls, csrf } = useBootstrapData();
+  const { user, urls } = useBootstrapData();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger aria-label="Account menu" className="flex h-9 items-center gap-2 rounded-md px-1.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/40">
@@ -21,13 +22,7 @@ export function AccountMenu() {
         <div className="px-2 pb-2 pt-1"><ThemeSwitch /></div>
         <DropdownMenuItem asChild><a href={urls.profile}><UserIcon /> My profile</a></DropdownMenuItem>
         <DropdownMenuItem onSelect={() => window.dispatchEvent(new Event('pq:shortcuts'))}><KeyboardIcon /> Keyboard shortcuts<Kbd className="ml-auto">?</Kbd></DropdownMenuItem>
-        {/* A real form post, so signing out works without JavaScript. */}
-        <form method="post" action={urls.logout}>
-          <input type="hidden" name="csrfmiddlewaretoken" value={csrf} />
-          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-            <button type="submit" className="w-full"><LogOutIcon /> Sign out</button>
-          </DropdownMenuItem>
-        </form>
+        <DropdownMenuItem onSelect={() => void signOut()}><LogOutIcon /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

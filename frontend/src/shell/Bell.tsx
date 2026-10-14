@@ -1,5 +1,6 @@
 import { BellIcon, CheckIcon } from '@/components/ui/icons';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { openNotification } from '@/lib/openNotification';
 import { useBootstrapData } from '@/lib/bootstrap';
 import { useBell, usePush } from '@/lib/notifications';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,6 +17,7 @@ const ago = (iso: string) => {
 };
 
 export function Bell() {
+  const navigate = useNavigate();
   const { urls } = useBootstrapData();
   const { unread, items, loaded, markAllRead } = useBell();
   const push = usePush();
@@ -44,7 +46,7 @@ export function Bell() {
           <ul className="max-h-96 overflow-y-auto">
             {items.map((n) => (
               <li key={n.id}>
-                <a href={n.url} className={cn('flex gap-3 border-b px-4 py-3 text-sm last:border-b-0 hover:bg-muted', !n.read && 'bg-accent/40')}>
+                <a href={n.url} onClick={(e) => openNotification(e, n, navigate)} className={cn('flex gap-3 border-b px-4 py-3 text-sm last:border-b-0 hover:bg-muted', !n.read && 'bg-accent/40')}>
                   <span aria-hidden className={cn('mt-1.5 size-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-primary')} />
                   <span className="min-w-0 flex-1">
                     <strong className="block font-medium">{n.title}</strong>

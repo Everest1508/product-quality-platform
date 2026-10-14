@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { api } from '@/lib/api';
 import * as bootstrap from '@/lib/bootstrap';
 import { sampleBootstrap } from '@/test-fixtures';
 import { AccountMenu } from './AccountMenu';
@@ -23,13 +24,16 @@ it('New menu offers tickets, leave and corrections, and New product only to admi
   expect(screen.getByRole('menuitem', { name: /new product/i })).toBeInTheDocument();
 });
 
-it('Account menu has My profile and a real sign-out form with the CSRF token', async () => {
+it('Account menu has My profile and Sign out calls the sign-out API, then shows the sign-in page', async () => {
   vi.spyOn(bootstrap, 'useBootstrapData').mockReturnValue(sampleBootstrap());
+  const post = vi.spyOn(api, 'post').mockResolvedValue({ redirect: '/login/' } as never);
+  const assign = vi.fn();
+  vi.stubGlobal('location', { ...window.location, assign });
   render(<AccountMenu />);
   await userEvent.click(screen.getByRole('button', { name: /account menu/i }));
   expect(screen.getByRole('menuitem', { name: /my profile/i })).toHaveAttribute('href', '/profile/');
-  const form = screen.getByRole('menuitem', { name: /sign out/i }).closest('form')!;
-  expect(form).toHaveAttribute('method', 'post');
-  expect(form).toHaveAttribute('action', '/logout/');
-  expect(form.querySelector('input[name=csrfmiddlewaretoken]')).toHaveValue('tok');
+  await userEvent.click(screen.getByRole('menuitem', { name: /sign out/i }));
+  await waitFor(() => expect(post).toHaveBeenCalledWith('auth/logout/', {}));
+  await waitFor(() => expect(assign).toHaveBeenCalledWith('/login/'));
+  vi.unstubAllGlobals();
 });

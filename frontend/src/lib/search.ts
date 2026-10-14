@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useBootstrapData } from './bootstrap';
+import { apiUrl, crossOrigin } from './env';
 
 export type SearchItem = { title: string; subtitle?: string; url: string; snippet?: string };
 export type SearchGroup = { label: string; items: SearchItem[] };
@@ -56,7 +57,7 @@ export function useSearch(query: string, enabled = true): { groups: SearchGroup[
     const timer = setTimeout(
       async () => {
         try {
-          const res = await fetch(`${urls.search}?q=${encodeURIComponent(q)}`, { credentials: 'same-origin', signal: ctl.signal });
+          const res = await fetch(`${apiUrl(urls.search)}?q=${encodeURIComponent(q)}`, { credentials: crossOrigin ? 'include' : 'same-origin', signal: ctl.signal });
           const data = res.ok ? ((await res.json()) as { groups: SearchGroup[] }) : { groups: [] };
           setGroups(data.groups);
           setLoading(false);

@@ -11,3 +11,4 @@ staticfiles/
 pq_sdk/
 frontend/node_modules/
 frontend/dist/
+frontend/dist-hosted/

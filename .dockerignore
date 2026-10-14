@@ -19,3 +19,6 @@ Dockerfile
 docker-compose.yml
 frontend/node_modules/
 frontend/dist/
+frontend/dist-hosted
+frontend/node_modules
+frontend/dist

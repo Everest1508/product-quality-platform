@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- Used only by `npm run build:hosted` (a static host such as Vercel). When Django serves the app it uses templates/uiapi/shell.html instead. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PQ Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<script>try{var t=localStorage.getItem("pqTheme");if(t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch(e){}</script>
+<link rel="icon" type="image/png" sizes="32x32" href="%VITE_API_ORIGIN%/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="%VITE_API_ORIGIN%/brand/apple-touch-icon.png">
+</head>
+<body>
+<div id="root" class="befui"></div>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import { signOut } from '@/lib/signOut';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export function CompanySetupPage() {
         </div>
         <Button type="submit" className="w-full" loading={busy}><PlusIcon />Create company</Button>
       </form>
-      <form method="post" action="/logout/" className="mt-3 text-center"><Button type="submit" variant="link" size="xs" className="text-muted-foreground"><LogOutIcon />Sign out</Button></form>
+      <div className="mt-3 text-center"><Button type="button" variant="link" size="xs" className="text-muted-foreground" onClick={() => void signOut()}><LogOutIcon />Sign out</Button></div>
     </AuthLayout>
   );
 }

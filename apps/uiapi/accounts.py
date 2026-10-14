@@ -48,6 +48,30 @@ class PublicAPIView(APIView):
     permission_classes = [AllowAny]
 
 
+class CsrfAPIView(PublicAPIView):
+    """A token for a front end that is not rendered by this site. It also sets the CSRF cookie the token belongs to."""
+
+    def get(self, request):
+        from django.middleware.csrf import get_token
+
+        token = get_token(request._request)
+        return Response({"csrf": token})
+
+
+class LogoutAPIView(APIView):
+    """Sign out. The page shows "Signed out." on the sign-in screen it goes to next."""
+
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth import logout
+
+        logout(request._request)
+        dj_messages.info(request._request, "Signed out.")
+        return Response({"redirect": "/login/"})
+
+
 class LoginAPIView(PublicAPIView):
     def get(self, request):
         """What the sign-in page needs: where to go after, whether you are already in, and flash messages

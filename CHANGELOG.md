@@ -10,6 +10,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.41.0] "Redstart" — 2026-10-14 · the app can be hosted on its own address
+
+> In short: the app can now run on a separate host such as Vercel while the server stays where it is, and signing out no longer needs a page form.
+
+### New
+- **The app can be hosted on its own address.** Set it up once and the screens come from a static host while the server keeps your data. The default, where the server serves everything, is unchanged.
+
+### Better
+- **Signing out works the same everywhere.** It now signs you out through the server and shows the sign-in page.
+- **Opening a notification works from a separately hosted app.** It is marked read and opens in the app you are already using.
+
 ## [1.40.2] "Meadowlark" — 2026-10-14 · no pay widget on Home
 
 > In short: Home no longer shows a pay card.

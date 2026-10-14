@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:hosted": "tsc --noEmit && vite build --mode hosted"
   },
   "type": "module",
   "dependencies": {

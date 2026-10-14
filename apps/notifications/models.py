@@ -64,6 +64,7 @@ class Notification(TenantScopedModel):
             "title": self.title,
             "body": self.body,
             "url": f"/notifications/{self.pk}/open/",
+            "to": self.url,
             "actor": (self.actor.get_full_name() or self.actor.username) if self.actor else "",
             "created_at": self.created_at.isoformat(),
             "read": self.is_read,

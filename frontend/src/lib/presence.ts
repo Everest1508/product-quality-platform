@@ -1,4 +1,5 @@
-import { getCsrf, type Notice } from './api';
+import { ensureCsrf, getCsrf, type Notice } from './api';
+import { apiUrl, crossOrigin, wsUrl } from './env';
 
 export type PresenceUser = {
   user_id: number;
@@ -57,9 +58,10 @@ function report() {
 
 async function pollOnce() {
   try {
-    const res = await fetch('/presence/beat/', {
+    await ensureCsrf();
+    const res = await fetch(apiUrl('/presence/beat/'), {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: crossOrigin ? 'include' : 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
       body: JSON.stringify({ tab, path: location.pathname, active: isActive() }),
     });
@@ -85,8 +87,7 @@ function stopPolling() {
 }
 
 function connect() {
-  const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
-  const sock = new WebSocket(`${proto}${location.host}/ws/presence/`);
+  const sock = new WebSocket(wsUrl('/ws/presence/'));
   ws = sock;
   sock.onopen = () => {
     if (ws !== sock) return;
