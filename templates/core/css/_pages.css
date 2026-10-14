@@ -693,3 +693,6 @@ body.board-compact .kanban-card{padding:10px 12px;}
 body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 @media (prefers-reduced-motion:reduce){.kanban-card{animation:none}}
 .btn.is-on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-strong);}
+
+/* Long forms keep Save and Cancel in reach. */
+.form-actions{position:sticky;bottom:0;z-index:5;margin-inline:-10px;padding:12px 10px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px);}
