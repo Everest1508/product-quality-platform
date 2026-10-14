@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.50.1] "Whimbrel" — 2026-10-14 · every project action is in the Audit log
+
+> In short: everything done on a project now appears in the Audit log, and people taken off a Pod are told.
+
+### Better
+
+- **Project actions are in the Audit log.** Moving a phase, writing in a project's log, changing the plan or the Pod, and adding or finishing a Crunch item are all recorded with who did it and when, and you can filter the log by them.
+- **People taken off a Pod are told.** They get a notification, just as people added to a Pod do.
+
 ## [1.50.0] "Siskin" — 2026-10-14 · a simpler app, with smoother movement
 
 > In short: the sidebar is much shorter, project settings live in one place, Home keeps only what you need today, the DSR has one notices card, and the whole app moves more smoothly.

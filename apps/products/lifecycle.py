@@ -131,6 +131,14 @@ def _tell(product, actor, title, body, mentioned=()):
                            title=title, body=body, url=url, actor=actor)
 
 
+def _audit(product, user, event_type, title, description="", **meta):
+    """One audit-log row for a project change (the summary reports and the Audit log read these)."""
+    from apps.dashboards.service import log_activity
+
+    log_activity(product.company, event_type, title[:480], description=(description or "")[:500], actor=user,
+                 target_content_type="product", target_object_id=product.pk, metadata={"product_id": product.pk, **meta})
+
+
 def actor_name(user):
     return (user.get_full_name() or user.username) if user else "Someone"
 
@@ -167,11 +175,8 @@ def move_stage(product, to_stage, reason, user, role):
         entry = _log(product, user, "stage", reason, from_stage=here, to_stage=to_stage,
                      meta={"days_in_from": spent, "back": b < a, "skipped": skipped})
         entry.mentions.set(mentioned)
-    from apps.dashboards.service import log_activity
-
-    log_activity(product.company, "project_stage", f"{product.name}: {LABELS[here]} to {LABELS[to_stage]}",
-                 description=reason[:200], actor=user, target_content_type="product", target_object_id=product.pk,
-                 metadata={"product_id": product.pk, "from": here, "to": to_stage})
+    _audit(product, user, "project_stage", f"{product.name}: {LABELS[here]} to {LABELS[to_stage]}", reason,
+           **{"from": here, "to": to_stage, "back": b < a})
     verb = "sent back to" if b < a else "moved to"
     _tell(product, user, f"{product.name} {verb} {LABELS[to_stage]}", f"{actor_name(user)}: {reason}", mentioned)
     return entry
@@ -190,6 +195,7 @@ def add_entry(product, user, role, kind, body):
         entry = _log(product, user, kind, body)
         entry.mentions.set(mentioned)
     label = ProjectLogEntry.Kind(kind).label
+    _audit(product, user, "project_log", f"{label} on {product.name}", body, kind=kind)
     _tell(product, user, f"{label} on {product.name}", f"{actor_name(user)}: {body}", mentioned)
     return entry
 
@@ -215,9 +221,14 @@ def set_team(product, lead, members, user):
     if {u.pk for u in after} != before:
         names = ", ".join(u.get_full_name() or u.username for u in after) or "nobody"
         _log(product, user, "setup", f"Pod: {names}", meta={"team": [u.pk for u in after]})
+        _audit(product, user, "project_team", f"Pod changed on {product.name}", names, team=[u.pk for u in after])
     from apps.notifications import service
     from apps.notifications.models import Notification
 
+    after_ids = {u.pk for u in after}
+    for u in get_user_model().objects.filter(pk__in=before - after_ids):
+        service.notify(user=u, company=product.company, kind=Notification.Kind.PROJECT,
+                       title=f"You were taken off the Pod for {product.name}", url=reverse("products:product_list"), actor=user)
     for u in added:
         service.notify(user=u, company=product.company, kind=Notification.Kind.ASSIGNED,
                        title=f"You joined the Pod for {product.name}", url=reverse("products:project_lifecycle", kwargs={"pk": product.pk}), actor=user)
@@ -296,6 +307,7 @@ def save_plan(product, *, user, start=None, end=None, tech_stack=None, srs=None,
         if changes:
             _log(product, user, "schedule", "Updated " + ", ".join(changes) + ".", meta={"changed": changes})
     if changes:
+        _audit(product, user, "project_plan", f"Plan updated on {product.name}", "Updated " + ", ".join(changes) + ".", changed=changes)
         _tell(product, user, f"{product.name}: plan updated", f"{actor_name(user)} updated {', '.join(changes)}.")
 
 
@@ -314,6 +326,7 @@ def add_crunch(product, user, role, feature, due, reason=""):
                                      reason=(reason or "").strip()[:300], created_by=user)
     _log(product, user, "crunch", f"Crunch: {feature} by {due:%d %b %Y}" + (f". {reason.strip()}" if reason and reason.strip() else ""),
          meta={"crunch": item.pk, "due": due.isoformat()})
+    _audit(product, user, "project_crunch", f"Crunch added on {product.name}: {feature}", f"Due {due:%d %b %Y}", crunch=item.pk)
     _tell(product, user, f"Crunch on {product.name}: {feature}", f"Due {due:%d %b %Y}. {actor_name(user)}")
     return item
 
@@ -327,6 +340,7 @@ def finish_crunch(item, user, role):
     item.done, item.done_at = True, timezone.now()
     item.save(update_fields=["done", "done_at"])
     _log(product, user, "crunch", f"Crunch done: {item.feature}", meta={"crunch": item.pk, "done": True})
+    _audit(product, user, "project_crunch", f"Crunch done on {product.name}: {item.feature}", crunch=item.pk, done=True)
     _tell(product, user, f"Crunch done on {product.name}", f"{item.feature}. {actor_name(user)}")
     return item
 

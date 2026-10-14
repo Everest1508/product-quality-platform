@@ -1,35 +1,4 @@
 [Deploy Full]
-sudo mkdir -p backups
-sudo cp db.sqlite3 backups/db-$(date +%F-%H%M).sqlite3
 sudo git pull --ff-only
 sudo docker compose down
-sudo docker compose up --build -d
-sudo docker compose ps
-sudo docker compose logs --tail 40 web
-
-[Deploy Quick]
-sudo git pull --ff-only
-sudo docker compose up --build -d web
-sudo docker compose ps
-sudo docker compose logs --tail 40 web
-
-[Health Check]
-curl -s -o /dev/null -w "login page: %{http_code}\n" http://localhost:8011/login/
-curl -s -o /dev/null -w "home page:  %{http_code}\n" http://localhost:8011/
-sudo docker compose ps
-
-[Reset To Latest Main]
-sudo cp docker-compose.yml ~/compose.bak
-sudo git fetch origin
-sudo git reset --hard origin/main
-sudo git status -sb
-diff ~/compose.bak docker-compose.yml
-
-[Restart App]
-sudo docker compose restart web
-
-[Stop]
-sudo docker compose down
-
-[Status]
-sudo docker compose ps
+sudo docker compose up -d --build

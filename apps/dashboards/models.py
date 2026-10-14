@@ -52,6 +52,11 @@ class ActivityLog(TenantScopedModel):
         PAYROLL_PROFILE_SAVED = "payroll_profile_saved", "Payroll Profile Saved"
         HOLIDAY_ADDED = "holiday_added", "Holiday Added"
         HOLIDAY_REMOVED = "holiday_removed", "Holiday Removed"
+        PROJECT_STAGE = "project_stage", "Project Stage Changed"
+        PROJECT_LOG = "project_log", "Project Log Entry"
+        PROJECT_PLAN = "project_plan", "Project Plan Updated"
+        PROJECT_TEAM = "project_team", "Project Pod Changed"
+        PROJECT_CRUNCH = "project_crunch", "Project Crunch"
 
     event_type = models.CharField(max_length=30, choices=EventType.choices)
     title = models.CharField(max_length=500)

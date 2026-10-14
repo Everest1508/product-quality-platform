@@ -217,3 +217,55 @@ class ProjectPagesTests(LifecycleBase):
         r = self.client.post(self.url("project_details", self.product.pk), {"start_date": "2026-11-10", "end_date": "2026-11-01", "phase_creation": "1"})
         self.assertEqual(r.status_code, 400)
         self.assertIn("before the start date", r.content.decode())
+
+
+class AuditAndNoticesTests(LifecycleBase):
+    """Everything a project does is in the Audit log, tells the Pod, and says so with a toast."""
+
+    def types(self):
+        from apps.dashboards.models import ActivityLog
+
+        return list(ActivityLog.objects.filter(company=self.company, target_object_id=self.product.pk).values_list("event_type", flat=True))
+
+    def test_every_project_action_writes_an_audit_row_with_a_known_type(self):
+        from apps.dashboards.models import ActivityLog
+
+        lc.move_stage(self.product, "fe", "go", self.lead, "developer")
+        lc.add_entry(self.product, self.dev, "developer", "blocker", "waiting on keys")
+        lc.save_plan(self.product, user=self.owner, start="2026-11-01", end="2026-11-30")
+        item = lc.add_crunch(self.product, self.lead, "developer", "Login", "2026-11-10")
+        lc.finish_crunch(item, self.dev, "developer")
+        lc.set_team(self.product, self.lead, [], self.owner)  # dev leaves the Pod
+        seen = set(self.types())
+        self.assertTrue({"project_stage", "project_log", "project_plan", "project_crunch", "project_team"} <= seen, seen)
+        valid = set(ActivityLog.EventType.values)
+        self.assertTrue(seen <= valid | {"product_created"}, seen - valid)
+
+    def test_the_audit_page_lists_and_filters_them(self):
+        lc.move_stage(self.product, "fe", "Design done", self.lead, "developer")
+        self.client.force_login(self.owner)
+        from django.urls import reverse
+
+        page = self.client.get(reverse("dashboards:audit_log"), {"type": "project_stage"}).content.decode()
+        self.assertIn("Billing: Creation to FE", page)
+        self.assertIn("Project Stage Changed", page)
+
+    def test_someone_taken_off_the_pod_is_told(self):
+        lc.set_team(self.product, self.lead, [], self.owner)
+        self.assertTrue(Notification.objects.filter(user=self.dev, title__contains="taken off the Pod").exists())
+
+    def test_each_action_over_http_says_so_with_a_toast(self):
+        from django.contrib.messages import get_messages
+        from django.urls import reverse
+
+        self.client.force_login(self.lead)
+        pk = self.product.pk
+        calls = [
+            (reverse("products:project_move", args=[pk]), {"to": "fe", "reason": "go"}),
+            (reverse("products:project_log_add", args=[pk]), {"kind": "update", "body": "hello"}),
+            (reverse("products:project_crunch_add", args=[pk]), {"feature": "Login", "due": "2026-11-10"}),
+        ]
+        for url, data in calls:
+            r = self.client.post(url, data, follow=True)
+            texts = [str(m) for m in get_messages(r.wsgi_request)] or [str(m) for m in r.context["messages"]]
+            self.assertTrue(texts, url)
