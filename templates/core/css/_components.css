@@ -584,7 +584,16 @@ html.dark .lmark{background:var(--panel);color:var(--text);}
 .lspark-bars{display:flex;align-items:flex-end;gap:2px;height:26px;width:84px;}
 .lspark-bars i{flex:1;min-height:3px;border-radius:2px;background:var(--border-strong);}
 .lactions{display:flex;align-items:center;gap:6px;}
-@media (max-width:1100px){.lrow{grid-template-columns:auto minmax(0,1fr);}.lmetrics,.lspark,.lactions{grid-column:2;justify-self:start;}}
+.lrow.lr-nomark{grid-template-columns:minmax(0,1.6fr) auto auto auto;}
+.lrow.lr-avatar{grid-template-columns:auto minmax(0,1.6fr) auto auto;}
+.lrow.lr-edit{grid-template-columns:1fr;}
+@media (max-width:1100px){
+  .lrow{grid-template-columns:auto minmax(0,1fr);}
+  .lrow.lr-nomark{grid-template-columns:minmax(0,1fr);}
+  .lrow.lr-avatar{grid-template-columns:auto minmax(0,1fr);}
+  .lrow>.lmetrics,.lrow>.lspark,.lrow>.lactions,.lrow>form{grid-column:1 / -1;justify-self:start;}
+  .lrow:not(.lr-nomark)>.lmetrics,.lrow:not(.lr-nomark)>.lspark,.lrow:not(.lr-nomark)>.lactions{grid-column:2;}
+}
 .alert-bar.is-warn{border-color:color-mix(in srgb,var(--orange) 40%,transparent);background:var(--orange-bg);}
 
 /* ───────── What's new ───────── */

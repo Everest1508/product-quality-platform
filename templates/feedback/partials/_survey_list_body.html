@@ -1,23 +1,15 @@
-{% for survey in page %}
-<tr>
-  <td onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">
-    <div class="title">{{ survey.name }}</div>
-    <div class="sub">{{ survey.product.name }}</div>
-  </td>
-  <td onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'"><span class="pill {{ survey.survey_type }}">{{ survey.get_survey_type_display }}</span></td>
-  <td class="text-sm text-muted" onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">{{ survey.product.name }}</td>
-  <td onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'"><span class="pill {{ survey.status }}">{{ survey.get_status_display }}</span></td>
-  <td class="text-sm" onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">{{ survey.response_count }}</td>
-  <td class="date" onclick="window.location='{% url 'feedback:survey_detail' pk=survey.pk %}'">{{ survey.created_at|timesince }} ago</td>
-  <td>
-    <a href="{% url 'feedback:survey_detail' pk=survey.pk %}" class="btn" style="font-size:12px;padding:3px 8px;">View</a>
-  </td>
-</tr>
+{% load icon_tags %}{% for survey in page %}
+<article class="lrow lr-nomark t-{% if survey.status == 'active' %}green{% elif survey.status == 'draft' %}off{% else %}blue{% endif %}">
+  <div class="lmain">
+    <div class="lt"><a href="{% url 'feedback:survey_detail' pk=survey.pk %}">{{ survey.name }}</a>
+      <span class="bdg bdg-outline">{{ survey.get_survey_type_display }}</span>
+      <span class="bdg {% if survey.status == 'active' %}bdg-green{% elif survey.status == 'draft' %}{% else %}bdg-blue{% endif %}">{{ survey.get_status_display }}</span></div>
+    <p class="ls">{{ survey.product.name }}</p>
+  </div>
+  <div class="lmetrics"><div><span class="v">{{ survey.response_count }}</span><span class="l">Responses</span></div></div>
+  <div class="lmetrics"><div><span class="v" style="font-size:13px;font-weight:500">{{ survey.created_at|timesince }} ago</span><span class="l">Created</span></div></div>
+  <div class="lactions"><a href="{% url 'feedback:survey_detail' pk=survey.pk %}" class="btn btn-sm">View</a></div>
+</article>
 {% empty %}
-<tr>
-  <td colspan="7" class="empty">
-    <h3>No surveys found</h3>
-    <p>{% if search %}Try a different search term.{% else %}Create a survey to start collecting feedback.{% endif %}</p>
-  </td>
-</tr>
+<div class="empty-state"><strong>No surveys found</strong>{% if search %}Try a different search term.{% else %}Create a survey to start collecting feedback.{% endif %}</div>
 {% endfor %}

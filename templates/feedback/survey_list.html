@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load dropdown_tags %}
+{% load dropdown_tags icon_tags %}
 
 {% block title %}Surveys — PQ Platform{% endblock %}
 
@@ -7,7 +7,7 @@
 <div class="head">
   <h1>Surveys <span class="count">{{ page.paginator.count }} total</span></h1>
   <div class="head-actions">
-    <a href="{% url 'feedback:survey_create' %}" class="btn btn-primary">New survey</a>
+    <a href="{% url 'feedback:survey_create' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New survey</a>
   </div>
 </div>
 
@@ -33,22 +33,9 @@
   {% dropdown "sort" "-created:Newest first|created:Oldest first|name:Name A-Z|-responses:Most responses"|opts current_sort placeholder="Sort" label="Sort" navigate=True %}
 </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th style="width:100px">Type</th>
-      <th style="width:110px">Product</th>
-      <th style="width:90px">Status</th>
-      <th style="width:90px">Responses</th>
-      <th style="width:100px">Created</th>
-      <th style="width:60px"></th>
-    </tr>
-  </thead>
-  <tbody id="survey-list-body">
-    {% include "feedback/partials/_survey_list_body.html" with page=page %}
-  </tbody>
-</table>
+<div class="ledger" id="survey-list-body">
+  {% include "feedback/partials/_survey_list_body.html" with page=page %}
+</div>
 
 {% include "core/_pagination.html" with page=page %}
 

@@ -1,4 +1,4 @@
-{% load icon_tags %}<article class="lrow t-{% if membership.role == 'owner' %}blue{% elif membership.role == 'admin' %}blue{% elif membership.role == 'developer' %}green{% elif membership.role == 'support' %}orange{% else %}off{% endif %}" id="member-{{ membership.pk }}" style="grid-template-columns:auto minmax(0,1.6fr) auto auto;">
+{% load icon_tags %}<article class="lrow lr-avatar t-{% if membership.role == 'owner' %}blue{% elif membership.role == 'admin' %}blue{% elif membership.role == 'developer' %}green{% elif membership.role == 'support' %}orange{% else %}off{% endif %}" id="member-{{ membership.pk }}">
   <span class="avatar" style="width:38px;height:38px;font-size:14px;">{{ membership.user.username.0|upper }}</span>
   <div class="lmain">
     <div class="lt"><a href="{% url 'accounts:team_member' pk=membership.pk %}">{{ membership.user.get_full_name|default:membership.user.username }}</a>{% if membership.user == request.user %}<span class="ls" style="font-weight:400;display:inline">(you)</span>{% endif %}

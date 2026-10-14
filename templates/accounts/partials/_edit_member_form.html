@@ -1,4 +1,4 @@
-<article class="lrow lrow-edit" id="member-{{ membership.pk }}" style="grid-template-columns:1fr;">
+<article class="lrow lr-edit" id="member-{{ membership.pk }}">
   <div>
     <form method="post" action="{% url 'accounts:team_edit' pk=membership.pk %}"
           hx-post="{% url 'accounts:team_edit' pk=membership.pk %}"
