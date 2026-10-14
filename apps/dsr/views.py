@@ -480,6 +480,7 @@ class DSRLogView(CompanyMemberRequiredMixin, View):
         for e in entries:
             lines.append(f"- {e.date.strftime('%-d %b')} {e.person + ': ' if everyone else ''}{e.task_name} ({e.get_category_display()}) - {format_hm(e.hours_spent)} [{e.get_status_display()}]")
 
+        waiting = [e for e in entries if e.needs_time and e.can_change]
         can_log, locked = submission_window(today, privileged)
         from apps.products.access import accessible_products
 
@@ -494,14 +495,32 @@ class DSRLogView(CompanyMemberRequiredMixin, View):
             "summary_text": "\n".join(lines) if entries else "No tasks recorded for this period.",
             "can_log": can_log_here, "locked_reason": locked, "products": products,
             "categories": DSREntry.Category.choices, "statuses": DSREntry.Status.choices,
+            "waiting": waiting,
             "work_suggestions": suggestions(request.company, target, today) if can_log_here and rng in ("today", "7d", "30d", "yesterday") else [],
         })
 
 
 def _elapsed(e):
-    """How long the ticket behind an auto-logged row was open: "3h 20m", or "11d 1h" past two days. Empty when unknown."""
-    if not (e.created_time and e.completed_time):
-        return ""
-    minutes = max(0, int((e.completed_time - e.created_time).total_seconds() // 60))
-    days, rest = divmod(minutes, 1440)
-    return f"{days}d {rest // 60}h" if days >= 2 else format_hm(Decimal(minutes) / 60)
+    """How long the ticket behind an auto-logged row was open ("3h 20m", or "11d 1h" past two days). Empty when unknown."""
+    from apps.dsr.service import elapsed_label
+
+    return elapsed_label(e)
+
+
+class DSRSuggestionAddAllView(CompanyMemberRequiredMixin, View):
+    """One click: log everything the sheet suggests for today at the suggested hours."""
+
+    def post(self, request):
+        from apps.dsr.service import add_all_suggested
+
+        today = timezone.localdate()
+        privileged = _is_privileged(request.user, request.company)
+        who = request.GET.get("user_id") or request.POST.get("user_id")
+        target = get_object_or_404(User, pk=who, memberships__company=request.company) if who and privileged else request.user
+        ok, reason = submission_window(today, privileged)
+        if not ok:
+            messages.error(request, reason)
+        else:
+            entries, message = add_all_suggested(request.company, request.user, target, today)
+            (messages.success if entries else messages.error)(request, message)
+        return _back(request, "/dsr/")

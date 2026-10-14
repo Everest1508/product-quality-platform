@@ -7,6 +7,7 @@ urlpatterns = [
     path("", views.DSRLogView.as_view(), name="dsr_sheet"),
     path("day/", views.DSRSheetView.as_view(), name="dsr_day"),
     path("suggestion/add/", views.DSRSuggestionAddView.as_view(), name="dsr_suggestion_add"),
+    path("suggestion/add-all/", views.DSRSuggestionAddAllView.as_view(), name="dsr_suggestion_add_all"),
     path("add/", views.DSREntryAddView.as_view(), name="dsr_add"),
     path("<int:pk>/update/", views.DSREntryUpdateView.as_view(), name="dsr_update"),
     path("<int:pk>/delete/", views.DSREntryDeleteView.as_view(), name="dsr_delete"),

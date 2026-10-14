@@ -585,3 +585,4 @@ html.dark .lmark{background:var(--panel);color:var(--text);}
 .lspark-bars i{flex:1;min-height:3px;border-radius:2px;background:var(--border-strong);}
 .lactions{display:flex;align-items:center;gap:6px;}
 @media (max-width:1100px){.lrow{grid-template-columns:auto minmax(0,1fr);}.lmetrics,.lspark,.lactions{grid-column:2;justify-self:start;}}
+.alert-bar.is-warn{border-color:color-mix(in srgb,var(--orange) 40%,transparent);background:var(--orange-bg);}

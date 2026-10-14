@@ -323,3 +323,11 @@ def pending_time_entry(company, user, ticket):
     """Today's auto-logged row for this ticket and person if it is waiting for the time they worked, else None."""
     entry = DSREntry.objects.filter(company=company, user=user, ticket=ticket, date=timezone.localdate()).first()
     return entry if entry is not None and entry.needs_time else None
+
+
+def needs_time_notice(company, user, ticket):
+    """The sentence to show a person who has just resolved a long-open ticket, or "" when there is nothing to ask for."""
+    waiting = pending_time_entry(company, user, ticket)
+    if waiting is None:
+        return ""
+    return f"{ticket.key} was open for {elapsed_label(waiting)}. Add the time you worked on it today in your DSR."

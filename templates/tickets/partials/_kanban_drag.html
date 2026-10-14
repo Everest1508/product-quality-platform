@@ -88,6 +88,11 @@
           draggedCard.dataset.status = oldStatus;
           recount();
         }
+      } else {
+        resp.json().then(function(data) {
+          if (data.message) window.pqToast(data.message, 'success');
+          if (data.warning) window.pqToast(data.warning, 'warning');
+        });
       }
     });
   });
@@ -136,6 +141,10 @@
       body: 'status=' + encodeURIComponent(opts[idx].key),
     }).then(function(resp) {
       if (!resp.ok && oldCol) { oldCol.appendChild(card); card.dataset.status = cur; recount(); }
+      else if (resp.ok) resp.json().then(function(data) {
+        if (data.message) window.pqToast(data.message, 'success');
+        if (data.warning) window.pqToast(data.warning, 'warning');
+      });
     });
   }
 })();

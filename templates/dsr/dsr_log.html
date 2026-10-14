@@ -38,10 +38,19 @@
 
 {% if not can_log and rng == 'today' and locked_reason %}<div class="hm-note is-warn" style="margin-bottom:14px">{{ locked_reason }}</div>{% endif %}
 
+{% if waiting %}
+  <div class="alert-bar is-warn" role="status">
+    <p><b>{% if waiting|length == 1 %}A ticket that was open a long time was added to your DSR.{% else %}{{ waiting|length }} long-open tickets were added to your DSR.{% endif %}</b>
+      {% for e in waiting|slice:":2" %}{{ e.ticket.key|default:e.task_name }} (open for {{ e.elapsed }}){% if not forloop.last %}, {% endif %}{% endfor %}. Add the time you worked on {% if waiting|length == 1 %}it{% else %}them{% endif %} today. Until then {% if waiting|length == 1 %}it counts{% else %}they count{% endif %} for nothing.</p>
+    <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('dsr-needs').showModal()">{% icon 'clock' 'ic' %}Add time</button>
+  </div>
+{% endif %}
+
 {% if work_suggestions %}
   <div class="alert-bar">
     <p><b>{{ work_suggestions|length }} ticket{{ work_suggestions|length|pluralize }}</b> you worked on today {{ work_suggestions|length|pluralize:"isn’t,aren’t" }} in your DSR yet: {% for s in work_suggestions|slice:":3" %}{{ s.key }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if work_suggestions|length > 3 %}…{% endif %}.</p>
-    <button type="button" class="btn btn-sm" onclick="document.getElementById('dsr-sugg').showModal()">Review &amp; add</button>
+    <span style="display:flex;gap:8px"><button type="button" class="btn btn-sm" onclick="document.getElementById('dsr-sugg').showModal()">Review</button>
+      <form method="post" action="{% url 'dsr:dsr_suggestion_add_all' %}?user_id={{ target.pk }}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-primary">{% icon 'plus' 'ic' %}Add all</button></form></span>
   </div>
 {% endif %}
 
@@ -64,12 +73,12 @@
             <div class="task">{% if e.ticket %}<a href="{% url 'tickets:ticket_detail' pk=e.ticket_id %}">{{ e.task_name }}</a>{% else %}{{ e.task_name }}{% endif %}
               {% if e.is_auto_logged %}<span class="bdg bdg-blue" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
               {% if e.source %}<span class="bdg bdg-outline" title="Submitted through the DSR MCP from {{ e.source }}">via MCP</span>{% endif %}</div>
-            {% if e.elapsed %}<p class="sub">Created {{ e.created_time|date:"j M H:i" }} → completed {{ e.completed_time|date:"j M H:i" }} · open for <b>{{ e.elapsed }}</b></p>{% endif %}
+            {% if e.elapsed %}<p class="sub">Created {{ e.created_time|date:"j M H:i" }} → completed {{ e.completed_time|date:"j M H:i" }} · open for <b>{{ e.elapsed }}</b>{% if e.needs_time %} (not counted){% endif %}</p>{% endif %}
             {% if e.notes %}<p class="sub">{{ e.notes }}</p>{% endif %}
           </td>
           <td>{% if e.product %}{{ e.product.name }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
           <td>{{ e.get_category_display }}</td>
-          <td class="c" style="font-weight:600;white-space:nowrap">{{ e.hours_spent|hm }}</td>
+          <td class="c" style="font-weight:600;white-space:nowrap">{% if e.needs_time %}{% if e.can_change %}<button type="button" class="btn btn-sm" style="color:var(--orange);border-color:color-mix(in srgb,var(--orange) 50%,transparent)" onclick="document.getElementById('dsr-needs').showModal()">{% icon 'plus' 'ic' %}Add time</button>{% else %}<span style="font-weight:400;font-size:12px;color:var(--muted)" title="The time the ticket was open is not counted">not counted</span>{% endif %}{% else %}{{ e.hours_spent|hm }}{% endif %}</td>
           <td class="c"><span class="bdg {% if e.status == 'completed' %}bdg-green{% elif e.status == 'in_progress' %}bdg-blue{% elif e.status == 'blocked' %}bdg-red{% endif %}">{{ e.get_status_display }}</span></td>
           <td class="c" style="white-space:nowrap">
             {% if e.can_change %}
@@ -134,6 +143,27 @@
 </dialog>
 {% endif %}
 
+{% if waiting %}
+<dialog class="dlg" id="dsr-needs" style="max-width:560px">
+  <div class="dlg-head"><h2>How long did you work on {% if waiting|length == 1 %}this ticket{% else %}these tickets{% endif %} today?</h2>
+    <p>{% if waiting|length == 1 %}It was{% else %}They were{% endif %} open for a long time, so the time open is not counted. Enter the time you actually spent. Only that goes into your DSR.</p></div>
+  <div class="dlg-body">
+    {% for e in waiting %}
+    <form method="post" action="{% url 'dsr:dsr_update' pk=e.pk %}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div style="flex:1;min-width:11rem"><div style="font-weight:500;font-size:13.5px">{{ e.ticket.key }} {{ e.task_name }}</div><div style="font-size:12px;color:var(--muted)">Open for {{ e.elapsed }}</div></div>
+      <input class="form-input" name="hours_spent" placeholder="e.g. 2h 30m" style="width:8rem" required aria-label="Time worked on {{ e.task_name }}">
+      <button class="btn btn-sm btn-primary">Save time</button>
+    </form>
+    {% endfor %}
+  </div>
+  <div class="dlg-foot"><button type="button" class="btn" onclick="this.closest('dialog').close()">Later</button></div>
+</dialog>
+<script>
+(function(){ try{ var k='pq:dsr-needs-time', ids={{ waiting|length }}+':'+'{% for e in waiting %}{{ e.pk }},{% endfor %}', seen=sessionStorage.getItem(k)||'';
+  if(seen.indexOf(ids)===-1){ sessionStorage.setItem(k, seen+'|'+ids); document.getElementById('dsr-needs').showModal(); } }catch(e){} })();
+</script>
+{% endif %}
 <script>
 function pqCopy(btn){navigator.clipboard.writeText(btn.dataset.copy).then(function(){window.pqToast&&pqToast('DSR copied to the clipboard.','success')})}
 var DSR_ADD="{% url 'dsr:dsr_add' %}?user_id={{ target.pk }}";

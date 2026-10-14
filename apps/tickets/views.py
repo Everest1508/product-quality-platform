@@ -359,9 +359,15 @@ class TicketStatusView(CompanyMemberRequiredMixin, View):
                 target_object_id=ticket.pk,
                 metadata={"product_id": ticket.product_id, "from": old_value, "to": ticket.status},
             )
+            from apps.dsr.service import needs_time_notice
+
+            done = f"{ticket.key}: status {old_display} → {ticket.get_status_display()}."
+            warning = needs_time_notice(request.company, request.user, ticket)
             if is_ajax:
-                return JsonResponse({"ok": True, "status": ticket.status})
-            messages.success(request, f"{ticket.key}: status {old_display} → {ticket.get_status_display()}.")
+                return JsonResponse({"ok": True, "status": ticket.status, "message": done, "warning": warning})
+            messages.success(request, done)
+            if warning:
+                messages.warning(request, warning)
 
         if request.headers.get("HX-Request") == "true":
             members = User.objects.filter(
