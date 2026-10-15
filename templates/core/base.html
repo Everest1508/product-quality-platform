@@ -784,6 +784,9 @@
 
   function showTooltip(el) {
     var text = el.getAttribute('data-tooltip') || el.getAttribute('title') || el.getAttribute('data-native-title');
+    // data-tip is a plain button name (from aria-label): shown as text, never as HTML.
+    var plain = !text && el.getAttribute('data-tip');
+    if (plain) text = plain;
     if (!text || !text.trim()) return;
 
     if (el.hasAttribute('title')) {
@@ -792,7 +795,7 @@
     }
 
     currentTarget = el;
-    textEl.innerHTML = text;
+    if (plain) textEl.textContent = text; else textEl.innerHTML = text;
 
     var rect = el.getBoundingClientRect();
     tooltipEl.style.display = 'block';
@@ -823,19 +826,27 @@
     currentTarget = null;
   }
 
+  var SEL = '[data-tooltip], [title], [data-native-title], [data-tip]';
   document.addEventListener('mouseover', function(e) {
-    var target = e.target.closest('[data-tooltip], [title], [data-native-title]');
+    var target = e.target.closest(SEL);
     if (target) {
       showTooltip(target);
     }
   }, true);
 
   document.addEventListener('mouseout', function(e) {
-    var target = e.target.closest('[data-tooltip], [title], [data-native-title]');
+    var target = e.target.closest(SEL);
     if (target) {
       hideTooltip();
     }
   }, true);
+
+  // Keyboard users get the name of an icon-only button too.
+  document.addEventListener('focusin', function(e) {
+    var target = e.target.closest('[data-tip]');
+    if (target && target.matches(':focus-visible')) showTooltip(target);
+  });
+  document.addEventListener('focusout', hideTooltip);
 
   window.addEventListener('scroll', hideTooltip, true);
 })();

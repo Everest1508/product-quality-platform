@@ -1,6 +1,6 @@
 {% load icon_tags %}
 {% comment %}Shared by the quick-add card and the edit page. `action` is where it posts.{% endcomment %}
-<form method="post" action="{{ action }}" class="ex-form" x-data="{ cat: '{{ form.category.value|default:'other' }}' }">
+<form method="post" action="{{ action }}" class="ex-form" x-data="{ cat: '{{ form.category.value|default:'tea' }}' }">
   {% csrf_token %}
   {% if form.errors %}
   <div class="alert alert-error" role="alert">
@@ -8,34 +8,50 @@
     {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
   </div>
   {% endif %}
+  <div class="field"><label for="ex-amount">{{ form.amount.label }} <span class="bdg bdg-blue">Required</span></label>
+    <input id="ex-amount" name="amount" class="form-input ex-num" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-money value="{{ form.amount.value|default:'' }}" required {% if autofocus %}autofocus{% endif %}></div>
+  <div class="field"><label>{{ form.paid_by.label }} <span class="bdg bdg-blue">Required</span></label>
+    <div class="chips">{% for p in form.people %}
+      <label class="chip ex-who"><input type="radio" name="paid_by" value="{{ p.pk }}" {% if form.paid_by.value|stringformat:"s" == p.pk|stringformat:"s" %}checked{% endif %} required><span class="kt-av">{{ p.username.0|upper }}</span>{{ p.get_full_name|default:p.username }}</label>{% endfor %}
+    </div></div>
   <div class="field-row">
-    <div class="field"><label for="ex-title">{{ form.title.label }}</label>
-      <input id="ex-title" name="title" class="form-input" maxlength="120" placeholder="e.g. Team lunch" value="{{ form.title.value|default:'' }}" required {% if autofocus %}autofocus{% endif %}></div>
-    <div class="field"><label for="ex-amount">{{ form.amount.label }}</label>
-      <input id="ex-amount" name="amount" class="form-input ex-num" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="0.00" value="{{ form.amount.value|default:'' }}" required></div>
-  </div>
-  <div class="field-row">
-    <div class="field"><label for="ex-paid">{{ form.paid_by.label }}</label>
-      <select id="ex-paid" name="paid_by" class="form-input">
-        {% for p in form.people %}<option value="{{ p.pk }}" {% if form.paid_by.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>{% endfor %}
-      </select></div>
     <div class="field"><label for="ex-date">{{ form.date.label }}</label>
       <input id="ex-date" name="date" class="form-input" type="date" value="{{ form.date.value|date:'Y-m-d'|default:form.date.value }}" required></div>
   </div>
-  <div class="field"><label>{{ form.category.label }}</label>
+  <div class="field"><label>{{ form.category.label }} <span class="bdg bdg-blue">Required</span></label>
     <input type="hidden" name="category" :value="cat">
     <div class="chips">{% for value, label in form.category.field.choices %}
       <button type="button" class="chip" :class="{ 'is-on': cat === '{{ value }}' }" @click="cat = '{{ value }}'">{{ label }}</button>{% endfor %}
-    </div></div>
-  <div class="field"><label>{{ form.split_with.label }}</label>
-    <div class="chips ex-who-list">{% for p in form.people %}
-      <label class="chip ex-who"><input type="checkbox" name="split_with" value="{{ p.pk }}" {% if p.pk|stringformat:"s" in form.selected_split %}checked{% endif %}>{{ p.get_full_name|default:p.username }}</label>{% endfor %}
     </div>
-    <p class="field-hint">Split equally between the ticked people. Untick anyone who did not share it.</p></div>
-  <div class="field"><label for="ex-note">{{ form.note.label }} <span class="text-muted">(optional)</span></label>
+    <input name="category_other" class="form-input" maxlength="60" placeholder="Type what it was, e.g. Printer ink" value="{{ form.category_other.value|default:'' }}" x-show="cat === 'other'" x-cloak style="margin-top:var(--space-2)" :required="cat === 'other'"></div>
+  <div class="field"><label for="ex-note">Details <span class="bdg bdg-outline">Optional</span></label>
     <input id="ex-note" name="note" class="form-input" maxlength="255" value="{{ form.note.value|default:'' }}"></div>
   <div class="ex-actions">
     <button type="submit" class="btn btn-primary">{% icon 'check' 'ic' %}{{ submit }}</button>
-    {% if cancel %}<a href="{{ cancel }}" class="btn">Cancel</a>{% endif %}
+    {% if cancel %}<a href="{{ cancel }}" class="btn">{% icon 'x' 'ic' %}Cancel</a>{% endif %}
+    {% if in_dialog %}<button type="button" class="btn" onclick="this.closest('dialog').close()">{% icon 'x' 'ic' %}Cancel</button>{% endif %}
   </div>
 </form>
+<script>
+(function(){
+  if (window.exMoney) { window.exMoney(); return; }
+  function group(i){ return i.replace(/\B(?=(\d{2})*\d{3}(?!\d))/g, ','); }
+  function fmt(el){
+    var pos = el.selectionStart, before = el.value.slice(0, pos).replace(/[^\d.]/g, '').length;
+    var v = el.value.replace(/[^\d.]/g, ''), dot = v.indexOf('.');
+    var i = dot < 0 ? v : v.slice(0, dot), d = dot < 0 ? null : v.slice(dot + 1).replace(/\./g, '').slice(0, 2);
+    i = group(i.replace(/^0+(?=\d)/, ''));
+    el.value = d === null ? i : i + '.' + d;
+    var n = 0, p = 0;
+    while (p < el.value.length && n < before) { if (/[\d.]/.test(el.value[p])) n++; p++; }
+    try { el.setSelectionRange(p, p); } catch (e) {}
+  }
+  window.exMoney = function(){
+    document.querySelectorAll('input[data-money]').forEach(function(el){
+      if (!el.dataset.moneyOn) { el.dataset.moneyOn = '1'; el.addEventListener('input', function(){ fmt(el); }); }
+      if (el.value) fmt(el);
+    });
+  };
+  window.exMoney();
+})();
+</script>

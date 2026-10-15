@@ -838,7 +838,7 @@ decided what and strike the item** rather than deleting it.
 - befui second drop (2026-10-14): upstream split its HTML build into a tiny ES-module loader plus per-component chunks. Vendored `befui.js`, `befui.css` and `chunks/` (228 files, 1.7 MB in the repo, but a page downloads only the chunks it uses). Served by `apps/core/befui.py` at `/befui/` and `/befui/chunks/<file>.js`; load with `<script type="module">` (see `templates/core/_befui.html`). `apps/core/befui_icons.py` was regenerated from its icons chunk: 390 icons (was 283); only `keyboard` changed shape. Alpine still mangles befui's `:prop='json'` attributes, so set data with `el.props = {...}` on Alpine pages.
 
 ## 2026-10-15 (expenses, 1.51.0; break 30 min)
-- New `apps/expenses` (`/expenses/`): shared ledger for every non-viewer member. Amounts are whole paise (`amount_paise`), equal split over `split_with`, leftover paise go to the lowest user ids so shares add up. Balances/settlements are derived from unsettled rows (`settled_at` null); owners/admins "Mark all settled". Edit/delete: creator or admin.
+- New `apps/expenses` (`/expenses/`): owners/admins-only simple ledger (title, amount, who paid, date, category, note) with totals and per-payer sums. Amounts are whole paise (`amount_paise`). Splitting/settle-up was built first, then removed by request (migration 0002); not wanted.
 - `WorkShift.break_minutes` default 60 -> 30 (migration 0006 moves rows still on 60). Every hours display uses `service.net_minutes_for` (via `annotate_effective`), not the raw punch span.
 - Correction decisions now also notify the other owners and admins.
-- Not done: settling a subset / part payments, per-expense receipts, exporting to CSV.
+- Not done: per-expense receipts, CSV export, month filter on the list.

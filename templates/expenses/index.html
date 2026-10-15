@@ -4,73 +4,86 @@
 {% block title %}Expenses — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
+<div class="pg-head">
   <div>
     <h1>Expenses</h1>
-    <p class="text-sm text-muted" style="margin-top:4px;">Note what was spent, who paid and who shares it. Work out who owes whom whenever you like.</p>
+    <p class="sub">Note what was spent and who paid.</p>
+  </div>
+  <div class="head-actions">
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('ex-dlg').showModal()">{% icon 'plus' 'ic' %}Add expense</button>
   </div>
 </div>
 
+<dialog class="dlg ex-dlg" id="ex-dlg">
+  <div class="dlg-head"><h2>Add an expense</h2><p>Amount, category and who paid are required.</p></div>
+  <div class="dlg-body">{% include "expenses/_form.html" with action=request.path submit="Add expense" autofocus=True in_dialog=True %}</div>
+</dialog>
+{% if form.errors %}<script>document.getElementById('ex-dlg').showModal()</script>{% endif %}
+
+{% if not has_any %}
+<div class="card-flush">
+  <div class="empty-state">
+    {% icon 'wallet' 'ex-empty-ic' %}
+    <strong>No expenses added yet</strong>
+    <p>Add the first one to start keeping track.</p>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('ex-dlg').showModal()">{% icon 'plus' 'ic' %}Add expense</button>
+  </div>
+</div>
+{% else %}
+<form method="get" class="ex-filters" id="ex-filters">
+  <select name="month" class="form-input" aria-label="Month" onchange="this.form.submit()">
+    <option value="all" {% if f.month == 'all' %}selected{% endif %}>All time</option>
+    {% for m in months %}<option value="{{ m.value }}" {% if f.month == m.value %}selected{% endif %}>{{ m.label }}</option>{% endfor %}
+  </select>
+  <select name="category" class="form-input" aria-label="Category" onchange="this.form.submit()">
+    <option value="">All categories</option>
+    {% for value, label in categories %}<option value="{{ value }}" {% if f.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="paid_by" class="form-input" aria-label="Paid by" onchange="this.form.submit()">
+    <option value="">Anyone paid</option>
+    {% for p in payers %}<option value="{{ p.pk }}" {% if f.paid_by == p.pk %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+  </select>
+  <input type="search" name="q" class="form-input" value="{{ f.q }}" placeholder="Search details" aria-label="Search details">
+  {% if f.is_filtered %}<a href="?month={{ f.month }}" class="btn btn-ghost btn-sm">{% icon 'x' 'ic' %}Clear filters</a>{% endif %}
+  <a href="{% url 'expenses:expense_export' %}?{{ f.query }}" class="btn btn-sm">{% icon 'download' 'ic' %}Export CSV</a>
+</form>
+
 <div class="ex-stats">
-  <div class="card"><span class="ex-l">Not settled yet</span><span class="ex-v">{{ open_total }}</span><span class="ex-s">{{ open_count }} expense{{ open_count|pluralize }}</span></div>
-  <div class="card"><span class="ex-l">Your balance</span>
-    <span class="ex-v {% if my_state == 'owed' %}ex-pos{% elif my_state == 'owe' %}ex-neg{% endif %}">{% if my_state == 'even' %}All even{% else %}{{ my_balance }}{% endif %}</span>
-    <span class="ex-s">{% if my_state == 'owed' %}owed to you{% elif my_state == 'owe' %}you owe{% else %}nothing to pay or collect{% endif %}</span></div>
+  <div class="card"><span class="ex-l">Total spent · {{ f.period_label }}</span><span class="ex-v">{{ total }}</span><span class="ex-s">{{ count }} expense{{ count|pluralize }}</span></div>
 </div>
 
 <div class="ex-grid">
-  <div class="ex-main">
-    <div class="card">
-      <h2 class="ex-h">Add an expense</h2>
-      {% include "expenses/_form.html" with action=request.path submit="Add expense" autofocus=False %}
-    </div>
-
-    <div class="ex-listhead">
-      <div class="seg" role="tablist" aria-label="Show">
-        <a href="?show=open" class="{% if show == 'open' %}is-on{% endif %}">Not settled</a>
-        <a href="?show=settled" class="{% if show == 'settled' %}is-on{% endif %}">Settled</a>
+  <div class="ledger ex-ledger">
+    {% for e in rows %}
+    <article class="lrow lr-nomark">
+      <div class="lmain">
+        <div class="lt">{{ e.category_label }}</div>
+        <div class="ls">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }}{% if e.note %} · {{ e.note }}{% endif %}</div>
       </div>
-    </div>
-
-    <div class="card-flush">
-      {% for e in rows %}
-      <div class="ex-row">
-        <div class="ex-what">
-          <strong>{{ e.title }}</strong>
-          <span class="bdg bdg-outline">{{ e.get_category_display }}</span>
-          <span class="ex-meta">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }} · shared by {{ e.split_names|join:", " }}{% if e.share_label %} ({{ e.share_label }} each){% endif %}{% if e.note %} · {{ e.note }}{% endif %}</span>
-        </div>
-        <div class="ex-amt">{{ e.amount_label }}</div>
-        {% if e.can_change and show == 'open' %}
-        <div class="ex-btns">
-          <a href="{% url 'expenses:expense_edit' e.pk %}" class="btn btn-sm btn-ghost">Edit</a>
-          <form method="post" action="{% url 'expenses:expense_delete' e.pk %}" data-confirm data-confirm-text="Delete {{ e.title }}? This cannot be undone." data-confirm-label="Delete">
-            {% csrf_token %}<button type="submit" class="btn btn-sm btn-ghost" aria-label="Delete {{ e.title }}">{% icon 'trash' 'ic' %}</button>
-          </form>
-        </div>
-        {% endif %}
+      <div class="ex-amt">{{ e.amount_label }}</div>
+      <div class="lactions">
+        <a href="{% url 'expenses:expense_edit' e.pk %}" class="btn btn-sm">{% icon 'edit' 'ic' %}Edit</a>
+        <form method="post" action="{% url 'expenses:expense_delete' e.pk %}" data-confirm data-confirm-text="Delete {{ e.category_label }}? This cannot be undone." data-confirm-label="Delete">
+          {% csrf_token %}<button type="submit" class="icon-btn" aria-label="Delete {{ e.category_label }}">{% icon 'trash' 'ic' %}</button>
+        </form>
       </div>
-      {% empty %}
-      <div class="empty-state"><p>{% if show == 'open' %}Nothing to settle.{% else %}Nothing has been settled yet.{% endif %}</p><p class="text-muted">{% if show == 'open' %}Add the first expense above.{% else %}Settled expenses show up here.{% endif %}</p></div>
-      {% endfor %}
-    </div>
+    </article>
+    {% empty %}
+    <div class="empty-state"><strong>No expenses here</strong><p>Nothing matches these filters.</p><a href="?month=all" class="btn btn-sm">{% icon 'x' 'ic' %}Show everything</a></div>
+    {% endfor %}
+    {% if limited %}<p class="ex-limit">Showing the latest 200. Narrow the filters, or export for the full list.</p>{% endif %}
   </div>
 
   <aside class="ex-side">
     <div class="card">
-      <h2 class="ex-h">Who pays whom</h2>
-      <p class="text-sm text-muted">The fewest payments that clear every unsettled expense.</p>
-      {% for p in payments %}
-      <div class="ex-pay {% if p.mine %}is-mine{% endif %}"><span><strong>{{ p.from }}</strong> pays <strong>{{ p.to }}</strong></span><span class="ex-amt">{{ p.amount }}</span></div>
-      {% empty %}
-      <p class="ex-even">{% icon 'check' 'ic' %} Everyone is even.</p>
-      {% endfor %}
-      {% if can_settle %}
-      <form method="post" action="{% url 'expenses:expense_settle' %}" data-confirm data-confirm-text="Mark all {{ open_count }} unsettled expenses as settled?" data-confirm-label="Settle up" style="margin-top:var(--space-4)">
-        {% csrf_token %}<button type="submit" class="btn">{% icon 'wallet' 'ic' %}Mark all settled</button>
-      </form>
-      {% endif %}
+      <h2 class="ex-h">By category</h2>
+      {% for c in by_category %}<div class="ex-pay"><span>{{ c.name }}</span><span class="ex-amt">{{ c.total }}</span></div>{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
+    </div>
+    <div class="card">
+      <h2 class="ex-h">Paid by</h2>
+      {% for p in by_person %}<div class="ex-pay"><span>{{ p.name }}</span><span class="ex-amt">{{ p.total }}</span></div>{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
     </div>
   </aside>
 </div>
+{% endif %}
 {% endblock %}

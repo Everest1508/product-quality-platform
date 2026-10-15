@@ -10,18 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
-## [1.51.0] "Tanager" — 2026-10-15 · Expenses, with who paid and who owes whom
+## [1.51.0] "Tanager" — 2026-10-15 · Expenses, better search and a tidier Home
 
-> In short: a new Expenses page lets the team note what was spent and who paid, and works out who owes whom whenever you want to settle up.
+> In short: a new Expenses page for owners and admins, wider search, a tidier Home, and a 30 minute office break.
 
 ### New
 
-- **An Expenses page.** Add what it was for, the amount, who paid, the date and a category, and tick who shared it. It splits equally between them.
-- **Who pays whom.** The page shows the fewest payments that clear every unsettled expense, and your own balance at the top.
-- **Settle up when you like.** Owners and admins can mark everything settled in one click; settled expenses stay under their own tab.
+- **An Expenses page for owners and admins.** Add what it was for, the amount, who paid, the date and a category (Tea, Milk, AI subscription, Server rent, Team trip, or Other, where you type what it was) from an Add expense button.
+- **Filters and totals.** Pick a month (or all time), a category, who paid, or search the details. The total, the spend by category and the amount each person paid follow your filters.
+- **Export to CSV.** Download what you are looking at as a spreadsheet, with a total at the bottom.
 
 ### Better
 
+- **A tidier Home.** Today, your assigned tickets and the week chart now stack neatly on the left, and your to-do list runs the full height on the right, with a scrolling list when it gets long. Empty cards no longer take up a big blank space.
+- **Search finds more.** The top search box now also looks through expenses and attendance corrections (owners and admins), project updates, and your notifications.
+- **Button names are no longer cut off.** The little name that appears over an icon button, including in the top bar, now always shows in full.
 - **The office break is 30 minutes.** Hours worked are now counted net of a 30 minute break (1:00 to 1:30 pm), so a 10:00 to 6:30 day is 8 hours everywhere.
 - **Hours match the week bars.** The punch panel, history and Today figure show the same hours as the bars, instead of the longer raw time.
 - **Everyone hears who decided a correction.** When an owner or admin approves or rejects an attendance correction, the other owners and admins are told.

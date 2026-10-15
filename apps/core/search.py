@@ -20,7 +20,7 @@ from apps.products.access import accessible_error_groups, accessible_products, a
 
 _TICKET_KEY = re.compile(r"^([A-Za-z][A-Za-z0-9]{1,5}?)[-\s]?0*(\d+)$")
 _BARE_KEY = re.compile(r"^[A-Za-z][A-Za-z0-9]{1,5}$")
-LIMITS = {"tickets": 6, "errors": 5, "products": 4, "people": 5, "pages": 6, "feedback": 4, "surveys": 3, "rules": 3, "dsr": 4, "leave": 3}
+LIMITS = {"tickets": 6, "errors": 5, "products": 4, "people": 5, "pages": 6, "feedback": 4, "surveys": 3, "rules": 3, "dsr": 4, "leave": 3, "expenses": 5, "corrections": 4, "log": 4, "notifications": 4}
 MIN_QUERY = 2
 
 
@@ -53,6 +53,8 @@ def _pages(request):
         ("Leave policies", reverse("leave:policies"), "types caps", True),
         ("Team", reverse("accounts:team_list"), "members invite roles", True),
         ("Audit log", reverse("dashboards:audit_log"), "activity history", True),
+        ("Expenses", reverse("expenses:expense_list"), "spend money paid tea milk server subscription trip", True),
+        ("Attendance corrections", reverse("attendance:corrections"), "fix punch requests", True),
     ]
     if approver:
         rows.append(("Leave approvals", reverse("leave:approvals"), "requests approve reject", False))
@@ -66,7 +68,9 @@ _IN_ALIASES = {
     "product": "products", "products": "products", "people": "people", "person": "people",
     "user": "people", "users": "people", "feedback": "feedback", "survey": "surveys",
     "surveys": "surveys", "rule": "rules", "rules": "rules", "automation": "rules",
-    "dsr": "dsr", "leave": "leave", "page": "pages", "pages": "pages", "go": "pages",
+    "dsr": "dsr", "leave": "leave", "expense": "expenses", "expenses": "expenses",
+    "correction": "corrections", "corrections": "corrections", "log": "log", "update": "log",
+    "notification": "notifications", "notifications": "notifications", "page": "pages", "pages": "pages", "go": "pages",
 }
 
 
@@ -232,6 +236,65 @@ def search(request, query):
         ]
     ]
 
+    is_admin = request.company_role in ("owner", "admin")
+    log_items = []
+    if query:
+        from apps.products.models import ProjectLogEntry
+
+        for entry in (
+            ProjectLogEntry.objects.filter(company=company, product__in=scope, body__icontains=query)
+            .select_related("product")
+            .order_by("-created_at")[: LIMITS["log"]]
+        ):
+            log_items.append({
+                "title": snippet(entry.body, query, 110) or entry.body[:110],
+                "subtitle": f"{entry.product.name} · {entry.get_kind_display()} · {entry.created_at:%b %d}",
+                "url": reverse("products:project_lifecycle", args=[entry.product_id]),
+            })
+
+    notification_items = []
+    if query:
+        from apps.notifications.models import Notification
+
+        notification_items = [
+            {"title": n.title[:110], "subtitle": f"Notification · {n.created_at:%b %d}", "url": n.url or reverse("notifications:list")}
+            for n in Notification.objects.filter(user=user, company=company)
+            .filter(Q(title__icontains=query) | Q(body__icontains=query))
+            .order_by("-created_at")[: LIMITS["notifications"]]
+        ]
+
+    expense_items, correction_items = [], []
+    if is_admin and query:
+        from apps.attendance.models import AttendanceCorrection
+        from apps.expenses.models import Expense
+        from apps.expenses.service import format_paise
+
+        text = Q(note__icontains=query) | Q(category_other__icontains=query) | Q(paid_by__username__icontains=query) | Q(
+            paid_by__first_name__icontains=query
+        ) | Q(paid_by__last_name__icontains=query)
+        # "tea", "ai subscription", "server rent": match the category's own name too.
+        text |= Q(category__in=[v for v, label in Expense.Category.choices if query.lower() in label.lower()])
+        digits = query.replace(",", "").replace("₹", "").strip()
+        if digits.replace(".", "", 1).isdigit():
+            text |= Q(amount_paise=int(round(float(digits) * 100)))
+        for e in Expense.objects.filter(company=company).filter(text).select_related("paid_by").order_by("-date", "-id")[: LIMITS["expenses"]]:
+            expense_items.append({
+                "title": f"{e.category_label} · {format_paise(e.amount_paise)}",
+                "subtitle": f"Expense · {e.paid_by.get_full_name() or e.paid_by.username} paid · {e.date:%b %d}",
+                "url": reverse("expenses:expense_edit", args=[e.pk]),
+            })
+        for c in (
+            AttendanceCorrection.objects.filter(company=company)
+            .filter(Q(reason__icontains=query) | Q(user__username__icontains=query) | Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query))
+            .select_related("user")
+            .order_by("-date")[: LIMITS["corrections"]]
+        ):
+            correction_items.append({
+                "title": f"{c.user.get_full_name() or c.user.username} · {c.date:%b %d}",
+                "subtitle": f"Correction · {c.get_status_display()} · {c.reason[:60]}",
+                "url": reverse("attendance:corrections"),
+            })
+
     people_items = []
     if request.company_role in ("owner", "admin"):
         User = get_user_model()
@@ -260,6 +323,10 @@ def search(request, query):
         ("rules", "Automation", rule_items),
         ("dsr", "My DSR", dsr_items),
         ("leave", "My leave", leave_items),
+        ("expenses", "Expenses", expense_items),
+        ("corrections", "Corrections", correction_items),
+        ("log", "Project updates", log_items),
+        ("notifications", "Notifications", notification_items),
         ("pages", "Go to", pages),
     ):
         # With only filters typed (no words), listing every product or survey

@@ -55,6 +55,7 @@ const ACTIONS = [
   { title: 'New ticket', subtitle: 'c', words: 'create add bug task', url: '{% url "tickets:ticket_create" %}' },
   { title: 'Log work in my DSR', subtitle: '', words: 'dsr timesheet report hours', url: '{% url "dsr:dsr_sheet" %}' },
   { title: 'Punch in or out', subtitle: '', words: 'check in check out attendance clock', url: '{% url "attendance:my_attendance" %}' },
+  {% if request.company_role == 'owner' or request.company_role == 'admin' %}{ title: 'Add an expense', subtitle: '', words: 'spend money paid tea milk', url: '{% url "expenses:expense_list" %}' },{% endif %}
   { title: 'Request leave', subtitle: '', words: 'time off holiday vacation', url: '{% url "leave:apply" %}' },
   { title: 'Ask for an attendance correction', subtitle: '', words: 'forgot punch fix', url: '{% url "attendance:correction_request" %}' },
   { title: 'My profile and settings', subtitle: 'g u', words: 'account notifications', url: '{% url "accounts:profile" %}' },

@@ -146,3 +146,55 @@ class BefuiAssetTest(TestCase):
         r = self.client.get("/befui/chunks/button.js")
         self.assertEqual(r.status_code, 200)
         self.assertIn("javascript", r["Content-Type"])
+
+
+class SearchMoreAreasTest(SearchTest):
+    """Expenses, corrections, project updates and notifications are searchable too."""
+
+    def setUp(self):
+        super().setUp()
+        from datetime import date
+
+        from apps.attendance.models import AttendanceCorrection
+        from apps.expenses.models import Expense
+        from apps.notifications.models import Notification
+        from apps.products.models import ProjectLogEntry
+
+        Expense.objects.create(company=self.company, amount_paise=125000, date=date(2026, 10, 1), category="trip",
+                               paid_by=self.owner, created_by=self.owner, note="Goa hotel")
+        AttendanceCorrection.objects.create(company=self.company, user=self.dev, date=date(2026, 10, 2),
+                                            reason="forgot to punch out")
+        ProjectLogEntry.objects.create(company=self.company, product=self.open_product, body="Switched to the new gateway")
+        ProjectLogEntry.objects.create(company=self.company, product=self.secret_product, body="Switched the vault gateway")
+        Notification.objects.create(company=self.company, user=self.dev, title="Gateway review requested")
+
+    def test_admins_find_expenses_by_category_note_payer_and_amount(self):
+        for q in ("team trip", "goa", "olive", "1,250"):
+            self.assertEqual(len(self.search("owner", q).get("Expenses", [])), 1, q)
+
+    def test_expenses_and_corrections_are_for_admins_only(self):
+        groups = self.search("dev", "trip")
+        self.assertNotIn("Expenses", groups)
+        self.assertNotIn("Corrections", self.search("dev", "forgot"))
+        self.assertEqual(len(self.search("owner", "forgot").get("Corrections", [])), 1)
+
+    def test_project_updates_respect_product_access(self):
+        self.assertEqual(len(self.search("dev", "gateway").get("Project updates", [])), 1)
+        self.assertEqual(len(self.search("owner", "gateway").get("Project updates", [])), 2)
+
+    def test_notifications_are_your_own(self):
+        self.assertEqual(len(self.search("dev", "gateway review").get("Notifications", [])), 1)
+        self.assertNotIn("Notifications", self.search("owner", "gateway review"))
+
+
+class CssBracesBalancedTest(TestCase):
+    """One stray brace in a stylesheet silently drops every rule after it."""
+
+    def test_each_css_file_has_balanced_braces(self):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        for f in sorted((Path(settings.BASE_DIR) / "templates/core/css").glob("*.css")):
+            text = f.read_text()
+            self.assertEqual(text.count("{"), text.count("}"), f.name)
