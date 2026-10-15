@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.51.3] "Phoebe" — 2026-10-16 · a calmer greeting with a reaction for every line
+
+> In short: the greeting on Home types and changes at a relaxed pace, and Pintu gives each line its own short reaction and then holds one face while you read.
+
+### Better
+
+- **A slower, calmer greeting.** Pintu waves first, then the line types out gently, stays on screen long enough to read, and pauses before the next one.
+- **One reaction per line.** Each of the 36 lines has its own two or three faces from Pintu, ending on the face he keeps while the line is on screen, instead of flicking through frames.
+
 ## [1.51.2] "Merganser" — 2026-10-16 · My work opens out in the sidebar
 
 > In short: My work is now a dropdown in the sidebar with Attendance, Leave, Calendar, DSR and Payslips one click away, and the bell on the DSR notices card is back to its normal size.

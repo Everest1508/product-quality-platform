@@ -580,7 +580,7 @@ class UnreadableDecimalTakesDownTheDashboardTest(TestCase):
 
 
 class GreetingActsTest(TestCase):
-    """Every greeting line plays its own run of Pintu's frames, and all of them exist."""
+    """Every greeting line gets its own reaction from Pintu, and every frame exists."""
 
     def test_every_line_has_its_own_valid_frames(self):
         from apps.dashboards import greetings
@@ -589,12 +589,13 @@ class GreetingActsTest(TestCase):
         for period, lines in greetings.GREETINGS.items():
             self.assertEqual(len(lines), 9, period)
             for text, frames in lines:
-                self.assertGreaterEqual(len(frames), 3, text)
+                self.assertIn(len(frames), (2, 3), text)
                 for name in frames:
                     self.assertIn(name, greetings.FRAMES, f"{text}: {name}")
                 runs.append(frames)
                 texts.append(text)
-        self.assertEqual(len(set(runs)), len(runs), "two lines play the same frames")
+        self.assertEqual(len(set(runs)), len(runs), "two lines react the same way")
+        self.assertEqual(len({f[-1] for f in runs}) > 5, True, "too few resting faces")
         self.assertEqual(len(set(texts)), len(texts))
 
     def test_pintu_art_is_a_full_18_by_16_grid_in_the_palette(self):
