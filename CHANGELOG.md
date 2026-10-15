@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.2] "Ouzel" — 2026-10-16 · the What's new close button is back in the corner
+
+> In short: the cross that closes the What's new window sits in its top right corner again instead of under the title.
+
+### Fixed
+
+- **The What's new close button is in the corner.** It had slipped down below the heading; it is back at the top right of the window.
+
 ## [1.52.1] "Jacana" — 2026-10-16 · tagging works in the project log
 
 > In short: typing @ in a project's log now suggests everyone who can open the project, so you can tag people even when the project has no Pod yet.

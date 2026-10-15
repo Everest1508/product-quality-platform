@@ -609,7 +609,7 @@ dialog.cl.is-closing{animation:clOut .2s ease-in forwards;}
 .cl-spark .ic{width:18px;height:18px;}
 .cl-ver{color:var(--accent);}
 .cl-head p{margin-top:6px;font-size:13.5px;color:var(--muted);}
-.cl-x{position:absolute;right:14px;top:14px;}
+.icon-btn.cl-x{position:absolute;right:14px;top:14px;}
 .cl-body{padding:18px 24px 22px;overflow-y:auto;display:grid;gap:14px;align-content:start;}
 .cl-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
 .cl-chips{display:flex;flex-wrap:wrap;gap:6px;}
