@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.3] "Sandpiper" — 2026-10-16 · punching in no longer fails when the app is busy
+
+> In short: checking in or out waits its turn when other people are saving at the same moment, instead of showing a "database is locked" error.
+
+### Fixed
+
+- **Check in and check out no longer fail with "database is locked".** When several people saved something at the same moment, a punch could be turned away with an error page. It now waits a few seconds for its turn and goes through.
+
 ## [1.52.2] "Ouzel" — 2026-10-16 · the What's new close button is back in the corner
 
 > In short: the cross that closes the What's new window sits in its top right corner again instead of under the title.

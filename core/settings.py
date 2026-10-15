@@ -106,6 +106,13 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        # One writer at a time, so make them queue. A deferred transaction that reads and
+        # then writes (every `punch`, `get_or_create`, presence beat) fails at once with
+        # "database is locked" when another writer got in between, whatever the timeout;
+        # IMMEDIATE takes the write lock up front and the timeout then really waits.
+        # Not WAL: the compose file mounts only db.sqlite3, and `cp db.sqlite3` backups
+        # would miss the -wal file.
+        "OPTIONS": {"transaction_mode": "IMMEDIATE", "timeout": 20},
     }
 }
 
@@ -140,7 +147,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.52.2")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.52.3")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth
