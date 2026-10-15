@@ -103,11 +103,20 @@ def history(product, now=None):
 
 # ---- people to tell ------------------------------------------------------------------------------------
 
+def taggable_users(product):
+    """Who an @ may name in the log: the Pod first, then anyone else who can open the project."""
+    from apps.products.access import product_users
+
+    pod = pod_users(product)
+    have = {u.pk for u in pod}
+    return pod + [u for u in product_users(product, product.company) if u.pk not in have]
+
+
 def _mentioned(body, product):
     names = [n.rstrip(".").lower() for n in _MENTION.findall(body or "")]
     if not names:
         return []
-    pool = {u.username.lower(): u for u in pod_users(product)}
+    pool = {u.username.lower(): u for u in taggable_users(product)}
     seen, out = set(), []
     for n in names:
         if n in pool and n not in seen:

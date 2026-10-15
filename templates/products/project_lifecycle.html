@@ -108,7 +108,7 @@ document.getElementById('pj-moveto')&&document.getElementById('pj-moveto').addEv
 });
 function pjCompose(){return{people:JSON.parse(document.getElementById('pj-people').textContent),open:false,matches:[],idx:0,at:-1,
   onInput(e){var t=e.target,v=t.value.slice(0,t.selectionStart),m=/(?:^|\s)@([\w.+-]*)$/.exec(v);if(!m){this.open=false;return}
-    this.at=v.length-m[1].length-1;var q=m[1].toLowerCase();this.matches=this.people.filter(function(p){return p.username.toLowerCase().indexOf(q)===0||p.name.toLowerCase().indexOf(q)===0}).slice(0,6);this.idx=0;this.open=true},
+    this.at=v.length-m[1].length-1;var q=m[1].toLowerCase();this.matches=this.people.filter(function(p){return p.username.toLowerCase().indexOf(q)>-1||p.name.toLowerCase().indexOf(q)>-1}).slice(0,6);this.idx=0;this.open=true},
   move(d){if(this.open&&this.matches.length)this.idx=(this.idx+d+this.matches.length)%this.matches.length},
   pick(e){if(this.open&&this.matches.length){e.preventDefault();this.choose(this.matches[this.idx])}},
   choose(m){var t=this.$refs.box,end=t.selectionStart;t.value=t.value.slice(0,this.at)+'@'+m.username+' '+t.value.slice(end);t.focus();this.open=false}}}

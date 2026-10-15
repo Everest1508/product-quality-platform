@@ -184,7 +184,7 @@ class ProjectLifecycleView(CompanyMemberRequiredMixin, View):
             "kind": kind, "kind_filters": KIND_FILTERS, "who": who, "mine": request.GET.get("mine") == "1",
             "pod": card["pod"], "stage_days": [(k, l, by_stage.get(k, 0), card["plans"].get(k)) for k, l in lc.STAGES if k in card["enabled"]],
             "crunch": [(c, lc.crunch_state(c, today)) for c in product.crunch_items.all()],
-            "mention_people": [{"username": u.username, "name": u.get_full_name() or u.username} for u in card["pod"]],
+            "mention_people": [{"username": u.username, "name": u.get_full_name() or u.username} for u in lc.taggable_users(product)],
             "stages": lc.STAGES, "labels": lc.LABELS,
             "compose_kinds": [("update", "Update"), ("blocker", "Blocker"), ("decision", "Decision"), ("correction", "Correction")],
         })

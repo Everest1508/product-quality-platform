@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.1] "Jacana" — 2026-10-16 · tagging works in the project log
+
+> In short: typing @ in a project's log now suggests everyone who can open the project, so you can tag people even when the project has no Pod yet.
+
+### Fixed
+
+- **Tagging people in the project log.** The @ list was empty on projects with no Pod, so nobody could be tagged. It now offers the Pod first, then everyone else who can open the project, and tagging them notifies them.
+
 ## [1.52.0] "Lapwing" — 2026-10-16 · move a card from its own menu
 
 > In short: every kanban card has an arrow that lists the statuses so you can move it in one click, and the Projects board now has search and filters like the tickets board.
