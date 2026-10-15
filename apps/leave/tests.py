@@ -1535,10 +1535,10 @@ class SidebarActiveStateTest(LeaveTestBase):
 
     def test_exactly_one_item_is_active_per_page(self):
         for url, expected in [
-            ("/attendance/", "My work"),
+            ("/attendance/", "Attendance"),
             ("/attendance/team/", "Team attendance"),
             ("/attendance/timesheet/", "Timesheet"),
-            ("/leave/", "My work"),
+            ("/leave/", "Leave"),
             ("/leave/policies/", "Leave Policy"),
             ("/team/", "Team"),
         ]:
@@ -1592,7 +1592,7 @@ class SidebarActiveStateTest(LeaveTestBase):
         the app had fewer pages than it has.
         """
         for url, expected in [
-            ("/leave/apply/", "My work"),
+            ("/leave/apply/", "Leave"),
             ("/feedback/", "Feedback"),
             ("/feedback/create/", "Feedback"),
             ("/feedback/cs-hub/", "Feedback"),
@@ -1600,8 +1600,8 @@ class SidebarActiveStateTest(LeaveTestBase):
             ("/automation/create/", "Automation"),
             ("/payroll/holidays/", "Payroll"),
             ("/payroll/preview/", "Payroll"),
-            ("/payroll/me/", "My work"),
-            ("/dsr/", "My work"),
+            ("/payroll/me/", "Payslips"),
+            ("/dsr/", "DSR"),
             ("/leave/approvals/", "Leave approvals"),
             ("/tickets/kanban/", "Tickets"),
             ("/errors/create/", "Errors"),

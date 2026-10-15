@@ -47,9 +47,9 @@ function homeHero(fallback) {
     },
     step() {
       const line = this.lines[this.i].t;
-      let wait = this.erasing ? 18 : 45;
+      let wait = this.erasing ? 30 : 85;
       if (!this.erasing && this.n < line.length) this.n++;
-      else if (!this.erasing) { this.erasing = true; wait = 3000; }
+      else if (!this.erasing) { this.erasing = true; wait = 4500; }
       else if (this.n > 0) this.n--;
       else { this.erasing = false; this.i = (this.i + 1) % this.lines.length; this.play(this.lineFrames()); }
       this.typed = line.slice(0, this.n);

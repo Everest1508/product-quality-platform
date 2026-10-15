@@ -970,3 +970,16 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
 .pt{flex:none;display:block;width:108px;height:96px;image-rendering:pixelated;align-self:flex-end;margin:0 var(--space-2) calc(-1 * var(--space-4)) 0;}
 .hm-hero .pt+.hm-hero-main{flex:1 1 280px;}
 @media (max-width:640px){.pt{width:72px;height:64px;}}
+
+/* ───────── One notices card on the DSR instead of stacked bars ───────── */
+.dsr-notices{margin:0 0 var(--space-5);padding:var(--space-4) var(--space-5);border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+.dsr-notices h2{display:flex;align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);font-size:var(--fs-sm);font-weight:600;color:var(--muted);}
+.dsr-notices h2 .ic{width:15px;height:15px;}
+.dsr-notices ul{list-style:none;margin:0;padding:0;}
+.dsr-notices li{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0;font-size:var(--fs-base);}
+.dsr-notices li+li{border-top:1px solid var(--line);}
+.dsr-notices li p{margin:0;flex:1;min-width:0;line-height:1.5;}
+.dsr-n-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.dsr-n-dot.is-warn{background:var(--orange);}.dsr-n-dot.is-info{background:var(--blue);}
+.dsr-n-actions{display:flex;gap:var(--space-2);flex:none;}.dsr-n-actions form{margin:0;}
+@media (max-width:720px){.dsr-notices li{flex-wrap:wrap;}}

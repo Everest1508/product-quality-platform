@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.51.2] "Merganser" — 2026-10-16 · My work opens out in the sidebar
+
+> In short: My work is now a dropdown in the sidebar with Attendance, Leave, Calendar, DSR and Payslips one click away, and the bell on the DSR notices card is back to its normal size.
+
+### New
+
+- **My work is a dropdown.** Open it in the sidebar to go straight to Attendance, Leave, Calendar, DSR or Payslips. It opens by itself on those pages and remembers whether you left it open.
+
+### Fixed
+
+- **A huge bell on the DSR page.** The "Needs your attention" card on the DSR page showed an oversized bell icon. It is small again.
+
 ## [1.51.1] "Sparrow" — 2026-10-15 · meet Pintu on Home
 
 > In short: Pintu, a small teal robot, now sits in the Home greeting and acts out every line of text with his own pixel frames, and the greeting has more funny lines.

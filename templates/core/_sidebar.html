@@ -43,11 +43,42 @@
        class="side-item {% if u == 'cs_hub' or u == 'survey_list' or u == 'survey_create' or u == 'survey_detail' or u == 'survey_toggle' or u == 'survey_delete' %}active{% endif %}">
       {% icon 'headset' %} <span class="side-label">Feedback</span>
     </a>
-    <a href="{% url 'attendance:my_attendance' %}" data-label="My work"
-       {% if u == 'my_attendance' or u == 'punch' or u == 'my_leave' or u == 'apply' or u == 'calendar' or u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' or u == 'my_payslips' or u == 'my_payslip' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'my_attendance' or u == 'punch' or u == 'my_leave' or u == 'apply' or u == 'calendar' or u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' or u == 'my_payslips' or u == 'my_payslip' %}active{% endif %}">
-      {% icon 'clock' %} <span class="side-label">My work</span>
-    </a>
+    <div class="nav-fold" x-data="{ open: false }"
+         x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('pqWorkFold') === '1'"
+         :class="{ 'is-open': open }">
+      <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqWorkFold', open ? '1' : '0') } catch (e) {}"
+              :aria-expanded="open.toString()" data-label="My work">
+        {% icon 'clock' %} <span class="side-label">My work</span>
+        {% icon 'chevron-down' 'fold-caret' %}
+      </button>
+      <div class="fold-body"><div class="fold-inner">
+        <a href="{% url 'attendance:my_attendance' %}" data-label="Attendance"
+           {% if u == 'my_attendance' or u == 'punch' %}aria-current="page"{% endif %}
+           class="side-item {% if u == 'my_attendance' or u == 'punch' %}active{% endif %}">
+          {% icon 'clock' %} <span class="side-label">Attendance</span>
+        </a>
+        <a href="{% url 'leave:my_leave' %}" data-label="Leave"
+           {% if u == 'my_leave' or u == 'apply' %}aria-current="page"{% endif %}
+           class="side-item {% if u == 'my_leave' or u == 'apply' %}active{% endif %}">
+          {% icon 'calendar-days' %} <span class="side-label">Leave</span>
+        </a>
+        <a href="{% url 'leave:calendar' %}" data-label="Calendar"
+           {% if u == 'calendar' %}aria-current="page"{% endif %}
+           class="side-item {% if u == 'calendar' %}active{% endif %}">
+          {% icon 'calendar-days' %} <span class="side-label">Calendar</span>
+        </a>
+        <a href="{% url 'dsr:dsr_sheet' %}" data-label="DSR"
+           {% if u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' %}aria-current="page"{% endif %}
+           class="side-item {% if u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' %}active{% endif %}">
+          {% icon 'file-text' %} <span class="side-label">DSR</span>
+        </a>
+        <a href="{% url 'payroll:my_payslips' %}" data-label="Payslips"
+           {% if u == 'my_payslips' or u == 'my_payslip' %}aria-current="page"{% endif %}
+           class="side-item {% if u == 'my_payslips' or u == 'my_payslip' %}active{% endif %}">
+          {% icon 'banknote' %} <span class="side-label">Payslips</span>
+        </a>
+      </div></div>
+    </div>
     <a href="{% url 'dashboards:reports' %}" data-label="Reports"
        {% if u == 'reports' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'reports' %}active{% endif %}">
