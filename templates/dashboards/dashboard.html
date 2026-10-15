@@ -4,45 +4,54 @@
 {% block title %}Home — PQ Platform{% endblock %}
 
 {% block content %}
+{{ greetings|json_script:"hm-lines" }}
 <script>
-/* The greeting follows the clock and the line under it types itself out, line after line. The browser knows the local time. */
+/* The greeting follows the clock and the line under it types itself out, line after line. The browser knows the local time.
+   Each line plays its own run of Pintu's frames (see apps/dashboards/greetings.py); his art and timing come from pintu.json. */
 function homeHero(fallback) {
-  const LINES = {
-    morning: ['Pick the one thing that matters today.', 'A clear head makes the first hour count.', 'Start with the smallest ticket and build momentum.',
-      'Chai first, bugs second.', 'The standup is not going to attend itself.', 'Today\'s plan: fewer errors, more chai.',
-      'Coffee loaded. Ticket queue loading...', 'Nobody ever regretted closing a ticket before lunch.', 'It worked yesterday. Let\'s see if it still does.'],
-    afternoon: ['Halfway there. Keep the momentum.', 'Close one thing before the next one opens.', 'A quick DSR line now saves the evening.',
-      'Post-lunch slump detected. Try a small ticket.', 'It is not a bug, it is a surprise feature.', 'Ctrl+S your good mood.',
-      'The error log is judging you silently.', 'Tea break is a valid deployment strategy.', 'Ship it, then tell no one it was a Friday.'],
-    evening: ['Time to wrap up. Log your day.', 'Leave tomorrow a clean board.', 'Resolve what you can, hand off the rest.',
-      'Your DSR is lonely. Give it a line.', 'Close the tabs. All forty of them.', 'Future you says thanks for the tidy board.',
-      'Nothing breaks if you push at 6:29. Probably.', 'Punch out before the next "quick fix" arrives.', 'Git commit, then go home.'],
-    night: ['Rest counts as work too.', 'Whatever is left will keep until morning.', 'Log it, then log off.',
-      'The bug will still be there tomorrow. Sadly.', 'Sleep is the best garbage collector.', 'Working late? The tickets can wait, your eyes cannot.',
-      'It is dark outside. Even the cron jobs are asleep.', 'Go to sleep. The error rate will behave tomorrow.', 'Close the laptop, open the biryani.'],
-  };
+  const DATA = JSON.parse(document.getElementById('hm-lines').textContent);
+  const PINTU = DATA.pintu;
   const GREET = { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Working late' };
   const ICON = { morning: 'sun', afternoon: 'coffee', evening: 'flame', night: 'moon' };
   return {
     period: 'morning', greeting: fallback, date: '', typed: '', i: 0, n: 0, erasing: false, still: false,
-    init() {
+    tick: null,
+    // Draws one of Pintu's frames, pixel by pixel; the red tints are his own for error and angry.
+    draw(name) {
+      const cv = this.$refs.pintu; if (!cv) return;
+      const ctx = cv.getContext('2d'), rows = PINTU.frames[name] || PINTU.frames.idle, pal = Object.assign({}, PINTU.palette, PINTU.tints[name] || {});
+      ctx.clearRect(0, 0, 18, 16);
+      rows.forEach((row, y) => [...row].forEach((ch, x) => { const c = pal[ch]; if (c) { ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`; ctx.fillRect(x, y, 1, 1); } }));
+    },
+    // Plays frames in order on a loop at Pintu's own pace (his wave runs once, then the line takes over).
+    play(frames, loop = true, then) {
+      clearInterval(this.tick); let k = 0; this.draw(frames[0]);
+      if (this.still) return;
+      this.tick = setInterval(() => {
+        k++;
+        if (k >= frames.length) { if (!loop) { clearInterval(this.tick); then && then(); return; } k = 0; }
+        this.draw(frames[k]);
+      }, PINTU.delay_ms);
+    },
+    lineFrames() { return this.lines[this.i].f; },    init() {
       const d = new Date(), h = d.getHours();
       this.period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : h < 21 ? 'evening' : 'night';
       this.greeting = GREET[this.period];
       this.date = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-      this.lines = LINES[this.period];
+      this.lines = DATA.lines[this.period];
       this.i = Math.floor(Math.random() * this.lines.length);
       this.still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (this.still) { this.typed = this.lines[this.i]; return; }
+      if (this.still) { this.typed = this.lines[this.i].t; this.play(this.lineFrames()); return; }
+      this.play(PINTU.sequence, false, () => this.play(this.lineFrames()));
       this.step();
     },
     step() {
-      const line = this.lines[this.i];
+      const line = this.lines[this.i].t;
       let wait = this.erasing ? 18 : 45;
       if (!this.erasing && this.n < line.length) this.n++;
       else if (!this.erasing) { this.erasing = true; wait = 3000; }
       else if (this.n > 0) this.n--;
-      else { this.erasing = false; this.i = (this.i + 1) % this.lines.length; }
+      else { this.erasing = false; this.i = (this.i + 1) % this.lines.length; this.play(this.lineFrames()); }
       this.typed = line.slice(0, this.n);
       setTimeout(() => this.step(), wait);
     },
@@ -57,6 +66,7 @@ function homeHero(fallback) {
       <template x-if="period === 'evening'">{% icon 'flame' 'ic' %}</template>
       <template x-if="period === 'night'">{% icon 'moon' 'ic' %}</template>
     </span>
+    {% include "dashboards/_mascot.html" %}
     <div class="hm-hero-main">
       <p class="hm-hero-date"><span x-text="date">{{ today|date:"l, F j" }}</span> · {{ request.company.name }}</p>
       <h1>

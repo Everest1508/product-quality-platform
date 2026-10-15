@@ -577,3 +577,48 @@ class UnreadableDecimalTakesDownTheDashboardTest(TestCase):
         call_command("audit_decimals", "--fix", "--set", "0.00", stdout=buffer)
         self.assertIn("Repaired 1 cell", buffer.getvalue())
         self.assertEqual(self.client.get(reverse("dashboards:index")).status_code, 200)
+
+
+class GreetingActsTest(TestCase):
+    """Every greeting line plays its own run of Pintu's frames, and all of them exist."""
+
+    def test_every_line_has_its_own_valid_frames(self):
+        from apps.dashboards import greetings
+
+        runs, texts = [], []
+        for period, lines in greetings.GREETINGS.items():
+            self.assertEqual(len(lines), 9, period)
+            for text, frames in lines:
+                self.assertGreaterEqual(len(frames), 3, text)
+                for name in frames:
+                    self.assertIn(name, greetings.FRAMES, f"{text}: {name}")
+                runs.append(frames)
+                texts.append(text)
+        self.assertEqual(len(set(runs)), len(runs), "two lines play the same frames")
+        self.assertEqual(len(set(texts)), len(texts))
+
+    def test_pintu_art_is_a_full_18_by_16_grid_in_the_palette(self):
+        from apps.dashboards import greetings
+
+        art = greetings.PINTU
+        for name, rows in art["frames"].items():
+            self.assertEqual((len(rows), {len(r) for r in rows}), (16, {18}), name)
+            for ch in "".join(rows):
+                self.assertTrue(ch == "." or ch in art["palette"], f"{name}: {ch}")
+        self.assertTrue(set(art["sequence"]) <= set(art["frames"]))
+
+    def test_the_home_page_carries_the_frames_for_the_canvas(self):
+        from django.conf import settings
+
+        from apps.accounts.models import Company, Membership, User
+
+        company = Company.objects.create(name="Pintu Co", slug="pintu-co")
+        user = User.objects.create_user("pintu-fan", password="x")
+        Membership.objects.create(user=user, company=company, role="developer")
+        self.client.force_login(user)
+        session = self.client.session
+        session[settings.ACTIVE_COMPANY_SESSION_KEY] = company.pk
+        session.save()
+        page = self.client.get(reverse("dashboards:index"))
+        self.assertContains(page, 'id="hm-lines"')
+        self.assertContains(page, '<canvas class="pt"')

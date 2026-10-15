@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.51.1] "Sparrow" — 2026-10-15 · meet Pintu on Home
+
+> In short: Pintu, a small teal robot, now sits in the Home greeting and acts out every line of text with his own pixel frames, and the greeting has more funny lines.
+
+### New
+
+- **Pintu on Home.** Pintu waves hello, then plays his own pixel frames for each line as it is typed: sleepy for the slump line, a cool face and party for shipping, hearts and his drink for chai, dizzy for too many tabs. No two lines play the same frames.
+- **More funny greeting lines.** There are nine for each time of day, and each visit starts on a different one.
+
+### Better
+
+- **Leave balance is a normal card.** It sits under your assigned tickets instead of inside a "More" fold, and an uncapped type like Unpaid no longer shows a full bar.
+
 ## [1.51.0] "Tanager" — 2026-10-15 · Expenses, better search and a tidier Home
 
 > In short: a new Expenses page for owners and admins, wider search, a tidier Home, and a 30 minute office break.

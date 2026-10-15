@@ -965,3 +965,8 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
   .hm-bento #todo-card{contain:none;min-height:0;max-height:520px;}
 }
 @media (max-width:720px){.hm-bento #todo-card{max-height:none;}.hm-bento .td-list{max-height:360px;}}
+
+/* ───────── Pintu, the Home mascot: 18 x 16 pixels, scaled by a whole number (6x) and never smoothed ───────── */
+.pt{flex:none;display:block;width:108px;height:96px;image-rendering:pixelated;align-self:flex-end;margin:0 var(--space-2) calc(-1 * var(--space-4)) 0;}
+.hm-hero .pt+.hm-hero-main{flex:1 1 280px;}
+@media (max-width:640px){.pt{width:72px;height:64px;}}

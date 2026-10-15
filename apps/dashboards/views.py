@@ -54,6 +54,9 @@ class DashboardView(CompanyMemberRequiredMixin, View):
             return render(request, "dashboards/partials/_dashboard_content.html", data)
 
         # Same line all day for one person, so a reload does not reshuffle it.
+        from apps.dashboards import greetings
+
+        data["greetings"] = greetings.as_json_data()
         data["quote"] = quotes.pick(seed=timezone.localdate().toordinal() + request.user.pk)
         return render(request, "dashboards/dashboard.html", data)
 

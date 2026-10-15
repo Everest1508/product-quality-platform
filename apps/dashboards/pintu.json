@@ -1,0 +1,472 @@
+{
+ "palette": {
+  "B": [
+   72,
+   214,
+   190
+  ],
+  "D": [
+   40,
+   160,
+   150
+  ],
+  "K": [
+   22,
+   104,
+   112
+  ],
+  "H": [
+   150,
+   240,
+   225
+  ],
+  "P": [
+   255,
+   160,
+   180
+  ],
+  "E": [
+   16,
+   22,
+   52
+  ],
+  "W": [
+   255,
+   255,
+   255
+  ],
+  "A": [
+   255,
+   184,
+   48
+  ],
+  "L": [
+   150,
+   170,
+   200
+  ],
+  "Y": [
+   255,
+   226,
+   150
+  ],
+  "R": [
+   255,
+   92,
+   130
+  ],
+  "C": [
+   120,
+   200,
+   255
+  ]
+ },
+ "frames": {
+  "idle": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBWEBBBBWEBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBEBBEBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "blink": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBEBBEBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "waveA": [
+   "..................",
+   ".....Y..AA..Y.....",
+   ".....Y.AAAA.Y.....",
+   "........LL........",
+   "...BBBBBBBBBBBB..B",
+   "..BBBBBBBBBBBBBB.B",
+   "..BBBBBBBBBBBBBBBB",
+   "..BBBWEBBBBWEBBBB.",
+   "..BBBEEBBBBEEBBBB.",
+   ".BBBBBBBBBBBBBBB..",
+   ".BBBBBBEBBEBBBBB..",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "waveB": [
+   "..................",
+   "....Y...AA...Y....",
+   "....Y..AAAA..Y....",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB.B",
+   "..BBBBBBBBBBBBBBBB",
+   "..BBBWEBBBBWEBBBBB",
+   "..BBBEEBBBBEEBBBB.",
+   ".BBBBBBBBBBBBBBB..",
+   ".BBBBBBEBBEBBBBB..",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "done": [
+   "...Y..........Y...",
+   "Y.......AA.......Y",
+   ".Y.....AAAA.....Y.",
+   "........LL........",
+   "B..BBBBBBBBBBBB..B",
+   "B.BBBBBBBBBBBBBB.B",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBEBBBBBBEBBBB.",
+   ".BBBEBEBBBBEBEBBB.",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBEBBEBBBBB..",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "question": [
+   "...............AAA",
+   "........AA.......A",
+   ".......AAAA.....AA",
+   "........LL........",
+   "...BBBBBBBBBBBB.A.",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBWEBBBBWEBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBEBBEBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "approval": [
+   "AA................",
+   "AA......AA........",
+   "AA.....AAAA.......",
+   "........LL........",
+   "AA.BBBBBBBBBBBB..B",
+   "..BBBBBBBBBBBBBB.B",
+   "..BBBBBBBBBBBBBBBB",
+   "..BBBWEBBBBWEBBBB.",
+   "..BBBEEBBBBEEBBBB.",
+   ".BBBBBBBBBBBBBBB..",
+   ".BBBBBBEBBEBBBBB..",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "error": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBEBEBBBBEBEBB..",
+   "..BBBEBBBBBBEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBBEEBBBBBBB.",
+   "..BBBBBEEEEBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "wink": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBWEBBBBBBBBB..",
+   "..BBBEEBBBBEEEBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBEEBBEBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "surprised": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBWEBBBBWEBBB..",
+   "..BBBEEBBBBEEBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBBEEBBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "sleepy": [
+   "..............YYYY",
+   "........AA......Y.",
+   ".......AAAA....Y..",
+   "........LL....YYYY",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBEEEBBBBEEEBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBBEEBBBBBBB.",
+   "..BBBBBBBBBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "love": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBRBRBBBBRBRBB..",
+   "..BBRRRBBBBRRRBB..",
+   ".BBBBRBBBBBBRBBBB.",
+   ".BBBBBBEBBEBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "thinking": [
+   "..................",
+   "........AA...Y.Y.Y",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBEWBBBBEWBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBBBBBBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "angry": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBEBBBBBBBBEBB..",
+   "..BBBEEBBBBEEBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBBEEBBBBBBB.",
+   "..BBBBBEEEEBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "dizzy": [
+   "..................",
+   "...Y....AA....Y...",
+   ".Y.....AAAA.......",
+   "........LL......Y.",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBEEEBBBBEEEBB..",
+   "..BBEBEBBBBEBEBB..",
+   ".BBBEEEBBBBEEEBBB.",
+   ".BBBBBBEBEBBBBBBB.",
+   "..BBBBBBEEEBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "cool": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BEWEEEEEEEEEEB..",
+   "..BBEEEBBBBEEEBB..",
+   ".BBBBBBBBBBBBBBBB.",
+   ".BBBBBBEBBEBBBBBB.",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "sad": [
+   "..................",
+   "........AA........",
+   ".......AAAA.......",
+   "........LL........",
+   "...BBBBBBBBBBBB...",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBWEBBBBWEBBB..",
+   "..BBBEEBBBBEEBBB..",
+   ".BBBBCBBBBBBBBBBB.",
+   ".BBBBCBBEEBBBBBBB.",
+   "..BBBBBEEEEBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "party": [
+   "...R..........R...",
+   "R.C.A...AA...A.C.R",
+   ".A.....AAAA.....A.",
+   "C.R.....LL.....R..",
+   "B..BBBBBBBBBBBB..C",
+   "B.BBBBBBBBBBBBBB.B",
+   ".BBBBBBBBBBBBBBBB.",
+   ".RBBBEBBBBBBEBBBB.",
+   ".BBBEBEBBBBEBEBBB.",
+   "..BBBBBBBBBBBBBB..",
+   "..BBBBBEEEEBBBBB..",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ],
+  "drink": [
+   "..................",
+   "........AA........",
+   "..C....AAAA....WWW",
+   "........LL.....WCW",
+   ".C.BBBBBBBBBBBBWCW",
+   "..BCBBBBBBBBBBBWWW",
+   "..BBBBBBBBBBBBBBBB",
+   "..BBBEBBBBBBEBBBBB",
+   "..BBEBEBBBBEBEBBB.",
+   ".BBBBBBBBBBBBBBB..",
+   ".BBBBBBEBBEBBBBB..",
+   "..BBBBBBEEBBBBBB..",
+   "...DDDDDDDDDDDD...",
+   "....BBB....BBB....",
+   "....BBB....BBB....",
+   ".................."
+  ]
+ },
+ "tints": {
+  "error": {
+   "B": [
+    255,
+    122,
+    122
+   ],
+   "D": [
+    205,
+    80,
+    92
+   ],
+   "K": [
+    150,
+    50,
+    64
+   ],
+   "H": [
+    255,
+    180,
+    180
+   ],
+   "P": [
+    255,
+    150,
+    150
+   ]
+  },
+  "angry": {
+   "B": [
+    255,
+    150,
+    110
+   ],
+   "D": [
+    215,
+    100,
+    70
+   ],
+   "K": [
+    150,
+    60,
+    40
+   ],
+   "H": [
+    255,
+    200,
+    170
+   ]
+  }
+ },
+ "sequence": [
+  "idle",
+  "idle",
+  "blink",
+  "idle",
+  "waveA",
+  "waveB",
+  "waveA",
+  "waveB",
+  "idle"
+ ],
+ "delay_ms": 380,
+ "icon_frame": "waveA"
+}
