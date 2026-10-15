@@ -79,7 +79,19 @@ class ProjectsBoardView(CompanyMemberRequiredMixin, View):
                     .select_related("lead").prefetch_related("phase_plans", "crunch_items", "pod_members__user")
                     .order_by("name"))
         today = timezone.localdate()
+        q = request.GET.get("q", "").strip()
+        lead = request.GET.get("lead", "")
+        if q:
+            products = products.filter(name__icontains=q)
+        if lead == "none":
+            products = products.filter(lead__isnull=True)
+        elif lead.isdigit():
+            products = products.filter(lead_id=int(lead))
         cards = [_card(p, today) for p in products]
+        if request.GET.get("late"):
+            cards = [c for c in cards if c["late_days"]]
+        if request.GET.get("crunch"):
+            cards = [c for c in cards if c["crunch_open"]]
         view = "journey" if request.GET.get("view") == "journey" else "board"
         columns = [{"key": k, "label": l, "cards": [c for c in cards if c["stage"] == k]} for k, l in lc.STAGES]
         rows = []
@@ -88,6 +100,8 @@ class ProjectsBoardView(CompanyMemberRequiredMixin, View):
         return render(request, "products/projects_board.html", {
             "view": view, "columns": columns, "rows": rows, "total": len(cards),
             "can_add": request.company_role in ("owner", "admin"), "stages": lc.STAGES,
+            "search": q, "current_lead": lead, "current_late": request.GET.get("late"), "current_crunch": request.GET.get("crunch"),
+            "leads": get_user_model().objects.filter(pk__in=accessible_products(request.user, request.company).exclude(lead=None).values("lead")),
         })
 
 

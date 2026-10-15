@@ -455,6 +455,14 @@
   .kanban-card .card-id{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
   .kanban-delete-btn{background:none;border:none;padding:2px;cursor:pointer;color:var(--muted);border-radius:3px;line-height:1;display:inline-flex;}
   .kanban-delete-btn:hover{color:var(--red);background:var(--red-bg);}
+  .kanban-card-actions{display:inline-flex;align-items:center;gap:2px;}
+  .kanban-move-btn{background:none;border:none;padding:2px;cursor:pointer;color:var(--muted);border-radius:3px;line-height:1;display:inline-flex;}
+  .kanban-move-btn:hover{color:var(--accent);background:var(--accent-soft);}
+  .kanban-move-menu{position:fixed;z-index:60;min-width:170px;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(13,17,23,.16);padding:4px;}
+  .kanban-move-menu[hidden]{display:none;}
+  .kanban-move-item{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;border-radius:5px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);cursor:pointer;text-align:left;}
+  .kanban-move-item:hover{background:var(--accent-soft);}
+  .kanban-move-item.is-current{color:var(--muted);font-weight:600;}
   .ticket-select{display:none;}
   .selection-mode .ticket-select{display:inline-block;}
   .selection-mode .clickable-row{cursor:default;}

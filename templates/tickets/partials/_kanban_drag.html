@@ -50,31 +50,22 @@
     if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
   });
 
-  board.addEventListener('drop', function(e) {
-    e.preventDefault();
-    const col = e.target.closest('.kanban-col');
-    if (!col || !draggedCard) return;
-
-    const newStatus = col.dataset.status;
-    const oldStatus = draggedCard.dataset.status;
-    const url = draggedCard.dataset.url;
-    const csrf = draggedCard.dataset.csrf;
+  function moveCard(card, newStatus) {
+    const oldStatus = card.dataset.status;
     if (newStatus === oldStatus) return;
-
     const oldCol = document.querySelector('.kanban-col[data-status="' + oldStatus + '"] .kanban-cards');
-    const cardsContainer = col.querySelector('.kanban-cards');
-    const empty = cardsContainer.querySelector('.kanban-empty');
+    const target = document.querySelector('.kanban-col[data-status="' + newStatus + '"] .kanban-cards');
+    if (!target) return;
+    const empty = target.querySelector('.kanban-empty');
     if (empty) empty.remove();
-    cardsContainer.appendChild(draggedCard);
-    draggedCard.dataset.status = newStatus;
-    col.classList.remove('drag-over');
+    target.appendChild(card);
+    card.dataset.status = newStatus;
     recount();
-
-    fetch(url, {
+    fetch(card.dataset.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': csrf,
+        'X-CSRFToken': card.dataset.csrf,
         'X-Requested-With': 'XMLHttpRequest',
       },
       body: 'status=' + encodeURIComponent(newStatus),
@@ -83,11 +74,7 @@
         resp.json().then(function(data) {
           window.dispatchEvent(new CustomEvent('django-message', { detail: { text: data.error || 'Cannot move ticket', tags: 'error' } }));
         });
-        if (oldCol) {
-          oldCol.appendChild(draggedCard);
-          draggedCard.dataset.status = oldStatus;
-          recount();
-        }
+        if (oldCol) { oldCol.appendChild(card); card.dataset.status = oldStatus; recount(); }
       } else {
         resp.json().then(function(data) {
           if (data.message) window.pqToast(data.message, 'success');
@@ -96,7 +83,48 @@
         });
       }
     });
+  }
+
+  board.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const col = e.target.closest('.kanban-col');
+    col && col.classList.remove('drag-over');
+    if (!col || !draggedCard) return;
+    moveCard(draggedCard, col.dataset.status);
   });
+
+  // "Move to" icon on each card: one shared menu, positioned under the clicked button.
+  const menu = document.createElement('div');
+  menu.className = 'kanban-move-menu';
+  menu.hidden = true;
+  document.body.appendChild(menu);
+  let menuCard = null;
+  function closeMenu() { menu.hidden = true; menuCard = null; }
+  board.addEventListener('click', function(e) {
+    const btn = e.target.closest('.kanban-move-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    const card = btn.closest('.kanban-card');
+    if (menuCard === card) return closeMenu();
+    menuCard = card;
+    menu.innerHTML = '';
+    document.querySelectorAll('.kanban-col').forEach(function(c) {
+      const o = document.createElement('button');
+      o.type = 'button';
+      o.className = 'kanban-move-item' + (c.dataset.status === card.dataset.status ? ' is-current' : '');
+      o.innerHTML = '<span class="dot ' + c.dataset.status + '"></span>';
+      o.append(c.querySelector('.kanban-header span').textContent.trim());
+      o.onclick = function() { closeMenu(); moveCard(card, c.dataset.status); };
+      menu.appendChild(o);
+    });
+    menu.hidden = false;
+    const r = btn.getBoundingClientRect();
+    menu.style.top = Math.min(r.bottom + 4, window.innerHeight - menu.offsetHeight - 8) + 'px';
+    menu.style.left = Math.max(8, Math.min(r.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  });
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeMenu(); });
+  window.addEventListener('scroll', closeMenu, true);
 
   // Touch fallback: long-press a card to pick a target column.
   board.addEventListener('contextmenu', function(e) {
@@ -125,28 +153,7 @@
       opts.map((o, i) => (i + 1) + '. ' + o.label).join('\n'));
     const idx = parseInt(choice, 10) - 1;
     if (isNaN(idx) || idx < 0 || idx >= opts.length) return;
-    const target = document.querySelector('.kanban-col[data-status="' + opts[idx].key + '"] .kanban-cards');
-    const oldCol = document.querySelector('.kanban-col[data-status="' + cur + '"] .kanban-cards');
-    const emptyEl = target.querySelector('.kanban-empty');
-    if (emptyEl) emptyEl.remove();
-    target.appendChild(card);
-    card.dataset.status = opts[idx].key;
-    recount();
-    fetch(card.dataset.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': card.dataset.csrf,
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: 'status=' + encodeURIComponent(opts[idx].key),
-    }).then(function(resp) {
-      if (!resp.ok && oldCol) { oldCol.appendChild(card); card.dataset.status = cur; recount(); }
-      else if (resp.ok) resp.json().then(function(data) {
-        if (data.message) window.pqToast(data.message, 'success');
-        if (data.warning) window.pqToast(data.warning, 'warning');
-      });
-    });
+    moveCard(card, opts[idx].key);
   }
 })();
 </script>

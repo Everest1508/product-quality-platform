@@ -18,6 +18,10 @@
           <input type="checkbox" class="ticket-select" value="{{ ticket.pk }}" onclick="event.stopPropagation();" style="cursor:pointer;">
           {{ ticket.key }}
         </span>
+        <span class="kanban-card-actions">
+        <button type="button" class="kanban-move-btn" title="Move to…" aria-label="Move to another status" aria-haspopup="menu" onclick="event.stopPropagation();" draggable="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </button>
         {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
         <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" onsubmit="return confirmAction(this, 'Delete ticket {{ ticket.key }}? This cannot be undone.')" onclick="event.stopPropagation();" style="display:inline;">
           {% csrf_token %}
@@ -26,6 +30,7 @@
           </button>
         </form>
         {% endif %}
+        </span>
       </div>
       <div class="card-title">
         <a href="{% url 'products:product_ticket_detail' pk=product.pk ticket_pk=ticket.pk %}" data-peek="{{ ticket.key }} · {{ ticket.get_status_display }}&#10;{{ ticket.get_ticket_type_display }} · {{ ticket.get_priority_display }} priority&#10;{% for a in ticket.assignees.all %}{{ a.get_full_name|default:a.username }}{% if not forloop.last %}, {% endif %}{% empty %}Nobody assigned{% endfor %}&#10;Updated {{ ticket.updated_at|timesince }} ago">{{ ticket.title }}</a>

@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.0] "Lapwing" — 2026-10-16 · move a card from its own menu
+
+> In short: every kanban card has an arrow that lists the statuses so you can move it in one click, and the Projects board now has search and filters like the tickets board.
+
+### New
+
+- **Move a card without dragging.** Each ticket and project card has an arrow icon; click it, pick a status or phase, and the card goes there.
+- **Search and filters on the Projects board.** Find a project by name, narrow by lead, or show only projects that are running late or have a Crunch.
+
 ## [1.51.3] "Phoebe" — 2026-10-16 · a calmer greeting with a reaction for every line
 
 > In short: the greeting on Home types and changes at a relaxed pace, and Pintu gives each line its own short reaction and then holds one face while you read.

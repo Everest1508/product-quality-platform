@@ -1,15 +1,31 @@
 {% extends "core/base.html" %}
-{% load icon_tags %}
+{% load icon_tags dropdown_tags %}
 {% block title %}Projects — PQ Platform{% endblock %}
 {% block content %}
 <div class="pg-head">
-  <div><h1>Projects</h1><p class="sub">{{ total }} project{{ total|pluralize }} across nine phases. Drag a card to move it, and say why.</p></div>
+  <div><h1>Projects</h1><p class="sub">{{ total }} project{{ total|pluralize }} across nine phases. Drag a card or use its arrow to move it, and say why.</p></div>
   <div class="pg-actions">
     {% include "products/_project_views.html" with here=view %}
     {% if can_add %}<a class="btn btn-primary" href="{% url 'products:project_new' %}">{% icon 'plus' 'ic' %}New project</a>{% endif %}
   </div>
 </div>
 
+<form class="toolbar" method="get" action="{{ request.path }}" style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;"
+      hx-get="{{ request.path }}" hx-target="#pj-results" hx-select="#pj-results" hx-swap="outerHTML" hx-push-url="true" hx-trigger="change">
+  <input type="hidden" name="view" value="{{ view }}">
+  <div class="search-wrap" style="display:flex;max-width:240px;width:100%;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="search" name="q" value="{{ search }}" aria-label="Search projects" placeholder="Search projects…"
+           hx-get="{{ request.path }}" hx-target="#pj-results" hx-select="#pj-results" hx-swap="outerHTML" hx-push-url="true"
+           hx-trigger="keyup changed delay:400ms, search" hx-include="closest form">
+  </div>
+  {% dropdown "lead" "none:No lead"|opts current_lead placeholder="All leads" label="Filter by lead" empty_value="" extra_choices=leads|obj_pairs:"pk:get_full_name" %}
+  <label class="filter-check"><input type="checkbox" name="late" value="1" {% if current_late %}checked{% endif %}> Running late</label>
+  <label class="filter-check"><input type="checkbox" name="crunch" value="1" {% if current_crunch %}checked{% endif %}> Has Crunch</label>
+  <span style="margin-left:auto;"><a href="{{ request.path }}?view={{ view }}" class="btn btn-sm" style="font-size:12px;color:var(--muted);">Clear</a></span>
+</form>
+
+<div id="pj-results">
 {% if view == 'board' %}
 <div class="pj-board" id="pj-board">
   {% for col in columns %}
@@ -18,7 +34,10 @@
     <div class="pj-cards">
       {% for c in col.cards %}
       <article class="pj-card" draggable="true" data-id="{{ c.product.pk }}" data-name="{{ c.product.name }}" data-stage="{{ c.stage }}" data-off="{{ c.off_json }}" data-days="{{ c.days }}">
-        <a class="pj-title" href="{% url 'products:project_lifecycle' pk=c.product.pk %}">{{ c.product.name }}</a>
+        <div class="pj-card-top">
+          <a class="pj-title" href="{% url 'products:project_lifecycle' pk=c.product.pk %}">{{ c.product.name }}</a>
+          <button type="button" class="kanban-move-btn pj-move-btn" title="Move to…" aria-label="Move {{ c.product.name }} to another phase" aria-haspopup="menu" draggable="false">{% icon 'arrow-right' 'ic' %}</button>
+        </div>
         <div class="pj-meta">
           <span title="Time in {{ col.label }}">{% icon 'clock' 'ic' %}{{ c.days }}d</span>
           {% if c.product.end_date %}<span title="Project end date">{% icon 'calendar-days' 'ic' %}{{ c.product.end_date|date:"j M" }}</span>{% endif %}
@@ -68,6 +87,7 @@
   {% empty %}<p class="pj-empty">No projects yet.</p>{% endfor %}
 </div>
 {% endif %}
+</div>
 
 {% include "products/_move_dialog.html" %}
 <script>
@@ -85,6 +105,23 @@
   board.addEventListener('dragend',function(){ if(drag) drag.classList.remove('is-dragging'); drag=null; board.querySelectorAll('.pj-col').forEach(function(c){c.classList.remove('is-off','is-over')}); });
   board.addEventListener('dragover',function(e){ var col=e.target.closest('.pj-col'); if(!col||!drag||col.classList.contains('is-off')) return; e.preventDefault(); col.classList.add('is-over'); });
   board.addEventListener('dragleave',function(e){ var col=e.target.closest('.pj-col'); if(col&&!col.contains(e.relatedTarget)) col.classList.remove('is-over'); });
+  var menu=document.createElement('div'); menu.className='kanban-move-menu'; menu.hidden=true; document.body.appendChild(menu);
+  function closeMenu(){menu.hidden=true; menu.dataset.id='';}
+  board.addEventListener('click',function(e){
+    var b=e.target.closest('.pj-move-btn'); if(!b) return; e.stopPropagation();
+    var c=b.closest('.pj-card'); if(menu.dataset.id===c.dataset.id&&!menu.hidden) return closeMenu();
+    var off=(c.dataset.off||'').split(','); menu.dataset.id=c.dataset.id; menu.innerHTML='';
+    ORDER.forEach(function(k){
+      if(off.indexOf(k)>-1) return;
+      var o=document.createElement('button'); o.type='button'; o.className='kanban-move-item'+(k===c.dataset.stage?' is-current':''); o.textContent=STAGES[k];
+      if(k!==c.dataset.stage) o.onclick=function(){closeMenu(); pjMove(c.dataset.id,k,STAGES[k],STAGES[c.dataset.stage],c.dataset.name,+c.dataset.days,ORDER.indexOf(k)<ORDER.indexOf(c.dataset.stage));};
+      menu.appendChild(o);
+    });
+    menu.hidden=false; var r=b.getBoundingClientRect();
+    menu.style.top=Math.max(8,Math.min(r.bottom+4,innerHeight-menu.offsetHeight-8))+'px';
+    menu.style.left=Math.max(8,Math.min(r.right-menu.offsetWidth,innerWidth-menu.offsetWidth-8))+'px';
+  });
+  document.addEventListener('click',closeMenu); document.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu()}); addEventListener('scroll',closeMenu,true);
   board.addEventListener('drop',function(e){
     var col=e.target.closest('.pj-col'); if(!col||!drag||col.classList.contains('is-off')) return; e.preventDefault();
     var to=col.dataset.stage, from=drag.dataset.stage; if(to===from) return;
