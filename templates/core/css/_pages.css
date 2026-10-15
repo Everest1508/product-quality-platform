@@ -950,14 +950,13 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
 .hm-dsr:hover .hm-dsr-text{color:var(--text);}
 .hm-meter.is-low i{background:var(--purple);}
 .hm-more-acc{margin-top:var(--space-5);}
-.hm-leave-card{max-width:520px;}
 @media (max-width:1180px){.hm-bento .hm-tiles>.hm-card:last-child{grid-column:1 / -1;}}
 
 /* ───────── Home layout: Today, Assigned and This week stack on the left; the to-do runs the full height on the right and scrolls inside ───────── */
 .hm-bento .hm-today,.hm-bento .hm-work,.hm-bento .hm-tiles>.hm-card{grid-column:1 / span 7;grid-row:auto;}
-.hm-bento .hm-today{grid-row:1;}.hm-bento .hm-work{grid-row:2;}.hm-bento .hm-tiles>.hm-card{grid-row:3;}
+.hm-bento .hm-today{grid-row:1;}.hm-bento .hm-work{grid-row:2;}.hm-bento .hm-tiles>.hm-card{grid-row:3;}.hm-bento .hm-tiles>.hm-leave-card{grid-row:4;}
 .hm{width:100%;}
-.hm-bento #todo-card{grid-column:8 / span 5;grid-row:1 / span 3;contain:size;min-height:480px;}
+.hm-bento #todo-card{grid-column:8 / span 5;grid-row:1 / span 4;contain:size;min-height:480px;}
 .hm-bento .hm-work>div:not(.hm-tabs){flex:none;display:block;}
 .hm-bento .hm-empty{flex:none;display:grid;gap:var(--space-1);padding:var(--space-5) 0;text-align:center;}
 .hm-bento .td-list{flex:1 1 0;max-height:none;min-height:120px;overflow-y:auto;overscroll-behavior:contain;padding-right:var(--space-1);}

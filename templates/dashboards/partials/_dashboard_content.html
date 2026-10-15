@@ -90,25 +90,20 @@
       {% endfor %}
     </div>
   </section>
-
-
-</div>
-</div>
-
-<details class="acc hm-more-acc">
-  <summary><span>More</span><small>leave balance</small></summary>
-  <div class="acc-body">
-  <section class="hm-leave-card">
-    <div class="hm-tile-head"><h2>{% icon 'calendar-days' 'ic' %}Leave</h2></div>
+  <section class="hm-card hm-leave-card">
+    <div class="hm-tile-head"><h2>Leave</h2><a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a></div>
     <ul class="hm-leave">
       {% for b in leave_balances|slice:":3" %}
         <li>
           <div class="r"><span>{{ b.policy.name }}</span><span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> left{% endif %}</span></div>
-          <span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{% if b.is_unlimited %}100{% else %}{% widthratio b.approved b.limit 100 %}{% endif %}%"></i></span>
+          {% if not b.is_unlimited %}<span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{% widthratio b.approved b.limit 100 %}%"></i></span>{% endif %}
         </li>
       {% empty %}<li class="hm-empty">No leave policies configured yet.</li>{% endfor %}
     </ul>
-    <a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a>
   </section>
-  </div>
-</details>
+
+
+</div>
+</div>
+
+
