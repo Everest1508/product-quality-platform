@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.51.0] "Tanager" — 2026-10-15 · Expenses, with who paid and who owes whom
+
+> In short: a new Expenses page lets the team note what was spent and who paid, and works out who owes whom whenever you want to settle up.
+
+### New
+
+- **An Expenses page.** Add what it was for, the amount, who paid, the date and a category, and tick who shared it. It splits equally between them.
+- **Who pays whom.** The page shows the fewest payments that clear every unsettled expense, and your own balance at the top.
+- **Settle up when you like.** Owners and admins can mark everything settled in one click; settled expenses stay under their own tab.
+
+### Better
+
+- **The office break is 30 minutes.** Hours worked are now counted net of a 30 minute break (1:00 to 1:30 pm), so a 10:00 to 6:30 day is 8 hours everywhere.
+- **Hours match the week bars.** The punch panel, history and Today figure show the same hours as the bars, instead of the longer raw time.
+- **Everyone hears who decided a correction.** When an owner or admin approves or rejects an attendance correction, the other owners and admins are told.
+
 ## [1.50.1] "Whimbrel" — 2026-10-14 · every project action is in the Audit log
 
 > In short: everything done on a project now appears in the Audit log, and people taken off a Pod are told.

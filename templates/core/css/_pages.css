@@ -965,3 +965,36 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
 .dsr-n-dot.is-warn{background:var(--orange);}.dsr-n-dot.is-info{background:var(--blue);}
 .dsr-n-actions{display:flex;gap:var(--space-2);flex:none;}.dsr-n-actions form{margin:0;}
 @media (max-width:720px){.dsr-notices li{flex-wrap:wrap;}}
+
+/* Expenses */
+.ex-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-5);margin-bottom:var(--space-6);}
+.ex-stats .card{display:flex;flex-direction:column;gap:var(--space-1);}
+.ex-l{font-size:var(--fs-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+.ex-v{font-size:var(--fs-lg);font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums;}
+.ex-s{font-size:var(--fs-sm);color:var(--muted);}
+.ex-pos{color:var(--green);}
+.ex-neg{color:var(--red);}
+.ex-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:var(--space-5);align-items:start;}
+.ex-main,.ex-side{display:flex;flex-direction:column;gap:var(--space-5);min-width:0;}
+.ex-h{font-size:var(--fs-md);font-weight:600;margin-bottom:var(--space-4);}
+.ex-side .ex-h{margin-bottom:var(--space-1);}
+.ex-form{display:flex;flex-direction:column;gap:var(--space-4);}
+.ex-form .field-row>.field{min-width:0;}
+.ex-num{font-variant-numeric:tabular-nums;}
+.ex-actions{display:flex;gap:var(--space-2);}
+.ex-who{display:inline-flex;align-items:center;gap:var(--space-2);}
+.ex-who input{accent-color:var(--accent);margin:0;}
+.ex-who:has(input:checked){background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);}
+.ex-listhead{display:flex;justify-content:space-between;align-items:center;}
+.ex-row{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--line);}
+.ex-row:last-child{border-bottom:0;}
+.ex-what{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1) var(--space-2);}
+.ex-meta{flex-basis:100%;font-size:var(--fs-sm);color:var(--muted);}
+.ex-amt{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.ex-btns{display:flex;gap:var(--space-1);}
+.ex-pay{display:flex;justify-content:space-between;gap:var(--space-3);padding:var(--space-3) 0;border-bottom:1px solid var(--line);font-size:var(--fs-sm);}
+.ex-pay.is-mine{color:var(--accent);}
+.ex-even{display:flex;align-items:center;gap:var(--space-2);color:var(--green);margin-top:var(--space-4);}
+@media (max-width:980px){.ex-grid{grid-template-columns:minmax(0,1fr);}.ex-side{order:-1;}}
+@media (max-width:640px){.ex-row{flex-wrap:wrap;}.ex-form .field-row{grid-template-columns:1fr;}}
+.ex-even svg{width:16px;height:16px;flex:none;}

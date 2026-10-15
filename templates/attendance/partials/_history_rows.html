@@ -33,7 +33,7 @@ also included on its own from the htmx punch path, which never renders rows.
         {% else %}<span class="text-muted">—</span>{% endif %}
       </td>
       <td>
-        {% if record.is_complete %}{{ record.worked_formatted }}
+        {% if record.is_complete %}{{ record.effective_formatted|default:record.worked_formatted }}
         {% elif record.is_open %}<span class="text-muted">{{ record.effective_formatted|default:record.elapsed_formatted }}</span>
         {% else %}<span class="text-muted">—</span>{% endif %}
         {% if record.day_pct %}<span class="day-bar" aria-hidden="true"><i style="width:{{ record.day_pct }}%"></i></span>{% endif %}

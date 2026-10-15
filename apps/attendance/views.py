@@ -68,7 +68,7 @@ def annotate_effective(record, shift):
     row in a list. It is attached to the instance so the partials can keep
     iterating plain records.
     """
-    record.effective_minutes = service.effective_span_for(record, shift)
+    record.effective_minutes = service.net_minutes_for(record, shift)
     record.effective_formatted = format_minutes(record.effective_minutes)
     return record
 
@@ -151,7 +151,8 @@ def _punch_context(request, record, message="", person=None):
     span_minutes = max(1, int((shift_end - shift_start).total_seconds() // 60))
     since_ms = int(record.check_in.timestamp() * 1000) if record and record.check_in else None
     out_ms = int(record.check_out.timestamp() * 1000) if record and record.check_out else None
-    worked = record.worked_minutes if record and record.is_complete else 0
+    # Net of the unpaid break, the same number the week bars and timesheet use.
+    worked = service.net_minutes_for(record, shift) if record and record.is_complete else 0
     target = shift.worked_minutes_per_day
 
     # A full day is `worked_minutes_per_day` of work plus the unpaid break, which is
@@ -170,6 +171,7 @@ def _punch_context(request, record, message="", person=None):
         "remaining_formatted": f"{remaining // 3600}h {remaining % 3600 // 60:02d}m {remaining % 60:02d}s",
         "shift_end_label": f"{shift.end_time:%I:%M %p}".lstrip("0"),
         "target_minutes": target,
+        "worked_net_formatted": format_minutes(worked),
         "target_formatted": format_minutes(target),
         "worked_delta": worked - target if worked else 0,
         "worked_delta_formatted": format_minutes(abs(worked - target)) if worked else "",

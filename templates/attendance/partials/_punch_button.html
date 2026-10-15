@@ -75,7 +75,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
   {% elif today_record and today_record.is_complete %}
     <div class="punch-hero punch-state punch-state-done">
       <div class="punch-big">
-        <span class="punch-big-num">{{ today_record.worked_formatted }}</span>
+        <span class="punch-big-num">{{ worked_net_formatted }}</span>
         <span class="punch-big-cap">worked today</span>
       </div>
       <div class="punch-copy">
@@ -86,7 +86,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
           · {% include "attendance/partials/_late_note.html" %}
         </span>
         <div class="punch-facts">
-          <span><b>{{ today_record.worked_formatted }}</b> worked</span>
+          <span><b>{{ worked_net_formatted }}</b> worked</span>
           <span>
             {% if worked_delta > 0 %}<b class="punch-ontime">+{{ worked_delta_formatted }}</b> over the {{ target_formatted }} day
             {% elif worked_delta < 0 %}<b class="punch-late">{{ worked_delta_formatted }}</b> short of the {{ target_formatted }} day

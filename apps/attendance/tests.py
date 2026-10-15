@@ -832,9 +832,9 @@ class LatePenaltyTest(AttendanceTestBase):
         shift = service.shift_for(self.company)
         self.assertEqual(shift.start_time, time(10, 0))
         self.assertEqual(shift.end_time, time(18, 30))
-        self.assertEqual(shift.break_minutes, 60)
-        # 8.5 hours less a 60 minute break.
-        self.assertEqual(shift.worked_minutes_per_day, 450)
+        self.assertEqual(shift.break_minutes, 30)
+        # 8.5 hours less a 30 minute break.
+        self.assertEqual(shift.worked_minutes_per_day, 480)
 
     def test_a_company_with_no_shift_row_still_gets_one(self):
         from apps.attendance.models import WorkShift
@@ -1037,7 +1037,7 @@ class MissingCheckoutTest(AttendanceTestBase):
         )
         shift = service.shift_for(self.company)
         self.assertEqual(service.effective_span_for(record, shift), 540)
-        self.assertEqual(service.net_minutes_for(record, shift), 480)
+        self.assertEqual(service.net_minutes_for(record, shift), 510)
 
     def test_no_check_in_means_no_hours_at_all(self):
         day = timezone.localdate() - timedelta(days=1)

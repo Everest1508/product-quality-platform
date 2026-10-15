@@ -48,6 +48,11 @@
        class="side-item {% if u == 'my_attendance' or u == 'punch' or u == 'my_leave' or u == 'apply' or u == 'calendar' or u == 'dsr_sheet' or u == 'dsr_add' or u == 'dsr_update' or u == 'my_payslips' or u == 'my_payslip' %}active{% endif %}">
       {% icon 'clock' %} <span class="side-label">My work</span>
     </a>
+    <a href="{% url 'expenses:expense_list' %}" data-label="Expenses"
+       {% if u == 'expense_list' or u == 'expense_edit' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'expense_list' or u == 'expense_edit' %}active{% endif %}">
+      {% icon 'wallet' %} <span class="side-label">Expenses</span>
+    </a>
     <a href="{% url 'dashboards:reports' %}" data-label="Reports"
        {% if u == 'reports' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'reports' %}active{% endif %}">

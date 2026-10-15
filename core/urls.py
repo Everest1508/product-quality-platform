@@ -37,6 +37,7 @@ urlpatterns = [
     path("dsr/", include("apps.dsr.urls")),
     path("attendance/", include("apps.attendance.urls")),
     path("leave/", include("apps.leave.urls")),
+    path("expenses/", include("apps.expenses.urls")),
     path("payroll/", include("apps.payroll.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("presence/", include("apps.presence.urls")),

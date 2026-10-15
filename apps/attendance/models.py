@@ -225,7 +225,7 @@ class WorkShift(TenantScopedModel):
     start_time = models.TimeField(default=time(10, 0))
     end_time = models.TimeField(default=time(18, 30))
     break_minutes = models.PositiveIntegerField(
-        default=60,
+        default=30,
         help_text="Unpaid scheduled break, deducted from hours worked.",
     )
 

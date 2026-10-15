@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}Edit expense — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs"><a href="{% url 'expenses:expense_list' %}">Expenses</a><span class="sep">/</span><span class="current">Edit</span></nav>
+<div class="head"><div><h1>Edit expense</h1></div></div>
+<div class="card" style="max-width:860px">
+  {% url 'expenses:expense_edit' expense.pk as action %}
+  {% url 'expenses:expense_list' as back %}
+  {% include "expenses/_form.html" with action=action submit="Save changes" cancel=back autofocus=True %}
+</div>
+{% endblock %}

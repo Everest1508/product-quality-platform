@@ -1,0 +1,76 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}Expenses — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <h1>Expenses</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">Note what was spent, who paid and who shares it. Work out who owes whom whenever you like.</p>
+  </div>
+</div>
+
+<div class="ex-stats">
+  <div class="card"><span class="ex-l">Not settled yet</span><span class="ex-v">{{ open_total }}</span><span class="ex-s">{{ open_count }} expense{{ open_count|pluralize }}</span></div>
+  <div class="card"><span class="ex-l">Your balance</span>
+    <span class="ex-v {% if my_state == 'owed' %}ex-pos{% elif my_state == 'owe' %}ex-neg{% endif %}">{% if my_state == 'even' %}All even{% else %}{{ my_balance }}{% endif %}</span>
+    <span class="ex-s">{% if my_state == 'owed' %}owed to you{% elif my_state == 'owe' %}you owe{% else %}nothing to pay or collect{% endif %}</span></div>
+</div>
+
+<div class="ex-grid">
+  <div class="ex-main">
+    <div class="card">
+      <h2 class="ex-h">Add an expense</h2>
+      {% include "expenses/_form.html" with action=request.path submit="Add expense" autofocus=False %}
+    </div>
+
+    <div class="ex-listhead">
+      <div class="seg" role="tablist" aria-label="Show">
+        <a href="?show=open" class="{% if show == 'open' %}is-on{% endif %}">Not settled</a>
+        <a href="?show=settled" class="{% if show == 'settled' %}is-on{% endif %}">Settled</a>
+      </div>
+    </div>
+
+    <div class="card-flush">
+      {% for e in rows %}
+      <div class="ex-row">
+        <div class="ex-what">
+          <strong>{{ e.title }}</strong>
+          <span class="bdg bdg-outline">{{ e.get_category_display }}</span>
+          <span class="ex-meta">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }} · shared by {{ e.split_names|join:", " }}{% if e.share_label %} ({{ e.share_label }} each){% endif %}{% if e.note %} · {{ e.note }}{% endif %}</span>
+        </div>
+        <div class="ex-amt">{{ e.amount_label }}</div>
+        {% if e.can_change and show == 'open' %}
+        <div class="ex-btns">
+          <a href="{% url 'expenses:expense_edit' e.pk %}" class="btn btn-sm btn-ghost">Edit</a>
+          <form method="post" action="{% url 'expenses:expense_delete' e.pk %}" data-confirm data-confirm-text="Delete {{ e.title }}? This cannot be undone." data-confirm-label="Delete">
+            {% csrf_token %}<button type="submit" class="btn btn-sm btn-ghost" aria-label="Delete {{ e.title }}">{% icon 'trash' 'ic' %}</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="empty-state"><p>{% if show == 'open' %}Nothing to settle.{% else %}Nothing has been settled yet.{% endif %}</p><p class="text-muted">{% if show == 'open' %}Add the first expense above.{% else %}Settled expenses show up here.{% endif %}</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="ex-side">
+    <div class="card">
+      <h2 class="ex-h">Who pays whom</h2>
+      <p class="text-sm text-muted">The fewest payments that clear every unsettled expense.</p>
+      {% for p in payments %}
+      <div class="ex-pay {% if p.mine %}is-mine{% endif %}"><span><strong>{{ p.from }}</strong> pays <strong>{{ p.to }}</strong></span><span class="ex-amt">{{ p.amount }}</span></div>
+      {% empty %}
+      <p class="ex-even">{% icon 'check' 'ic' %} Everyone is even.</p>
+      {% endfor %}
+      {% if can_settle %}
+      <form method="post" action="{% url 'expenses:expense_settle' %}" data-confirm data-confirm-text="Mark all {{ open_count }} unsettled expenses as settled?" data-confirm-label="Settle up" style="margin-top:var(--space-4)">
+        {% csrf_token %}<button type="submit" class="btn">{% icon 'wallet' 'ic' %}Mark all settled</button>
+      </form>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

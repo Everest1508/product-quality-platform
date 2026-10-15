@@ -188,6 +188,17 @@ def decide(correction_id, approver, approve, note=""):
         url=f"/attendance/?month={day:%Y-%m}",
         actor=approver,
     )
+    # The other owners and admins hear who decided, so nobody acts on it twice.
+    who = user.get_full_name() or user.username
+    notifications.notify_many(
+        [a for a in admins(company) if a.pk != user.pk],
+        company=company,
+        kind=Notification.Kind.CORRECTION_REQUEST,
+        title=f"{boss} {verdict} {who}'s correction for {day:%b %d}",
+        body=(note or correction.reason)[:140],
+        url="/attendance/corrections/",
+        actor=approver,
+    )
     log_activity(
         company,
         f"attendance_correction_{verdict}",

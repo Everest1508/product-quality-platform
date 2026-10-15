@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.dsr",
     "apps.attendance",
     "apps.leave",
+    "apps.expenses",
     "apps.payroll",
     "apps.serop",
     "apps.presence",
@@ -139,7 +140,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.50.1")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.51.0")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth
