@@ -93,7 +93,7 @@
           {% if forloop.first %}<td class="daycell" rowspan="{{ d.rows|length }}"><b>{% if d.is_today %}Today{% else %}{{ d.date|date:"D, j M" }}{% endif %}</b><small>{{ d.hours_label }} · {{ d.rows|length }} {% if d.rows|length == 1 %}entry{% else %}entries{% endif %}</small></td>{% endif %}
           {% if everyone %}<td style="white-space:nowrap;font-weight:500">{{ e.person }}</td>{% endif %}
           <td>
-            <div class="task">{% if e.ticket %}<a href="{% url 'tickets:ticket_detail' pk=e.ticket_id %}">{{ e.task_name }}</a>{% else %}{{ e.task_name }}{% endif %}
+            <div class="task task-clamp"><span class="clamp-2" title="{{ e.task_name }}">{% if e.ticket %}<a href="{% url 'tickets:ticket_detail' pk=e.ticket_id %}">{{ e.task_name }}</a>{% else %}{{ e.task_name }}{% endif %}</span>
               {% if e.is_auto_logged %}<span class="bdg bdg-blue" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
               {% if e.source %}<span class="bdg bdg-outline" title="Submitted through the DSR MCP from {{ e.source }}">via MCP</span>{% endif %}</div>
             {% if e.elapsed %}<p class="sub">Created {{ e.created_time|date:"j M H:i" }} → completed {{ e.completed_time|date:"j M H:i" }} · open for <b>{{ e.elapsed }}</b>{% if e.needs_time %} (not counted){% endif %}</p>{% endif %}

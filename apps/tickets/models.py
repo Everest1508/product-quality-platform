@@ -1,8 +1,12 @@
+import logging
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 from apps.core.models import TenantScopedModel
+
+logger = logging.getLogger(__name__)
 
 
 class Ticket(TenantScopedModel):
@@ -186,7 +190,8 @@ class Ticket(TenantScopedModel):
                 from apps.dsr.service import auto_log_ticket_dsr
                 auto_log_ticket_dsr(self, actor=actor)
             except Exception:
-                pass
+                # Best-effort: a DSR failure must not block the status change, but it must not vanish either.
+                logger.exception("DSR auto-log failed for ticket %s", self.pk)
 
     def set_assignees(self, users, actor=None):
         """Replace the assignee set and keep the primary ``assigned_to`` in sync.

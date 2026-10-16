@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.5] "Veery" — 2026-10-16 · long task names no longer stretch the DSR log
+
+> In short: the DSR log fits more entries on screen because long task names stop at two lines, with the full name shown when you hover.
+
+### Better
+
+- **Long task names in the DSR log stop at two lines.** A long commit message used to make its row very tall. It now shows two lines, and the full name appears when you hover over it.
+
 ## [1.52.4] "Towhee" — 2026-10-16 · long lists scroll, and the DSR log shows more rows
 
 > In short: dropdown lists and the date picker stay open while you scroll them, and the DSR log table is no longer squeezed into a small box.

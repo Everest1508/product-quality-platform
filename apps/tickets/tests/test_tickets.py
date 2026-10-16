@@ -40,6 +40,18 @@ class TicketModelTest(TestCase):
             ticket.transition_to(status)
         self.assertEqual(ticket.status, "closed")
 
+    def test_dsr_auto_log_failure_is_logged_not_swallowed(self):
+        from unittest import mock
+        ticket = Ticket.objects.create(company=self.company, title="Test", created_by=self.user)
+        ticket.transition_to("assigned")
+        ticket.transition_to("in_progress")
+        ticket.transition_to("testing")
+        with mock.patch("apps.dsr.service.auto_log_ticket_dsr", side_effect=RuntimeError("boom")), \
+                self.assertLogs("apps.tickets.models", level="ERROR") as logs:
+            ticket.transition_to("resolved")
+        self.assertEqual(ticket.status, "resolved")  # the status change still goes through
+        self.assertIn("DSR auto-log failed", logs.output[0])
+
 
 class TicketViewTest(TestCase):
     def setUp(self):
