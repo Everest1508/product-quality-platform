@@ -1,7 +1,11 @@
 import json
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 
+from apps.accounts.access import NO_WORKSPACE_MESSAGE, has_no_workspace
 from apps.accounts.models import Membership
 from apps.core.templatetags.toast_tags import TOAST_TAGS
 
@@ -27,6 +31,12 @@ class CurrentCompanyMiddleware:
                 )
                 request.company = membership.company
                 request.company_role = membership.role
+            elif has_no_workspace(request.user):
+                # Removed from their team while signed in: end the session
+                # rather than leave them in the app or offer company setup.
+                logout(request)
+                messages.error(request, NO_WORKSPACE_MESSAGE)
+                return redirect("accounts:login")
 
         response = self.get_response(request)
         return response

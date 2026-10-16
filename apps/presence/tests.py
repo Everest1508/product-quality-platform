@@ -79,6 +79,26 @@ class PresenceSocketTest(TransactionTestCase):
 
         async_to_sync(run)()
 
+    def test_removed_member_is_disconnected_on_next_ping(self):
+        async def run():
+            comm = self.communicator("bob")
+            connected, _ = await comm.connect()
+            self.assertTrue(connected)
+            await comm.receive_json_from()
+            await database_sync_to_async(
+                Membership.objects.filter(user=self.bob, company=self.company).delete
+            )()
+            await comm.send_json_to({"type": "ping"})
+            msg = await comm.receive_output()
+            self.assertEqual(msg["type"], "websocket.close")
+            self.assertEqual(msg["code"], 4403)
+            await comm.disconnect()  # the server runs disconnect() after the close
+            self.assertFalse(
+                await database_sync_to_async(PresenceSession.objects.filter(user=self.bob).exists)()
+            )
+
+        async_to_sync(run)()
+
     def test_a_foreign_origin_is_refused_even_with_a_valid_session(self):
         async def run():
             comm = self.communicator("ann", origin=b"https://evil.example")

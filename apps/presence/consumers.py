@@ -56,6 +56,10 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content, **kwargs):
         kind = content.get("type") if isinstance(content, dict) else None
+        if kind in ("ping", "activity") and not await self._still_member():
+            # Removed while the tab was open; disconnect() clears the session row.
+            await self.close(code=4403)
+            return
         if kind == "ping":
             changed = await self._touch()
         elif kind == "activity":
@@ -93,6 +97,10 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
         session = self.scope.get("session")
         active = session.get(settings.ACTIVE_COMPANY_SESSION_KEY) if session else None
         return active if active in memberships else memberships[0]
+
+    @database_sync_to_async
+    def _still_member(self):
+        return Membership.objects.filter(user=self.user, company_id=self.company_id).exists()
 
     @database_sync_to_async
     def _create_session(self):

@@ -125,7 +125,7 @@ Project-level `templates/` (plus `APP_DIRS: True`). `core/base.html` is the app 
 
 ### Auth
 
-Custom `accounts.User` (`AbstractUser` + `discord_id`). django-allauth is installed but login/logout/signup are handled by `apps/accounts/views.py` (email + password). A user with no `Membership` is sent to `accounts:company_setup`, which creates a `Company` and an owner `Membership`.
+Custom `accounts.User` (`AbstractUser` + `discord_id`). django-allauth is installed but login/logout/signup are handled by `apps/accounts/views.py` (email + password). A user with no `Membership` is sent to `accounts:company_setup` (which creates a `Company` and an owner `Membership`) only if they are staff or the install has no company yet. Any other user with no `Membership` is a removed team member: `apps/accounts/access.py::has_no_workspace` refuses their sign-in in `LoginView` and signs them out mid-session in `CurrentCompanyMiddleware`, with a message.
 
 ### Serop integration (`apps/serop/`, `apps/accounts` OAuth views)
 

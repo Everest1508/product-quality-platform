@@ -63,7 +63,7 @@ To start over, delete `db.sqlite3` and run `./bootstrap.sh` again.
 python manage.py runserver 8010
 ```
 
-Sign in at <http://localhost:8010>. A user with no company is sent to **Company setup** to create one.
+Sign in at <http://localhost:8010>. On an empty install the first user, or any staff account, is sent to **Company setup** to create the first company. Once a company exists, anyone else with no company (for example a member who was removed) is told to ask an owner or admin to add them.
 
 ## Running the tests
 
@@ -144,6 +144,6 @@ The `.server-operator/` folder has deploy and maintenance command files for the 
 | Sign-in or a form says CSRF verification failed. | Your address is not in `CSRF_TRUSTED_ORIGINS`. |
 | `ImproperlyConfigured: ... must be set when DJANGO_DEBUG is off`. | Set `DJANGO_SECRET_KEY` and `SHARED_SERVER_ENCRYPTION_KEY`. |
 | `DisallowedHost`. | Add the hostname to `DJANGO_ALLOWED_HOSTS`. |
-| Everything redirects to **Company setup**. | That user has no company yet. Create one, or use a demo user. |
+| Everything redirects to **Company setup**. | That user has no company yet and is staff, or the install has no company at all. Create one, or use a demo user. Any other user with no company is signed out with a message instead. |
 | Reminders, rules or to-do alerts never arrive. | The scheduled commands are not running. See *Background jobs*. |
 | Port already in use. | Pick another: `python manage.py runserver 8020`. |

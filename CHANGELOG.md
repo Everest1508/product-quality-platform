@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.6] "Wheatear" — 2026-10-16 · a team member you remove can no longer sign in
+
+> In short: a person you remove from a team can no longer sign in or start a company of their own, and sees a message telling them to ask an owner or admin to add them back.
+
+### Fixed
+
+- **A removed team member can no longer sign in.** Removing someone used to leave their login working, and their next page offered to set up a brand new company that they would own. They are now stopped at the sign-in page with a message to ask an owner or admin to add them back.
+- **Someone removed while signed in is signed out on their next click.** They no longer stay in the app or get offered a new company: they land on the sign-in page with the same message. People who are still in another workspace simply lose the one they were removed from.
+- **A removed member's open tab stops showing who is online.** The live "online now" list used to keep updating in a tab that was already open when the person was removed. It now disconnects within a few seconds of the next heartbeat.
+
+### Security
+
+- **Starting a new company is closed to people who belong to no workspace.** It is still there for the first person on a new install and for staff accounts, so setting up a fresh install works as before.
+
 ## [1.52.5] "Veery" — 2026-10-16 · long task names no longer stretch the DSR log
 
 > In short: the DSR log fits more entries on screen because long task names stop at two lines, with the full name shown when you hover.

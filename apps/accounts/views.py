@@ -12,6 +12,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+from apps.accounts.access import NO_WORKSPACE_MESSAGE, has_no_workspace
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
 from apps.accounts import throttle
 from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
@@ -73,6 +74,11 @@ class LoginView(View):
                 authenticated = authenticate(request, username=user.username, password=password)
                 if authenticated:
                     throttle.record_success(request, username_or_email)
+                    if has_no_workspace(authenticated):
+                        # Said only once the password is right, so it cannot be
+                        # used to probe which accounts exist.
+                        form.add_error(None, NO_WORKSPACE_MESSAGE)
+                        return self._render(request, form, request.POST.get("next"))
                     login(request, authenticated)
                     return redirect(destination or "accounts:dashboard")
             throttle.record_failure(request, username_or_email)
