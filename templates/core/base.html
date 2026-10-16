@@ -671,7 +671,7 @@
   });
 
   window.addEventListener('resize', hidePopover);
-  window.addEventListener('scroll', hidePopover, true);
+  window.addEventListener('scroll', function(e) { if (!popover.contains(e.target)) hidePopover(); }, true);
 })();
 
 // Custom Select Dropdown Component Script
@@ -768,7 +768,7 @@
   }, true);
 
   window.addEventListener('resize', hideSelectPopover);
-  window.addEventListener('scroll', hideSelectPopover, true);
+  window.addEventListener('scroll', function(e) { if (!selectPopover.contains(e.target)) hideSelectPopover(); }, true);
 })();
 
 // Custom Tooltip Component Script

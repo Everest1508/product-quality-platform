@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.4] "Towhee" — 2026-10-16 · long lists scroll, and the DSR log shows more rows
+
+> In short: dropdown lists and the date picker stay open while you scroll them, and the DSR log table is no longer squeezed into a small box.
+
+### Fixed
+
+- **Long dropdown lists can be scrolled again.** Scrolling a dropdown or the date picker used to close it before you could reach the last options. It now stays open.
+- **The DSR log shows many more rows at once.** The table is no longer boxed into a small scrolling area, and category and project names stay on one line so each row is shorter.
+
 ## [1.52.3] "Sandpiper" — 2026-10-16 · punching in no longer fails when the app is busy
 
 > In short: checking in or out waits its turn when other people are saving at the same moment, instead of showing a "database is locked" error.

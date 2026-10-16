@@ -79,12 +79,12 @@
 
 <div class="card-flush">
   {% if days %}
-    <div style="overflow-x:auto;max-height:70vh">
+    <div style="overflow-x:auto">
     <table class="tbl">
       <thead><tr>
         <th class="c" style="width:7.5rem">Date</th>
         {% if everyone %}<th style="width:9rem">Employee</th>{% endif %}
-        <th style="min-width:16rem">Task</th><th style="width:9rem">Project</th><th style="width:10rem">Category</th>
+        <th style="min-width:16rem">Task</th><th style="width:9rem">Project</th><th style="width:11rem">Category</th>
         <th class="c" style="width:6rem">Time</th><th class="c" style="width:8rem">Status</th><th class="c" style="width:6rem">Actions</th>
       </tr></thead>
       <tbody>
@@ -99,8 +99,8 @@
             {% if e.elapsed %}<p class="sub">Created {{ e.created_time|date:"j M H:i" }} → completed {{ e.completed_time|date:"j M H:i" }} · open for <b>{{ e.elapsed }}</b>{% if e.needs_time %} (not counted){% endif %}</p>{% endif %}
             {% if e.notes %}<p class="sub">{{ e.notes }}</p>{% endif %}
           </td>
-          <td>{% if e.product %}{{ e.product.name }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
-          <td>{{ e.get_category_display }}</td>
+          <td style="white-space:nowrap">{% if e.product %}{{ e.product.name }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+          <td style="white-space:nowrap">{{ e.get_category_display }}</td>
           <td class="c" style="font-weight:600;white-space:nowrap">{% if e.needs_time %}{% if e.can_change %}<button type="button" class="btn btn-sm" style="color:var(--orange);border-color:color-mix(in srgb,var(--orange) 50%,transparent)" onclick="document.getElementById('dsr-needs').showModal()">{% icon 'plus' 'ic' %}Add time</button>{% else %}<span style="font-weight:400;font-size:12px;color:var(--muted)" title="The time the ticket was open is not counted">not counted</span>{% endif %}{% else %}{{ e.hours_spent|hm }}{% endif %}</td>
           <td class="c"><span class="bdg {% if e.status == 'completed' %}bdg-green{% elif e.status == 'in_progress' %}bdg-blue{% elif e.status == 'blocked' %}bdg-red{% endif %}">{{ e.get_status_display }}</span></td>
           <td class="c" style="white-space:nowrap">
