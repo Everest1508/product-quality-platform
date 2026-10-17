@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.MyAttendanceView.as_view(), name="my_attendance"),
     path("punch/", views.AttendancePunchView.as_view(), name="punch"),
     path("team/", views.TeamAttendanceView.as_view(), name="team_attendance"),
+    path("weekly-off/", views.WeeklyOffView.as_view(), name="weekly_off"),
     path("timesheet/", views.TimesheetView.as_view(), name="timesheet"),
     path("timesheet/<int:user_id>/", views.TimesheetDetailView.as_view(), name="timesheet_detail"),
     path("corrections/", views.CorrectionQueueView.as_view(), name="corrections"),

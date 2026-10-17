@@ -69,6 +69,7 @@ forgotten-check-out warning, which is the reason they opened the page.
     <span class="stat-strip-value">
       {% if today_record and today_record.is_complete %}<span class="pill resolved">done</span>
       {% elif today_record and today_record.is_open %}<span class="pill open">on clock</span>
+      {% elif is_weekly_off %}<span class="pill closed">weekly off</span>
       {% else %}<span class="pill closed">not in</span>{% endif %}
     </span>
   </div>
@@ -106,7 +107,7 @@ forgotten-check-out warning, which is the reason they opened the page.
       <li><i class="mg-part"></i><span>Part days</span><b>{{ month_counts.part }}</b></li>
       <li><i class="mg-open"></i><span>On the clock</span><b>{{ month_counts.open }}</b></li>
       <li><i class="mg-stale"></i><span>No check-out</span><b>{{ month_counts.stale }}</b></li>
-      <li><i class="mg-none"></i><span>Weekdays with no punch</span><b>{{ month_counts.none }}</b></li>
+      <li><i class="mg-none"></i><span>Working days with no punch</span><b>{{ month_counts.none }}</b></li>
     </ul>
   </div>
 </section>

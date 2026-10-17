@@ -113,7 +113,7 @@ Reuse before you write. Each is a class in `_components.css`; the markup is on a
 - **Card** `.card` (white, 1px border, `--radius-lg`, `--space-5` padding). Quiet blocks use `--panel`. **Ledger** `.ledger` with `.lrow` for a list of rows.
 - **Button** `.btn`, `.btn-primary` (one per view), `.btn-danger`, `.btn-sm`, `.icon-btn`. **Badge** `.bdg` with `-green -orange -red -blue -outline`; **pill** `.pill` for ticket status.
 - **Tabs** `.seg` (links or buttons, current one `.is-on`). **Dialog** native `<dialog class="dlg">` with `.dlg-head`, `.dlg-body`, `.dlg-foot`; it opens centred and closes on Esc and on the backdrop. Dropdowns and date pickers open *inside* an open dialog.
-- **Confirm** add `data-confirm`, `data-confirm-text`, `data-confirm-label` to a form; every delete asks first.
+- **Confirm** add `data-confirm="Delete this?"` (the value is the title; a bare attribute never asks), `data-confirm-text` and `data-confirm-label` to a form; every delete asks first.
 - **Dropdown** `{% dropdown %}`; native `<select>` is enhanced by the same popover. **Toast** `window.pqToast(text, kind)` or a Django `messages` call.
 - **Avatar** `.kt-av` (initial in a circle, `.lg` and `.more` variants). **Empty state** `.empty-state`: one line of what is missing and one line of what to do.
 - **Home bento** `.hm-bento`: a 12 column grid whose cards stretch to the row, so nothing leaves a hole. **Projects** use `.pj-*`: board columns, cards, journey track, lifecycle feed, Pod and phase pickers.

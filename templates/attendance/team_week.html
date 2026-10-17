@@ -37,7 +37,7 @@
     <thead>
       <tr>
         <th class="tw-who">Employee</th>
-        {% for d in days %}<th class="{% if d == today %}is-today{% endif %}{% if d.weekday >= 5 %} is-weekend{% endif %}">{{ d|date:"D" }} <span>{{ d|date:"j" }}</span></th>{% endfor %}
+        {% for d in days %}<th class="{% if d.date == today %}is-today{% endif %}{% if d.off %} is-weekend{% endif %}">{{ d.date|date:"D" }} <span>{{ d.date|date:"j" }}</span></th>{% endfor %}
         <th class="tw-total">Week</th>
       </tr>
     </thead>

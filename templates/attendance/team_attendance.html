@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}Team Attendance — PQ Platform{% endblock %}
 
@@ -19,6 +20,7 @@
       <a href="{% url 'attendance:team_attendance' %}" role="tab" class="active" aria-selected="true">Today</a>
       <a href="?view=week" role="tab">Week</a>
     </div>
+    <button type="button" class="btn" onclick="document.getElementById('wo-dlg').showModal()" title="Choose the days nobody is expected to work">{% icon 'calendar-days' 'ic' %}Weekly off: {{ weekly_off_label }}</button>
     <a href="{% url 'attendance:timesheet' %}" class="btn" style="gap:6px;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       Monthly timesheet
@@ -27,4 +29,34 @@
 </div>
 
 {% include "attendance/partials/_team_body.html" %}
+
+{% comment %}
+Weekly off days. Kept outside the team body, which htmx swaps, so the dialog
+survives a refresh. Plain checkboxes inside labels: the choice posts without
+JavaScript and keyboard focus lands on a real control.
+{% endcomment %}
+<dialog class="dlg" id="wo-dlg">
+  <form method="post" action="{% url 'attendance:weekly_off' %}">
+    {% csrf_token %}
+    <div class="dlg-head">
+      <h2>Weekly off days</h2>
+      <p>Nobody is expected in on these days. Work on them is never late, short or absent, and nothing is deducted.</p>
+    </div>
+    <div class="dlg-body">
+      <div class="field">
+        <label id="wo-label">Days off each week</label>
+        <div class="chips" role="group" aria-labelledby="wo-label">
+          {% for n, short, long in weekdays %}
+          <label class="chip chip-check" title="{{ long }}"><input type="checkbox" name="off_days" value="{{ n }}"{% if n in weekly_off %} checked{% endif %}>{{ short }}</label>
+          {% endfor %}
+        </div>
+        <p class="field-hint">Payroll and leave count these days as non-working from now on; pay runs you have already locked do not change. Tick none if you work every day.</p>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button>
+      <button type="submit" class="btn btn-primary">{% icon 'check' 'ic' %}Save weekly offs</button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}

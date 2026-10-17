@@ -62,6 +62,7 @@
       </div>
       <div class="ex-amt">{{ e.amount_label }}</div>
       <div class="lactions">
+        <a href="{% url 'expenses:expense_edit' e.pk %}#discussion" class="btn btn-sm" title="{% if e.comment_count %}{{ e.comment_count }} comment{{ e.comment_count|pluralize }}{% else %}Start a discussion{% endif %}">{% icon 'messages-square' 'ic' %}{% if e.comment_count %}{{ e.comment_count }}{% else %}Discuss{% endif %}</a>
         <a href="{% url 'expenses:expense_edit' e.pk %}" class="btn btn-sm">{% icon 'edit' 'ic' %}Edit</a>
         <form method="post" action="{% url 'expenses:expense_delete' e.pk %}" data-confirm data-confirm-text="Delete {{ e.category_label }}? This cannot be undone." data-confirm-label="Delete">
           {% csrf_token %}<button type="submit" class="icon-btn" aria-label="Delete {{ e.category_label }}">{% icon 'trash' 'ic' %}</button>

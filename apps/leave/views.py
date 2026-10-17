@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.views import View
 
 from apps.accounts.models import Membership
+from apps.attendance.models import weekly_off_for
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.leave import service
@@ -257,7 +258,9 @@ class LeaveSplitPreviewView(CompanyMemberRequiredMixin, View):
 
         try:
             first, last = _parse_dates(start, end)
-            days = Decimal("0.5") if half else service.working_days(first, last)
+            days = Decimal("0.5") if half else service.working_days(
+                first, last, weekly_off_for(request.company)
+            )
         except ValidationError:
             return panel()
         if days <= 0:

@@ -47,16 +47,16 @@
             <p class="hm-sub">
               {% if attendance.on_leave_today %}On approved leave
               {% elif rec.is_open %}Working since {{ rec.check_in|date:"g:i A" }}
-              {% elif rec %}{{ rec.worked_hours|floatformat:"1" }}h · {{ rec.check_in|date:"g:i A" }} → {{ rec.check_out|date:"g:i A" }}
-              {% elif today.weekday >= 5 %}Weekend
+              {% elif rec %}{{ attendance.today_minutes|hours }}h · {{ rec.check_in|date:"g:i A" }} → {{ rec.check_out|date:"g:i A" }}
+              {% elif attendance.is_weekly_off %}Weekly off · punch in only if you work
               {% else %}Not punched in{% endif %}
             </p>
           </div>
           {% if not attendance.on_leave_today %}
             {% if rec.is_open %}
-              <form method="post" action="{% url 'attendance:punch' %}" data-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ rec.check_in|date:'U' }}000">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
-            {% elif not rec and today.weekday < 5 %}
-              <form method="post" action="{% url 'attendance:punch' %}">{% csrf_token %}<button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch in</button></form>
+              <form method="post" action="{% url 'attendance:punch' %}" data-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ rec.check_in|date:'U' }}000">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboards:index' %}"><button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
+            {% elif not rec %}
+              <form method="post" action="{% url 'attendance:punch' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboards:index' %}"><button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch in</button></form>
             {% endif %}
           {% endif %}
         </div>

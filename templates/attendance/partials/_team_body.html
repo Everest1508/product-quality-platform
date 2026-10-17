@@ -12,6 +12,7 @@
           {% elif me.state == 'done' %}{{ me.record.check_in|date:"g:i A" }} → {{ me.record.check_out|date:"g:i A" }} · {{ me.net_formatted }} worked
           {% elif me.state == 'leave' %}On approved leave today
           {% elif me.state == 'stale' %}Checked in {{ me.record.date|date:"M j" }} and never checked out
+          {% elif me.state == 'off' %}Weekly off: check in any time you work
           {% else %}You have not checked in yet{% endif %}
         </span>
       </div>
@@ -94,7 +95,7 @@
   <div class="team-grid">
     <section class="card roster" aria-label="Today's attendance">
       <header class="roster-head">
-        <h2>Today <span class="text-muted">· {{ today|date:"l, F j" }}</span></h2>
+        <h2>Today <span class="text-muted">· {{ today|date:"l, F j" }}</span>{% if is_off_today %} <span class="pill closed">Weekly off</span>{% endif %}</h2>
         <div class="chips" role="group" aria-label="Filter the roster">
           <button type="button" class="chip" :class="{ 'is-on': filter === 'all' }" @click="filter = 'all'">All</button>
           <button type="button" class="chip" :class="{ 'is-on': filter === 'clock' }" @click="filter = 'clock'">On the clock</button>
@@ -131,6 +132,7 @@
               {% elif row.state == 'stale' %}<span class="pill high" title="Checked in on {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>
               {% elif row.state == 'clock' %}<span class="pill open">On clock</span>
               {% elif row.state == 'done' %}<span class="pill resolved">Complete</span>
+              {% elif row.state == 'off' %}<span class="pill closed" title="Weekly off: nobody is expected in">Weekly off</span>
               {% else %}<span class="pill closed">Absent</span>{% endif %}
             </td>
             <td>{{ row.record.check_in|date:"g:i A"|default:"—" }}</td>

@@ -198,6 +198,15 @@ def month_bounds(year, month):
     return first, last
 
 
+# Monday is 0 and Sunday is 6, the same numbers `date.weekday()` returns.
+WEEKEND = (5, 6)
+
+
+def default_weekly_off():
+    """A function, because a JSONField default must not be one shared list."""
+    return list(WEEKEND)
+
+
 class WorkShift(TenantScopedModel):
     """A company's office hours, and the lateness rules that hang off them.
 
@@ -247,6 +256,13 @@ class WorkShift(TenantScopedModel):
     )
     penalty_currency = models.CharField(max_length=8, default="INR")
 
+    weekly_off_days = models.JSONField(
+        default=default_weekly_off,
+        blank=True,
+        help_text="Weekdays nobody is expected to work, Monday is 0 and Sunday is 6. "
+        "Work on these days is never late, short or absent.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -268,6 +284,14 @@ class WorkShift(TenantScopedModel):
         )
         return max(0, int(span.total_seconds() // 60) - self.break_minutes)
 
+    @property
+    def off_weekdays(self):
+        return frozenset(self.weekly_off_days or ())
+
+    def is_weekly_off(self, day):
+        """True on a weekly off day: no start time, no grace, no target hours."""
+        return day.weekday() in self.off_weekdays
+
     def band_for_late_minutes(self, late_minutes):
         """`"on_time" | "minor" | "major" | "half_day"` for a lateness.
 
@@ -281,6 +305,20 @@ class WorkShift(TenantScopedModel):
         if late_minutes <= self.major_band_end_minutes:
             return "major"
         return "half_day"
+
+
+def weekly_off_for(company):
+    """The weekdays `company` has off, without creating a shift row.
+
+    Payroll and leave only ever read this, so a company that never opened
+    attendance still gets the default (Saturday and Sunday).
+    """
+    days = (
+        WorkShift.objects.filter(company=company)
+        .values_list("weekly_off_days", flat=True)
+        .first()
+    )
+    return frozenset(WEEKEND if days is None else days)
 
 
 class AttendanceCorrection(TenantScopedModel):

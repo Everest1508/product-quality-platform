@@ -4,8 +4,10 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Company, Membership, User
+from apps.dashboards.models import ActivityLog
 from apps.expenses import service
-from apps.expenses.models import Expense
+from apps.expenses.models import Expense, ExpenseComment
+from apps.notifications.models import Notification
 
 
 class MoneyFormatTest(TestCase):
@@ -130,3 +132,148 @@ class ExpenseViewsTest(TestCase):
         s[settings.ACTIVE_COMPANY_SESSION_KEY] = self.other_co.pk
         s.save()
         self.assertEqual(self.client.get(reverse("expenses:expense_edit", args=[e.pk])).status_code, 404)
+
+
+class ExpenseDiscussionTest(TestCase):
+    """A small thread on each expense, for the people who can open the ledger."""
+
+    def setUp(self):
+        from django.conf import settings
+
+        self.settings = settings
+        self.co = Company.objects.create(name="Acme", slug="acme")
+        self.other_co = Company.objects.create(name="Other", slug="other")
+        self.owner = User.objects.create_user("owner", password="x", first_name="Olive", last_name="Owner")
+        self.admin = User.objects.create_user("admin", password="x")
+        self.dev = User.objects.create_user("dev", password="x")
+        for user, role in ((self.owner, "owner"), (self.admin, "admin"), (self.dev, "developer")):
+            Membership.objects.create(user=user, company=self.co, role=role)
+        self.expense = Expense.objects.create(
+            company=self.co, amount_paise=30000, date=date(2026, 10, 14), category="tea",
+            paid_by=self.owner, created_by=self.owner,
+        )
+        self.url = reverse("expenses:expense_comment", args=[self.expense.pk])
+        self.page = reverse("expenses:expense_edit", args=[self.expense.pk])
+
+    def login(self, user):
+        self.client.force_login(user)
+        s = self.client.session
+        s[self.settings.ACTIVE_COMPANY_SESSION_KEY] = self.co.pk
+        s.save()
+
+    def say(self, user, text="Was this the October bill?"):
+        self.login(user)
+        return self.client.post(self.url, {"body": text})
+
+    def test_a_comment_is_saved_shown_and_lands_back_on_the_thread(self):
+        res = self.say(self.owner)
+        self.assertRedirects(res, self.page + "#discussion", fetch_redirect_response=False)
+        c = ExpenseComment.objects.get()
+        self.assertEqual((c.expense, c.author, c.company, c.body), (self.expense, self.owner, self.co, "Was this the October bill?"))
+        page = self.client.get(self.page)
+        self.assertContains(page, "Discussion")
+        self.assertContains(page, "Olive Owner")
+        self.assertContains(page, "Was this the October bill?")
+
+    def test_the_toast_arrives_with_the_page_after_the_redirect(self):
+        self.login(self.owner)
+        res = self.client.post(self.url, {"body": "hello"}, follow=True)
+        self.assertContains(res, 'id="toast-seed"')
+        self.assertContains(res, "Comment added.")
+
+    def test_the_other_owners_and_admins_are_told_but_not_the_author_or_a_developer(self):
+        self.say(self.owner, "Please check the amount")
+        told = Notification.objects.filter(kind="comment")
+        self.assertEqual([n.user for n in told], [self.admin])
+        n = told.get()
+        self.assertEqual(n.url, f"/expenses/{self.expense.pk}/#discussion")
+        self.assertIn("Olive Owner commented on Tea (₹300)", n.title)
+        self.assertEqual(n.body, "Please check the amount")
+        self.assertEqual(n.actor, self.owner)
+
+    def test_a_blank_or_huge_comment_is_refused_with_a_reason(self):
+        self.login(self.owner)
+        for text, message in (("   ", "Write something before you send it."), ("x" * 2001, "Keep a comment under 2,000 characters.")):
+            with self.subTest(len=len(text)):
+                res = self.client.post(self.url, {"body": text}, follow=True)
+                self.assertContains(res, message)
+        self.assertEqual(ExpenseComment.objects.count(), 0)
+        self.assertEqual(Notification.objects.count(), 0)
+
+    def test_the_comment_is_shown_as_text_never_as_markup(self):
+        self.say(self.owner, "<script>alert(1)</script>")
+        page = self.client.get(self.page)
+        self.assertNotContains(page, "<script>alert(1)</script>")
+        self.assertContains(page, "&lt;script&gt;alert(1)&lt;/script&gt;")
+
+    def test_only_owners_and_admins_can_read_or_write_in_it(self):
+        self.say(self.owner)
+        self.login(self.dev)
+        self.assertEqual(self.client.get(self.page).status_code, 403)
+        self.assertEqual(self.client.post(self.url, {"body": "hi"}).status_code, 403)
+        c = ExpenseComment.objects.get()
+        delete = reverse("expenses:expense_comment_delete", args=[self.expense.pk, c.pk])
+        self.assertEqual(self.client.post(delete).status_code, 403)
+        self.assertEqual(ExpenseComment.objects.count(), 1)
+
+    def test_you_can_delete_your_own_comment_and_only_yours(self):
+        self.say(self.owner, "mine")
+        self.say(self.admin, "theirs")
+        mine, theirs = ExpenseComment.objects.order_by("id")
+        delete = lambda c: reverse("expenses:expense_comment_delete", args=[self.expense.pk, c.pk])
+
+        self.login(self.owner)
+        self.assertEqual(self.client.post(delete(theirs)).status_code, 403)  # not even an owner
+        self.assertEqual(ExpenseComment.objects.count(), 2)
+        res = self.client.post(delete(mine), follow=True)
+        self.assertContains(res, "Comment deleted.")
+        self.assertEqual(list(ExpenseComment.objects.all()), [theirs])
+        # The delete button is only drawn on your own comments, and it asks first. The
+        # confirm box needs a title in `data-confirm`; a bare attribute never asks.
+        self.say(self.owner, "again")
+        page = self.client.get(self.page)
+        self.assertNotContains(page, delete(theirs))
+        self.assertContains(page, 'data-confirm="Delete your comment?"')
+
+    def test_a_comment_cannot_be_reached_through_another_expense_or_company(self):
+        self.say(self.owner)
+        c = ExpenseComment.objects.get()
+        other = Expense.objects.create(
+            company=self.co, amount_paise=100, date=date(2026, 10, 14), category="tea",
+            paid_by=self.owner, created_by=self.owner,
+        )
+        self.assertEqual(
+            self.client.post(reverse("expenses:expense_comment_delete", args=[other.pk, c.pk])).status_code, 404
+        )
+        out = User.objects.create_user("out", password="x")
+        Membership.objects.create(user=out, company=self.other_co, role="owner")
+        self.client.force_login(out)
+        s = self.client.session
+        s[self.settings.ACTIVE_COMPANY_SESSION_KEY] = self.other_co.pk
+        s.save()
+        self.assertEqual(self.client.post(self.url, {"body": "hi"}).status_code, 404)
+
+    def test_the_ledger_shows_how_many_comments_each_expense_has(self):
+        listing = lambda: self.client.get(reverse("expenses:expense_list") + "?month=all")
+        self.login(self.owner)
+        self.assertContains(listing(), "Discuss")
+        self.say(self.owner, "one")
+        self.say(self.admin, "two")
+        self.login(self.owner)
+        page = listing()
+        self.assertEqual(page.context["rows"][0].comment_count, 2)
+        self.assertContains(page, 'title="2 comments"')
+
+    def test_deleting_the_expense_takes_its_thread_with_it(self):
+        self.say(self.owner)
+        self.client.post(reverse("expenses:expense_delete", args=[self.expense.pk]))
+        self.assertEqual(ExpenseComment.objects.count(), 0)
+
+    def test_comments_are_audited(self):
+        self.say(self.owner)
+        c = ExpenseComment.objects.get()
+        self.client.post(reverse("expenses:expense_comment_delete", args=[self.expense.pk, c.pk]))
+        kinds = list(ActivityLog.objects.filter(company=self.co).order_by("id").values_list("event_type", flat=True))
+        self.assertEqual(kinds, ["expense_commented", "expense_comment_deleted"])
+        # The words themselves stay out of the audit trail.
+        self.assertFalse(ActivityLog.objects.filter(description__contains="October").exists())

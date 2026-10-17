@@ -1,6 +1,6 @@
 """Nudges to check in and out. Run from cron every few minutes (`manage.py send_attendance_reminders`).
 
-Only people who actually use attendance (a punch in the last 30 days) are nudged, never on weekends, holidays or
+Only people who actually use attendance (a punch in the last 30 days) are nudged, never on weekly offs, holidays or
 approved leave, and each person gets each kind at most once a day. Switching the kind off in the profile mutes it,
 because everything goes through `notifications.service.notify`.
 """
@@ -26,9 +26,9 @@ def send(company, now=None, dry_run=False):
     """Create the reminders that are due right now. Returns how many were (or would be) sent."""
     now = now or timezone.now()
     today = timezone.localtime(now).date()
-    if today.weekday() >= 5 or today in leave._holiday_dates(company, today, today):
-        return 0
     shift = service.shift_for(company)
+    if shift.is_weekly_off(today) or today in leave._holiday_dates(company, today, today):
+        return 0
     start = _at(today, shift.start_time) + timedelta(minutes=min(CHECK_IN_AFTER, shift.grace_minutes))
     end = _at(today, shift.end_time)
     User = get_user_model()

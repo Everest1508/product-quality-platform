@@ -15,7 +15,7 @@ TICKET_MARKS = (1, 10, 25, 50, 100, 250, 500, 1000)
 def on_time_streak(company, user, today=None):
     """Working days in a row, up to today, that the person checked in within the grace period.
 
-    Weekends, company holidays and approved leave neither count nor break the run. A day today with no punch yet
+    Weekly offs, company holidays and approved leave neither count nor break the run. A day today with no punch yet
     is skipped rather than counted against the streak.
     """
     today = today or timezone.localdate()
@@ -25,7 +25,7 @@ def on_time_streak(company, user, today=None):
     skip = leave.leave_dates(company, user, start, today) | set(leave._holiday_dates(company, start, today))
     n, day = 0, today
     while day >= start:
-        if day.weekday() < 5 and day not in skip:
+        if not shift.is_weekly_off(day) and day not in skip:
             rec = records.get(day)
             if rec is None:
                 if day != today:

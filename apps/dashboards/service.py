@@ -658,6 +658,10 @@ def _personal_attendance(company, user, today):
 
     return {
         "record": record,
+        # Net of the break, like every other hours figure; `worked_hours` is the raw span.
+        "today_minutes": net_minutes_for(record, shift) if record and record.check_in else 0,
+        # A weekly off day: the Today card still lets the person punch, but says it is optional.
+        "is_weekly_off": shift.is_weekly_off(today),
         "on_leave_today": is_on_leave(company, user, today),
         "present_days": present_days,
         "worked_minutes": minutes,
@@ -832,7 +836,7 @@ DSR_NUDGE_TITLE = "Log your DSR for today"
 def _dsr_nudge(company, user, today, attendance):
     """True when the working day is over and nothing was logged on the DSR.
 
-    Weekends, leave and days with no punch never nudge: nobody owes a DSR for a
+    Weekly offs, leave and days with no punch never nudge: nobody owes a DSR for a
     day they did not work. The first time it is true each day it also leaves one
     line in the bell, so the reminder survives closing the page.
     """
@@ -842,7 +846,7 @@ def _dsr_nudge(company, user, today, attendance):
     from apps.notifications.models import Notification
 
     record = attendance["record"]
-    if today.weekday() >= 5 or attendance["on_leave_today"] or not (record and record.check_in):
+    if attendance["is_weekly_off"] or attendance["on_leave_today"] or not (record and record.check_in):
         return False
     shift = shift_for(company)
     if timezone.localtime().time() < shift.end_time and not record.check_out:

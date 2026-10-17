@@ -5,9 +5,9 @@ of the following month would overlap a day and double-pay it.
 
 Pay is entered as a **monthly salary** where possible, and the daily rate is
 derived from it, because that is the number someone actually knows. Working
-days already exclude Sat, Sun and company holidays, so the divisor is the real
-one for that cycle and a person receives their full monthly salary in a normal
-cycle. `effective_rate` is the single place that resolves a profile to a daily
+days already exclude the company's weekly offs (Saturday and Sunday unless it
+changed them) and company holidays, so the divisor is the real one for that
+cycle and a person receives their full monthly salary in a normal cycle. `effective_rate` is the single place that resolves a profile to a daily
 rate; nothing else may divide a salary.
 
 Pay rule, kept deliberately simple:
@@ -26,6 +26,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
 
+from apps.attendance.models import WEEKEND, weekly_off_for
 from apps.attendance.service import late_penalties_in_period
 from apps.leave.models import LeaveRequest
 from apps.payroll.models import Holiday, Payslip, PayrollProfile, PayrollRun
@@ -90,18 +91,21 @@ def holiday_dates(company, start, end):
 
 
 def working_days(company, start, end, holidays=None):
-    """Working days between two dates, excluding weekends and holidays.
+    """Working days between two dates, excluding weekly offs and holidays.
 
-    Unlike the leave service (which counts plain Mon-Fri), payroll must skip
-    company holidays: a person is not payable for a day the office was shut.
+    The weekly offs are the company's (`weekly_off_for`: Saturday and Sunday
+    unless it changed them), the same days the leave service skips. Payroll
+    also skips company holidays: a person is not payable for a day the office
+    was shut. Work done on a weekly off never adds to or takes from this.
     """
     if end < start:
         return 0
     holidays = holiday_dates(company, start, end) if holidays is None else holidays
+    off = weekly_off_for(company)
     total = 0
     cursor = start
     while cursor <= end:
-        if cursor.weekday() < 5 and cursor not in holidays:
+        if cursor.weekday() not in off and cursor not in holidays:
             total += 1
         cursor += timedelta(days=1)
     return total
@@ -109,10 +113,11 @@ def working_days(company, start, end, holidays=None):
 
 def working_day_list(company, start, end):
     holidays = holiday_dates(company, start, end)
+    off = weekly_off_for(company)
     days = []
     cursor = start
     while cursor <= end:
-        if cursor.weekday() < 5 and cursor not in holidays:
+        if cursor.weekday() not in off and cursor not in holidays:
             days.append(cursor)
         cursor += timedelta(days=1)
     return days
@@ -129,7 +134,7 @@ def leave_days_in_period(company, user, start, end):
     ``LeaveRequest.days``, which charges the whole request at once.
 
     Only days the person would actually have been paid for are counted: a
-    weekend or a company holiday inside the leave span is skipped, otherwise
+    weekly off or a company holiday inside the leave span is skipped, otherwise
     leave covering a holiday would deduct pay for a day that was already free.
 
     The paid/unpaid split is the request's own, not its policy's -- an approver
@@ -148,6 +153,7 @@ def leave_days_in_period(company, user, start, end):
     paid = Decimal("0.00")
     unpaid = Decimal("0.00")
     holidays = holiday_dates(company, start, end)
+    off = weekly_off_for(company)
     for request in LeaveRequest.objects.filter(
         company=company,
         user=user,
@@ -175,7 +181,7 @@ def leave_days_in_period(company, user, start, end):
             if request.start_date >= start and request.end_date <= end
             else holiday_dates(company, request.start_date, request.end_date)
         )
-        for day in _weekdays(request.start_date, request.end_date):
+        for day in _weekdays(request.start_date, request.end_date, off):
             if day in request_holidays:
                 continue
             # Consume the bucket for *every* day in the span, including the ones
@@ -195,11 +201,12 @@ def leave_days_in_period(company, user, start, end):
     return {"paid_days": paid, "unpaid_days": unpaid}
 
 
-def _weekdays(start, end):
+def _weekdays(start, end, off=WEEKEND):
+    """The days in a range that are not weekly offs (what a leave request is charged on)."""
     days = []
     cursor = start
     while cursor <= end:
-        if cursor.weekday() < 5:
+        if cursor.weekday() not in off:
             days.append(cursor)
         cursor += timedelta(days=1)
     return days
@@ -247,7 +254,7 @@ def effective_rate(company, profile, on_date):
     """The daily rate this profile pays on `on_date`.
 
     One rule: a monthly salary is divided by the working days in the cycle
-    containing `on_date`. Sat, Sun and company holidays are already out of that
+    containing `on_date`. Weekly offs and company holidays are already out of that
     count, so a person is paid their whole salary every cycle and adding a
     holiday raises the day rate rather than cutting the pay.
 

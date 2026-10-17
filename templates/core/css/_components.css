@@ -10,6 +10,10 @@
 .chip{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:500;cursor:pointer;transition:background .12s,color .12s,border-color .12s;}
 .chip:hover{color:var(--text);border-color:var(--border-strong);}
 .chip.is-on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
+.chip-check{display:inline-flex;align-items:center;gap:var(--space-1);}
+.chip-check input{accent-color:var(--accent);margin:0;}
+.chip-check:has(input:checked){background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);}
+.chip-check:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px;}
 .chip:focus-visible,.kpi:focus-visible,.dc-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--border);}
 .dot.is-worked{background:var(--green);}

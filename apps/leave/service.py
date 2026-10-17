@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from apps.attendance.models import WEEKEND, weekly_off_for
 from apps.leave.models import LeavePolicy, LeaveRequest
 
 HALF_DAY = Decimal("0.5")
@@ -33,29 +34,30 @@ def format_days(value):
     return format(value, "f")
 
 
-def working_days(start_date, end_date):
-    """Mon-Fri days in an inclusive range.
+def working_days(start_date, end_date, off=WEEKEND):
+    """Days in an inclusive range that are not weekly offs.
 
-    Leave is charged in working days, so a Friday-to-Monday spell costs 2, not
-    4. Returns 0 for a range that contains only weekends, which the form
-    rejects separately with a clearer message.
+    `off` is the company's weekly off weekdays (`weekly_off_for`); the default is
+    Saturday and Sunday, so a Friday-to-Monday spell costs 2, not 4. Leave is
+    charged in working days. Returns 0 for a range that contains only weekly
+    offs, which the form rejects separately with a clearer message.
     """
     if not (start_date and end_date) or end_date < start_date:
         return 0
     count = 0
     cursor = start_date
     while cursor <= end_date:
-        if cursor.weekday() < 5:
+        if cursor.weekday() not in off:
             count += 1
         cursor += timedelta(days=1)
     return count
 
 
-def charge_days(start_date, end_date, is_half_day):
+def charge_days(start_date, end_date, is_half_day, off=WEEKEND):
     """Days this request costs: 0.5 for a half day, else working days."""
     if is_half_day:
         return HALF_DAY
-    return Decimal(working_days(start_date, end_date))
+    return Decimal(working_days(start_date, end_date, off))
 
 
 def policies_for(company):
@@ -226,7 +228,7 @@ def consecutive_run_days(company, user, start_date, end_date, exclude_pk=None):
     span_end = day
 
     # Decimal, like every other day count here, so `format_days` accepts it.
-    return Decimal(working_days(span_start, span_end))
+    return Decimal(working_days(span_start, span_end, weekly_off_for(company)))
 
 
 def paid_allowance(company, user, policy, start_date, end_date, days, exclude_pk=None):
@@ -265,7 +267,8 @@ def paid_allowance(company, user, policy, start_date, end_date, days, exclude_pk
     if cap is not None:
         run = consecutive_run_days(company, user, start_date, end_date, exclude_pk)
         already_booked = max(
-            Decimal("0.0"), run - Decimal(working_days(start_date, end_date))
+            Decimal("0.0"),
+            run - Decimal(working_days(start_date, end_date, weekly_off_for(company))),
         )
         headroom = max(Decimal("0.0"), cap - already_booked)
         reasons.append(
@@ -408,7 +411,7 @@ def validate_and_split(
             raise ValidationError("A half day can only be taken on a single date.")
         days = HALF_DAY
     else:
-        working = working_days(start_date, end_date)
+        working = working_days(start_date, end_date, weekly_off_for(company))
         if working == 0:
             raise ValidationError("That range is a weekend only.")
         days = Decimal(working)
@@ -456,10 +459,10 @@ def _holiday_dates(company, start, end):
     return {h.date: h.name for h in Holiday.objects.filter(company=company, date__gte=start, date__lte=end)}
 
 
-def _weekdays_between(start, end):
+def _weekdays_between(start, end, off=WEEKEND):
     days, cursor = [], start
     while cursor <= end:
-        if cursor.weekday() < 5:
+        if cursor.weekday() not in off:
             days.append(cursor)
         cursor += dt.timedelta(days=1)
     return days
@@ -475,7 +478,7 @@ def clash_for(company, user, start, end, exclude_pk=None):
     """Who else is off on the working days between `start` and `end`.
 
     Only approved leave counts: a pending request is a wish, not an absence.
-    Weekends and company holidays are skipped, because nobody is missed on them.
+    Weekly offs and company holidays are skipped, because nobody is missed on them.
     Returns the people (by name), the busiest day with its head count, and the
     team size, so a screen can say "3 of 6 are away on Oct 14".
     """
@@ -489,11 +492,12 @@ def clash_for(company, user, start, end, exclude_pk=None):
     if exclude_pk:
         others = others.exclude(pk=exclude_pk)
     holidays = _holiday_dates(company, start, end)
-    working = [d for d in _weekdays_between(start, end) if d not in holidays]
+    off = weekly_off_for(company)
+    working = [d for d in _weekdays_between(start, end, off) if d not in holidays]
     per_day = {}
     for leave in others:
         name = leave.user.get_full_name() or leave.user.username
-        for day in _weekdays_between(max(start, leave.start_date), min(end, leave.end_date)):
+        for day in _weekdays_between(max(start, leave.start_date), min(end, leave.end_date), off):
             if day in working:
                 per_day.setdefault(day, set()).add(name)
     people = sorted({n for names in per_day.values() for n in names})
@@ -534,6 +538,7 @@ def month_calendar(company, year, month, show_types=False):
     grid_end = last + dt.timedelta(days=6 - last.weekday())
 
     holidays = _holiday_dates(company, grid_start, grid_end)
+    off = weekly_off_for(company)
     requests = LeaveRequest.objects.filter(
         company=company, status__in=["approved", "pending"], start_date__lte=grid_end, end_date__gte=grid_start
     ).select_related("user", "policy")
@@ -541,7 +546,7 @@ def month_calendar(company, year, month, show_types=False):
     by_day = {}
     for leave in requests:
         name = leave.user.get_full_name() or leave.user.username
-        for day in _weekdays_between(max(grid_start, leave.start_date), min(grid_end, leave.end_date)):
+        for day in _weekdays_between(max(grid_start, leave.start_date), min(grid_end, leave.end_date), off):
             if day in holidays:
                 continue
             by_day.setdefault(day, []).append(
@@ -567,7 +572,7 @@ def month_calendar(company, year, month, show_types=False):
                     "date": cursor,
                     "in_month": cursor.month == month,
                     "is_today": cursor == today,
-                    "is_weekend": cursor.weekday() >= 5,
+                    "is_weekend": cursor.weekday() in off,
                     "holiday": holidays.get(cursor, ""),
                     "entries": entries,
                     "off_count": sum(1 for e in entries if e["status"] == "approved"),

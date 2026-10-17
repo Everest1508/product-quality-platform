@@ -22,6 +22,8 @@ class PunchCountdownTest(TestCase):
         Membership.objects.create(user=self.user, company=self.company, role="developer")
         self.client.login(username="emp", password="pass1234")
         self.shift = service.shift_for(self.company)
+        # The countdown is for a working day; a weekly off shows elapsed time instead.
+        service.set_weekly_off(self.company, [])
 
     def page(self):
         return self.client.get(reverse("attendance:my_attendance"))

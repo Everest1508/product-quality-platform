@@ -10,7 +10,8 @@ is never stale; Alpine only ticks the clock and counter between requests.
 Markup rules the tests rely on, so keep them:
 * the counter is `x-text="elapsed"` and the server renders its first value as
   "2h 03m", so the box is not blank before Alpine boots;
-* `Shift HH:MM–HH:MM` appears in every state;
+* `Shift HH:MM–HH:MM` appears in every state, weekly offs included (there it
+  is followed by "Weekly off": no lateness note, countdown or target);
 * lateness comes from `_late_note.html`, which quotes `late_penalty_for`, the
   same call the payslip uses;
 * nothing here is `aria-live` except the punch result: a counter that changes
@@ -83,12 +84,13 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
         <span class="punch-sub">
           {{ today_record.check_in|date:"g:i A" }} → {{ today_record.check_out|date:"g:i A" }}
           · Shift {{ shift_label }}
-          · {% include "attendance/partials/_late_note.html" %}
+          · {% if is_weekly_off %}Weekly off{% else %}{% include "attendance/partials/_late_note.html" %}{% endif %}
         </span>
         <div class="punch-facts">
           <span><b>{{ worked_net_formatted }}</b> worked</span>
           <span>
-            {% if worked_delta > 0 %}<b class="punch-ontime">+{{ worked_delta_formatted }}</b> over the {{ target_formatted }} day
+            {% if is_weekly_off %}No target hours on a weekly off
+            {% elif worked_delta > 0 %}<b class="punch-ontime">+{{ worked_delta_formatted }}</b> over the {{ target_formatted }} day
             {% elif worked_delta < 0 %}<b class="punch-late">{{ worked_delta_formatted }}</b> short of the {{ target_formatted }} day
             {% else %}<b class="punch-ontime">Exactly</b> the {{ target_formatted }} day{% endif %}
           </span>
@@ -99,11 +101,20 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
   {% elif today_record and today_record.is_open_today %}
     <div class="punch-hero punch-state punch-state-open">
       <div class="punch-big">
+        {% if is_weekly_off %}
+        <span class="punch-big-num" x-text="elapsed">{{ today_record.elapsed_formatted }}</span>
+        <span class="punch-big-cap">on the clock</span>
+        {% else %}
         <span class="punch-big-num" x-text="dayDone ? extra : countdown">{{ remaining_formatted }}</span>
         <span class="punch-big-cap" x-text="dayDone ? 'past your full day' : 'left in your day'">left in your day</span>
+        {% endif %}
       </div>
       <div class="punch-copy">
         <span class="punch-label">On the clock since {{ today_record.check_in|date:"g:i A" }}</span>
+        {% if is_weekly_off %}
+        <span class="punch-sub">Shift {{ shift_label }} · Weekly off, check out whenever you finish</span>
+        <div class="punch-facts"><span>No lateness or target hours today</span></div>
+        {% else %}
         <span class="punch-sub">
           Shift {{ shift_label }}
           · {% include "attendance/partials/_late_note.html" %}
@@ -115,6 +126,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
         </div>
         <div class="punch-bar" aria-hidden="true"><i :style="'width:' + dayPct + '%'" style="width:0%"></i>
         </div>
+        {% endif %}
       </div>
       <div class="punch-actions">
         {% include "attendance/partials/_punch_form.html" with label="Check out" icon="log-out" variant="out" since=since_ms %}
@@ -129,6 +141,12 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
       </div>
       <div class="punch-copy">
         <span class="punch-label">Not checked in</span>
+        {% if is_weekly_off %}
+        <span class="punch-sub">Shift {{ shift_label }} · Weekly off, work any hours you like</span>
+        {% if not punch_readonly %}
+        <p class="punch-latenote ok">Weekly off: no shift start, grace period, penalty or half day applies today.</p>
+        {% endif %}
+        {% else %}
         <span class="punch-sub">
           Shift {{ shift_label }}
           {% if starts_in_minutes %} · starts in {{ starts_in_minutes }}m{% endif %}
@@ -139,6 +157,7 @@ The Alpine object is plain JS in an attribute. The since/end values are integers
         </div>
         {% if not punch_readonly %}
         <p class="punch-latenote" :class="lateNote.cls" x-text="lateNote.text" aria-live="off"></p>
+        {% endif %}
         {% endif %}
       </div>
       <div class="punch-actions">

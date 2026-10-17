@@ -13,7 +13,7 @@
     <tbody>
       <tr>
         {% for day in days %}
-        <td class="att-cell{% if day.is_weekend %} att-weekend{% endif %}{% if day.is_today %} att-today{% endif %}{% if day.on_leave %} att-leave{% elif not day.record or not day.record.check_in %} att-absent{% endif %}"
+        <td class="att-cell{% if day.is_weekend %} att-weekend{% endif %}{% if day.is_today %} att-today{% endif %}{% if day.on_leave %} att-leave{% elif day.is_weekend %}{% elif not day.record or not day.record.check_in %} att-absent{% endif %}"
             {% if day.record and day.record.is_open %}title="Set the check-out"{% endif %}>
           {% if day.record and day.record.check_in %}
             {% comment %} An unclosed day links straight to its correction form: the grid

@@ -38,3 +38,25 @@ class Expense(TenantScopedModel):
 
     def __str__(self):
         return f"{self.category_label} ({self.amount_paise / 100:.2f})"
+
+
+class ExpenseComment(TenantScopedModel):
+    """One line of talk about an expense, between the owners and admins.
+
+    Shaped like `TicketComment`: it belongs to its parent, keeps its author when
+    the author is later removed (shown as "Someone"), and has no edit, only a
+    delete by the person who wrote it.
+    """
+
+    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        ordering = ["created_at", "id"]
+
+    def __str__(self):
+        return f"Comment by {self.author} on expense {self.expense_id}"

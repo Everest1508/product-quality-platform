@@ -952,6 +952,19 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
 .hm-more-acc{margin-top:var(--space-5);}
 @media (max-width:1180px){.hm-bento .hm-tiles>.hm-card:last-child{grid-column:1 / -1;}}
 
+/* ───────── Expense discussion ───────── */
+.cm-card{max-width:860px;margin-top:var(--space-5);}
+.cm-h{font-size:var(--fs-md);font-weight:600;margin-bottom:var(--space-1);}
+.cm-card>.text-sm{margin-bottom:var(--space-4);}
+.cm-list{display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-5);}
+.cm{display:flex;gap:var(--space-3);}
+.cm-main{flex:1;min-width:0;}
+.cm-head{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-sm);}
+.cm-head time{color:var(--muted);font-size:var(--fs-xs);}
+.cm-head form{margin-left:auto;}
+.cm-body{margin:var(--space-1) 0 0;font-size:var(--fs-base);white-space:pre-wrap;overflow-wrap:anywhere;}
+.cm-form{display:flex;flex-direction:column;gap:var(--space-2);}
+
 /* ───────── Home layout: Today, Assigned and This week stack on the left; the to-do runs the full height on the right and scrolls inside ───────── */
 .hm-bento .hm-today,.hm-bento .hm-work,.hm-bento .hm-tiles>.hm-card{grid-column:1 / span 7;grid-row:auto;}
 .hm-bento .hm-today{grid-row:1;}.hm-bento .hm-work{grid-row:2;}.hm-bento .hm-tiles>.hm-card{grid-row:3;}.hm-bento .hm-tiles>.hm-leave-card{grid-row:4;}

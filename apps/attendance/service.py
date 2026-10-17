@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.utils import timezone
+from django.utils.dates import WEEKDAYS, WEEKDAYS_ABBR
 
 from apps.attendance.models import (
     AttendanceRecord,
@@ -187,7 +188,9 @@ def get_month_grid(company, year, month, user):
             "date": cursor,
             "day": cursor.day,
             "weekday": cursor.weekday(),
-            "is_weekend": cursor.weekday() >= 5,
+            # A weekly off day (Saturday and Sunday unless the company changed
+            # them). The key keeps its old name because templates read it.
+            "is_weekend": shift.is_weekly_off(cursor),
             "is_today": cursor == timezone.localdate(),
             "record": record,
             "on_leave": cursor in on_leave,
@@ -205,9 +208,11 @@ def get_month_grid(company, year, month, user):
         "total_minutes": total_minutes,
         "total_formatted": format_minutes(total_minutes),
         "present_days": sum(1 for d in days if d["record"] and d["record"].check_in),
+        # Nobody is absent on a weekly off day, whether or not they came in.
         "absent_days": sum(
             1 for d in days
-            if not d["on_leave"] and (not d["record"] or not d["record"].check_in)
+            if not d["on_leave"] and not d["is_weekend"]
+            and (not d["record"] or not d["record"].check_in)
         ),
         "leave_days": sum(1 for d in days if d["on_leave"]),
         "late_days": sum(1 for d in days if d["late_label"]),
@@ -249,6 +254,34 @@ def shift_for(company):
     """
     shift, _created = WorkShift.objects.get_or_create(company=company)
     return shift
+
+
+def weekly_off_label(days, short=False):
+    """'Saturday, Sunday' (or 'Sat, Sun'), or 'None' for a seven day week."""
+    names = WEEKDAYS_ABBR if short else WEEKDAYS
+    return ", ".join(str(names[d]) for d in sorted(days)) or "None"
+
+
+def set_weekly_off(company, days):
+    """Save which weekdays are weekly offs and return them, sorted.
+
+    `days` is whatever a form posted (digit strings, Monday is 0). The text of a
+    ValueError is meant for the person. All seven days are refused: with no
+    working day there is nothing to be late for and nothing to divide a monthly
+    salary by.
+    """
+    try:
+        chosen = sorted({int(d) for d in days})
+    except (TypeError, ValueError):
+        raise ValueError("Pick weekdays from the list.")
+    if any(d not in WEEKDAYS for d in chosen):
+        raise ValueError("Pick weekdays from the list.")
+    if len(chosen) == len(WEEKDAYS):
+        raise ValueError("Leave at least one working day.")
+    shift = shift_for(company)
+    shift.weekly_off_days = chosen
+    shift.save(update_fields=["weekly_off_days", "updated_at"])
+    return chosen
 
 
 def effective_span_for(record, shift=None):
@@ -323,12 +356,16 @@ def lateness_for(record, shift=None):
     never clocked in has no arrival time to be late with, and guessing one
     would silently cost them money.
 
-    Saturday and Sunday are off days with no start time, so working one is
-    never late.
+    A weekly off day (Saturday and Sunday unless the company changed them) has
+    no start time, so working one is never late. This is where that rule lives:
+    `late_penalty_for`, `late_label_for`, the payslip and the punch panel all
+    derive from it, so none of them can charge for an off day.
     """
-    if record.check_in is None or record.date.weekday() >= 5:
+    if record.check_in is None:
         return 0
     shift = shift or shift_for(record.company)
+    if shift.is_weekly_off(record.date):
+        return 0
     scheduled = timezone.localtime(record.check_in).time()
     late = (
         scheduled.hour * 60 + scheduled.minute
@@ -473,7 +510,7 @@ def get_team_week(company, monday, shift=None):
                 minutes_total += minutes
             elif day > today:
                 cell["state"] = "future"
-            elif day.weekday() >= 5:
+            elif shift.is_weekly_off(day):
                 cell["state"] = "weekend"
             else:
                 cell["state"] = "none"

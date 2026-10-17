@@ -2,9 +2,10 @@ import csv
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Sum
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect, render
+from django.db.models import Count, Sum
+from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
@@ -13,8 +14,8 @@ from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.expenses import service
 from apps.expenses.filters import Filters
-from apps.expenses.forms import ExpenseForm, display_name
-from apps.expenses.models import Expense
+from apps.expenses.forms import CommentForm, ExpenseForm, display_name
+from apps.expenses.models import Expense, ExpenseComment
 
 LIST_LIMIT = 200
 
@@ -74,7 +75,7 @@ class ExpenseListView(ExpenseAccessMixin, View):
         every = Expense.objects.filter(company=request.company)
         f = Filters(request.GET)
         qs = f.apply(every)
-        rows = list(qs.select_related("paid_by")[:LIST_LIMIT])
+        rows = list(qs.select_related("paid_by").annotate(comment_count=Count("comments"))[:LIST_LIMIT])
         for e in rows:
             e.amount_label = service.format_paise(e.amount_paise)
         total = qs.aggregate(t=Sum("amount_paise"))["t"] or 0
@@ -133,17 +134,27 @@ class ExpenseExportView(ExpenseAccessMixin, View):
         return resp
 
 
+def _discussion_url(expense):
+    return reverse("expenses:expense_edit", args=[expense.pk]) + "#discussion"
+
+
 class ExpenseEditView(ExpenseAccessMixin, View):
+    def page(self, request, expense, form):
+        comments = expense.comments.select_related("author")
+        return render(request, "expenses/edit.html", {
+            "form": form, "expense": expense, "comments": comments, "comment_form": CommentForm(),
+        })
+
     def get(self, request, pk, form=None):
         e = self.expense_or_404(pk)
         form = form or ExpenseForm(company=request.company, user=request.user, initial=_initial(e))
-        return render(request, "expenses/edit.html", {"form": form, "expense": e})
+        return self.page(request, e, form)
 
     def post(self, request, pk):
         e = self.expense_or_404(pk)
         form = ExpenseForm(request.POST, company=request.company, user=request.user)
         if not form.is_valid():
-            return render(request, "expenses/edit.html", {"form": form, "expense": e})
+            return self.page(request, e, form)
         _save(form, request.company, request.user, e)
         log_activity(
             request.company, "expense_edited", f"Expense edited: {e.category_label}",
@@ -164,3 +175,38 @@ class ExpenseDeleteView(ExpenseAccessMixin, View):
         )
         messages.success(request, f"Deleted {title}.")
         return redirect("expenses:expense_list")
+
+
+class ExpenseCommentView(ExpenseAccessMixin, View):
+    """Add a comment to an expense's thread (owners and admins, like the ledger)."""
+
+    def post(self, request, pk):
+        e = self.expense_or_404(pk)
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            service.add_comment(e, request.user, form.cleaned_data["body"])
+            log_activity(
+                request.company, "expense_commented", f"Comment on expense: {e.category_label}",
+                actor=request.user, target_content_type="expense", target_object_id=e.pk,
+            )
+            messages.success(request, "Comment added.")
+        else:
+            messages.error(request, form.errors["body"][0])
+        return redirect(_discussion_url(e))
+
+
+class ExpenseCommentDeleteView(ExpenseAccessMixin, View):
+    """Delete your own comment. Nobody can delete somebody else's, owners included."""
+
+    def post(self, request, pk, comment_pk):
+        e = self.expense_or_404(pk)
+        comment = get_object_or_404(ExpenseComment, pk=comment_pk, expense=e, company=request.company)
+        if comment.author_id != request.user.pk:
+            return HttpResponseForbidden("You can only delete your own comments.")
+        comment.delete()
+        log_activity(
+            request.company, "expense_comment_deleted", f"Comment deleted on expense: {e.category_label}",
+            actor=request.user, target_content_type="expense", target_object_id=e.pk,
+        )
+        messages.success(request, "Comment deleted.")
+        return redirect(_discussion_url(e))

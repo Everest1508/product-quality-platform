@@ -58,3 +58,14 @@ class ExpenseForm(forms.Form):
             self.initial.setdefault("paid_by", user.pk)
             self.initial.setdefault("date", timezone.localdate())
             self.initial.setdefault("category", "tea")
+
+
+class CommentForm(forms.Form):
+    body = forms.CharField(
+        max_length=2000,
+        label="Comment",
+        error_messages={
+            "required": "Write something before you send it.",
+            "max_length": "Keep a comment under 2,000 characters.",
+        },
+    )

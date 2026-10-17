@@ -748,6 +748,7 @@ class LeaveShowsInAttendanceTest(AttendanceTestBase):
         self.assertFalse(rows[self.dev.pk]["on_leave"])
 
     def test_team_view_counts_leave_separately(self):
+        service.set_weekly_off(self.company, [])  # a weekly off has no absentees
         today = timezone.localdate()
         self.grant(self.dev, today, today, days=Decimal("1.0"))
         self.client.login(username="owner", password="pass1234")
@@ -818,6 +819,8 @@ class LatePenaltyTest(AttendanceTestBase):
 
     def punch_at(self, at, day=None):
         day = day or timezone.localdate()
+        # Saturday and Sunday are weekly offs, where nobody is late: use the Friday.
+        day -= timedelta(days=max(0, day.weekday() - 4))
         return AttendanceRecord.objects.create(
             company=self.company,
             user=self.dev,
@@ -1238,6 +1241,12 @@ class MissingCheckoutTest(AttendanceTestBase):
 
 class PunchPanelTest(AttendanceTestBase):
     """The punch control is the page's only job, so its content is a contract."""
+
+    def setUp(self):
+        super().setUp()
+        # The panel is read for "today"; a weekly off shows a different one
+        # (see test_weekly_off), so these run on a seven day week.
+        service.set_weekly_off(self.company, [])
 
     def punch_in(self, at):
         from apps.attendance.models import AttendanceRecord
@@ -1709,11 +1718,13 @@ class WeekendWorkNotLateTest(TestCase):
     def test_weekend_punch_is_never_late(self):
         from datetime import date, time
         from types import SimpleNamespace
+        from apps.attendance.models import WorkShift
         from apps.attendance.service import lateness_for
         tz = timezone.get_current_timezone()
         for day, expected in ((date(2026, 10, 10), 0), (date(2026, 10, 11), 0), (date(2026, 10, 12), 240)):
             rec = SimpleNamespace(date=day, check_in=timezone.make_aware(datetime.combine(day, time(14, 0)), tz))
-            shift = SimpleNamespace(start_time=time(10, 0))
+            # An unsaved shift, so it carries the default weekly offs (Saturday and Sunday).
+            shift = WorkShift(start_time=time(10, 0))
             self.assertEqual(lateness_for(rec, shift), expected)
 
 

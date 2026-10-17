@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dates import WEEKDAYS, WEEKDAYS_ABBR
 from django.views import View
 
 from apps.attendance import corrections, service
@@ -81,7 +82,10 @@ def _punch_notification_body(record, action, company):
     notification can never quote a different number from either of them.
     """
     shift = service.shift_for(company)
+    off = shift.is_weekly_off(record.date)
     if action == "checked_in":
+        if off:
+            return "Weekly off: no shift start, lateness or late fee today."
         penalty = service.late_penalty_for(record, shift)
         if penalty:
             if penalty["band"] == "half_day":
@@ -99,7 +103,8 @@ def _punch_notification_body(record, action, company):
     body = f"{record.worked_formatted} worked today"
     target = shift.worked_minutes_per_day
     delta = record.worked_minutes - target
-    if delta:
+    # No target on a weekly off, so no day to be short of.
+    if delta and not off:
         body += (
             f" · {format_minutes(abs(delta))} "
             f"{'over' if delta > 0 else 'short of'} a full {format_minutes(target)} day"
@@ -146,6 +151,9 @@ def _punch_context(request, record, message="", person=None):
     # an unquoted ISO string into Alpine's x-data, which is a syntax error, so
     # the counter never ticked.
     today = timezone.localdate()
+    # A weekly off has no shift to start, finish or fall short of. The panel
+    # hides all of that; lateness is already 0 because `lateness_for` knows.
+    is_off = shift.is_weekly_off(today)
     shift_start = timezone.make_aware(datetime.combine(today, shift.start_time))
     shift_end = timezone.make_aware(datetime.combine(today, shift.end_time))
     span_minutes = max(1, int((shift_end - shift_start).total_seconds() // 60))
@@ -173,8 +181,9 @@ def _punch_context(request, record, message="", person=None):
         "target_minutes": target,
         "worked_net_formatted": format_minutes(worked),
         "target_formatted": format_minutes(target),
-        "worked_delta": worked - target if worked else 0,
-        "worked_delta_formatted": format_minutes(abs(worked - target)) if worked else "",
+        "is_weekly_off": is_off,
+        "worked_delta": worked - target if worked and not is_off else 0,
+        "worked_delta_formatted": format_minutes(abs(worked - target)) if worked and not is_off else "",
         "now_label": f"{now:%I:%M %p}".lstrip("0"),
         "week": _week_strip(request, owner, shift),
         "today_record": record,
@@ -198,7 +207,7 @@ def _punch_context(request, record, message="", person=None):
             "symbol": CURRENCY_SYMBOLS.get(shift.penalty_currency, shift.penalty_currency + " "),
             "onTimeBy": f"{(shift_start + timedelta(minutes=shift.grace_minutes)):%I:%M %p}".lstrip("0"),
         },
-        "starts_in_minutes": starts_in if starts_in > 0 else None,
+        "starts_in_minutes": starts_in if starts_in > 0 and not is_off else None,
         # Every month, not the one on screen: an unclosed day from last month
         # still needs correcting and still stands between the employee and a
         # full day's pay.
@@ -244,8 +253,8 @@ def _month_summary(records, shift, first, last, today):
             pct = min(100, round(100 * mins / scheduled))
         elif day > today:
             state, note, pct = "future", "", 0
-        elif day.weekday() >= 5:
-            state, note, pct = "rest", "weekend", 0
+        elif shift.is_weekly_off(day):
+            state, note, pct = "rest", "weekly off", 0
         else:
             state, note, pct = "none", "no punch", 0
         cells.append({
@@ -407,7 +416,8 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
                 ),
             )
 
-        return redirect("attendance:my_attendance")
+        # The Home card posts here too and asks to come back to Home.
+        return redirect(safe_next(request.POST.get("next")) or "attendance:my_attendance")
 
 
 def _week_strip(request, owner, shift):
@@ -435,7 +445,7 @@ def _week_strip(request, owner, shift):
             state = "worked"
         elif day > today:
             state = "future"
-        elif day.weekday() >= 5:
+        elif shift.is_weekly_off(day):
             state = "weekend"
         else:
             state = "none"
@@ -480,7 +490,7 @@ def _last_week(company, user_ids, shift):
                 state = "open"
             elif minutes:
                 state = "worked"
-            elif day.weekday() >= 5:
+            elif shift.is_weekly_off(day):
                 state = "weekend"
             else:
                 state = "none"
@@ -502,6 +512,8 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
         # Your own row first, marked, then everyone else. It used to be buried
         # alphabetically, which read as "my attendance is not here".
         weeks = _last_week(request.company, [row["user"].pk for row in team], shift)
+        # On a weekly off nobody is absent, so no one is counted as not in.
+        is_off_today = shift.is_weekly_off(timezone.localdate())
         for row in team:
             row["is_me"] = row["user"].pk == request.user.pk
             row["week"] = weeks[row["user"].pk]
@@ -514,6 +526,8 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
                 row["state"] = "clock"
             elif record and record.is_complete:
                 row["state"] = "done"
+            elif is_off_today:
+                row["state"] = "off"
             else:
                 row["state"] = "absent"
             row["net_formatted"] = (
@@ -540,11 +554,12 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
             "leave_count": sum(1 for row in team if row["on_leave"]),
             "shift": shift,
             "next": request.get_full_path(),
-            "absent_count": sum(
-                1 for row in team
-                if not row["on_leave"] and not (row["record"] and row["record"].check_in)
-            ),
+            "absent_count": sum(1 for row in team if row["state"] == "absent"),
             "today": timezone.localdate(),
+            "is_off_today": is_off_today,
+            "weekly_off": shift.off_weekdays,
+            "weekly_off_label": service.weekly_off_label(shift.off_weekdays, short=True),
+            "weekdays": [(n, str(WEEKDAYS_ABBR[n]), str(WEEKDAYS[n])) for n in WEEKDAYS],
         }
 
         if request.headers.get("HX-Request") == "true":
@@ -568,7 +583,10 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
         rows.sort(key=lambda r: (not r["is_me"], r["user"].username.lower()))
         return render(request, "attendance/team_week.html", {
             "rows": rows,
-            "days": [monday + timedelta(days=i) for i in range(7)],
+            "days": [
+                {"date": d, "off": shift.is_weekly_off(d)}
+                for d in (monday + timedelta(days=i) for i in range(7))
+            ],
             "monday": monday,
             "sunday": monday + timedelta(days=6),
             "prev_week": (monday - timedelta(days=7)).isoformat(),
@@ -578,6 +596,33 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
             "shift": shift,
             "next": request.get_full_path(),
         })
+
+
+class WeeklyOffView(CompanyAdminRequiredMixin, View):
+    """Owners and admins choose which weekdays are weekly offs (the dialog on the team page)."""
+
+    def post(self, request):
+        try:
+            days = service.set_weekly_off(request.company, request.POST.getlist("off_days"))
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        else:
+            label = service.weekly_off_label(days)
+            log_activity(
+                request.company,
+                "weekly_off_changed",
+                f"Weekly off days set to {label}",
+                actor=request.user,
+                target_content_type="work_shift",
+                metadata={"days": days},
+            )
+            messages.success(
+                request,
+                f"Weekly off days saved: {label}. Nobody is marked late, short or absent on them."
+                if days
+                else "Weekly off days cleared: every day of the week is a working day.",
+            )
+        return redirect("attendance:team_attendance")
 
 
 class TimesheetView(CompanyAdminRequiredMixin, View):

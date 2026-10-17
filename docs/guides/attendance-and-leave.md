@@ -15,8 +15,25 @@ month and the daily average.
 
 **The month grid** shows one square per day. Dark green is a full day (at least 90%
 of the scheduled hours), light green a part day, blue the day you are on the clock,
-orange a day with no check-out, and an outlined square a weekday with no punch.
+orange a day with no check-out, and an outlined square a working day with no punch.
 Hover a square for its hours. The list beside it counts each kind.
+
+## Weekly off days
+
+Saturday and Sunday are weekly offs unless your company says otherwise. An owner
+or admin changes them with the **Weekly off** button on **Team attendance**.
+
+On a weekly off nobody is expected in, so none of the shift rules apply. You can
+still check in and out, on Home or on My attendance, and work any hours you
+like. You are never late, there is no grace period, penalty or half day, the
+day is not short or absent, and it does not move your pay. The punch card says
+"Weekly off" instead of counting down a working day.
+
+Payroll and leave use the same days. A leave request is charged only on working
+days, and a pay cycle's working days are the days that are not weekly offs or
+holidays. Changing the days applies from then on: a pay run that is already
+locked stays as it was, and an unlocked one picks the new days up when you
+generate it again.
 
 ## A wrong or forgotten punch
 

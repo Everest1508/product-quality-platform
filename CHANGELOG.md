@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.52.7] "Auklet" — 2026-10-17 · weekly off days you choose, punch in on Home any day, and a thread on each expense
+
+> In short: you choose which days of the week are weekly offs and nothing counts against anyone on them, Home lets you punch in on any day, and every expense has a discussion for owners and admins.
+
+### New
+
+- **Choose your weekly off days.** Owners and admins can pick the days nobody is expected to work from the **Weekly off** button on Team attendance. It starts as Saturday and Sunday. Payroll and leave count the days you pick as non-working from then on, and pay runs you have already locked do not change.
+- **Every expense has a discussion.** Under each expense, owners and admins can ask about a bill or agree what to do with it. Nobody else can see it. The other owners and admins get a notification, the Expenses list shows how many comments each one has, and you can delete your own comments.
+
+### Better
+
+- **Work on a weekly off day carries no rules.** Checking in or out on one is never late, never a penalty or a half day, and the day is never short or absent. The punch card says it is a weekly off instead of showing the shift countdown, and Team attendance shows "Weekly off" instead of "Absent".
+- **Punching from Home brings you back to Home.** You used to land on the Attendance page after pressing Punch in or Punch out on Home.
+
+### Fixed
+
+- **Punch in was missing from Home on Saturday and Sunday.** The Today card hid the button on weekends and just said "Weekend". It now shows on every day, and says when it is a weekly off.
+- **Home showed worked hours before the break was taken off.** After you punched out, the Today card showed 8.5h for a 10:00 to 6:30 day. It now shows 8h, like the rest of the app.
+
 ## [1.52.6] "Wheatear" — 2026-10-16 · a team member you remove can no longer sign in
 
 > In short: a person you remove from a team can no longer sign in or start a company of their own, and sees a message telling them to ask an owner or admin to add them back.

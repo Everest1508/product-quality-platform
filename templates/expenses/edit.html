@@ -11,4 +11,41 @@
   {% url 'expenses:expense_list' as back %}
   {% include "expenses/_form.html" with action=action submit="Save changes" cancel=back autofocus=True %}
 </div>
+
+{% comment %}
+The talk about this expense. Owners and admins only, like the ledger itself. A
+comment is a plain form post and a redirect back to #discussion, so there is
+nothing to keep in step on the page; the toast arrives with the redirect.
+{% endcomment %}
+<section class="card cm-card" id="discussion" aria-labelledby="cm-title">
+  <h2 class="cm-h" id="cm-title">Discussion <span class="text-muted">({{ comments|length }})</span></h2>
+  <p class="text-sm text-muted">Only owners and admins can see this. Use it to ask about the bill or agree what to do with it.</p>
+  <div class="cm-list">
+    {% for c in comments %}
+    <article class="cm">
+      <span class="kt-av lg" aria-hidden="true">{{ c.author.username.0|default:"?"|upper }}</span>
+      <div class="cm-main">
+        <div class="cm-head">
+          <strong>{% firstof c.author.get_full_name c.author.username "Someone" %}</strong>
+          <time datetime="{{ c.created_at|date:'c' }}" title="{{ c.created_at|date:'j M Y, g:i A' }}">{{ c.created_at|timesince }} ago</time>
+          {% if c.author_id == request.user.pk %}
+          <form method="post" action="{% url 'expenses:expense_comment_delete' expense.pk c.pk %}" data-confirm="Delete your comment?" data-confirm-text="This cannot be undone." data-confirm-label="Delete">
+            {% csrf_token %}<button type="submit" class="icon-btn" aria-label="Delete your comment from {{ c.created_at|date:'j M, g:i A' }}">{% icon 'trash' 'ic' %}</button>
+          </form>
+          {% endif %}
+        </div>
+        <p class="cm-body">{{ c.body }}</p>
+      </div>
+    </article>
+    {% empty %}
+    <p class="text-sm text-muted">No comments yet. Start the discussion below.</p>
+    {% endfor %}
+  </div>
+  <form method="post" action="{% url 'expenses:expense_comment' expense.pk %}" class="cm-form">
+    {% csrf_token %}
+    <label for="cm-body">Add a comment</label>
+    <textarea id="cm-body" name="body" class="form-input" rows="3" maxlength="2000" required placeholder="e.g. Is this the bill for September or October?"></textarea>
+    <div><button type="submit" class="btn btn-primary">{% icon 'send' 'ic' %}Comment</button></div>
+  </form>
+</section>
 {% endblock %}
