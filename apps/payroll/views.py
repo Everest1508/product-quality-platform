@@ -4,8 +4,10 @@ from decimal import Decimal
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dates import WEEKDAYS, WEEKDAYS_ABBR
 from django.views import View
 
+from apps.attendance.service import shift_for
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.payroll import service
@@ -256,6 +258,8 @@ class HolidayListView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
             {
                 "holidays": Holiday.objects.filter(company=request.company),
                 "form": HolidayForm(company=request.company),
+                "weekly_off": shift_for(request.company).off_weekdays,
+                "weekdays": [(n, str(WEEKDAYS_ABBR[n]), str(WEEKDAYS[n])) for n in WEEKDAYS],
             },
         )
 

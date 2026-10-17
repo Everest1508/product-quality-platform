@@ -622,6 +622,9 @@ class WeeklyOffView(CompanyAdminRequiredMixin, View):
                 if days
                 else "Weekly off days cleared: every day of the week is a working day.",
             )
+        back = request.POST.get("next", "")
+        if back.startswith("/") and not back.startswith("//"):
+            return redirect(back)
         return redirect("attendance:team_attendance")
 
 
