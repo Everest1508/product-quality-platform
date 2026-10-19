@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.53.1] "Bushtit" — 2026-10-19 · a tidier sidebar and the Expenses page laid out properly again
+
+> In short: the Admin menu is split into small groups, and the Expenses page and its Add expense form look right again.
+
+### Better
+
+- **The Admin menu is split into smaller groups.** Admin now has People (team attendance, timesheet, corrections, leave approvals, leave policy, team), Money (payroll, payroll setup, expenses, project costing) and System (audit log, automation). Each group opens on its own, remembers whether you left it open, and the one holding your current page opens by itself. An open group sits in a soft panel, the page you are on lifts out of it, every item has its own icon, and the sidebar has Workspace and Admin headings.
+
+### Fixed
+
+- **The Expenses page is laid out properly again.** The filters sit in one row, the total shows "Total spent · October 2026", the amount and the count as separate pieces, the category and payer summaries line up in a side column, and the Add expense form has normal spacing. The empty-state icon is no longer huge, and date fields on Firefox show one calendar icon instead of two.
+- **The date field in the Add expense form was stretched tall.** It is a normal height again.
+
 ## [1.53.0] "Bulbul" — 2026-10-19 · work out what a project costs and what to charge
 
 > In short: owners and admins get a Project costing page where you type the people, hours and costs of a project and see what it costs us and what to charge.

@@ -1058,3 +1058,6 @@
 
   @media(max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:1100px){.grid-3{grid-template-columns:1fr 1fr;}}
+/* Firefox draws its own calendar button inside a date field; drop our drawn one so there is only one icon. */
+@supports (-moz-appearance:none){input[type="date"]{background-image:none;padding-right:10px;}}
+

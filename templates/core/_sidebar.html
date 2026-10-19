@@ -16,6 +16,7 @@
   {% with u=request.resolver_match.url_name %}
 
   <nav class="nav-section" aria-label="Main">
+    <div class="nav-label">Workspace</div>
     <a href="{% url 'dashboards:index' %}" data-label="Home"
        {% if u == 'index' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'index' %}active{% endif %}">
@@ -48,7 +49,7 @@
          :class="{ 'is-open': open }">
       <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqWorkFold', open ? '1' : '0') } catch (e) {}"
               :aria-expanded="open.toString()" data-label="My work">
-        {% icon 'clock' %} <span class="side-label">My work</span>
+        {% icon 'briefcase' %} <span class="side-label">My work</span>
         {% icon 'chevron-down' 'fold-caret' %}
       </button>
       <div class="fold-body"><div class="fold-inner">
@@ -60,7 +61,7 @@
         <a href="{% url 'leave:my_leave' %}" data-label="Leave"
            {% if u == 'my_leave' or u == 'apply' %}aria-current="page"{% endif %}
            class="side-item {% if u == 'my_leave' or u == 'apply' %}active{% endif %}">
-          {% icon 'calendar-days' %} <span class="side-label">Leave</span>
+          {% icon 'plane' %} <span class="side-label">Leave</span>
         </a>
         <a href="{% url 'leave:calendar' %}" data-label="Calendar"
            {% if u == 'calendar' %}aria-current="page"{% endif %}
@@ -151,56 +152,38 @@
 
 
   {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-  <nav class="nav-section nav-fold" aria-label="Admin" x-data="{ open: false }"
-       x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('pqAdminFold') === '1'"
+  <div class="nav-label">Admin</div>
+  <nav class="nav-section nav-fold nav-admin" aria-label="Admin: People" x-data="{ open: false }"
+       x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('pqFoldPeople') === '1'"
        :class="{ 'is-open': open }">
-    <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqAdminFold', open ? '1' : '0') } catch (e) {}"
-            :aria-expanded="open.toString()" data-label="Admin">
-      {% icon 'settings' %} <span class="side-label">Admin</span>
+    <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqFoldPeople', open ? '1' : '0') } catch (e) {}"
+            :aria-expanded="open.toString()" data-label="People">
+      {% icon 'users' %} <span class="side-label">People</span>
       {% if nav_pending_corrections %}<span class="side-badge" x-show="!open">{{ nav_pending_corrections }}</span>{% endif %}
+      <span class="fold-count">6</span>
       {% icon 'chevron-down' 'fold-caret' %}
     </button>
     <div class="fold-body"><div class="fold-inner">
     <a href="{% url 'attendance:team_attendance' %}" data-label="Team attendance"
        {% if u == 'team_attendance' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'team_attendance' %}active{% endif %}">
-      {% icon 'users' %} <span class="side-label">Team attendance</span>
+      {% icon 'clock' %} <span class="side-label">Team attendance</span>
     </a>
     <a href="{% url 'attendance:timesheet' %}" data-label="Timesheet"
        {% if u == 'timesheet' or u == 'timesheet_detail' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'timesheet' or u == 'timesheet_detail' %}active{% endif %}">
-      {% icon 'calendar-days' %} <span class="side-label">Timesheet</span>
+      {% icon 'clipboard-list' %} <span class="side-label">Timesheet</span>
     </a>
     <a href="{% url 'attendance:corrections' %}" data-label="Corrections"
        {% if u == 'corrections' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'corrections' %}active{% endif %}">
-      {% icon 'clock' %} <span class="side-label">Corrections</span>
+      {% icon 'history' %} <span class="side-label">Corrections</span>
       {% if nav_pending_corrections %}<span class="side-badge">{{ nav_pending_corrections }}</span>{% endif %}
-    </a>
-    <a href="{% url 'expenses:expense_list' %}" data-label="Expenses"
-       {% if u == 'expense_list' or u == 'expense_edit' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'expense_list' or u == 'expense_edit' %}active{% endif %}">
-      {% icon 'wallet' %} <span class="side-label">Expenses</span>
-    </a>
-    <a href="{% url 'costing:estimate_list' %}" data-label="Project costing"
-       {% if u == 'estimate_list' or u == 'estimate_new' or u == 'estimate_edit' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'estimate_list' or u == 'estimate_new' or u == 'estimate_edit' %}active{% endif %}">
-      {% icon 'banknote' %} <span class="side-label">Project costing</span>
     </a>
     <a href="{% url 'leave:approvals' %}" data-label="Leave approvals"
        {% if u == 'approvals' or u == 'approval_detail' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'approvals' or u == 'approval_detail' %}active{% endif %}">
       {% icon 'circle-check' %} <span class="side-label">Leave approvals</span>
-    </a>
-    <a href="{% url 'payroll:run_list' %}" data-label="Payroll"
-       {% if u == 'run_list' or u == 'preview' or u == 'run_detail' or u == 'payslip' or u == 'holidays' or u == 'holiday_delete' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'run_list' or u == 'preview' or u == 'run_detail' or u == 'payslip' or u == 'holidays' or u == 'holiday_delete' %}active{% endif %}">
-      {% icon 'wallet' %} <span class="side-label">Payroll</span>
-    </a>
-    <a href="{% url 'payroll:profiles' %}" data-label="Payroll setup"
-       {% if u == 'profiles' or u == 'profile_edit' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'profiles' or u == 'profile_edit' %}active{% endif %}">
-      {% icon 'percent' %} <span class="side-label">Payroll setup</span>
     </a>
     <a href="{% url 'leave:policies' %}" data-label="Leave Policy"
        {% if u == 'policies' or u == 'policy_add' or u == 'policy_update' %}aria-current="page"{% endif %}
@@ -212,10 +195,54 @@
        class="side-item {% if u == 'team_list' or u == 'team_invite' or u == 'team_edit' %}active{% endif %}">
       {% icon 'user' %} <span class="side-label">Team</span>
     </a>
+    </div></div>
+  </nav>
+  <nav class="nav-section nav-fold nav-admin" aria-label="Admin: Money" x-data="{ open: false }"
+       x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('pqFoldMoney') === '1'"
+       :class="{ 'is-open': open }">
+    <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqFoldMoney', open ? '1' : '0') } catch (e) {}"
+            :aria-expanded="open.toString()" data-label="Money">
+      {% icon 'coins' %} <span class="side-label">Money</span>
+      <span class="fold-count">4</span>
+      {% icon 'chevron-down' 'fold-caret' %}
+    </button>
+    <div class="fold-body"><div class="fold-inner">
+    <a href="{% url 'payroll:run_list' %}" data-label="Payroll"
+       {% if u == 'run_list' or u == 'preview' or u == 'run_detail' or u == 'payslip' or u == 'holidays' or u == 'holiday_delete' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'run_list' or u == 'preview' or u == 'run_detail' or u == 'payslip' or u == 'holidays' or u == 'holiday_delete' %}active{% endif %}">
+      {% icon 'landmark' %} <span class="side-label">Payroll</span>
+    </a>
+    <a href="{% url 'payroll:profiles' %}" data-label="Payroll setup"
+       {% if u == 'profiles' or u == 'profile_edit' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'profiles' or u == 'profile_edit' %}active{% endif %}">
+      {% icon 'percent' %} <span class="side-label">Payroll setup</span>
+    </a>
+    <a href="{% url 'expenses:expense_list' %}" data-label="Expenses"
+       {% if u == 'expense_list' or u == 'expense_edit' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'expense_list' or u == 'expense_edit' %}active{% endif %}">
+      {% icon 'wallet' %} <span class="side-label">Expenses</span>
+    </a>
+    <a href="{% url 'costing:estimate_list' %}" data-label="Project costing"
+       {% if u == 'estimate_list' or u == 'estimate_new' or u == 'estimate_edit' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'estimate_list' or u == 'estimate_new' or u == 'estimate_edit' %}active{% endif %}">
+      {% icon 'banknote' %} <span class="side-label">Project costing</span>
+    </a>
+    </div></div>
+  </nav>
+  <nav class="nav-section nav-fold nav-admin" aria-label="Admin: System" x-data="{ open: false }"
+       x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('pqFoldSystem') === '1'"
+       :class="{ 'is-open': open }">
+    <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('pqFoldSystem', open ? '1' : '0') } catch (e) {}"
+            :aria-expanded="open.toString()" data-label="System">
+      {% icon 'settings' %} <span class="side-label">System</span>
+      <span class="fold-count">2</span>
+      {% icon 'chevron-down' 'fold-caret' %}
+    </button>
+    <div class="fold-body"><div class="fold-inner">
     <a href="{% url 'dashboards:audit_log' %}" data-label="Audit log"
        {% if u == 'audit_log' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'audit_log' %}active{% endif %}">
-      {% icon 'history' %} <span class="side-label">Audit log</span>
+      {% icon 'eye' %} <span class="side-label">Audit log</span>
     </a>
     <a href="{% url 'automation:rule_list' %}" data-label="Automation"
        {% if u == 'rule_list' or u == 'rule_create' or u == 'rule_edit' or u == 'rule_delete' or u == 'rule_toggle' %}aria-current="page"{% endif %}
