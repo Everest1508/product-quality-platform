@@ -1,5 +1,5 @@
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
+  html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
   input,select,textarea{font-family:inherit;font-size:13.5px;}
@@ -837,7 +837,7 @@
   input[type="date"]::-ms-clear,
   input[type="date"]::-ms-reveal{display:none !important;}
 
-  .pq-datepicker-popover{position:absolute;z-index:1100;width:280px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 25px -5px rgba(13,17,23,.1),0 8px 10px -6px rgba(13,17,23,.08);padding:14px;font-family:'Inter',-apple-system,sans-serif;display:none;animation:datepickerFadeIn .15s ease;}
+  .pq-datepicker-popover{position:absolute;z-index:1100;width:280px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 25px -5px rgba(13,17,23,.1),0 8px 10px -6px rgba(13,17,23,.08);padding:14px;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:none;animation:datepickerFadeIn .15s ease;}
   @keyframes datepickerFadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
   .pq-datepicker-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .pq-datepicker-title{font-size:13.5px;font-weight:600;color:var(--text);}
@@ -898,7 +898,7 @@
     border-radius: 8px;
     box-shadow: 0 10px 25px -5px rgba(13,17,23,.1), 0 8px 10px -6px rgba(13,17,23,.08);
     padding: 4px;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     display: none;
     max-height: 260px;
     overflow-y: auto;

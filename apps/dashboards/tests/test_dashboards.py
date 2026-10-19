@@ -323,8 +323,11 @@ class PersonalDashboardTest(TestCase):
     def test_personal_cards_are_shown_to_a_developer(self):
         response = self.get()
         self.assertEqual(response.status_code, 200)
+        from apps.core import assets
+
+        text = response.content.decode() + self.client.get(assets.css_url()).content.decode()
         for marker in ("hm-today", "hm-work", "hm-tiles", "hm-kpis"):
-            self.assertContains(response, marker)
+            self.assertIn(marker, text)
 
     def test_company_cards_are_admin_only(self):
         self.assertNotContains(self.get(), 'class="hm-attn"')

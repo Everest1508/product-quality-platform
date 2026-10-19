@@ -457,8 +457,11 @@ class VersionFooterUiTest(TestCase):
 
     def test_trigger_is_reachable_by_keyboard(self):
         self.client.force_login(self.user)
-        body = self.client.get("/tickets/").content.decode()
-        self.assertIn("side-version:focus-visible", body)
+        from apps.core import assets
+
+        self.assertIn(assets.css_url(), self.client.get("/tickets/").content.decode())
+        css = self.client.get(assets.css_url()).content.decode()
+        self.assertIn("side-version:focus-visible", css)
 
 
 
@@ -674,3 +677,34 @@ class ErrorPagesTest(TestCase):
         from django.template.loader import render_to_string
 
         self.assertIn("Something went wrong", render_to_string("500.html"))
+
+
+class AppCssAssetTest(TestCase):
+    """The stylesheet is one cached, compressed file, not text inside every page."""
+
+    def test_page_links_the_file_and_does_not_inline_it(self):
+        from apps.core import assets
+
+        body = self.client.get("/login/").content.decode()
+        self.assertIn(f'href="{assets.css_url()}"', body)
+        self.assertNotIn("--accent-soft", body)
+
+    def test_file_is_cached_for_a_year_and_gzips(self):
+        from apps.core import assets
+
+        url = assets.css_url()
+        resp = self.client.get(url, HTTP_ACCEPT_ENCODING="gzip")
+        self.assertEqual(resp["Content-Encoding"], "gzip")
+        self.assertIn("immutable", resp["Cache-Control"])
+        self.assertIn("--accent", self.client.get(url).content.decode())
+
+    def test_old_hash_still_serves_current_css_but_is_not_cached(self):
+        resp = self.client.get("/assets/app.deadbeef00.css")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Cache-Control"], "no-cache")
+
+
+class ServerTimingTest(TestCase):
+    def test_pages_report_server_and_database_time(self):
+        header = self.client.get("/login/")["Server-Timing"]
+        self.assertRegex(header, r'^app;dur=\d+, db;dur=\d+;desc="\d+ queries"$')

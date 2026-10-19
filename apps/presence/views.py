@@ -1,4 +1,5 @@
 import json
+import logging
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -8,6 +9,8 @@ from django.views.decorators.http import require_POST
 
 from apps.presence import service
 from apps.presence.models import PresenceSession
+
+logger = logging.getLogger(__name__)
 
 
 @require_POST
@@ -57,9 +60,13 @@ def beat(request):
     users = service.snapshot(company)
     if changed:
         # Tabs that do have a socket should hear about this one right away.
-        layer = get_channel_layer()
-        if layer is not None:
-            async_to_sync(layer.group_send)(
-                f"presence_{company.pk}", {"type": "presence.changed", "users": users}
-            )
+        # Best effort: a Redis outage must not turn a recorded heartbeat into a 500.
+        try:
+            layer = get_channel_layer()
+            if layer is not None:
+                async_to_sync(layer.group_send)(
+                    f"presence_{company.pk}", {"type": "presence.changed", "users": users}
+                )
+        except Exception:
+            logger.warning("presence broadcast failed", exc_info=True)
     return JsonResponse({"users": users})

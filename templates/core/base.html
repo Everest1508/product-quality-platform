@@ -1,4 +1,5 @@
 {% load static %}
+{% load asset_tags %}
 {% load toast_tags %}
 {% load icon_tags %}
 <!DOCTYPE html>
@@ -19,7 +20,10 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 <script>
@@ -42,13 +46,7 @@
   if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(stored()==='system')apply('system')});
 })();
 </script>
-<style>
-{% include "core/css/_tokens.css" %}
-{% include "core/css/_app.css" %}
-{% include "core/css/_components.css" %}
-{% include "core/css/_pages.css" %}
-{% include "core/css/_responsive.css" %}
-</style>
+<link rel="stylesheet" href="{% app_css %}">
 {% block extra_head %}{% endblock %}
 <script>
   document.addEventListener('htmx:configRequest', function(evt) {

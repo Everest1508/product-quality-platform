@@ -3,9 +3,9 @@
 <div class="kanban-col" data-status="{{ col.key }}">
   <div class="kanban-header">
     <span><span class="dot {{ col.key }}"></span>{{ col.label }}</span>
-    <span class="kanban-count">{{ col.tickets|length }}</span>
+    <span class="kanban-count">{{ col.count }}</span>
   </div>
-  <div class="kanban-cards" data-status="{{ col.key }}">
+  <div class="kanban-cards" data-status="{{ col.key }}" data-more="{{ col.more }}">
     {% for ticket in col.tickets %}
     <div class="kanban-card{% if ticket.is_overdue %} overdue{% endif %}"
          draggable="true"
@@ -56,6 +56,7 @@
       </div>
     </div>
     {% endfor %}
+    {% if col.more %}<a class="kanban-more" href="?{% for k, v in request.GET.items %}{% if k != 'all' %}{{ k }}={{ v|urlencode }}&amp;{% endif %}{% endfor %}all=1">Show {{ col.more }} more</a>{% endif %}
     {% if not col.tickets %}
     <div class="kanban-empty">No tickets</div>
     {% endif %}

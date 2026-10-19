@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "apps.attendance",
     "apps.leave",
     "apps.expenses",
+    "apps.costing",
     "apps.payroll",
     "apps.serop",
     "apps.presence",
@@ -66,6 +67,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Compress responses (pages were ~340 KB uncompressed). Right after Security so it wraps the rest.
+    "django.middleware.gzip.GZipMiddleware",
+    "apps.core.middleware.ServerTimingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -147,7 +151,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.52.7")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.53.0")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth

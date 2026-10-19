@@ -1,0 +1,37 @@
+{% load costing_tags %}
+{% if oob %}<div id="co-kpis" class="co-kpis" hx-swap-oob="true">{% include "costing/_kpis.html" %}</div>{% endif %}
+{% comment %}Everything the app works out. Swapped in by htmx on every change.{% endcomment %}
+<div class="co-sum">
+  <h2 class="co-h">What it costs us</h2>
+  <dl class="co-dl">
+    <div><dt>Employees</dt><dd>{{ r.labour|inr }}</dd></div>
+    <div><dt>Office rent <small>({{ r.months }} months)</small></dt><dd>{{ r.rent|inr }}</dd></div>
+    <div><dt>AI cost <small>({{ r.ai_heads }} people)</small></dt><dd>{{ r.ai|inr }}</dd></div>
+    <div><dt>Other charges</dt><dd>{{ r.extra|inr }}</dd></div>
+    <div class="co-total"><dt>Total cost for BeForth</dt><dd id="co-total">{{ r.total|inr }}</dd></div>
+  </dl>
+</div>
+<div class="co-sum">
+  <h2 class="co-h">Pitch price to client</h2>
+  <dl class="co-dl">
+    <div class="co-total"><dt>{% if r.mode == 'margin' %}Cost ÷ (1 − margin){% else %}Cost + margin{% endif %}</dt><dd>{{ r.price|inr }}</dd></div>
+    <div><dt>Profit</dt><dd class="{% if r.profit < 0 %}co-neg{% endif %}">{{ r.profit|inr }}</dd></div>
+  </dl>
+</div>
+{% if r.has_pitch %}
+<div class="co-sum">
+  <h2 class="co-h">If you quote your own price</h2>
+  <dl class="co-dl">
+    <div class="co-total"><dt>Your price</dt><dd>{{ r.pitch|inr }}</dd></div>
+    <div><dt>Profit</dt><dd class="{% if r.pitch_profit < 0 %}co-neg{% endif %}">{{ r.pitch_profit|inr }}</dd></div>
+    <div><dt>Margin on price</dt><dd class="{% if r.pitch_margin < 0 %}co-neg{% endif %}">{{ r.pitch_margin }}%</dd></div>
+  </dl>
+</div>
+{% endif %}
+{% if r.people %}
+    <div class="co-sum">
+      <h2 class="co-h">Per person</h2>
+      <dl class="co-dl">{% for p in r.people %}<div><dt>{{ p.name|default:"Unnamed" }} <small>{{ p.rate|inr }}/hr × {{ p.hours }}h</small></dt><dd>{{ p.cost|inr }}</dd></div>{% endfor %}</dl>
+    </div>
+{% endif %}
+<p class="co-help">Hourly rate = salary ÷ {{ r.hpm }} hours a month (30 days × {{ r.hpd }} hours a day, from Attendance settings).</p>

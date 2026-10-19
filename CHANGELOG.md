@@ -10,6 +10,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.53.0] "Bulbul" — 2026-10-19 · work out what a project costs and what to charge
+
+> In short: owners and admins get a Project costing page where you type the people, hours and costs of a project and see what it costs us and what to charge.
+
+### New
+
+- **Project costing for owners and admins.** Open **Project costing** under Admin, add a project, its team with their salaries, office rent, AI cost and any other charges, and the total cost and the price appear as you type. Nobody else can open it, and nothing is taken from payroll or attendance: you type every salary yourself.
+- **Margin and your own pitch price.** Add a margin percent as a markup on cost or as a true margin on the price, and type a pitch price to see the profit it leaves. You can save, reopen and duplicate estimates.
+- **A report over your saved estimates.** The Project costing page adds up cost, price and profit, shows them by client, can be narrowed to one month, and exports to a spreadsheet. Set an estimate's quote date to add an old quote under the right month.
+- **A client quote with line items.** The quote page for each estimate lists the team, office and other items with their prices and a total, on a BeForth quotation layout that can be printed. It never shows salaries, rates, costs or margin.
+
+### Better
+
+- **Pages open faster.** The app's look used to be sent again inside every page, about 230 KB each time, and nothing was compressed. It is now one file your browser keeps, and pages are compressed, so a page is a fraction of what it was.
+- **The ticket board opens much faster with many tickets.** Each column shows its first 30 tickets with a "Show more" link for the rest, and the counts still include every ticket. With hundreds of tickets the page used to be over a megabyte.
+- **BeForth fonts everywhere.** Text is DM Sans and headings are Manrope across the whole app, not only on Project costing.
+- **Project costing looks like your estimates screen.** The list is a table with a search box and totals on top, and each estimate has a row of cost, price, profit and margin cards above its form, with the margin and results in a side column. The pages use DM Sans for text and Manrope for headings and figures.
+
+### Fixed
+
+- **The online panel could show an error when the live connection was down.** If the live connection could not be reached, the fallback check-in could fail with a server error. It now always records that you are here.
+- **The DSR log could not be scrolled to its last rows.** On some screen sizes the table was squeezed into a short box and the rows below it were cut off. The table now takes the height it needs and the page scrolls to the end.
+
 ## [1.52.7] "Auklet" — 2026-10-17 · weekly off days you choose, punch in on Home any day, and a thread on each expense
 
 > In short: you choose which days of the week are weekly offs and nothing counts against anyone on them, Home lets you punch in on any day, and every expense has a discussion for owners and admins.

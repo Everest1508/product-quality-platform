@@ -223,6 +223,15 @@ class PresenceBeatTest(TestCase):
         self.assertEqual([u["username"] for u in users], ["beat"])
         self.assertEqual(users[0]["activity"], "Viewing ticket #7")
 
+    def test_beat_survives_a_broken_channel_layer(self):
+        from unittest import mock
+
+        with mock.patch("apps.presence.views.async_to_sync", side_effect=ConnectionError("redis down")):
+            with self.assertLogs("apps.presence.views", level="WARNING"):
+                res = self._beat(tab="abc123", path="/tickets/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(PresenceSession.objects.filter(user=self.user).count(), 1)
+
     def test_beat_twice_keeps_one_row(self):
         self._beat(tab="abc123", path="/tickets/")
         self._beat(tab="abc123", path="/errors/")

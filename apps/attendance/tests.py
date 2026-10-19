@@ -1453,9 +1453,12 @@ class PunchPanelTest(AttendanceTestBase):
         buttons rendered as the same plain `.btn`."""
         self.punch_in(self.at(10, 2))
         body = self.panel()
+        from apps.core import assets
+
+        css = self.client.get(assets.css_url()).content.decode()
         self.assertIn("punch-btn punch-btn-out", body)
         for selector in (".punch-btn-in{", ".punch-btn-out{"):
-            self.assertIn(selector, body)
+            self.assertIn(selector, css)
 
     def test_the_panel_warns_about_a_forgotten_check_out(self):
         """The complaint that started this: the panel said nothing about it."""

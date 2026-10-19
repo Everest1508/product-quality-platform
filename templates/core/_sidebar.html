@@ -182,6 +182,11 @@
        class="side-item {% if u == 'expense_list' or u == 'expense_edit' %}active{% endif %}">
       {% icon 'wallet' %} <span class="side-label">Expenses</span>
     </a>
+    <a href="{% url 'costing:estimate_list' %}" data-label="Project costing"
+       {% if u == 'estimate_list' or u == 'estimate_new' or u == 'estimate_edit' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'estimate_list' or u == 'estimate_new' or u == 'estimate_edit' %}active{% endif %}">
+      {% icon 'banknote' %} <span class="side-label">Project costing</span>
+    </a>
     <a href="{% url 'leave:approvals' %}" data-label="Leave approvals"
        {% if u == 'approvals' or u == 'approval_detail' %}aria-current="page"{% endif %}
        class="side-item {% if u == 'approvals' or u == 'approval_detail' %}active{% endif %}">

@@ -1,0 +1,135 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}{% if e and e.pk %}{{ e.name }}{% else %}New estimate{% endif %} — PQ Platform{% endblock %}
+
+
+{% block content %}
+<div class="co-scope">
+<nav class="breadcrumbs"><a href="{% url 'costing:estimate_list' %}">Project costing</a><span class="sep">/</span><span class="current">{% if e and e.pk %}{{ e.name }}{% else %}New estimate{% endif %}</span></nav>
+<div class="pg-head">
+  <div>
+    <h1>{% if e and e.pk %}{{ e.name }}{% else %}New project{% endif %}</h1>
+    <p class="sub">{% if e and e.client_name %}{{ e.client_name }} · {% endif %}Type your numbers. The cost and price update as you type. Only the project name is required.</p>
+  </div>
+  {% if e and e.pk %}<div class="head-actions">
+    <a href="{% url 'costing:estimate_quote' e.pk %}" target="_blank" rel="noopener" class="btn">{% icon 'file-text' 'ic' %}Client quote</a>
+  </div>{% endif %}
+</div>
+
+{% comment %}
+One form, posted two ways: to the calc URL on every change (htmx, shows the numbers,
+saves nothing) and to this page on Save. The people and other-charge rows live in
+Alpine and travel as two JSON fields, so there is only one copy of the maths: the server's.
+{% endcomment %}
+<div id="co-kpis" class="co-kpis">{% include "costing/_kpis.html" %}</div>
+
+<form method="post" class="co-page" id="co-form" novalidate
+      data-people="{{ people_json }}" data-others="{{ others_json }}"
+      x-data="costing(JSON.parse($el.dataset.people), JSON.parse($el.dataset.others))"
+      hx-post="{% url 'costing:estimate_calc' %}" hx-trigger="calc, input delay:250ms, change delay:250ms" hx-target="#co-result" hx-swap="innerHTML"
+      x-effect="JSON.stringify(people); JSON.stringify(others); $nextTick(() => htmx.trigger($el, 'calc'))">
+  {% csrf_token %}
+  <input type="hidden" name="people_json" :value="JSON.stringify(people)">
+  <input type="hidden" name="others_json" :value="JSON.stringify(others)">
+
+  <div class="co-main">
+    <section class="card co-card">
+      <h2 class="co-h">Project <span class="bdg bdg-blue">Required</span></h2>
+      <p class="co-help">Dedicated days are the days our team works on it. Rent and AI cost follow this.</p>
+      <div class="co-grid">
+        <div class="field co-wide"><label for="c-name">Project name</label>
+          <input id="c-name" name="name" class="form-input" maxlength="200" placeholder="e.g. Interior Project Management System" value="{{ d.name }}" required></div>
+        <div class="field co-wide"><label for="c-client">Client <span class="bdg bdg-outline">Optional</span></label>
+          <input id="c-client" name="client_name" class="form-input" maxlength="200" placeholder="e.g. Aestheti Interiors" value="{{ d.client_name }}"></div>
+        <div class="field"><label for="c-qd">Quote date <span class="bdg bdg-outline">Optional</span></label>
+          <input id="c-qd" name="quote_date" type="date" class="form-input" value="{{ d.quote_date|date:'Y-m-d' }}"></div>
+        <div class="field"><label for="c-ded">Dedicated days</label>
+          <input id="c-ded" name="dedicated_days" class="form-input" inputmode="numeric" value="{{ d.dedicated_days }}"></div>
+        <div class="field"><label for="c-cli">Days told to client</label>
+          <input id="c-cli" name="client_days" class="form-input" inputmode="numeric" value="{{ d.client_days }}"></div>
+      </div>
+    </section>
+
+    <section class="card co-card">
+      <h2 class="co-h">Team <span class="bdg bdg-blue">Required</span></h2>
+      <p class="co-help">Type each person's monthly salary and the time they give. The hourly rate is worked out from your office hours.</p>
+      <div class="co-rows">
+        <div class="co-row co-row-head co-people" aria-hidden="true"><span>Name</span><span>Role</span><span>Salary / month</span><span>Time</span><span>Unit</span><span>AI cost</span><span></span></div>
+        <template x-for="(p, n) in people" :key="n">
+          <div class="co-row co-people">
+            <input class="form-input" x-model="p.name" placeholder="e.g. Manager 1" aria-label="Name">
+            <input class="form-input" x-model="p.role" placeholder="e.g. Manager" aria-label="Role">
+            <input class="form-input" x-model="p.salary" inputmode="decimal" placeholder="20000" aria-label="Monthly salary">
+            <input class="form-input" x-model="p.time" inputmode="decimal" placeholder="80" aria-label="Time on this project">
+            <select class="form-input" x-model="p.unit" aria-label="Unit"><option value="hours">hours</option><option value="days">days</option></select>
+            <label class="co-check"><input type="checkbox" x-model="p.ai"> Yes</label>
+            <button type="button" class="icon-btn" @click="people.splice(n, 1)" aria-label="Remove person">{% icon 'trash' 'ic' %}</button>
+          </div>
+        </template>
+        <p class="co-none" x-show="!people.length" x-cloak>No people yet.</p>
+      </div>
+      <button type="button" class="btn btn-sm" @click="people.push({name:'', role:'', salary:'', time:'', unit:'hours', ai:true})">{% icon 'plus' 'ic' %}Add person</button>
+    </section>
+
+    <section class="card co-card">
+      <h2 class="co-h">Office and AI <span class="bdg bdg-outline">Optional</span></h2>
+      <p class="co-help">Both are charged for the dedicated days: amount × dedicated days ÷ days per month.</p>
+      <div class="co-grid">
+        <div class="field"><label for="c-rent">Office rent per month (₹)</label>
+          <input id="c-rent" name="rent_monthly" class="form-input" inputmode="decimal" value="{{ d.rent_monthly }}"></div>
+        <div class="field"><label for="c-ai">AI cost per person per month (₹)</label>
+          <input id="c-ai" name="ai_per_person_month" class="form-input" inputmode="decimal" value="{{ d.ai_per_person_month }}"></div>
+      </div>
+    </section>
+
+    <section class="card co-card">
+      <h2 class="co-h">Other charges <span class="bdg bdg-outline">Optional</span></h2>
+      <p class="co-help">Anything else that costs money on this project.</p>
+      <div class="co-rows">
+        <template x-for="(o, n) in others" :key="n">
+          <div class="co-row co-others">
+            <input class="form-input" x-model="o.name" placeholder="e.g. Hosting" aria-label="Charge name">
+            <input class="form-input" x-model="o.amount" inputmode="decimal" placeholder="3000" aria-label="Amount">
+            <button type="button" class="icon-btn" @click="others.splice(n, 1)" aria-label="Remove charge">{% icon 'trash' 'ic' %}</button>
+          </div>
+        </template>
+      </div>
+      <button type="button" class="btn btn-sm" @click="others.push({name:'', amount:''})">{% icon 'plus' 'ic' %}Add charge</button>
+    </section>
+
+    <div class="co-actions">
+      <button type="submit" class="btn btn-primary">{% icon 'check' 'ic' %}Save estimate</button>
+      <a href="{% url 'costing:estimate_list' %}" class="btn">{% icon 'x' 'ic' %}Cancel</a>
+    </div>
+  </div>
+
+  <aside class="co-side">
+    <section class="card co-card">
+      <h2 class="co-h">Margin <span class="bdg bdg-blue">Required</span></h2>
+      <p class="co-help">Say your cost is ₹100 and the margin is 50%. With markup you add 50% of the cost on top, so you charge ₹150. With true margin, half of what the client pays is your profit, so you charge ₹200.</p>
+      <div class="co-grid">
+        <div class="field"><label for="c-pct">Margin %</label>
+          <input id="c-pct" name="margin_percent" class="form-input" inputmode="decimal" value="{{ d.margin_percent }}"></div>
+        <div class="field"><label for="c-mode">How to apply it</label>
+          <select id="c-mode" name="margin_mode" class="form-input">
+            <option value="markup" {% if d.margin_mode != 'margin' %}selected{% endif %}>Markup on cost</option>
+            <option value="margin" {% if d.margin_mode == 'margin' %}selected{% endif %}>True margin on price</option>
+          </select></div>
+        <div class="field co-wide"><label for="c-pitch">Quote a different price instead (₹)</label>
+          <input id="c-pitch" name="pitch_price" class="form-input" inputmode="decimal" placeholder="Leave blank to quote the calculated pitch price" value="{{ d.pitch_price }}">
+          <small class="co-help">Only if you want to charge something other than the calculated price. The client quote then shows it, and you see the profit it leaves.</small></div>
+      </div>
+    </section>
+
+    <div id="co-result">{% include "costing/_result.html" %}</div>
+  </aside>
+</form>
+</div>
+
+<script>
+function costing(people, others) {
+  return { people: people, others: others };
+}
+</script>
+{% endblock %}

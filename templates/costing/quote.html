@@ -1,0 +1,75 @@
+{% load costing_tags %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quotation — {{ e.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#1a5bff;--ink:#182234;--muted:#7a8497;--line:#e6e9f0;--soft:#f5f7fb}
+  *{box-sizing:border-box}
+  body{font:14px/1.5 'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);margin:0;padding:48px;-webkit-font-smoothing:antialiased}
+  h1,.brand,.total b{font-family:'Manrope','DM Sans',sans-serif}
+  .q{max-width:850px;margin:0 auto}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;border-bottom:2px solid var(--blue);padding-bottom:24px}
+  .brand{font-size:28px;font-weight:700;letter-spacing:-.02em}
+  .brand small{display:block;margin-top:6px;font:500 10px 'DM Sans',sans-serif;letter-spacing:.2em;color:var(--muted)}
+  .meta{text-align:right;color:var(--muted);line-height:1.7}
+  .tag{margin:32px 0 6px;color:var(--blue);font-size:11px;font-weight:600;letter-spacing:.2em}
+  h1{margin:0 0 6px;font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.15}
+  .for{color:var(--muted);font-size:16px;margin:0 0 32px}
+  .facts{display:flex;gap:48px;padding:20px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:32px}
+  .facts span{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .facts b{font-weight:500;font-size:15px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#f4f6fa;color:var(--muted);text-align:left;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:14px 20px}
+  td{padding:16px 20px;border-bottom:1px solid var(--line)}
+  th:last-child,td:last-child{text-align:right}
+  td:nth-child(2){color:var(--muted)}
+  .total{width:310px;margin:32px 0 0 auto;background:var(--soft);border-radius:12px;padding:20px 24px}
+  .total div{display:flex;justify-content:space-between;align-items:baseline}
+  .total .n{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line);color:var(--muted)}
+  .total b{color:var(--blue);font-size:21px;font-weight:700}
+  .notes{margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
+  .notes h2{font-size:14px;font-weight:600;margin:0 0 8px}
+  .notes li{color:var(--muted);font-size:13px;margin-bottom:4px}
+  .bar{max-width:850px;margin:0 auto 24px;text-align:right}
+  .bar button{font:500 13px 'DM Sans',sans-serif;padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+  @media print{.bar{display:none}body{padding:22px}@page{size:A4;margin:12mm}}
+  @media (max-width:640px){body{padding:20px}.head{flex-direction:column}.meta{text-align:left}.facts{flex-wrap:wrap;gap:20px}}
+</style>
+</head>
+<body>
+<div class="bar"><button onclick="window.print()">Print</button></div>
+<div class="q">
+  <div class="head">
+    <div class="brand">BEFORTH<small>MODERN BUSINESS INFRASTRUCTURE</small></div>
+    <div class="meta">Project quotation<br>Prepared on {{ e.quote_date|date:"j F Y" }}<br>Currency: INR (₹)</div>
+  </div>
+  <div class="tag">PROJECT PROPOSAL</div>
+  <h1>{{ e.name }}</h1>
+  <p class="for">Prepared for {{ e.client_name|default:"Client" }}</p>
+  <div class="facts">
+    <div><span>Client</span><b>{{ e.client_name|default:"Client" }}</b></div>
+    <div><span>Estimated timeline</span><b>{{ e.client_days }} days</b></div>
+    <div><span>Quote validity</span><b>14 days</b></div>
+  </div>
+  <table>
+    <thead><tr><th>Deliverable / item</th><th>Scope</th><th>Amount (INR)</th></tr></thead>
+    <tbody>{% for l in lines %}<tr><td>{{ l.label }}</td><td>{{ l.qty }}</td><td>{{ l.amount|inr }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <div class="total">
+    <div class="n"><span>Project items</span><span>{{ lines|length }}</span></div>
+    <div><span>Total quotation</span><b>{{ price|inr }}</b></div>
+  </div>
+  <div class="notes">
+    <h2>Commercial notes</h2>
+    <ul>
+      <li>This quotation is an estimate based on the described scope and timeline.</li>
+      <li>Final scope, milestones, taxes, and payment terms should be confirmed in the signed proposal or agreement.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

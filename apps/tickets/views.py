@@ -148,18 +148,24 @@ class TicketListView(CompanyMemberRequiredMixin, View):
         })
 
 
+KANBAN_CARDS_PER_COLUMN = 30
+
+
 class TicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by").prefetch_related("assignees")
         qs, ctx = apply_ticket_filters(request, qs)
         qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
 
-        columns = [
-            {"key": v, "label": label, "tickets": list(qs.filter(status=v))}
-            for v, label in Ticket.Status.choices
-        ]
-        total = sum(len(c["tickets"]) for c in columns)
-        open_count = sum(len(c["tickets"]) for c in columns if c["key"] not in OPEN_EXCLUDED)
+        show_all = request.GET.get("all") == "1"
+        columns = []
+        for v, label in Ticket.Status.choices:
+            every = list(qs.filter(status=v))
+            # Drawing hundreds of cards made the page over 1 MB; the rest are one click away.
+            shown = every if show_all else every[:KANBAN_CARDS_PER_COLUMN]
+            columns.append({"key": v, "label": label, "tickets": shown, "count": len(every), "more": len(every) - len(shown)})
+        total = sum(c["count"] for c in columns)
+        open_count = sum(c["count"] for c in columns if c["key"] not in OPEN_EXCLUDED)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "tickets/partials/_kanban_columns.html", {

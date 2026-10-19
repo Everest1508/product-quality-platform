@@ -124,7 +124,9 @@ class LoginPageMarkupTest(TestCase):
         button, so an unsized glyph bursts out of it and covers the field.
         Every consumer of `{% icon %}` therefore needs a CSS size rule.
         """
-        css = self.client.get(self.url).content.decode()
+        from apps.core import assets
+
+        css = self.client.get(assets.css_url()).content.decode()
         self.assertRegex(
             css,
             r"\.pw-toggle \.ic\{[^}]*\bwidth:",
@@ -180,7 +182,10 @@ class LoginPageMarkupTest(TestCase):
 
     def test_the_brand_panel_is_hidden_on_narrow_screens(self):
         """Decoration that would push the form below the fold on a phone."""
-        self.assertIn(".auth-brand{display:none;}", self.client.get(self.url).content.decode())
+        from apps.core import assets
+
+        css = self.client.get(assets.css_url()).content.decode()
+        self.assertIn(".auth-brand{display:none;}", css)
 
 
 class LoginErrorStateTest(TestCase):

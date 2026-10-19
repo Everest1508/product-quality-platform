@@ -194,6 +194,20 @@ class TicketViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "tickets/ticket_kanban.html")
 
+    def test_kanban_caps_cards_per_column_but_counts_all(self):
+        from apps.tickets.views import KANBAN_CARDS_PER_COLUMN as CAP
+
+        for i in range(CAP + 5):
+            Ticket.objects.create(company=self.company, title=f"T{i}", created_by=self.user, product=self.product)
+        body = self.client.get("/tickets/").content.decode()
+        self.assertEqual(body.count('data-ticket-id='), CAP)
+        self.assertIn("Show 5 more", body)
+        self.assertIn(f'<span class="kanban-count">{CAP + 5}</span>', body)  # the header still counts every ticket
+        self.assertIn(f"{CAP + 5} ticket", body)
+        full = self.client.get("/tickets/", {"all": "1"}).content.decode()
+        self.assertEqual(full.count('data-ticket-id='), CAP + 5)
+        self.assertNotIn("more</a>", full)
+
     def test_kanban_filters_overdue(self):
         from django.utils import timezone
         from datetime import timedelta

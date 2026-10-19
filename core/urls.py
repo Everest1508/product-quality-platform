@@ -6,6 +6,7 @@ from django.urls import include, path
 from apps.core import befui
 from django.views.generic import RedirectView
 
+from apps.core.assets import css as app_css
 from apps.core.brand import brand_file, favicon_ico
 from apps.core.search import SearchView
 from apps.core.pwa import manifest, offline, service_worker
@@ -17,6 +18,7 @@ urlpatterns = [
     path("sw.js", service_worker),
     path("offline/", offline),
     path("brand/<str:name>", brand_file),
+    path("assets/app.<str:version>.css", app_css),
     path("admin/", admin.site.urls),
     path("befui/<path:name>", befui.asset),
     path("api/", include("apps.ingestion.urls")),
@@ -38,6 +40,7 @@ urlpatterns = [
     path("attendance/", include("apps.attendance.urls")),
     path("leave/", include("apps.leave.urls")),
     path("expenses/", include("apps.expenses.urls")),
+    path("costing/", include("apps.costing.urls")),
     path("payroll/", include("apps.payroll.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("presence/", include("apps.presence.urls")),

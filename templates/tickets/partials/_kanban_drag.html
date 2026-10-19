@@ -7,10 +7,11 @@
 
   function recount() {
     document.querySelectorAll('.kanban-col').forEach(function(c) {
-      const n = c.querySelector('.kanban-cards').querySelectorAll('.kanban-card').length;
-      c.querySelector('.kanban-count').textContent = n;
       const cards = c.querySelector('.kanban-cards');
-      if (n === 0 && !cards.querySelector('.kanban-empty')) {
+      const n = cards.querySelectorAll('.kanban-card').length;
+      const more = Number(cards.dataset.more || 0);
+      c.querySelector('.kanban-count').textContent = n + more;
+      if (n === 0 && more === 0 && !cards.querySelector('.kanban-empty')) {
         const e = document.createElement('div');
         e.className = 'kanban-empty';
         e.textContent = 'No tickets';

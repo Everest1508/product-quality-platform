@@ -1,0 +1,5 @@
+{% load costing_tags %}
+<div class="co-stat"><span class="co-k">Internal cost</span><span class="co-v">{{ r.total|inr }}</span><span class="co-note">Team + office + AI + other</span></div>
+<div class="co-stat"><span class="co-k">Client price</span><span class="co-v">{% if r.has_pitch %}{{ r.pitch|inr }}{% else %}{{ r.price|inr }}{% endif %}</span><span class="co-note">{% if r.has_pitch %}Your own price{% elif r.mode == 'margin' %}Cost ÷ (1 − margin){% else %}Cost + markup{% endif %}</span></div>
+<div class="co-stat"><span class="co-k">Expected profit</span><span class="co-v {% if r.shown_profit < 0 %}co-neg{% else %}co-pos{% endif %}">{{ r.shown_profit|inr }}</span><span class="co-note">Price minus cost</span></div>
+<div class="co-stat"><span class="co-k">Gross margin</span><span class="co-v {% if r.shown_margin < 0 %}co-neg{% else %}co-pos{% endif %}">{{ r.shown_margin }}%</span><span class="co-note">Profit ÷ price</span></div>
