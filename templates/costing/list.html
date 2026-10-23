@@ -49,8 +49,8 @@
     </tr></thead>
     <tbody>
       {% for row in rows %}
-      <tr x-show="!q || '{{ row.search|escapejs }}'.includes(q.toLowerCase())" onclick="if(!event.target.closest('a,button,form'))location='{% url 'costing:estimate_edit' row.e.pk %}'" class="co-click">
-        <td><div class="co-proj"><span class="co-ico">{% icon 'briefcase' 'ic' %}</span><span><a class="co-name" href="{% url 'costing:estimate_edit' row.e.pk %}">{{ row.e.name }}</a><small>{{ row.e.client_name|default:"No client assigned" }}</small></span></div></td>
+      <tr x-show="!q || '{{ row.search|escapejs }}'.includes(q.toLowerCase())" onclick="if(!event.target.closest('a,button,form'))location='{% url 'costing:estimate_detail' row.e.pk %}'" class="co-click">
+        <td><div class="co-proj"><span class="co-ico">{% icon 'briefcase' 'ic' %}</span><span><a class="co-name" href="{% url 'costing:estimate_detail' row.e.pk %}">{{ row.e.name }}</a><small>{{ row.e.client_name|default:"No client assigned" }}</small></span></div></td>
         <td>{{ row.e.quote_date|date:"j M Y" }}</td>
         <td>{{ row.e.client_days }} days</td>
         <td class="r co-mute">{{ row.cost|inr }}</td>

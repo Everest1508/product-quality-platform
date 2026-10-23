@@ -1,0 +1,67 @@
+{% extends "core/base.html" %}
+{% load icon_tags costing_tags %}
+
+{% block title %}{{ e.name }} — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="co-scope">
+<nav class="breadcrumbs"><a href="{% url 'costing:estimate_list' %}">Project costing</a><span class="sep">/</span><span class="current">{{ e.name }}</span></nav>
+<div class="pg-head">
+  <div>
+    <h1>{{ e.name }}</h1>
+    <p class="sub">{% if e.client_name %}{{ e.client_name }} · {% endif %}Every number below, step by step, in plain words.</p>
+  </div>
+  <div class="head-actions">
+    <a href="{% url 'costing:estimate_quote' e.pk %}" target="_blank" rel="noopener" class="btn">{% icon 'file-text' 'ic' %}Client quote</a>
+    <a href="{% url 'costing:estimate_edit' e.pk %}" class="btn btn-primary">{% icon 'edit' 'ic' %}Edit</a>
+  </div>
+</div>
+
+<div class="co-sum">
+  <h2 class="co-h">Step 1 · What each person costs</h2>
+  <p class="co-help">Hourly rate = monthly salary ÷ {{ r.hpm }} working hours in a month. Cost = hourly rate × hours spent on this project.{% if r.hpd %} A day counts as {{ r.hpd }} hours.{% endif %}</p>
+  <dl class="co-dl">
+    {% for p in r.people %}
+    <div><dt>{{ p.name|default:"Unnamed" }}
+      <small>salary ₹{{ p.salary }} ÷ {{ r.hpm }} = {{ p.rate|inr }}/hr × {{ p.hours }}h{% if p.unit == "days" %} ({{ p.time }} days × {{ r.hpd }}h){% endif %}</small></dt>
+      <dd>{{ p.cost|inr }}</dd></div>
+    {% empty %}<div><dt>No people added</dt><dd></dd></div>{% endfor %}
+    <div class="co-total"><dt>Employees total</dt><dd>{{ r.labour|inr }}</dd></div>
+  </dl>
+</div>
+
+<div class="co-sum">
+  <h2 class="co-h">Step 2 · Other costs</h2>
+  <dl class="co-dl">
+    <div><dt>Office rent <small>{{ d.rent_monthly|default:"0" }} a month × {{ r.months }} months ({{ d.dedicated_days }} days ÷ 30)</small></dt><dd>{{ r.rent|inr }}</dd></div>
+    <div><dt>AI tools <small>{{ d.ai_per_person_month|default:"0" }} per person a month × {{ r.ai_heads }} people using AI × {{ r.months }} months</small></dt><dd>{{ r.ai|inr }}</dd></div>
+    {% for o in r.others %}<div><dt>{{ o.name|default:"Other charge" }}</dt><dd>{{ o.amount|inr }}</dd></div>{% endfor %}
+    <div><dt>Other charges total</dt><dd>{{ r.extra|inr }}</dd></div>
+  </dl>
+</div>
+
+<div class="co-sum">
+  <h2 class="co-h">Step 3 · Total cost to us</h2>
+  <p class="co-help">Employees + rent + AI + other charges.</p>
+  <dl class="co-dl">
+    <div><dt>{{ r.labour|inr }} + {{ r.rent|inr }} + {{ r.ai|inr }} + {{ r.extra|inr }}</dt><dd></dd></div>
+    <div class="co-total"><dt>Total cost</dt><dd>{{ r.total|inr }}</dd></div>
+  </dl>
+</div>
+
+<div class="co-sum">
+  <h2 class="co-h">Step 4 · Price and profit</h2>
+  <p class="co-help">
+    {% if r.mode == 'margin' %}You asked for a {{ d.margin_percent }}% margin, so price = cost ÷ (1 − {{ d.margin_percent }}%). Profit is {{ d.margin_percent }}% of the price.
+    {% else %}You asked for a {{ d.margin_percent }}% markup, so price = cost + {{ d.margin_percent }}% of cost. Margin is measured on the price, so it comes out lower than the markup.{% endif %}
+  </p>
+  <dl class="co-dl">
+    <div><dt>Suggested price</dt><dd>{{ r.price|inr }}</dd></div>
+    <div><dt>Suggested profit <small>price − cost</small></dt><dd class="{% if r.profit < 0 %}co-neg{% endif %}">{{ r.profit|inr }}</dd></div>
+    {% if r.has_pitch %}<div><dt>Price you are actually quoting</dt><dd>{{ r.pitch|inr }}</dd></div>{% endif %}
+    <div><dt>Profit <small>{% if r.has_pitch %}quoted price{% else %}price{% endif %} − cost</small></dt><dd class="{% if r.shown_profit < 0 %}co-neg{% endif %}">{{ r.shown_profit|inr }}</dd></div>
+    <div class="co-total"><dt>Margin <small>profit ÷ {% if r.has_pitch %}quoted price{% else %}price{% endif %} × 100</small></dt><dd class="{% if r.shown_margin < 0 %}co-neg{% endif %}">{{ r.shown_margin }}%</dd></div>
+  </dl>
+</div>
+</div>
+{% endblock %}

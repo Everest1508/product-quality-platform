@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.54.1] "Dunnock" — 2026-10-23 · project costing page that shows every calculation
+
+> In short: saving a project in Project costing now opens a page that explains every number in plain steps.
+
+### New
+
+- **A project page that shows how every number is worked out.** It walks through what each person costs, rent, AI and other charges, the total cost, and then the price, profit and margin, each with the sum written out.
+
+### Better
+
+- **Saving a project takes you to that page.** You used to stay on the form after saving. Clicking a project in the list opens the same page, and an Edit button there takes you back to the form.
+
 ## [1.54.0] "Chickadee" — 2026-10-23 · newest tickets first, rows per page, creation dates
 
 > In short: the ticket board shows the newest tickets at the top, every table lets you pick how many rows to show, and tickets show when they were created.

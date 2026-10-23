@@ -126,13 +126,22 @@ class EstimateFormView(CostingAccessMixin, View):
             setattr(e, f, data[f])
         e.save()
         messages.success(request, f"Saved {e.name}.")
-        return redirect("costing:estimate_edit", pk=e.pk)
+        return redirect("costing:estimate_detail", pk=e.pk)
 
     def page(self, request, e, data):
         return render(request, "costing/form.html", {
             "e": e, "d": data, "r": compute(request.company, data),
             "people_json": json.dumps(data["people"]), "others_json": json.dumps(data["others"]),
         })
+
+
+class EstimateDetailView(CostingAccessMixin, View):
+    """Read-only page that walks through every number: where it comes from and how it adds up."""
+
+    def get(self, request, pk):
+        e = self.estimate_or_404(pk)
+        d = e.inputs()
+        return render(request, "costing/detail.html", {"e": e, "d": d, "r": compute(request.company, d)})
 
 
 class EstimateCalcView(CostingAccessMixin, View):

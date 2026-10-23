@@ -72,7 +72,7 @@ class AccessTest(TestCase):
         s.save()
 
     def test_only_owner_and_admin(self):
-        urls = [reverse("costing:estimate_list"), reverse("costing:estimate_new"), reverse("costing:estimate_edit", args=[self.est.pk]),
+        urls = [reverse("costing:estimate_list"), reverse("costing:estimate_new"), reverse("costing:estimate_edit", args=[self.est.pk]), reverse("costing:estimate_detail", args=[self.est.pk]),
                 reverse("costing:estimate_quote", args=[self.est.pk])]
         for role in ("developer", "viewer"):
             self.login(role)
