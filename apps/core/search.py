@@ -194,6 +194,7 @@ def search(request, query):
     from apps.feedback.models import Survey
     from apps.ingestion.models import Feedback
     from apps.leave.models import LeaveRequest
+    from apps.leave.views import is_approver
 
     feedback_items = [
         {
@@ -237,6 +238,21 @@ def search(request, query):
     ]
 
     is_admin = request.company_role in ("owner", "admin")
+    # Approvers decide everyone's leave, so they can find it; others only see their own above.
+    team_leave_items = []
+    if query and (is_admin or is_approver(user, company)):
+        team_leave_items = [
+            {
+                "title": f"{r.user.get_full_name() or r.user.username} · {r.start_date:%b %d} – {r.end_date:%b %d}",
+                "subtitle": f"Leave · {r.get_status_display()} · {r.reason[:60]}",
+                "url": reverse("leave:approvals"),
+            }
+            for r in LeaveRequest.objects.filter(company=company)
+            .filter(Q(reason__icontains=query) | Q(user__username__icontains=query) | Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query))
+            .exclude(user=user)
+            .select_related("user")
+            .order_by("-start_date")[: LIMITS["leave"]]
+        ]
     log_items = []
     if query:
         from apps.products.models import ProjectLogEntry
@@ -323,6 +339,7 @@ def search(request, query):
         ("rules", "Automation", rule_items),
         ("dsr", "My DSR", dsr_items),
         ("leave", "My leave", leave_items),
+        ("leave", "Team leave", team_leave_items),
         ("expenses", "Expenses", expense_items),
         ("corrections", "Corrections", correction_items),
         ("log", "Project updates", log_items),

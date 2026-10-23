@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.53.2] "Chiffchaff" — 2026-10-23 · stack traces back on the project error page, and search finds team leave
+
+> In short: the stack trace shows again on a project's error page, and approvers can search everyone's leave requests.
+
+### Better
+
+- **Approvers can search team leave.** Owners, admins and leave approvers now find other people's leave requests by name or reason from the search bar, under a Team leave group that opens the approvals page. Everyone else still finds only their own leave.
+
+### Fixed
+
+- **The stack trace was missing on a project's error page.** Each occurrence on the error page opened from a project now shows its stack trace underneath, as the main Errors page already did.
+
 ## [1.53.1] "Bushtit" — 2026-10-19 · a tidier sidebar and the Expenses page laid out properly again
 
 > In short: the Admin menu is split into small groups, and the Expenses page and its Add expense form look right again.

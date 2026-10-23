@@ -81,6 +81,9 @@
       <td class="text-sm">{{ occ.page|default:"—" }}</td>
       <td class="text-sm">{{ occ.user_ref|default:"—" }}</td>
     </tr>
+    {% if occ.stacktrace %}
+    <tr><td colspan="4"><pre style="margin:0;padding:12px;background:var(--navy);color:#E6EDF7;border-radius:6px;font-size:12px;overflow-x:auto;max-height:300px;">{{ occ.stacktrace }}</pre></td></tr>
+    {% endif %}
     {% empty %}
     <tr><td colspan="4" class="empty"><p>No occurrences recorded.</p></td></tr>
     {% endfor %}
