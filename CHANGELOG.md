@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.54.0] "Chickadee" — 2026-10-23 · newest tickets first, rows per page, creation dates
+
+> In short: the ticket board shows the newest tickets at the top, every table lets you pick how many rows to show, and tickets show when they were created.
+
+### New
+
+- **Choose how many rows a table shows.** Every table with pages now has a Rows per page menu (10, 20, 50 or 100) next to the "1–10 of 16" count. Your choice stays while you move between pages and filters.
+- **Tickets show their creation date.** Each card on the board shows the day it was created, and the ticket lists have a Created column beside Updated.
+
+### Better
+
+- **The ticket board lists the newest tickets first.** Within each column the latest ticket is at the top and the oldest at the bottom, instead of ordering by priority first. You can still sort by priority from the sort menu.
+- **Tables show 20 rows by default.** It used to be 25, so it matches the new menu.
+
 ## [1.53.2] "Chiffchaff" — 2026-10-23 · stack traces back on the project error page, and search finds team leave
 
 > In short: the stack trace shows again on a project's error page, and approvers can search everyone's leave requests.

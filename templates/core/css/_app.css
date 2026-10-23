@@ -357,6 +357,9 @@
   .pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px;}
   .pagination .btn{min-width:32px;text-align:center;padding:5px 10px;}
   .pagination .btn[disabled]{opacity:.4;pointer-events:none;}
+  .pagebar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:18px;}
+  .pagebar .pagination{margin-top:0;}
+  .pagebar-size{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);}
   .pagination .page-info{font-size:13px;color:var(--muted);padding:0 8px;}
 
   .row-actions{display:flex;gap:4px;}

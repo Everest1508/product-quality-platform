@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -126,8 +126,7 @@ class TicketListView(CompanyMemberRequiredMixin, View):
 
         qs = sort_tickets(request, qs, default=("-created_at",))
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
         open_count = qs.exclude(status__in=OPEN_EXCLUDED).count()
 
         if request.headers.get("HX-Request") == "true":
@@ -155,7 +154,7 @@ class TicketKanbanView(CompanyMemberRequiredMixin, View):
     def get(self, request):
         qs = accessible_tickets(request.user, request.company).select_related("product", "assigned_to", "created_by").prefetch_related("assignees")
         qs, ctx = apply_ticket_filters(request, qs)
-        qs = sort_tickets(request, qs, default=("-priority", "-created_at"))
+        qs = sort_tickets(request, qs, default=("-created_at",))
 
         show_all = request.GET.get("all") == "1"
         columns = []

@@ -3,6 +3,14 @@ Pass `hx_target` (an element id, no #) to make page links swap that element
 via htmx and keep the URL in sync. Without it, links fall back to the Alpine
 `buildPageUrl` full-navigation behaviour.
 {% endcomment %}
+{% load dropdown_tags %}
+{% if page.paginator.count %}
+<div class="pagebar">
+  <div class="pagebar-size" onchange="var u=new URL(location.href);u.searchParams.delete('page');u.searchParams.set('per_page',event.target.value);location=u;">
+    <span>Rows per page</span>
+    {% dropdown "per_page" "10:10|20:20|50:50|100:100"|opts page.paginator.per_page label="Rows per page" %}
+    <span>{{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }}</span>
+  </div>
 {% if page.has_other_pages %}
 <div class="pagination"{% if not hx_target %} x-data{% endif %}>
   {% if page.has_previous %}
@@ -38,8 +46,8 @@ via htmx and keep the URL in sync. Without it, links fall back to the Alpine
   {% else %}
   <span class="btn disabled">Next</span>
   {% endif %}
+  <span class="page-info">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
 </div>
-<div style="text-align:center;margin-top:8px;">
-  <span class="text-sm text-muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+{% endif %}
 </div>
 {% endif %}

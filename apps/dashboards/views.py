@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -114,8 +114,7 @@ class AuditLogView(CompanyAdminRequiredMixin, View):
         if search:
             qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         members = User.objects.filter(memberships__company=request.company).order_by("username")
         event_types = ActivityLog.EventType.choices

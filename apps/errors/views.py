@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -65,9 +65,7 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
         order = ERROR_SORT_MAP.get(sort, "-last_seen")
         qs = qs.order_by(order)
 
-        paginator = Paginator(qs, 25)
-        page_num = request.GET.get("page", 1)
-        page = paginator.get_page(page_num)
+        page = paginate(request, qs)
         page.object_list = trends.attach_trends(page.object_list)
         open_count = qs.exclude(status__in=("resolved", "ignored")).count()
 

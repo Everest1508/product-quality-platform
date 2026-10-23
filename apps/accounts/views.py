@@ -4,7 +4,7 @@ from urllib.parse import urlencode, urlparse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -185,8 +185,7 @@ class TeamListView(CompanyMemberRequiredMixin, View):
         order = TEAM_SORT_MAP.get(sort, "-role")
         qs = qs.order_by(order)
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         form = TeamCreateMemberForm(company=request.company)
 
@@ -241,8 +240,7 @@ class TeamInviteView(CompanyAdminRequiredMixin, View):
             .select_related("user")
             .order_by("-role", "user__username")
         )
-        paginator = Paginator(memberships, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, memberships)
         return render(request, "accounts/team_list.html", {
             "page": page,
             "memberships": page,

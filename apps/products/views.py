@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib import messages
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.db.models import Count, Q
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -42,8 +42,7 @@ class ProductListView(CompanyMemberRequiredMixin, View):
         order = PRODUCT_SORT_MAP.get(sort, "name")
         qs = qs.order_by(order)
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         from apps.dashboards.service import _build_product_cards
         from apps.ingestion.models import ErrorOccurrence
@@ -448,8 +447,7 @@ class ProductErrorListView(CompanyMemberRequiredMixin, View):
         sort_map = {"last_seen": "last_seen", "-last_seen": "-last_seen", "severity": "severity", "-severity": "-severity", "count": "occurrence_count", "-count": "-occurrence_count", "title": "title", "-title": "-title"}
         qs = qs.order_by(sort_map.get(sort, "-last_seen"))
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
         from apps.errors import trends
         page.object_list = trends.attach_trends(page.object_list)
         open_count = qs.exclude(status__in=("resolved", "ignored")).count()
@@ -521,8 +519,7 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
             qs = qs.filter(status=status)
         qs = sort_tickets(request, qs, default=("-created_at",))
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
         open_count = qs.exclude(status__in=("resolved", "closed")).count()
 
         if request.headers.get("HX-Request") == "true":
@@ -676,8 +673,7 @@ class ProductSurveyListView(CompanyMemberRequiredMixin, View):
         sort_map = {"created": "created_at", "-created": "-created_at", "name": "name", "-name": "-name", "responses": "response_count", "-responses": "-response_count"}
         qs = qs.order_by(sort_map.get(sort, "-created_at"))
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_survey_list_body.html", {"page": page})
@@ -740,8 +736,7 @@ class ProductRuleListView(CompanyMemberRequiredMixin, View):
         sort_map = {"created": "created_at", "-created": "-created_at", "name": "name", "-name": "-name", "-fired": "-trigger_count"}
         qs = qs.order_by(sort_map.get(sort, "-created_at"))
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "products/partials/_product_rule_list_body.html", {"page": page})

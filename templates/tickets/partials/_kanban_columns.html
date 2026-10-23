@@ -50,6 +50,7 @@
         {% else %}
         <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
         {% endif %}
+        <span class="text-sm text-muted" style="font-size:11px;" title="Created {{ ticket.created_at|date:'M j, Y, g:i A' }}">{{ ticket.created_at|date:'M j' }}</span>
         {% if ticket.deadline %}
         <span class="card-deadline{% if ticket.is_overdue %} overdue{% endif %}" title="{{ ticket.deadline|date:'M j, Y, g:i A' }}">{% if ticket.is_overdue %}Overdue · {% else %}Due {% endif %}{{ ticket.deadline|date:'M j' }}</span>
         {% endif %}

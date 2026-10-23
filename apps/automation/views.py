@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
@@ -41,8 +41,7 @@ class RuleListView(CompanyMemberRequiredMixin, View):
         order = RULE_SORT_MAP.get(sort, "-created_at")
         qs = qs.order_by(order)
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         recent_logs = AutoTicketLog.objects.filter(company=request.company).select_related("rule", "ticket")[:10]
 

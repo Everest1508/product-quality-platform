@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.core.paginator import Paginator
+from apps.core.pagination import paginate
 from django.db.models import Avg, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -44,8 +44,7 @@ class SurveyListView(CompanyMemberRequiredMixin, View):
         order = SURVEY_SORT_MAP.get(sort, "-created_at")
         qs = qs.order_by(order)
 
-        paginator = Paginator(qs, 25)
-        page = paginator.get_page(request.GET.get("page", 1))
+        page = paginate(request, qs)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "feedback/partials/_survey_list_body.html", {
