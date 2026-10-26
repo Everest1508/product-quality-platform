@@ -349,6 +349,23 @@ def late_label_for(record, shift):
     return f"late {minutes}m"
 
 
+EARLY_LINES = (
+    "Early bird! {n} min ahead of the shift.",
+    "Chai can wait, you're {n} min early.",
+    "{n} min early. The office isn't even warm yet.",
+    "First one in gets the good chair. {n} min early.",
+    "Look at you, {n} min ahead of the bell.",
+    "{n} min early. Someone's feeling productive.",
+    "Beat the clock by {n} min. Nice start.",
+    "Up before the rush, {n} min early.",
+)
+
+
+def early_line(minutes, day):
+    """A friendly line for an early arrival; fixed per day so a refresh does not reshuffle it."""
+    return EARLY_LINES[day.toordinal() % len(EARLY_LINES)].format(n=minutes)
+
+
 def lateness_for(record, shift=None):
     """Minutes late for one attendance row, or 0 when on time.
 

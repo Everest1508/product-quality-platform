@@ -61,6 +61,7 @@
           {% endif %}
         </div>
       {% endwith %}
+      {% if attendance.early_line %}<p style="margin-top:10px"><span class="bdg bdg-green">{% icon 'flame' 'ic' %}{{ attendance.early_line }}</span></p>{% endif %}
       {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
       {% if dsr_today %}
       <a class="hm-dsr" href="{% url 'dsr:dsr_sheet' %}" title="Open the DSR">
@@ -70,6 +71,19 @@
       {% endif %}
       <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
     </section>
+
+    {% if is_privileged %}
+    <section class="hm-card">
+      <h2>Team today <span class="hm-sub-inline">{{ team_today|length }} in</span></h2>
+      {% if team_today %}
+        <ul class="hm-rows">
+          {% for r in team_today %}
+            <li><span class="t">{{ r.user.get_full_name|default:r.user.username }}</span><span class="m">{{ r.check_in|date:"g:i A" }} → {% if r.check_out %}{{ r.check_out|date:"g:i A" }}{% else %}working{% endif %}</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}<div class="hm-empty"><span>Nobody has punched in yet.</span></div>{% endif %}
+    </section>
+    {% endif %}
 
     <section class="hm-card" id="todo-card">
       <h2>My to-do <span class="hm-sub-inline">only you can see this</span></h2>

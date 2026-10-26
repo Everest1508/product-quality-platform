@@ -641,7 +641,7 @@ def _personal_attendance(company, user, today):
     an admin notices, which is exactly the case nobody noticed.
     """
     from apps.attendance.models import AttendanceRecord
-    from apps.attendance.service import net_minutes_for, shift_for
+    from apps.attendance.service import early_line, net_minutes_for, shift_for
     from apps.leave.service import is_on_leave
 
     record = AttendanceRecord.objects.filter(
@@ -656,8 +656,14 @@ def _personal_attendance(company, user, today):
     shift = shift_for(company)
     minutes = sum(net_minutes_for(r, shift) for r in month_records)
 
+    early = 0
+    if record and record.check_in and not shift.is_weekly_off(today):
+        local_in = timezone.localtime(record.check_in)
+        early = max(0, shift.start_time.hour * 60 + shift.start_time.minute - (local_in.hour * 60 + local_in.minute))
+
     return {
         "record": record,
+        "early_line": early_line(early, today) if early else "",
         # Net of the break, like every other hours figure; `worked_hours` is the raw span.
         "today_minutes": net_minutes_for(record, shift) if record and record.check_in else 0,
         # A weekly off day: the Today card still lets the person punch, but says it is optional.
@@ -872,6 +878,7 @@ def get_personal_dashboard_data(user, company):
     number they are actually responsible for.
     """
     from apps.accounts.models import Membership
+    from apps.attendance.models import AttendanceRecord
     from apps.leave.models import LeaveRequest
     from apps.leave.service import balances_for
     from apps.products.access import accessible_tickets
@@ -938,6 +945,10 @@ def get_personal_dashboard_data(user, company):
         data["leave_approvals"] = LeaveRequest.objects.filter(
             company=company, status="pending"
         ).select_related("user", "policy").order_by("start_date")[:5]
+        data["team_today"] = list(
+            AttendanceRecord.objects.filter(company=company, date=today, check_in__isnull=False)
+            .select_related("user").order_by("check_in")
+        )
         data["leave_approval_count"] = LeaveRequest.objects.filter(
             company=company, status="pending"
         ).count()

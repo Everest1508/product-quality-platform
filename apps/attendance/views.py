@@ -371,7 +371,15 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
                 target_object_id=record.pk,
                 metadata={"date": record.date.isoformat()},
             )
-            message = f"Checked in at {timezone.localtime(record.check_in).strftime('%I:%M %p')}."
+            local_in = timezone.localtime(record.check_in)
+            message = f"Checked in at {local_in.strftime('%I:%M %p')}."
+            shift = service.shift_for(request.company)
+            early = (
+                shift.start_time.hour * 60 + shift.start_time.minute
+                - (local_in.hour * 60 + local_in.minute)
+            )
+            if early > 0 and not shift.is_weekly_off(record.date):
+                message += " " + service.early_line(early, record.date)
         elif action == "checked_out":
             log_activity(
                 request.company,

@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.55.0] "Dove" — 2026-10-26 · early-bird greetings and who is in today
+
+> In short: checking in before the shift starts now gets a friendly line, and owners and admins see who is in today on Home.
+
+### New
+
+- **A friendly line when you check in early.** It shows as a badge in your Today box and in the check-in message. There are several lines, and you get a different one each day.
+- **A "Team today" card on Home for owners and admins.** It lists everyone who has punched in today, when they came in, and when they left or that they are still working.
+
 ## [1.54.1] "Dunnock" — 2026-10-23 · project costing page that shows every calculation
 
 > In short: saving a project in Project costing now opens a page that explains every number in plain steps.
