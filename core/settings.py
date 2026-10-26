@@ -188,6 +188,13 @@ REST_FRAMEWORK = {
     "UNAUTHENTICATED_USER": None,
 }
 
+# TLS ends at the reverse proxy in front of the container. Set this to 1 there so
+# Django trusts X-Forwarded-Proto and builds https:// links (the website-lead webhook
+# URL is built this way). Leave it off if the app is reachable without the proxy,
+# because anyone could then fake the header.
+if os.environ.get("DJANGO_BEHIND_HTTPS_PROXY", "").lower() in ("1", "true", "yes"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # CSRF
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS",
