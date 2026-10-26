@@ -1,35 +1,31 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}Website leads — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>Website leads <span class="count">{{ page.paginator.count }} total</span></h1>
+<div x-data="{ copied: '',
+  copy(id, label) { const t = document.getElementById(id).textContent.trim(); navigator.clipboard.writeText(t).then(() => { this.copied = id; if (window.pqToast) window.pqToast(label + ' copied', 'success'); setTimeout(() => this.copied = '', 1800); }); }
+}">
+
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>Website leads</h1>
+    <p class="sub">{{ page.paginator.count }} total · everything your website form sends lands here</p>
+  </div>
+  <div class="pg-actions">
+    <button type="button" class="btn" @click="copy('lead-url', 'Webhook URL')">{% icon 'copy' 'ic' %}Copy webhook URL</button>
+    <button type="button" class="btn btn-primary" @click="copy('lead-prompt', 'Setup prompt')">{% icon 'sparkles' 'ic' %}Copy setup prompt</button>
+  </div>
 </div>
 
-<div class="ledger">
-  <article class="lrow lr-nomark">
-    <div class="lmain">
-      <div class="lt">Webhook URL</div>
-      <p class="ls">Send your website form here with POST. Anyone with this link can add leads, so keep it private.</p>
-      <input type="text" class="form-input" readonly value="{{ webhook_url }}" aria-label="Webhook URL" onclick="this.select()">
-      <p class="ls">Fields: <code>full_name</code>, <code>email</code>, <code>company</code>, <code>need</code>, <code>details</code> (JSON or normal form post).</p>
-    </div>
-    <div class="lactions">
-      <form method="post" action="{% url 'leads:webhook_rotate' %}" data-confirm="Create a new webhook URL?" data-confirm-text="The current URL stops working, so update your website." data-confirm-label="Create new URL">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-sm">New URL</button>
-      </form>
-    </div>
-  </article>
+<div class="card" style="background:var(--panel);margin-bottom:var(--space-6);padding:var(--space-4) var(--space-5)">
+  <p style="font-size:var(--fs-xs);color:var(--muted);margin-bottom:var(--space-1)">Webhook URL · POST your website form here. Keep it private: anyone with it can add leads.</p>
+  <code style="font-size:var(--fs-sm);word-break:break-all;user-select:all">{{ webhook_url }}</code>
 </div>
 
-<div class="ledger" style="margin-top:var(--space-4)" x-data="{ copied: false }">
-  <article class="lrow lr-nomark">
-    <div class="lmain">
-      <div class="lt">Setup prompt</div>
-      <p class="ls">Copy this and paste it to your developer or your AI tool to connect your website form.</p>
-      <textarea x-ref="guide" class="form-input" rows="14" readonly aria-label="Setup prompt" style="font-family:monospace;font-size:var(--fs-sm,13px)">Connect my website's contact form to my CRM webhook.
+<script type="text/plain" id="lead-url">{{ webhook_url }}</script>
+<script type="text/plain" id="lead-prompt">Connect my website's contact form to my CRM webhook.
 
 Webhook URL (POST):
 {{ webhook_url }}
@@ -53,33 +49,38 @@ fetch("{{ webhook_url }}", {
   method: "POST",
   headers: {"Content-Type": "application/json"},
   body: JSON.stringify({full_name, email, company, need, details})
-})</textarea>
-    </div>
-    <div class="lactions">
-      <button type="button" class="btn btn-sm btn-primary"
-              @click="$refs.guide.select(); navigator.clipboard.writeText($refs.guide.value).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-              x-text="copied ? 'Copied' : 'Copy'">Copy</button>
-    </div>
-  </article>
+})</script>
+
+<div class="card-flush">
+  <div class="table-scroll">
+  <table class="tbl">
+    <thead><tr><th>Received</th><th>Name</th><th>Email</th><th>Company</th><th>Needs</th><th>Project details</th></tr></thead>
+    <tbody>
+    {% for lead in page %}
+      <tr>
+        <td style="white-space:nowrap" title="{{ lead.created_at|date:'d M Y, g:i a' }}">{{ lead.created_at|timesince }} ago</td>
+        <td class="task">{{ lead.full_name }}</td>
+        <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
+        <td>{{ lead.company_name|default:"—" }}</td>
+        <td>{% if lead.need %}<span class="bdg bdg-outline">{{ lead.need }}</span>{% else %}—{% endif %}</td>
+        <td style="white-space:pre-wrap;min-width:240px;max-width:420px">{{ lead.details }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6"><div class="empty-state"><strong>No leads yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
 </div>
 
-<table class="tbl" style="margin-top:var(--space-4)">
-  <thead><tr><th>When</th><th>Name</th><th>Email</th><th>Company</th><th>Needs</th><th>Details</th></tr></thead>
-  <tbody>
-  {% for lead in page %}
-    <tr>
-      <td>{{ lead.created_at|date:"d M, H:i" }}</td>
-      <td>{{ lead.full_name }}</td>
-      <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
-      <td>{{ lead.company_name|default:"—" }}</td>
-      <td>{{ lead.need|default:"—" }}</td>
-      <td style="white-space:pre-wrap;max-width:420px">{{ lead.details }}</td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="6"><div class="empty-state"><strong>No leads yet</strong>Submissions from your website form will show up here.</div></td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-
 {% include "core/_pagination.html" with page=page %}
+
+<footer class="note" style="margin-top:var(--space-6)">
+  The webhook URL is private: anyone who has it can add leads.
+  <form method="post" action="{% url 'leads:webhook_rotate' %}" style="display:inline" data-confirm="Create a new webhook URL?" data-confirm-text="The current URL stops working, so update your website." data-confirm-label="Create new URL">
+    {% csrf_token %}<button type="submit" class="btn btn-sm">{% icon 'refresh' 'ic' %}Create a new URL</button>
+  </form>
+</footer>
+
+</div>
 {% endblock %}

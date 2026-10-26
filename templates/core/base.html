@@ -335,13 +335,23 @@
 })();
 </script>
 
-<div id="toast-container"
-     x-data="{ messages: [], push(m) { this.messages.push(m); setTimeout(() => this.messages.shift(), 4000) } }"
+<div id="toast-container" aria-live="polite"
+     x-data="{ messages: [], n: 0,
+       push(m) { m = Object.assign({}, m, { id: ++this.n }); this.messages.push(m); setTimeout(() => this.dismiss(m), 4000) },
+       dismiss(m) { this.messages = this.messages.filter(x => x.id !== m.id) } }"
      x-init="const seed = document.getElementById('toast-seed'); if (seed) { JSON.parse(seed.textContent).forEach(m => push(m)) }"
      x-on:django-message.window="($event.detail.messages || [$event.detail]).forEach(m => push(m))">
-  <template x-for="(msg, i) in messages" :key="i">
-    <div class="toast" :class="msg.tags" x-text="msg.text" x-show="true"
-         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+  <template x-for="msg in messages" :key="msg.id">
+    <div class="toast" :class="msg.tags" role="status"
+         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+      <span class="toast-ic" aria-hidden="true">
+        <span x-show="(msg.tags || '').includes('success')">{% icon 'circle-check' %}</span>
+        <span x-show="(msg.tags || '').includes('error') || (msg.tags || '').includes('warning')">{% icon 'triangle-alert' %}</span>
+        <span x-show="!/success|error|warning/.test(msg.tags || '')">{% icon 'bell' %}</span>
+      </span>
+      <span class="toast-text" x-text="msg.text"></span>
+      <button type="button" class="toast-x" aria-label="Dismiss" @click="dismiss(msg)">{% icon 'x' %}</button>
+    </div>
   </template>
 </div>
 

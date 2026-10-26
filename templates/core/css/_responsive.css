@@ -55,7 +55,7 @@ img,svg,video{max-width:100%;}
 
   .modal{width:min(92vw,440px);max-height:calc(100dvh - 32px);overflow-y:auto;}
   #toast-container{left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));align-items:stretch;}
-  .toast{text-align:center;max-width:none;}
+  .toast{width:auto;max-width:none;}
 
   .head h1{overflow-wrap:anywhere;}
   .filter-select,.sort-select,input[type=date]{max-width:100%;min-width:0;}
