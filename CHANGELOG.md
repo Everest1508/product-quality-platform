@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.55.1] "Drongo" — 2026-10-26 · Team today card laid out properly
+
+> In short: the Team today card on Home now sits in its own column and lines up names with times.
+
+### Fixed
+
+- **The Team today card was squashed into a narrow strip.** It now takes a full column like the cards around it, with each name on the left and the time on the right.
+
 ## [1.55.0] "Dove" — 2026-10-26 · early-bird greetings and who is in today
 
 > In short: checking in before the shift starts now gets a friendly line, and owners and admins see who is in today on Home.

@@ -73,12 +73,12 @@
     </section>
 
     {% if is_privileged %}
-    <section class="hm-card">
+    <section class="hm-card hm-team">
       <h2>Team today <span class="hm-sub-inline">{{ team_today|length }} in</span></h2>
       {% if team_today %}
         <ul class="hm-rows">
           {% for r in team_today %}
-            <li><span class="t">{{ r.user.get_full_name|default:r.user.username }}</span><span class="m">{{ r.check_in|date:"g:i A" }} → {% if r.check_out %}{{ r.check_out|date:"g:i A" }}{% else %}working{% endif %}</span></li>
+            <li class="is-plain"><span class="t">{{ r.user.get_full_name|default:r.user.username }}</span><span class="m">{{ r.check_in|date:"g:i A" }} → {% if r.check_out %}{{ r.check_out|date:"g:i A" }}{% else %}working{% endif %}</span></li>
           {% endfor %}
         </ul>
       {% else %}<div class="hm-empty"><span>Nobody has punched in yet.</span></div>{% endif %}

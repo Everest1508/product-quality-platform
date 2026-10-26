@@ -116,7 +116,7 @@ Reuse before you write. Each is a class in `_components.css`; the markup is on a
 - **Confirm** add `data-confirm="Delete this?"` (the value is the title; a bare attribute never asks), `data-confirm-text` and `data-confirm-label` to a form; every delete asks first.
 - **Dropdown** `{% dropdown %}`; native `<select>` is enhanced by the same popover. **Toast** `window.pqToast(text, kind)` or a Django `messages` call.
 - **Avatar** `.kt-av` (initial in a circle, `.lg` and `.more` variants). **Empty state** `.empty-state`: one line of what is missing and one line of what to do.
-- **Home bento** `.hm-bento`: a 12 column grid whose cards stretch to the row, so nothing leaves a hole. **Projects** use `.pj-*`: board columns, cards, journey track, lifecycle feed, Pod and phase pickers.
+- **Home bento** `.hm-bento`: a 12 column grid whose cards stretch to the row, so nothing leaves a hole. A new Home card needs its own `grid-column:span N` line under `.hm-bento` in `_pages.css` (4 for a side card, 8 for a wide one); without it the card shrinks to one column. Plain rows inside a card are `.hm-rows li.is-plain` with a `.t` name and a `.m` detail, or `li > a` when the row links somewhere. **Projects** use `.pj-*`: board columns, cards, journey track, lifecycle feed, Pod and phase pickers.
 - **Notifications** go through `apps.notifications.service.notify`; toasts, presence, the palette and the changelog dialog are described in their templates.
 
 ## Forms
@@ -206,7 +206,7 @@ row the socket does, so the person still counts as online. The store's `mode` is
 
 ## Adding something new
 
-1. Look for an existing component and token first.
+1. Look for an existing component and token first. Never put a bare `<section>`, `<ul>` or `<li>` in a page grid: give it the card class and the row class its siblings use, then look at it in the browser before you call it done.
 2. Put new CSS in `_components.css` (widgets) or `_pages.css` (page layouts) and read tokens only.
 3. Check it at 360, 768 and 1440px wide, and with the keyboard.
 4. A multi-line note in a template needs `{% comment %}`. A `{# #}` that spans
