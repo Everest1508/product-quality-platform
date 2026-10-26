@@ -1,0 +1,85 @@
+{% extends "core/base.html" %}
+
+{% block title %}Website leads — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="head">
+  <h1>Website leads <span class="count">{{ page.paginator.count }} total</span></h1>
+</div>
+
+<div class="ledger">
+  <article class="lrow lr-nomark">
+    <div class="lmain">
+      <div class="lt">Webhook URL</div>
+      <p class="ls">Send your website form here with POST. Anyone with this link can add leads, so keep it private.</p>
+      <input type="text" class="form-input" readonly value="{{ webhook_url }}" aria-label="Webhook URL" onclick="this.select()">
+      <p class="ls">Fields: <code>full_name</code>, <code>email</code>, <code>company</code>, <code>need</code>, <code>details</code> (JSON or normal form post).</p>
+    </div>
+    <div class="lactions">
+      <form method="post" action="{% url 'leads:webhook_rotate' %}" data-confirm="Create a new webhook URL?" data-confirm-text="The current URL stops working, so update your website." data-confirm-label="Create new URL">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm">New URL</button>
+      </form>
+    </div>
+  </article>
+</div>
+
+<div class="ledger" style="margin-top:var(--space-4)" x-data="{ copied: false }">
+  <article class="lrow lr-nomark">
+    <div class="lmain">
+      <div class="lt">Setup prompt</div>
+      <p class="ls">Copy this and paste it to your developer or your AI tool to connect your website form.</p>
+      <textarea x-ref="guide" class="form-input" rows="14" readonly aria-label="Setup prompt" style="font-family:monospace;font-size:var(--fs-sm,13px)">Connect my website's contact form to my CRM webhook.
+
+Webhook URL (POST):
+{{ webhook_url }}
+
+Form fields to send (JSON body with Content-Type: application/json, or a normal form post):
+- full_name  (required, text)
+- email      (required, valid email)
+- company    (optional, text)
+- need       (optional, the "What do you need?" dropdown value, e.g. CRM)
+- details    (required, the "Project details" textarea)
+
+Responses: 201 {"ok": true} on success; 400 {"ok": false, "errors": {...}} when a required field is missing or the email is invalid; 404 if the URL is wrong.
+
+Requirements:
+- Call the URL from the browser with fetch(), or from the server. The endpoint allows cross-origin requests and needs no cookies or auth header; the token in the URL is the only credential.
+- Show a success message on 201 and show the field errors on 400.
+- Disable the submit button while sending to avoid duplicates.
+
+Example:
+fetch("{{ webhook_url }}", {
+  method: "POST",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({full_name, email, company, need, details})
+})</textarea>
+    </div>
+    <div class="lactions">
+      <button type="button" class="btn btn-sm btn-primary"
+              @click="$refs.guide.select(); navigator.clipboard.writeText($refs.guide.value).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+              x-text="copied ? 'Copied' : 'Copy'">Copy</button>
+    </div>
+  </article>
+</div>
+
+<table class="tbl" style="margin-top:var(--space-4)">
+  <thead><tr><th>When</th><th>Name</th><th>Email</th><th>Company</th><th>Needs</th><th>Details</th></tr></thead>
+  <tbody>
+  {% for lead in page %}
+    <tr>
+      <td>{{ lead.created_at|date:"d M, H:i" }}</td>
+      <td>{{ lead.full_name }}</td>
+      <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
+      <td>{{ lead.company_name|default:"—" }}</td>
+      <td>{{ lead.need|default:"—" }}</td>
+      <td style="white-space:pre-wrap;max-width:420px">{{ lead.details }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6"><div class="empty-state"><strong>No leads yet</strong>Submissions from your website form will show up here.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% include "core/_pagination.html" with page=page %}
+{% endblock %}

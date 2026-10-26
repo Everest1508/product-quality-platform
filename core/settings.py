@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "apps.tickets",
     "apps.automation",
     "apps.feedback",
+    "apps.leads",
     "apps.dashboards",
     "apps.dsr",
     "apps.attendance",
@@ -151,7 +152,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.55.1")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.56.0")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth
@@ -193,10 +194,10 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
     "https://crm.beforth.in,http://localhost:8011,http://127.0.0.1:8011",
 ).split(",")
 
-# CORS — scoped to the Serop desktop app's bearer-token-authenticated API only.
+# CORS — scoped to the Serop desktop app's bearer-token API and the public website-lead webhook.
 # These paths carry no cookies, so allowing any origin on them is safe; the
 # rest of the CRM (session-cookie web UI) is untouched by corsheaders.
-CORS_URLS_REGEX = r"^/(oauth|api/serop)/.*$"
+CORS_URLS_REGEX = r"^/(oauth|api/serop|api/v1/leads)/.*$"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = False
 

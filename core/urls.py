@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from apps.leads.views import LeadWebhookView
 from django.urls import include, path
 
 from apps.core import befui
@@ -21,6 +22,7 @@ urlpatterns = [
     path("assets/app.<str:version>.css", app_css),
     path("admin/", admin.site.urls),
     path("befui/<path:name>", befui.asset),
+    path("api/v1/leads/<str:token>/", LeadWebhookView.as_view(), name="lead_webhook"),
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),
@@ -30,6 +32,7 @@ urlpatterns = [
     path("tickets/", include("apps.tickets.urls")),
     path("automation/", include("apps.automation.urls")),
     path("feedback/", include("apps.feedback.urls")),
+    path("leads/", include("apps.leads.urls")),
     path("dashboards/", include("apps.dashboards.urls")),
     # Historic singular path, kept alive for old bookmarks and anything that
     # hardcoded it. A redirect, not a second `include`: including the same

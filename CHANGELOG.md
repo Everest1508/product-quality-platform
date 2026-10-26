@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.56.0] "Eider" — 2026-10-26 · website form leads arrive in the CRM
+
+> In short: owners and admins get a private link their website form can post to, and every submission shows up in a Website leads list.
+
+### New
+
+- **A Website leads page for owners and admins.** It shows each submission with name, email, company, what they need and their project details, newest first.
+- **A webhook link you can paste into your website.** Your form sends its answers to that link and they land in the CRM. You can create a new link at any time if the old one gets out.
+
 ## [1.55.1] "Drongo" — 2026-10-26 · Team today card laid out properly
 
 > In short: the Team today card on Home now sits in its own column and lines up names with times.
