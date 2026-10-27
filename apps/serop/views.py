@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Company, Membership
+from apps.products.access import accessible_products
 from apps.serop.authentication import ExternalTokenAuthentication
 from apps.serop.models import SeropNotification, SeropSharedServer
 from apps.serop.notifications import notify_read, notify_user
@@ -232,3 +233,43 @@ class SharedServerDetailView(BaseSeropView):
 
         server.delete()
         return Response({"ok": True})
+
+
+class ProjectsView(BaseSeropView):
+    """The projects the user may open in Serop: products they have access to
+    that an admin has hosted on a server. The connection details come with
+    each project; Serop keeps the person inside its directory."""
+
+    def get(self, request):
+        projects = []
+        for membership in Membership.objects.filter(user=request.user).select_related("company"):
+            products = (
+                accessible_products(request.user, membership.company)
+                .filter(server__isnull=False)
+                .exclude(server_path="")
+                .select_related("server")
+            )
+            for product in products:
+                server = product.server
+                password = None
+                if server.encrypted_password:
+                    try:
+                        password = _fernet().decrypt(server.encrypted_password.encode()).decode()
+                    except InvalidToken:
+                        password = None
+                projects.append({
+                    "id": str(product.pk),
+                    "name": product.name,
+                    "teamId": str(membership.company_id),
+                    "path": product.server_path,
+                    "server": {
+                        "id": str(server.pk),
+                        "name": server.name,
+                        "host": server.host,
+                        "username": server.username,
+                        "connectionType": server.connection_type,
+                        "privateKeyPath": server.private_key_path,
+                        "password": password,
+                    },
+                })
+        return Response({"ok": True, "projects": projects})

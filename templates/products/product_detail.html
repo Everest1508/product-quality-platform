@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load icon_tags %}
+{% load dropdown_tags icon_tags %}
 
 {% block title %}{{ product.name }} — PQ Platform{% endblock %}
 
@@ -201,6 +201,32 @@
 </details>
 
 {% if is_privileged %}
+<details class="acc" id="hosting">
+<summary><span>Hosting</span><small>which server runs this project</small></summary>
+<div class="acc-body">
+<div class="card">
+  <p class="text-sm text-muted mb-4">People allocated to this project see it in Serop and can work only inside this directory on this server.</p>
+  <form method="post" action="{% url 'products:product_hosting' pk=product.pk %}">
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="form-group">
+        <span class="dd-label">Server</span>
+        {% dropdown "server" server_choices product.server_id|default_if_none:"" placeholder="No server" label="Server" empty_value="" %}
+      </div>
+      <div class="form-group">
+        <label for="server_path">Directory on the server</label>
+        <input id="server_path" type="text" name="server_path" value="{{ product.server_path }}" class="form-input" placeholder="/var/www/my-app">
+      </div>
+    </div>
+    <div class="flex-between">
+      <a href="{% url 'serop_web:servers' %}" class="text-sm">Manage servers</a>
+      <button type="submit" class="btn btn-primary">Save hosting</button>
+    </div>
+  </form>
+</div>
+</div>
+</details>
+
 <details class="acc" id="team">
 <summary><span>Team access</span><small>who can open this project</small></summary>
 <div class="acc-body">

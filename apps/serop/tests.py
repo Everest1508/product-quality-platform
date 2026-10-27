@@ -75,3 +75,123 @@ class SharedServerRoleTest(TestCase):
         body = {"teamId": self.company.pk, "name": "x", "host": "h", "username": "u", "password": 12345}
         response = self.client_for("owner").post("/api/serop/shared-servers", body, format="json")
         self.assertEqual(response.status_code, 400)
+
+
+class ProjectHostingTest(TestCase):
+    """Servers are added and assigned in the CRM; Serop lists what a person may open."""
+
+    def setUp(self):
+        from apps.products.models import Product, ProductAccess
+
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.users = {}
+        for name, role in (("admin", "admin"), ("dev", "developer"), ("other", "developer")):
+            user = User.objects.create_user(name, password="pass1234", email=f"{name}@example.com")
+            Membership.objects.create(user=user, company=self.company, role=role)
+            self.users[name] = user
+        self.app = Product.objects.create(company=self.company, name="App", slug="app")
+        self.site = Product.objects.create(company=self.company, name="Site", slug="site")
+        ProductAccess.objects.create(company=self.company, product=self.app, user=self.users["dev"])
+
+    def web_client(self, name):
+        from django.test import Client
+
+        client = Client()
+        client.force_login(self.users[name])
+        session = client.session
+        session[settings.ACTIVE_COMPANY_SESSION_KEY] = self.company.pk
+        session.save()
+        return client
+
+    def api_client(self, name):
+        _, raw = ExternalAccessToken.create_token(self.users[name])
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {raw}")
+        return client
+
+    def add_server(self, password="S3cret!"):
+        res = self.web_client("admin").post(
+            "/servers/", {"name": "prod", "host": "10.0.0.5", "username": "deploy", "password": password}
+        )
+        self.assertEqual(res.status_code, 302)
+        return SeropSharedServer.objects.get(name="prod")
+
+    def host(self, product, server, path):
+        return self.web_client("admin").post(
+            f"/products/{product.pk}/hosting/", {"server": server.pk, "server_path": path}
+        )
+
+    def test_password_is_encrypted_at_rest(self):
+        server = self.add_server()
+        self.assertNotIn("S3cret!", server.encrypted_password)
+        self.assertEqual(Fernet(settings.SHARED_SERVER_ENCRYPTION_KEY).decrypt(server.encrypted_password.encode()), b"S3cret!")
+        page = self.web_client("admin").get("/servers/").content.decode()
+        self.assertIn("password stored", page)
+        self.assertNotIn("S3cret!", page)
+        self.assertNotIn(server.encrypted_password, page)
+
+    def test_server_needs_all_fields(self):
+        res = self.web_client("admin").post("/servers/", {"name": "x", "host": "h", "username": "u", "password": ""})
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(SeropSharedServer.objects.exists())
+
+    def test_only_admins_manage_servers_and_hosting(self):
+        server = self.add_server()
+        dev = self.web_client("dev")
+        self.assertEqual(dev.get("/servers/").status_code, 403)
+        self.assertEqual(dev.post("/servers/", {"name": "x", "host": "h", "username": "u", "password": "p"}).status_code, 403)
+        self.assertEqual(dev.post(f"/servers/{server.pk}/delete/").status_code, 403)
+        res = dev.post(f"/products/{self.app.pk}/hosting/", {"server": server.pk, "server_path": "/srv/app"})
+        self.assertEqual(res.status_code, 403)
+
+    def test_hosting_path_is_validated(self):
+        server = self.add_server()
+        for bad in ("srv/app", "/srv/../etc", "/", "/srv/app; rm -rf /", "/srv/app name"):
+            self.host(self.app, server, bad)
+            self.app.refresh_from_db()
+            self.assertIsNone(self.app.server_id, bad)
+        self.host(self.app, server, "/srv/app/")
+        self.app.refresh_from_db()
+        self.assertEqual((self.app.server_id, self.app.server_path), (server.pk, "/srv/app"))
+
+    def test_server_from_another_company_is_refused(self):
+        other = Company.objects.create(name="Other", slug="other")
+        foreign = SeropSharedServer.objects.create(company=other, owner=self.users["admin"], name="x", host="h", username="u")
+        self.host(self.app, foreign, "/srv/app")
+        self.app.refresh_from_db()
+        self.assertIsNone(self.app.server_id)
+
+    def test_person_sees_only_projects_they_are_allocated_to(self):
+        server = self.add_server()
+        self.host(self.app, server, "/srv/app")
+        self.host(self.site, server, "/srv/site")
+
+        dev = self.api_client("dev").get("/api/serop/projects").json()["projects"]
+        self.assertEqual([p["name"] for p in dev], ["App"])
+        self.assertEqual(dev[0]["path"], "/srv/app")
+        self.assertEqual(dev[0]["server"]["password"], "S3cret!")
+
+        self.assertEqual(self.api_client("other").get("/api/serop/projects").json()["projects"], [])
+        admin = self.api_client("admin").get("/api/serop/projects").json()["projects"]
+        self.assertEqual(sorted(p["name"] for p in admin), ["App", "Site"])
+
+    def test_unhosted_projects_are_not_listed(self):
+        self.assertEqual(self.api_client("dev").get("/api/serop/projects").json()["projects"], [])
+
+    def test_removing_a_server_unhosts_its_projects(self):
+        server = self.add_server()
+        self.host(self.app, server, "/srv/app")
+        self.web_client("admin").post(f"/servers/{server.pk}/delete/")
+        self.assertEqual(self.api_client("dev").get("/api/serop/projects").json()["projects"], [])
+
+    def test_project_page_shows_hosting_to_admins_only(self):
+        server = self.add_server()
+        self.host(self.app, server, "/srv/app")
+        page = self.web_client("admin").get(f"/products/{self.app.pk}/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'id="hosting"')
+        self.assertContains(page, "/srv/app")
+        dev_page = self.web_client("dev").get(f"/products/{self.app.pk}/")
+        self.assertEqual(dev_page.status_code, 200)
+        self.assertNotContains(dev_page, 'id="hosting"')
+        self.assertNotContains(dev_page, "10.0.0.5")
