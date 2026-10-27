@@ -13,7 +13,7 @@ title, a subtitle, its actions and its body.
 <style>
   /* ---- setup screen: one <form> per person, so a grid, never a <table> ---- */
   .pay-grid{display:grid;
-            grid-template-columns:minmax(180px,2fr) 116px 152px 146px 168px 64px;
+            grid-template-columns:minmax(180px,2fr) 116px 214px 150px 168px 64px;
             gap:14px;align-items:center;}
   .pay-head{padding:9px 18px;border-bottom:1px solid var(--border);
             font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
@@ -50,11 +50,15 @@ title, a subtitle, its actions and its body.
 
   /* Monthly salary, with the day rate it works out to. */
   .pay-money{display:flex;align-items:center;gap:7px;}
-  .pay-money .form-input{width:92px;text-align:right;font-variant-numeric:tabular-nums;}
+  .pay-money .form-input{width:104px;text-align:right;font-variant-numeric:tabular-nums;}
+  .pay-money input[type=number]{-moz-appearance:textfield;appearance:textfield;}
+  .pay-money input[type=number]::-webkit-inner-spin-button,
+  .pay-money input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  .pay-money input[name=currency]{width:58px;text-align:center;font-size:12px;padding:8px 4px;text-transform:uppercase;}
   .pay-money .cur{font-size:12px;color:var(--muted);white-space:nowrap;}
   .pay-money .form-input.aux{width:58px;text-align:center;font-size:12px;
                              padding:8px 4px;text-transform:uppercase;}
-  .pay-date .form-input{width:136px;}
+  .pay-date .form-input{width:100%;max-width:150px;}
   .pay-derived{font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:4px;}
   .pay-derived b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums;}
   .pay-hint{font-size:12px;color:var(--muted);margin-top:4px;}
