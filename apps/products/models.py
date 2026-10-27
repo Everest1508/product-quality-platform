@@ -37,6 +37,12 @@ class Product(TenantScopedModel):
     lead = models.ForeignKey(
         "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="led_products",
     )
+    # Where this project is hosted, for the Serop app: a shared server and the one
+    # directory on it that people allocated to the product may work in.
+    server = models.ForeignKey(
+        "serop.SeropSharedServer", null=True, blank=True, on_delete=models.SET_NULL, related_name="products",
+    )
+    server_path = models.CharField(max_length=500, blank=True, default="")
     tech_stack = models.JSONField(default=list, blank=True)
     srs = models.TextField(blank=True, default="")
     srs_updated_at = models.DateTimeField(null=True, blank=True)

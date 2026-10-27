@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 from django.contrib import messages
@@ -5,6 +6,7 @@ from apps.core.pagination import paginate
 from django.db.models import Count, Q
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
@@ -15,6 +17,7 @@ from apps.products.access import accessible_products, require_product_access
 from apps.products.forms import ProductCreateForm, ProductEditForm, VersionCreateForm
 from apps.products.models import APIKey, Product, ProductAccess, ProductVersion
 from apps.products.webhook import notify_ticket_created
+from apps.serop.models import SeropSharedServer
 from apps.core.timefmt import t12
 
 
@@ -199,7 +202,53 @@ class ProductDetailView(CompanyMemberRequiredMixin, View):
             "all_members": all_members,
             "allocated_ids": allocated_ids,
             "is_privileged": is_privileged,
+            "server_choices": [
+                (server.pk, f"{server.name} ({server.host})")
+                for server in SeropSharedServer.objects.filter(company=request.company)
+            ] if is_privileged else [],
         })
+
+
+class ProductHostingView(CompanyAdminRequiredMixin, View):
+    """Where the project is hosted: one server and one directory on it.
+
+    Serop limits whoever is allocated to the project to this directory, so the
+    path is held to plain absolute path characters with no `..`.
+    """
+
+    PATH_RE = re.compile(r"^/[A-Za-z0-9._/@+-]*$")
+
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk, company=request.company)
+        require_product_access(request, product)
+
+        server = None
+        server_id = request.POST.get("server")
+        if server_id:
+            server = SeropSharedServer.objects.filter(pk=server_id, company=request.company).first()
+            if not server:
+                messages.error(request, "That server does not exist.")
+                return redirect(f"{reverse('products:product_detail', kwargs={'pk': product.pk})}#hosting")
+
+        path = (request.POST.get("server_path") or "").strip()
+        if len(path) > 1:
+            path = path.rstrip("/")
+        if server and (not self.PATH_RE.match(path) or ".." in path.split("/") or path == "/"):
+            messages.error(request, "Give the project's directory as an absolute path, like /var/www/my-app.")
+            return redirect(f"{reverse('products:product_detail', kwargs={'pk': product.pk})}#hosting")
+
+        product.server = server
+        product.server_path = path if server else ""
+        product.save(update_fields=["server", "server_path"])
+        log_activity(
+            request.company, "product_hosting_updated",
+            f"Hosting for '{product.name}' " + (f"set to {server.name}:{product.server_path}" if server else "cleared"),
+            actor=request.user,
+            target_content_type="product",
+            target_object_id=product.pk,
+        )
+        messages.success(request, "Hosting saved." if server else "Hosting cleared.")
+        return redirect(f"{reverse('products:product_detail', kwargs={'pk': product.pk})}#hosting")
 
 
 class ProductEditView(CompanyAdminRequiredMixin, View):

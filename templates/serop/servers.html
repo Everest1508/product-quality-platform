@@ -1,0 +1,72 @@
+{% extends "core/base.html" %}
+
+{% block title %}Servers — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'products:project_board' %}">Projects</a>
+  <span class="sep">/</span>
+  <span class="current">Servers</span>
+</nav>
+
+<div class="head">
+  <h1>Servers</h1>
+</div>
+
+<div class="card form-card">
+  <div class="form-card-head">
+    <div>
+      <h2>Add a server</h2>
+      <p>Where your projects are hosted. The password is encrypted and cannot be read back here.</p>
+    </div>
+  </div>
+  <form method="post" autocomplete="off">
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="form-group">
+        <label for="srv-name">Name</label>
+        <input id="srv-name" type="text" name="name" value="{{ values.name|default:'' }}" class="form-input" placeholder="Production box" required>
+      </div>
+      <div class="form-group">
+        <label for="srv-host">Host</label>
+        <input id="srv-host" type="text" name="host" value="{{ values.host|default:'' }}" class="form-input" placeholder="203.0.113.10" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="srv-user">Username</label>
+        <input id="srv-user" type="text" name="username" value="{{ values.username|default:'' }}" class="form-input" placeholder="deploy" required>
+      </div>
+      <div class="form-group">
+        <label for="srv-pass">Password</label>
+        <input id="srv-pass" type="password" name="password" class="form-input" autocomplete="new-password" required>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add server</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:var(--space-4, 16px);">
+  <div class="flex-between mb-4">
+    <div class="text-sm font-medium">Your servers</div>
+    <span class="count-badge">{{ servers|length }}</span>
+  </div>
+  {% for server in servers %}
+  <div class="flex-between" style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
+    <div>
+      <div class="text-sm font-medium">{{ server.name }}</div>
+      <div class="text-sm text-muted">{{ server.username }}@{{ server.host }}{% if server.encrypted_password %} · password stored{% endif %}</div>
+      <div class="text-sm text-muted">
+        {% for product in server.products.all %}{{ product.name }}{% if not forloop.last %}, {% endif %}{% empty %}No projects yet{% endfor %}
+      </div>
+    </div>
+    <form method="post" action="{% url 'serop_web:server_delete' pk=server.pk %}" data-confirm="Remove {{ server.name }}? Projects hosted on it will lose their server.">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm" style="color:var(--red);">Remove</button>
+    </form>
+  </div>
+  {% empty %}
+  <p class="text-sm text-muted" style="text-align:center;padding:16px;">No servers yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

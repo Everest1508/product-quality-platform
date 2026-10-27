@@ -27,6 +27,7 @@ urlpatterns = [
     path("api-keys/<int:pk>/revoke/", views.APIKeyRevokeView.as_view(), name="api_key_revoke"),
     path("<int:pk>/versions/add/", views.VersionCreateView.as_view(), name="version_create"),
     path("<int:pk>/versions/<int:version_pk>/delete/", views.VersionDeleteView.as_view(), name="version_delete"),
+    path("<int:pk>/hosting/", views.ProductHostingView.as_view(), name="product_hosting"),
     path("<int:pk>/access/add/", views.ProductAccessAddView.as_view(), name="product_access_add"),
     path("<int:pk>/access/<int:user_pk>/remove/", views.ProductAccessRemoveView.as_view(), name="product_access_remove"),
     # Product-scoped routes

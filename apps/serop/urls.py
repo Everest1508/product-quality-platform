@@ -10,6 +10,7 @@ urlpatterns = [
     path("teams/<int:team_id>/invite", views.TeamInviteView.as_view(), name="team_invite"),
     path("inbox", views.InboxView.as_view(), name="inbox"),
     path("inbox/<int:notification_id>/read", views.InboxReadView.as_view(), name="inbox_read"),
+    path("projects", views.ProjectsView.as_view(), name="projects"),
     path("shared-servers", views.SharedServersView.as_view(), name="shared_servers"),
     path("shared-servers/<int:server_id>/credentials", views.SharedServerCredentialsView.as_view(), name="shared_server_credentials"),
     path("shared-servers/<int:server_id>", views.SharedServerDetailView.as_view(), name="shared_server_detail"),
