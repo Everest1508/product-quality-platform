@@ -4,32 +4,56 @@
 
 {% block pay_subtitle %}
 <p class="text-sm text-muted" style="margin-top:4px;">
-  {{ period_start|date:"j M Y" }} → {{ period_end|date:"j M Y" }} &middot;
-  {{ working_days }} working days after weekends and holidays. Nothing is saved until you generate.
+  Cycle {{ period_start|date:"j M Y" }} → {{ period_end|date:"j M Y" }} &middot;
+  {{ working_days }} working days (weekends and holidays are not counted)
 </p>
 {% endblock %}
 
 {% block pay_body %}
-<form method="get" class="card toolbar" style="margin-bottom:20px;">
+<style>
+  .pv-steps{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;padding:0;list-style:none;font-size:13px;}
+  .pv-steps li{display:flex;align-items:center;gap:8px;color:var(--muted);}
+  .pv-steps .n{width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;
+               font-size:11px;font-weight:600;border:1px solid var(--border);}
+  .pv-steps li.now{color:var(--text);font-weight:500;}
+  .pv-steps li.now .n{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .pv-steps li + li::before{content:"";width:22px;border-top:1px solid var(--border);}
+  .pv-tbl th,.pv-tbl td{white-space:nowrap;}
+  .pv-tbl td.pay-num{padding-right:18px;}
+  .pv-tbl tfoot td{border-top:1px solid var(--border);padding-top:12px;padding-bottom:12px;}
+  .pv-plus{color:var(--green);}
+  .pv-go{margin-top:20px;padding:18px 20px;display:flex;gap:20px;align-items:center;
+         justify-content:space-between;flex-wrap:wrap;}
+  .pv-go p{margin:0;max-width:640px;font-size:13.5px;line-height:1.5;}
+  .pv-go .t{font-weight:600;margin-bottom:2px;}
+</style>
+
+<ol class="pv-steps" aria-label="Steps">
+  <li class="now"><span class="n">1</span>Check the numbers</li>
+  <li><span class="n">2</span>Create payslips</li>
+  <li><span class="n">3</span>Lock when final</li>
+</ol>
+
+<form method="get" class="card toolbar" style="margin-bottom:16px;">
   <div>
-    <label class="text-sm text-muted" style="display:block;margin-bottom:4px;" for="anchor">Any date in the cycle</label>
+    <label class="text-sm text-muted" style="display:block;margin-bottom:4px;" for="anchor">Pick any date in the month you want to pay</label>
     <input id="anchor" type="date" name="anchor" value="{{ period_start|date:'Y-m-d' }}" class="form-input">
   </div>
-  <button type="submit" class="btn">Show cycle</button>
+  <button type="submit" class="btn">Show this cycle</button>
 </form>
 
-<div class="card" style="padding:0;overflow:hidden;">
-  <table>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="pv-tbl">
     <thead>
       <tr>
         <th>Employee</th>
-        <th class="pay-num">Monthly</th>
-        <th class="pay-num">Day rate</th>
-        <th class="pay-num">Paid leave</th>
-        <th class="pay-num">Unpaid leave</th>
-        <th class="pay-num">Payable days</th>
-        <th class="pay-num">Deduction</th>
-        <th class="pay-num">Gross</th>
+        <th class="pay-num">Salary</th>
+        <th class="pay-num">Per day</th>
+        <th class="pay-num">Days paid</th>
+        <th class="pay-num">Leave</th>
+        <th class="pay-num">Deductions</th>
+        <th class="pay-num">Expenses repaid</th>
+        <th class="pay-num">Net pay</th>
       </tr>
     </thead>
     <tbody>
@@ -41,27 +65,24 @@
           <div class="sub">{{ row.user.username }}</div>
         </td>
         <td class="pay-num">
-          {% if row.breakdown.monthly_salary %}
-            {{ row.currency }} {{ row.breakdown.monthly_salary }}
-            <div class="sub">÷ {{ working_days }} days</div>
-          {% else %}
-            <span class="text-muted">—</span>
-            <div class="sub">daily rate</div>
-          {% endif %}
+          {% if row.breakdown.monthly_salary %}{{ row.currency }} {{ row.breakdown.monthly_salary }}
+          {% else %}<span class="text-muted">by the day</span>{% endif %}
         </td>
         <td class="pay-num">{{ row.currency }} {{ row.daily_rate }}</td>
+        <td class="pay-num"><strong>{{ row.payable_days|floatformat:"-2" }}</strong> <span class="text-muted">of {{ working_days }}</span></td>
         <td class="pay-num">
-          {% if row.paid_leave_days %}{{ row.paid_leave_days }}
-          {% else %}<span class="text-muted">0</span>{% endif %}
+          {% if row.paid_leave_days or row.unpaid_leave_days %}
+            {% if row.paid_leave_days %}{{ row.paid_leave_days|floatformat:"-2" }} paid{% endif %}
+            {% if row.unpaid_leave_days %}<div><span class="pill high">{{ row.unpaid_leave_days|floatformat:"-2" }} unpaid</span></div>{% endif %}
+          {% else %}<span class="text-muted">none</span>{% endif %}
         </td>
-        <td class="pay-num">
-          {% if row.unpaid_leave_days %}<span class="pill high">{{ row.unpaid_leave_days }}</span>
-          {% else %}<span class="text-muted">0</span>{% endif %}
-        </td>
-        <td class="pay-num"><strong>{{ row.payable_days }}</strong></td>
         <td class="pay-num">
           {% if row.deduction %}−{{ row.currency }} {{ row.deduction }}
-          {% else %}<span class="text-muted">—</span>{% endif %}
+          {% else %}<span class="text-muted">none</span>{% endif %}
+        </td>
+        <td class="pay-num">
+          {% if row.reimbursement %}<span class="pv-plus">+{{ row.currency }} {{ row.reimbursement }}</span>
+          {% else %}<span class="text-muted">none</span>{% endif %}
         </td>
         <td class="pay-num"><strong>{{ row.currency }} {{ row.gross }}</strong></td>
       </tr>
@@ -79,8 +100,9 @@
     {% if rows %}
     <tfoot>
       <tr>
-        <td colspan="6" class="pay-num"><strong>Total</strong></td>
-        <td class="pay-num">−{{ total_deduction }}</td>
+        <td colspan="5"><strong>Total to pay</strong></td>
+        <td class="pay-num">{% if total_deduction %}−{{ total_deduction }}{% else %}<span class="text-muted">none</span>{% endif %}</td>
+        <td class="pay-num">{% if total_repaid %}<span class="pv-plus">+{{ total_repaid }}</span>{% else %}<span class="text-muted">none</span>{% endif %}</td>
         <td class="pay-num"><strong>{{ total_gross }}</strong></td>
       </tr>
     </tfoot>
@@ -89,11 +111,28 @@
 </div>
 
 {% if rows %}
-<form method="post" class="toolbar" style="margin-top:20px;">
-  {% csrf_token %}
-  <input type="hidden" name="anchor" value="{{ period_start|date:'Y-m-d' }}">
-  <button type="submit" class="btn btn-primary">Generate payslips for this cycle</button>
-  <span class="text-sm text-muted">This snapshots the numbers above.</span>
-</form>
+<div class="card pv-go">
+  <div>
+    {% if existing_run and existing_run.is_locked %}
+      <p class="t">This cycle is locked.</p>
+      <p class="text-muted">Payslips were created and can no longer change. Unlock the run first if something has to be fixed.</p>
+    {% elif existing_run %}
+      <p class="t">Payslips already exist for this cycle.</p>
+      <p class="text-muted">Everyone can already see them under My payslips. If you changed something above, create them again to refresh. Nothing is paid out by this page.</p>
+    {% else %}
+      <p class="t">Happy with these numbers?</p>
+      <p class="text-muted">Creating payslips saves one slip per person, shown under their My payslips page. Nothing is paid out by this page, and you can create them again to fix a mistake until you lock the run.</p>
+    {% endif %}
+  </div>
+  {% if existing_run and existing_run.is_locked %}
+    <a class="btn" href="{% url 'payroll:run_detail' existing_run.pk %}">Open the run</a>
+  {% else %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="anchor" value="{{ period_start|date:'Y-m-d' }}">
+    <button type="submit" class="btn btn-primary">{% if existing_run %}Create payslips again{% else %}Create payslips{% endif %}</button>
+  </form>
+  {% endif %}
+</div>
 {% endif %}
 {% endblock %}

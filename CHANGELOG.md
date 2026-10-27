@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.57.1] "Fulmar" — 2026-10-27 · creating payslips is easier to follow
+
+> In short: the payroll preview now walks you through checking the numbers and creating payslips, and the salary setup page no longer overlaps.
+
+### Better
+
+- **The payroll preview explains each step.** A strip at the top shows check, create, lock, and the button now says Create payslips, with a note that nothing is paid out from that page.
+- **The preview table is clearer.** It shows days paid out of the working days, leave in one column, and a new Expenses repaid column, and Gross is now called Net pay like on the payslip.
+- **The page says when payslips already exist.** You can create them again to refresh, or open the run if it is locked.
+
+### Fixed
+
+- **The totals row lines up with its columns.** It used to sit off to the side and touch the edge of the page.
+- **The salary setup page no longer overlaps.** The currency box no longer slides under the date, and the amount is no longer cut off.
+
 ## [1.57.0] "Fantail" — 2026-10-27 · pay people back for expenses
 
 > In short: an expense can now be paid back through salary or directly, and a repaid expense shows on the payslip.

@@ -108,6 +108,10 @@ class PayrollPreviewView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
                 "working_days": working,
                 "rows": rows,
                 "form": CycleForm(initial={"anchor": start}),
+                "existing_run": PayrollRun.objects.filter(
+                    company=request.company, period_start=start, period_end=end
+                ).first(),
+                "total_repaid": sum((r["reimbursement"] for r in rows), Decimal("0.00")),
                 "total_gross": sum((r["gross"] for r in rows), Decimal("0.00")),
                 "total_deduction": sum(
                     (r["deduction"] for r in rows), Decimal("0.00")
