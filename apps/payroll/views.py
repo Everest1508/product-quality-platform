@@ -139,8 +139,8 @@ class PayrollRunDetailView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
 
             return csv_response(
                 f"payroll-{run.period_start}-to-{run.period_end}.csv",
-                ["Employee", "Currency", "Monthly salary", "Working days", "Paid leave days", "Unpaid leave days", "Late half days", "Late penalty", "Payable days", "Deduction", "Gross"],
-                [[(p.user.get_full_name() or p.user.username), p.currency, (p.breakdown or {}).get("monthly_salary", ""), p.working_days, p.paid_leave_days, p.unpaid_leave_days, p.late_half_days, p.late_penalty, p.payable_days, p.deduction, p.gross] for p in slips],
+                ["Employee", "Currency", "Monthly salary", "Working days", "Paid leave days", "Unpaid leave days", "Late half days", "Late penalty", "Payable days", "Deduction", "Expenses repaid", "Gross"],
+                [[(p.user.get_full_name() or p.user.username), p.currency, (p.breakdown or {}).get("monthly_salary", ""), p.working_days, p.paid_leave_days, p.unpaid_leave_days, p.late_half_days, p.late_penalty, p.payable_days, p.deduction, p.reimbursement, p.gross] for p in slips],
             )
         return self.page(
             request,

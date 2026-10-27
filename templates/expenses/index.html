@@ -58,7 +58,7 @@
     <article class="lrow lr-nomark">
       <div class="lmain">
         <div class="lt">{{ e.category_label }}</div>
-        <div class="ls">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }}{% if e.note %} · {{ e.note }}{% endif %}</div>
+        <div class="ls">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }}{% if e.note %} · {{ e.note }}{% endif %}{% if e.repaid_on %} · paid back {{ e.repaid_on|date:"j M" }}{% elif e.paid_in_run %} · paid in salary{% elif e.to_salary %} · to be added to salary{% endif %}</div>
       </div>
       <div class="ex-amt">{{ e.amount_label }}</div>
       <div class="lactions">
@@ -82,7 +82,7 @@
     </div>
     <div class="card">
       <h2 class="ex-h">Paid by</h2>
-      {% for p in by_person %}<div class="ex-pay"><span>{{ p.name }}</span><span class="ex-amt">{{ p.total }}</span></div>{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
+      {% for p in by_person %}<div class="ex-pay"><span>{{ p.name }}</span><span class="ex-amt">{{ p.total }}</span></div>{% if p.can_add %}<form method="post" action="{% url 'expenses:expense_salary_all' %}" style="margin:2px 0 8px;">{% csrf_token %}<input type="hidden" name="paid_by" value="{{ p.pk }}"><input type="hidden" name="month" value="{{ f.month }}"><input type="hidden" name="category" value="{{ f.category }}"><input type="hidden" name="q" value="{{ f.q }}"><button type="submit" class="btn btn-sm">Add all to salary</button> <button type="submit" name="mode" value="direct" class="btn btn-sm">All paid back directly</button></form>{% endif %}{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
     </div>
   </aside>
 </div>

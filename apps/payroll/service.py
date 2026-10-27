@@ -25,6 +25,7 @@ from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
+from django.db.models import Q
 
 from apps.attendance.models import WEEKEND, weekly_off_for
 from apps.attendance.service import late_penalties_in_period
@@ -290,6 +291,23 @@ def rate_breakdown(company, profile, on_date, days):
     }
 
 
+def reimbursements(company, start, end):
+    """{user_id: [Expense]} the cycle would repay through salary.
+
+    Anything marked `to_salary` dated up to the cycle end that no other run has
+    taken yet; this run's own earlier pick-ups count too, so regenerating an
+    open run keeps them.
+    """
+    from apps.expenses.models import Expense
+
+    run = PayrollRun.objects.filter(company=company, period_start=start, period_end=end).first()
+    taken = Q(paid_in_run__isnull=True) | Q(paid_in_run=run) if run else Q(paid_in_run__isnull=True)
+    out = {}
+    for e in Expense.objects.filter(taken, company=company, to_salary=True, date__lte=end).order_by("date", "id"):
+        out.setdefault(e.paid_by_id, []).append(e)
+    return out
+
+
 def preview(company, start, end):
     """Day counts per person, without writing anything.
 
@@ -297,6 +315,7 @@ def preview(company, start, end):
     before anyone commits to it.
     """
     days = working_days(company, start, end)
+    repay = reimbursements(company, start, end)
     rows = []
     for profile in payable_people(company, start):
         leave = leave_days_in_period(company, profile.user, start, end)
@@ -318,6 +337,8 @@ def preview(company, start, end):
         # stays in the breakdown so the cap is auditable instead of silently
         # swallowing money.
         earned = (payable * rate).quantize(Decimal("0.01"))
+        owed = repay.get(profile.user_id, [])
+        back = (Decimal(sum(e.amount_paise for e in owed)) / 100).quantize(Decimal("0.01"))
         cash_applied = min(cash, earned) if cash > earned else cash
         rows.append(
             {
@@ -336,8 +357,14 @@ def preview(company, start, end):
                     + late["half_day_loss"]
                     + cash_applied
                 ).quantize(Decimal("0.01")),
-                "gross": (earned - cash_applied).quantize(Decimal("0.01")),
+                "reimbursement": back,
+                "expense_ids": [e.pk for e in owed],
+                "gross": (earned - cash_applied + back).quantize(Decimal("0.01")),
                 "breakdown": {
+                    "reimbursements": [
+                        {"what": e.category_label, "date": f"{e.date:%d %b %Y}", "amount": format_money(Decimal(e.amount_paise) / 100)}
+                        for e in owed
+                    ],
                     **rate_breakdown(company, profile, start, days),
                     "late_penalty": format_money(cash_applied),
                     "late_half_days": format_days(late["half_days"]),
@@ -425,7 +452,10 @@ def _write_run(company, start, end, existing, days, rows):
     run.save()
 
     run.payslips.all().delete()
+    run.expenses.update(paid_in_run=None)
     for row in rows:
+        if row["expense_ids"]:
+            run.expenses.model.objects.filter(pk__in=row["expense_ids"]).update(paid_in_run=run)
         Payslip.objects.create(
             company=company,
             run=run,
@@ -441,6 +471,7 @@ def _write_run(company, start, end, existing, days, rows):
             late_penalty=row["late_penalty"],
             deduction=row["deduction"],
             gross=row["gross"],
+            reimbursement=row["reimbursement"],
             breakdown={
                 "paid_leave": format_days(row["paid_leave_days"]),
                 "unpaid_leave": format_days(row["unpaid_leave_days"]),

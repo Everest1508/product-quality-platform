@@ -43,6 +43,12 @@
     <dd style="color:var(--red);">−{{ payslip.currency }} {{ payslip.deduction }}</dd>
     <dt>Payable days</dt>
     <dd class="strong">{{ payslip.payable_days }}</dd>
+    {% if payslip.reimbursement %}
+    <dt>Expenses repaid</dt>
+    <dd style="color:var(--green);">+{{ payslip.currency }} {{ payslip.reimbursement }}
+      {% for r in payslip.breakdown.reimbursements %}<span class="sub">{{ r.what }}, {{ r.date }}: {{ r.amount }}</span>{% endfor %}
+    </dd>
+    {% endif %}
     <div class="rule"></div>
     <dt class="strong">Net pay</dt>
     <dd class="strong" style="font-size:18px;color:var(--green);">{{ payslip.currency }} {{ payslip.gross }}</dd>
@@ -63,7 +69,7 @@
     <dt>Daily rate</dt>
     <dd class="strong">{{ payslip.currency }} {{ payslip.breakdown.daily_rate }}</dd>
     <dt>Paid</dt>
-    <dd class="strong">{{ payslip.payable_days }} days × {{ payslip.breakdown.daily_rate }} = {{ payslip.currency }} {{ payslip.gross }}</dd>
+    <dd class="strong">{{ payslip.payable_days }} days × {{ payslip.breakdown.daily_rate }}</dd>
   </dl>
 </div>
 {% endif %}

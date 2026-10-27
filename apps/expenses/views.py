@@ -82,7 +82,12 @@ class ExpenseListView(ExpenseAccessMixin, View):
 
         paid = list(qs.values("paid_by").annotate(t=Sum("amount_paise")).order_by("-t"))
         people = User.objects.in_bulk([r["paid_by"] for r in paid])
-        by_person = [{"name": display_name(people[r["paid_by"]]), "total": service.format_paise(r["t"])} for r in paid]
+        waiting = set(qs.filter(to_salary=False, paid_in_run__isnull=True, repaid_on__isnull=True).values_list("paid_by", flat=True))
+        by_person = [
+            {"pk": r["paid_by"], "name": display_name(people[r["paid_by"]]), "total": service.format_paise(r["t"]),
+             "can_add": r["paid_by"] in waiting}
+            for r in paid
+        ]
 
         labels = dict(Expense.Category.choices)
         by_category = [
@@ -152,6 +157,9 @@ class ExpenseEditView(ExpenseAccessMixin, View):
 
     def post(self, request, pk):
         e = self.expense_or_404(pk)
+        if e.paid_in_run_id:
+            messages.error(request, "This expense is already on a payslip and can no longer be edited.")
+            return redirect("expenses:expense_edit", pk=e.pk)
         form = ExpenseForm(request.POST, company=request.company, user=request.user)
         if not form.is_valid():
             return self.page(request, e, form)
@@ -167,6 +175,9 @@ class ExpenseEditView(ExpenseAccessMixin, View):
 class ExpenseDeleteView(ExpenseAccessMixin, View):
     def post(self, request, pk):
         e = self.expense_or_404(pk)
+        if e.paid_in_run_id:
+            messages.error(request, "This expense is already on a payslip and cannot be deleted.")
+            return redirect("expenses:expense_edit", pk=e.pk)
         title = e.category_label
         e.delete()
         log_activity(
@@ -175,6 +186,78 @@ class ExpenseDeleteView(ExpenseAccessMixin, View):
         )
         messages.success(request, f"Deleted {title}.")
         return redirect("expenses:expense_list")
+
+
+class ExpenseSalaryView(ExpenseAccessMixin, View):
+    """Flip "repay through salary". Once a payslip has taken it, it is fixed."""
+
+    def post(self, request, pk):
+        e = self.expense_or_404(pk)
+        if e.paid_in_run_id:
+            messages.error(request, "This expense is already on a payslip.")
+            return redirect("expenses:expense_edit", pk=e.pk)
+        if e.repaid_on:
+            messages.error(request, "This was already paid back directly. Undo that first.")
+            return redirect("expenses:expense_edit", pk=e.pk)
+        e.to_salary = not e.to_salary
+        e.save(update_fields=["to_salary"])
+        who = display_name(e.paid_by)
+        log_activity(
+            request.company, "expense_salary", f"Expense {'added to' if e.to_salary else 'taken off'} salary: {e.category_label}",
+            actor=request.user, target_content_type="expense", target_object_id=e.pk,
+            metadata={"paid_by": e.paid_by_id, "to_salary": e.to_salary},
+        )
+        messages.success(
+            request,
+            f"{e.category_label} will be added to {who}'s next payslip." if e.to_salary
+            else f"{e.category_label} will not be added to salary.",
+        )
+        return redirect("expenses:expense_edit", pk=e.pk)
+
+
+class ExpenseRepaidView(ExpenseAccessMixin, View):
+    """Flip "paid back directly". Replaces a pending salary mark; a payslip's is fixed."""
+
+    def post(self, request, pk):
+        e = self.expense_or_404(pk)
+        if e.paid_in_run_id:
+            messages.error(request, "This expense is already on a payslip.")
+            return redirect("expenses:expense_edit", pk=e.pk)
+        e.repaid_on = None if e.repaid_on else timezone.localdate()
+        e.to_salary = False
+        e.save(update_fields=["repaid_on", "to_salary"])
+        log_activity(
+            request.company, "expense_repaid", f"Expense {'paid back' if e.repaid_on else 'marked not paid back'}: {e.category_label}",
+            actor=request.user, target_content_type="expense", target_object_id=e.pk,
+            metadata={"paid_by": e.paid_by_id, "repaid": bool(e.repaid_on)},
+        )
+        messages.success(request, f"{e.category_label} marked as paid back to {display_name(e.paid_by)}." if e.repaid_on
+                         else f"{e.category_label} is not marked as paid back any more.")
+        return redirect("expenses:expense_edit", pk=e.pk)
+
+
+class ExpenseSalaryAllView(ExpenseAccessMixin, View):
+    """Add every unpaid expense of one person, in the filters shown, to their salary."""
+
+    def post(self, request):
+        f = Filters(request.POST)
+        pk = request.POST.get("paid_by", "")
+        qs = f.apply(Expense.objects.filter(company=request.company, paid_by_id=pk if pk.isdigit() else 0))
+        qs = qs.filter(to_salary=False, paid_in_run__isnull=True, repaid_on__isnull=True)
+        ids = list(qs.values_list("pk", flat=True))
+        direct = request.POST.get("mode") == "direct"
+        if ids:
+            Expense.objects.filter(pk__in=ids).update(**({"repaid_on": timezone.localdate()} if direct else {"to_salary": True}))
+            who = display_name(User.objects.get(pk=pk))
+            log_activity(
+                request.company, "expense_salary", f"{len(ids)} expense(s) {'paid back to' if direct else 'added to'} {who}{'' if direct else chr(39) + 's salary'}",
+                actor=request.user, metadata={"paid_by": int(pk), "expense_ids": ids},
+            )
+            noun = f"{len(ids)} expense{'s' if len(ids) != 1 else ''}"
+            messages.success(request, f"{noun} marked as paid back to {who}." if direct else f"{noun} will be added to {who}'s next payslip.")
+        else:
+            messages.info(request, "Nothing left to add for that person here.")
+        return redirect(f"{reverse('expenses:expense_list')}?{Filters(request.POST).query}")
 
 
 class ExpenseCommentView(ExpenseAccessMixin, View):

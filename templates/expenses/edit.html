@@ -12,6 +12,25 @@
   {% include "expenses/_form.html" with action=action submit="Save changes" cancel=back autofocus=True %}
 </div>
 
+<section class="card" style="max-width:860px;margin-top:14px">
+  <h2 class="cm-h">Pay back through salary</h2>
+  {% if expense.paid_in_run %}
+  <p class="text-sm">Paid on the payslip for {{ expense.paid_in_run.label }}. It is fixed now: it cannot be edited or deleted.</p>
+  {% elif expense.repaid_on %}
+  <p class="text-sm">Paid back directly on {{ expense.repaid_on|date:"j M Y" }}. It will not go on a payslip.</p>
+  <form method="post" action="{% url 'expenses:expense_repaid' expense.pk %}">{% csrf_token %}<button type="submit" class="btn">Undo</button></form>
+  {% else %}
+  <p class="text-sm text-muted">{% if expense.to_salary %}Marked. It joins {{ expense.paid_by.get_full_name|default:expense.paid_by.username }}'s payslip the next time payroll is generated for a cycle ending on or after {{ expense.date|date:"j M Y" }}. They must be on payroll.{% else %}{{ expense.paid_by.get_full_name|default:expense.paid_by.username }} paid this. Add it to their salary and it appears as a separate line on their payslip.{% endif %}</p>
+  <form method="post" action="{% url 'expenses:expense_salary' expense.pk %}">
+    {% csrf_token %}<button type="submit" class="btn {% if not expense.to_salary %}btn-primary{% endif %}">{% if expense.to_salary %}Take off salary{% else %}Add to salary{% endif %}</button>
+  </form>
+  <form method="post" action="{% url 'expenses:expense_repaid' expense.pk %}" style="margin-top:8px">
+    {% csrf_token %}<button type="submit" class="btn">Paid back directly</button>
+    <span class="text-sm text-muted">Cash, UPI or bank. Not added to any payslip.</span>
+  </form>
+  {% endif %}
+</section>
+
 {% comment %}
 The talk about this expense. Owners and admins only, like the ledger itself. A
 comment is a plain form post and a redirect back to #discussion, so there is

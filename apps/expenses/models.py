@@ -28,6 +28,14 @@ class Expense(TenantScopedModel):
     paid_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="expenses_paid")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="expenses_created")
     created_at = models.DateTimeField(auto_now_add=True)
+    # Pay the payer back through salary: the next payroll run for a cycle ending
+    # on or after `date` adds it to their payslip and sets `paid_in_run`.
+    to_salary = models.BooleanField(default=False)
+    # Or paid back by hand (cash, UPI): the day it was done. Never both.
+    repaid_on = models.DateField(null=True, blank=True)
+    paid_in_run = models.ForeignKey(
+        "payroll.PayrollRun", on_delete=models.SET_NULL, null=True, blank=True, related_name="expenses"
+    )
 
     class Meta:
         ordering = ["-date", "-id"]

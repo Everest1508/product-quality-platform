@@ -50,7 +50,7 @@ class ExpenseViewsTest(TestCase):
         page = self.client.get(reverse("expenses:expense_list"))
         self.assertContains(page, "Tea")
         self.assertEqual(page.context["total"], "₹1,250.50")
-        self.assertEqual(page.context["by_person"], [{"name": "dev", "total": "₹1,250.50"}])
+        self.assertEqual(page.context["by_person"], [{"pk": self.dev.pk, "name": "dev", "total": "₹1,250.50", "can_add": True}])
 
     def test_amount_accepts_the_commas_the_box_adds(self):
         self.add(self.owner, "12,34,567.50")
@@ -277,3 +277,35 @@ class ExpenseDiscussionTest(TestCase):
         self.assertEqual(kinds, ["expense_commented", "expense_comment_deleted"])
         # The words themselves stay out of the audit trail.
         self.assertFalse(ActivityLog.objects.filter(description__contains="October").exists())
+
+
+class SalaryAllTest(ExpenseViewsTest):
+    # Reuses the base setUp; its own tests are run once, in ExpenseViewsTest.
+    def test_adds_only_that_persons_unpaid_expenses(self):
+        self.add(self.owner, "100", payer=self.dev)
+        self.add(self.owner, "200", payer=self.dev)
+        self.add(self.owner, "300", payer=self.dev2)
+        r = self.client.post(reverse("expenses:expense_salary_all"), {"paid_by": self.dev.pk, "month": "all"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(list(Expense.objects.filter(to_salary=True).values_list("paid_by", flat=True)), [self.dev.pk] * 2)
+        self.assertEqual(self.client.get(reverse("expenses:expense_list") + "?month=all").status_code, 200)
+
+
+class RepaidDirectlyTest(ExpenseViewsTest):
+    def test_direct_and_salary_exclude_each_other(self):
+        self.add(self.owner, "100", payer=self.dev)
+        e = Expense.objects.get()
+        self.client.post(reverse("expenses:expense_salary", args=[e.pk]))
+        self.client.post(reverse("expenses:expense_repaid", args=[e.pk]))
+        e.refresh_from_db()
+        self.assertEqual((e.to_salary, bool(e.repaid_on)), (False, True))
+        self.client.post(reverse("expenses:expense_salary", args=[e.pk]))  # refused
+        e.refresh_from_db()
+        self.assertFalse(e.to_salary)
+
+    def test_bulk_direct_skips_salary_marked(self):
+        self.add(self.owner, "100", payer=self.dev)
+        self.add(self.owner, "200", payer=self.dev)
+        Expense.objects.filter(amount_paise=10000).update(to_salary=True)
+        self.client.post(reverse("expenses:expense_salary_all"), {"paid_by": self.dev.pk, "month": "all", "mode": "direct"})
+        self.assertEqual(Expense.objects.filter(repaid_on__isnull=False).count(), 1)

@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.57.0] "Fantail" — 2026-10-27 · pay people back for expenses
+
+> In short: an expense can now be paid back through salary or directly, and a repaid expense shows on the payslip.
+
+### New
+
+- **Add an expense to someone's salary.** Open an expense and choose Add to salary, and the amount appears on that person's next payslip as its own Expenses repaid line.
+- **Do it for all of a person's expenses at once.** The Paid by box on the Expenses page has an Add all to salary button for each person.
+- **Mark an expense as paid back directly.** For money you gave back in cash, UPI or bank, so it never lands on a payslip.
+
+### Better
+
+- **Payslips list the repaid expenses.** Each one shows its name, date and amount, and the payroll CSV has an Expenses repaid column.
+- **A repaid expense is locked.** Once it is on a payslip it cannot be edited or deleted, so the slip always matches the ledger.
+
 ## [1.56.0] "Eider" — 2026-10-26 · website form leads arrive in the CRM
 
 > In short: owners and admins get a private link their website form can post to, and every submission shows up in a Website leads list.

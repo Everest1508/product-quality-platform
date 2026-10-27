@@ -178,6 +178,12 @@ class Payslip(TenantScopedModel):
         default=0,
         help_text="Cash penalty for late arrivals inside the grace bands.",
     )
+    reimbursement = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Expenses the person paid, repaid on this slip. Already inside gross.",
+    )
     breakdown = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

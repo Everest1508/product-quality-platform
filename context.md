@@ -887,3 +887,6 @@ decided what and strike the item** rather than deleting it.
 - **Expenses form fields are block, not flex.** `display:flex` on `.ex-form .field` stretched `input[type=date]` to ~260px tall in some browsers; now block with a 38px date input.
 - **Sidebar clipping bug:** `.sidebar` is a flex column with `overflow-y:auto`, so `overflow:hidden` children such as `.nav-label` shrank to nothing once the menu got long (the Admin heading vanished). `.sidebar > *{flex-shrink:0}` fixes it; same class of bug as the DSR table.
 
+
+## 2026-10-27 (expense to salary)
+- "Disbuss" meant disburse. `Expense.to_salary` + `paid_in_run` (expenses/0007), `Payslip.reimbursement` (payroll/0004). `payroll.service.reimbursements` picks marked expenses dated up to the cycle end that no other run took; `_write_run` stamps `paid_in_run`. Reimbursement is inside `gross`, shown as its own payslip line. Once paid, an expense cannot be edited, deleted or unmarked. Payer must be on payroll or it waits. Not done: CHANGELOG entry/version bump, notification when a slip is ready.
