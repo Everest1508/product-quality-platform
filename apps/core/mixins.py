@@ -9,12 +9,11 @@ class LoginRequiredMixin(DjangoLoginRequiredMixin):
 
 class CompanyMemberRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        if isinstance(response, HttpResponse) and response.status_code in (301, 302):
-            return response
-        if not request.company:
+        # Check before dispatching: super().dispatch() runs the view, which
+        # would otherwise execute with request.company = None.
+        if request.user.is_authenticated and not request.company:
             return redirect("accounts:company_setup")
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CompanyAdminRequiredMixin(CompanyMemberRequiredMixin):
