@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.57.2] "Goldcrest" — 2026-10-28 · signing in with no company no longer crashes
+
+> In short: someone who signs in without belonging to a company is now sent to company setup instead of seeing an error page.
+
+### Fixed
+
+- **An admin with no company no longer gets an error page.** Opening the dashboard used to fail with a server error. It now takes you to company setup first.
+
 ## [1.57.1] "Fulmar" — 2026-10-27 · creating payslips is easier to follow
 
 > In short: the payroll preview now walks you through checking the numbers and creating payslips, and the salary setup page no longer overlaps.
