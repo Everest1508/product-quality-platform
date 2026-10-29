@@ -500,6 +500,29 @@ class PwaTests(TestCase):
         self.assertIn("no-cache", r["Cache-Control"])
         self.assertIn(settings.APP_VERSION, r.content.decode())
 
+    def test_the_worker_warms_exactly_the_cdn_files_the_page_loads(self):
+        """If base.html bumps htmx or Alpine and sw.js does not, the warm copy is dead weight."""
+        page = self.client.get("/login/").content.decode()
+        worker = self.client.get("/sw.js").content.decode()
+        for url in (
+            "https://unpkg.com/htmx.org@2.0.4",
+            "https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js",
+            "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap",
+        ):
+            self.assertIn(url, page, url)
+            self.assertIn(url, worker, url)
+
+    def test_scripts_do_not_block_the_first_paint(self):
+        page = self.client.get("/login/").content.decode()
+        self.assertIn('<script defer src="https://unpkg.com/htmx.org@2.0.4">', page)
+
+    def test_manifest_falls_back_to_minimal_ui_and_has_shortcuts_that_stay_in_scope(self):
+        data = self.client.get("/manifest.webmanifest").json()
+        self.assertEqual(data["display_override"], ["standalone", "minimal-ui"])
+        self.assertGreaterEqual(len(data["shortcuts"]), 5)
+        for shortcut in data["shortcuts"]:
+            self.assertTrue(shortcut["url"].startswith(data["scope"]), shortcut)
+
     def test_offline_page_needs_no_login(self):
         r = self.client.get("/offline/")
         self.assertEqual(r.status_code, 200)

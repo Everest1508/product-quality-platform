@@ -13,6 +13,12 @@ document.addEventListener('alpine:init', function () {
     return Uint8Array.from(raw, function (c) { return c.charCodeAt(0); });
   }
 
+  // The unread count on the installed app's icon, where the browser supports it.
+  function badge(n) {
+    if (!navigator.setAppBadge) return;
+    try { (n > 0 ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(function () {}); } catch (e) {}
+  }
+
   Alpine.store('notifications', {
     items: [],
     unread: 0,
@@ -24,7 +30,7 @@ document.addEventListener('alpine:init', function () {
       var self = this;
       fetch('/notifications/feed/', { credentials: 'same-origin' })
         .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) { if (d) { self.items = d.items; self.unread = d.unread; } self.loaded = true; })
+        .then(function (d) { if (d) { self.items = d.items; self.unread = d.unread; badge(d.unread); } self.loaded = true; })
         .catch(function () { self.loaded = true; });
       if (this.pushSupported) {
         navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); })
@@ -36,6 +42,7 @@ document.addEventListener('alpine:init', function () {
       this.items.unshift(msg.notification);
       this.items = this.items.slice(0, 15);
       this.unread = msg.unread;
+      badge(msg.unread);
       window.dispatchEvent(new CustomEvent('django-message', {
         detail: { text: msg.notification.title, tags: 'success' }
       }));
@@ -52,6 +59,7 @@ document.addEventListener('alpine:init', function () {
       }).then(function () {
         self.items = self.items.map(function (n) { n.read = true; return n; });
         self.unread = 0;
+        badge(0);
       });
     },
 

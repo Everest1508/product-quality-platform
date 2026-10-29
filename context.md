@@ -904,3 +904,6 @@ decided what and strike the item** rather than deleting it.
 
 ## 2026-10-29 (payroll month picker)
 - The payroll preview picks a month from a list (`?month=2026-10` is 27 Sep to 26 Oct, named by the month it ends in; each option says In progress, Not created, Created or Locked). With no month it opens the newest finished cycle, the one ready to pay, not the running one. Fixed: "Create payslips" ignored the page and always created today's cycle; it now reads the same `month` the page shows (`views._requested_cycle`, `service.cycle_options`).
+
+## 2026-10-29 (PWA)
+- Manifest gained `display_override`, `launch_handler`, categories, lang and two more shortcuts. The worker now warms htmx, Alpine and the font sheet at install (list `WARM` in `templates/pwa/sw.js`; a test fails if it drifts from `base.html`). htmx loads with `defer` so it no longer blocks first paint. iOS Safari gets the Install app button with a Share, Add to Home Screen hint. The unread count is set on the installed app's icon through the Badging API.
