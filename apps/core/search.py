@@ -20,6 +20,10 @@ from apps.products.access import accessible_error_groups, accessible_products, a
 
 _TICKET_KEY = re.compile(r"^([A-Za-z][A-Za-z0-9]{1,5}?)[-\s]?0*(\d+)$")
 _BARE_KEY = re.compile(r"^[A-Za-z][A-Za-z0-9]{1,5}$")
+# Tickets are not offered in search: the board and "All tickets" are the way in. Pages
+# such as "All tickets" still show under "Go to".
+SEARCH_TICKETS = False
+
 LIMITS = {"tickets": 6, "errors": 5, "products": 4, "people": 5, "pages": 6, "feedback": 4, "surveys": 3, "rules": 3, "dsr": 4, "leave": 3, "expenses": 5, "corrections": 4, "log": 4, "notifications": 4}
 MIN_QUERY = 2
 
@@ -136,7 +140,10 @@ def search(request, query):
         ticket_qs = ticket_qs.filter(assignees__username__iexact=filters["assignee"])
     if filters.get("status"):
         ticket_qs = ticket_qs.filter(status__iexact=filters["status"].replace("-", "_"))
-    tickets = ticket_qs.select_related("product").distinct().order_by("-updated_at")[: LIMITS["tickets"]]
+    tickets = (
+        ticket_qs.select_related("product").distinct().order_by("-updated_at")[: LIMITS["tickets"]]
+        if SEARCH_TICKETS else []
+    )
     ticket_items = []
     for t in tickets:
         why = ""

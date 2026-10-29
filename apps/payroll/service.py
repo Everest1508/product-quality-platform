@@ -4,11 +4,12 @@ Pay cycle is the 27th of one month to the 26th of the next, because the 27th
 of the following month would overlap a day and double-pay it.
 
 Pay is entered as a **monthly salary** where possible, and the daily rate is
-derived from it, because that is the number someone actually knows. Working
-days already exclude the company's weekly offs (Saturday and Sunday unless it
-changed them) and company holidays, so the divisor is the real one for that
-cycle and a person receives their full monthly salary in a normal cycle. `effective_rate` is the single place that resolves a profile to a daily
-rate; nothing else may divide a salary.
+derived from it, because that is the number someone actually knows. The rate is
+the salary divided by every calendar day in the cycle (28 to 31), and weekly
+offs and holidays are paid days, so a person who misses nothing receives their
+full monthly salary and each unpaid day costs one day rate. `effective_rate` is
+the single place that resolves a profile to a daily rate; nothing else may
+divide a salary.
 
 Pay rule, kept deliberately simple:
 
@@ -251,13 +252,18 @@ def payable_people(company, on_date):
 # --- Generating a run ------------------------------------------------------
 
 
+def cycle_days(start, end):
+    """Calendar days in a cycle: 30 for 27 Sep to 26 Oct, 28 or 29 for February's."""
+    return (end - start).days + 1
+
+
 def effective_rate(company, profile, on_date):
     """The daily rate this profile pays on `on_date`.
 
-    One rule: a monthly salary is divided by the working days in the cycle
-    containing `on_date`. Weekly offs and company holidays are already out of that
-    count, so a person is paid their whole salary every cycle and adding a
-    holiday raises the day rate rather than cutting the pay.
+    One rule: a monthly salary is divided by the calendar days in the cycle
+    containing `on_date` (8000 over 30 days is 266.67 a day). Weekly offs and
+    company holidays are paid days, so a person is paid their whole salary every
+    cycle and a holiday never changes the rate.
 
     A profile with no monthly salary is paid the daily rate as typed, which is
     both the per-day case and what keeps rows saved before monthly salary
@@ -267,10 +273,7 @@ def effective_rate(company, profile, on_date):
         return profile.daily_rate
 
     start, end = cycle_bounds(on_date)
-    divisor = working_days(company, start, end)
-    if divisor < 1:
-        return Decimal("0.00")
-    return (profile.monthly_salary / Decimal(divisor)).quantize(
+    return (profile.monthly_salary / Decimal(cycle_days(start, end))).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
 
@@ -284,8 +287,10 @@ def rate_breakdown(company, profile, on_date, days):
     rate = effective_rate(company, profile, on_date)
     if profile.monthly_salary is None or profile.monthly_salary <= 0:
         return {"daily_rate": str(rate)}
+    start, end = cycle_bounds(on_date)
     return {
         "monthly_salary": str(profile.monthly_salary),
+        "cycle_days": cycle_days(start, end),
         "working_days": days,
         "daily_rate": str(rate),
     }
@@ -324,9 +329,14 @@ def preview(company, start, end):
         # A half day lost to lateness is a working day not paid, so it reduces
         # payable days the same way unpaid leave does; the cash bands are a flat
         # charge on top and cannot be expressed as days.
+        # A monthly salary pays every calendar day of the cycle (weekly offs and
+        # holidays included) minus the days lost; a per-day profile is paid for
+        # working days only, as before.
+        monthly = profile.monthly_salary is not None and profile.monthly_salary > 0
+        pay_days = cycle_days(start, end) if monthly else days
         payable = max(
             Decimal("0.00"),
-            Decimal(days) - leave["unpaid_days"] - late["half_days"],
+            Decimal(pay_days) - leave["unpaid_days"] - late["half_days"],
         )
         cash = late["cash_penalty"]
         # Deductions cannot exceed earnings. Someone on a low salary who is
@@ -336,7 +346,16 @@ def preview(company, start, end):
         # days can actually absorb and floor gross at zero. The uncapped figure
         # stays in the breakdown so the cap is auditable instead of silently
         # swallowing money.
-        earned = (payable * rate).quantize(Decimal("0.01"))
+        if monthly:
+            # Salary over days, rounded once: multiplying the rounded day rate
+            # back up would leave a full cycle a few paise short of the salary.
+            earned = (profile.monthly_salary * payable / Decimal(pay_days)).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            lost = (profile.monthly_salary - earned).quantize(Decimal("0.01"))
+        else:
+            earned = (payable * rate).quantize(Decimal("0.01"))
+            lost = (leave["unpaid_days"] * rate + late["half_day_loss"]).quantize(Decimal("0.01"))
         owed = repay.get(profile.user_id, [])
         back = (Decimal(sum(e.amount_paise for e in owed)) / 100).quantize(Decimal("0.01"))
         cash_applied = min(cash, earned) if cash > earned else cash
@@ -347,16 +366,13 @@ def preview(company, start, end):
                 "daily_rate": rate,
                 "currency": profile.currency,
                 "working_days": days,
+                "pay_days": pay_days,
                 "paid_leave_days": leave["paid_days"],
                 "unpaid_leave_days": leave["unpaid_days"],
                 "payable_days": payable,
                 "late_half_days": late["half_days"],
                 "late_penalty": cash_applied,
-                "deduction": (
-                    leave["unpaid_days"] * rate
-                    + late["half_day_loss"]
-                    + cash_applied
-                ).quantize(Decimal("0.01")),
+                "deduction": (lost + cash_applied).quantize(Decimal("0.01")),
                 "reimbursement": back,
                 "expense_ids": [e.pk for e in owed],
                 "gross": (earned - cash_applied + back).quantize(Decimal("0.01")),

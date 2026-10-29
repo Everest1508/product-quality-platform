@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from datetime import timedelta
 
 from django.contrib.messages import get_messages
@@ -39,6 +40,7 @@ class TopbarFeaturesTest(TestCase):
         self.assertIn("9:45 AM", page)
         self.assertIn("6:30 PM", page)
 
+    @patch("apps.core.search.SEARCH_TICKETS", True)
     def test_search_reaches_ticket_descriptions_and_comments(self):
         t = Ticket.objects.create(
             company=self.company, product=self.product, title="Plain title",
@@ -142,6 +144,7 @@ class FeatureRoundTwoTest(TestCase):
         self.assertIn("Linked tickets", detail)
         self.assertIn(ticket.key, detail)
 
+    @patch("apps.core.search.SEARCH_TICKETS", True)
     def test_search_filters_and_snippets(self):
         from apps.core.search import parse_query, snippet
 

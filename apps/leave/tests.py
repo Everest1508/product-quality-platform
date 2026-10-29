@@ -1129,6 +1129,12 @@ class SplitPreviewTest(LeaveTestBase):
         base.update(payload)
         return self.client.post(reverse("leave:split_preview"), base)
 
+    def test_a_past_start_date_shows_a_warning_instead_of_a_price(self):
+        yesterday = timezone.localdate() - timedelta(days=1)
+        body = self.preview(start_date=yesterday.isoformat()).content.decode()
+        self.assertIn("only ask for leave from today onward", body)
+        self.assertNotIn("charged as unpaid leave", body)
+
     def test_it_prices_an_over_cap_spell_before_it_is_submitted(self):
         """The applicant must not discover the unpaid half only after submitting.
 

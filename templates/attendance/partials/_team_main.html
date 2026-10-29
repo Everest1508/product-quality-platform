@@ -1,0 +1,25 @@
+{% load icon_tags %}
+{% comment %}
+Everything that changes when you move between days or switch to the calendar.
+The wrapper is boosted, so the links and the date form below swap this block in
+place (and still work as plain links without JavaScript).
+{% endcomment %}
+<div id="team-main" hx-boost="true" hx-target="#team-main" hx-swap="outerHTML show:none" hx-push-url="true">
+  <div class="team-bar">
+    <div class="view-toggle" role="tablist" aria-label="Team view">
+      <a href="{% url 'attendance:team_attendance' %}?date={% if mode == 'day' %}{{ day|date:'Y-m-d' }}{% else %}{{ monday|date:'Y-m-d' }}{% endif %}" role="tab" class="{% if mode == 'day' %}active{% endif %}"{% if mode == 'day' %} aria-selected="true"{% endif %}>Day</a>
+      <a href="{% url 'attendance:team_attendance' %}?view=week&date={% if mode == 'day' %}{{ day|date:'Y-m-d' }}{% else %}{{ monday|date:'Y-m-d' }}{% endif %}" role="tab" class="{% if mode == 'week' %}active{% endif %}"{% if mode == 'week' %} aria-selected="true"{% endif %}>Calendar view</a>
+    </div>
+
+    <form class="date-nav" method="get" action="{% url 'attendance:team_attendance' %}" hx-trigger="change">
+      {% if mode == 'week' %}<input type="hidden" name="view" value="week">{% endif %}
+      <a class="btn btn-sm" href="?{% if mode == 'week' %}view=week&{% endif %}date={{ prev_date }}" aria-label="{% if mode == 'week' %}Previous week{% else %}Previous day{% endif %}">{% icon 'chevron-left' 'ic' %}</a>
+      <input type="date" class="form-input" name="date" aria-label="Jump to a date" max="{{ today|date:'Y-m-d' }}" value="{% if mode == 'day' %}{{ day|date:'Y-m-d' }}{% else %}{{ monday|date:'Y-m-d' }}{% endif %}">
+      {% if next_date %}<a class="btn btn-sm" href="?{% if mode == 'week' %}view=week&{% endif %}date={{ next_date }}" aria-label="{% if mode == 'week' %}Next week{% else %}Next day{% endif %}">{% icon 'chevron-right' 'ic' %}</a>
+      {% else %}<span class="btn btn-sm is-disabled" aria-disabled="true" title="Nothing to show after today">{% icon 'chevron-right' 'ic' %}</span>{% endif %}
+      {% if mode == 'day' and not is_today or mode == 'week' and not is_this_week %}<a class="btn btn-sm" href="?{% if mode == 'week' %}view=week{% endif %}">Back to today</a>{% endif %}
+    </form>
+  </div>
+
+  {% if mode == 'week' %}{% include "attendance/partials/_team_week.html" %}{% else %}{% include "attendance/partials/_team_body.html" %}{% endif %}
+</div>

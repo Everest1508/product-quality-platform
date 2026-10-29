@@ -265,6 +265,8 @@ class LeaveSplitPreviewView(CompanyMemberRequiredMixin, View):
             return panel()
         if days <= 0:
             return panel()  # weekend-only span: nothing to price yet
+        if first < timezone.localdate():
+            return panel(past=True)  # the form refuses it on submit; say so now
 
         result = service.auto_split(
             request.company, request.user, policy, first, last, days

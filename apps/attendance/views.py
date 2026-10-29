@@ -219,7 +219,7 @@ def _punch_context(request, record, message="", person=None):
     }
 
 
-def _month_summary(records, shift, first, last, today):
+def _month_summary(records, shift, first, last, today, holidays=None):
     """Numbers and a day-by-day strip for the month being viewed.
 
     Hours come from `effective_minutes` (set by `annotate_effective`), so an
@@ -236,6 +236,7 @@ def _month_summary(records, shift, first, last, today):
             present += 1
             total += mins
 
+    holidays = holidays or {}
     cells = []
     day = first
     while day <= last:
@@ -253,6 +254,8 @@ def _month_summary(records, shift, first, last, today):
             pct = min(100, round(100 * mins / scheduled))
         elif day > today:
             state, note, pct = "future", "", 0
+        elif day in holidays:
+            state, note, pct = "rest", f"holiday: {holidays[day]}", 0
         elif shift.is_weekly_off(day):
             state, note, pct = "rest", "weekly off", 0
         else:
@@ -309,7 +312,10 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
         prev_year, prev_month = service.month_shift(year, month, -1)
         next_year, next_month = service.month_shift(year, month, 1)
 
-        month_summary = _month_summary(month_records, shift, first, last, today)
+        month_summary = _month_summary(
+            month_records, shift, first, last, today,
+            holidays=service.holiday_names(request.company, first, last),
+        )
 
         focus_user = user if user.pk != request.user.pk else None
 
@@ -441,6 +447,7 @@ def _week_strip(request, owner, shift):
         )
     }
     on_leave = service.approved_leave_map(request.company, monday, sunday).get(owner.pk, set())
+    holidays = service.holiday_names(request.company, monday, sunday)
     target = max(1, shift.worked_minutes_per_day)
     days = []
     for offset in range(7):
@@ -453,7 +460,7 @@ def _week_strip(request, owner, shift):
             state = "worked"
         elif day > today:
             state = "future"
-        elif shift.is_weekly_off(day):
+        elif shift.is_weekly_off(day) or day in holidays:
             state = "weekend"
         else:
             state = "none"
@@ -507,24 +514,52 @@ def _last_week(company, user_ids, shift):
     return out
 
 
+def _picked_day(request, today, key="date"):
+    """The day asked for in ?date=, never later than today (nothing to show yet)."""
+    try:
+        day = date.fromisoformat(request.GET.get(key, ""))
+    except ValueError:
+        return today
+    return min(day, today)
+
+
 class TeamAttendanceView(CompanyAdminRequiredMixin, View):
-    """Admin: who is on the clock right now, and the whole team's today."""
+    """Admin: the whole team for one day (today by default), or a week as a calendar.
+
+    Both views take ?date= so old records are one click away, and both swap in
+    place for an htmx request so moving between days does not reload the shell.
+    """
 
     def get(self, request):
-        if request.GET.get("view") == "week":
-            return self._week(request)
-        on_clock = service.get_who_is_in(request.company)
-        team = service.get_team_today(request.company)
+        today = timezone.localdate()
         shift = service.shift_for(request.company)
+        if request.GET.get("view") == "week":
+            context = self._week(request, today, shift)
+        else:
+            context = self._day(request, today, shift)
+        context.update({
+            "today": today,
+            "shift": shift,
+            "next": request.get_full_path(),
+            "weekly_off": shift.off_weekdays,
+            "weekly_off_label": service.weekly_off_label(shift.off_weekdays, short=True),
+            "weekdays": [(n, str(WEEKDAYS_ABBR[n]), str(WEEKDAYS[n])) for n in WEEKDAYS],
+        })
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "attendance/partials/_team_main.html", context)
+        return render(request, "attendance/team_attendance.html", context)
 
-        # Your own row first, marked, then everyone else. It used to be buried
-        # alphabetically, which read as "my attendance is not here".
-        weeks = _last_week(request.company, [row["user"].pk for row in team], shift)
+    def _day(self, request, today, shift):
+        day = _picked_day(request, today)
+        on_clock = service.get_who_is_in(request.company)
+        team = service.get_team_today(request.company, day)
+        is_today = day == today
         # On a weekly off nobody is absent, so no one is counted as not in.
-        is_off_today = shift.is_weekly_off(timezone.localdate())
+        holiday = service.holiday_names(request.company, day, day).get(day)
+        is_off_day = shift.is_weekly_off(day) or bool(holiday)
+        target = max(1, shift.worked_minutes_per_day)
         for row in team:
             row["is_me"] = row["user"].pk == request.user.pk
-            row["week"] = weeks[row["user"].pk]
             record = row["record"]
             if row["on_leave"]:
                 row["state"] = "leave"
@@ -534,24 +569,26 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
                 row["state"] = "clock"
             elif record and record.is_complete:
                 row["state"] = "done"
-            elif is_off_today:
+            elif holiday:
+                row["state"] = "holiday"
+            elif is_off_day:
                 row["state"] = "off"
             else:
                 row["state"] = "absent"
-            row["net_formatted"] = (
-                format_minutes(service.net_minutes_for(record, shift))
-                if record and record.check_in else ""
-            )
-            row["progress"] = (
-                min(100, round(service.net_minutes_for(record, shift) / max(1, shift.worked_minutes_per_day) * 100))
-                if record and record.check_in else 0
-            )
+            minutes = service.net_minutes_for(record, shift) if record and record.check_in else 0
+            row["net_formatted"] = format_minutes(minutes) if minutes else ""
+            row["progress"] = min(100, round(minutes / target * 100)) if minutes else 0
+            late = service.lateness_for(record, shift) if record and record.check_in and not is_off_day else 0
+            row["late_minutes"] = late
+            row["late_band"] = shift.band_for_late_minutes(late) if late else "on_time"
         team.sort(key=lambda row: (not row["is_me"], row["user"].username.lower()))
-        me = next((row for row in team if row["is_me"]), None)
-
-        context = {
+        me = next((row for row in team if row["is_me"]), None) if is_today else None
+        return {
+            "mode": "day",
+            "day": day,
+            "is_today": is_today,
             "on_clock": on_clock,
-            "on_clock_count": len(on_clock),
+            "on_clock_count": sum(1 for row in team if row["state"] == "clock"),
             "stale_count": sum(1 for r in on_clock if r["is_stale"]),
             "team": team,
             "me": me,
@@ -560,36 +597,25 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
             # Someone on approved leave is not absent, so they are counted
             # separately instead of dragging the absent total up.
             "leave_count": sum(1 for row in team if row["on_leave"]),
-            "shift": shift,
-            "next": request.get_full_path(),
             "absent_count": sum(1 for row in team if row["state"] == "absent"),
-            "today": timezone.localdate(),
-            "is_off_today": is_off_today,
-            "weekly_off": shift.off_weekdays,
-            "weekly_off_label": service.weekly_off_label(shift.off_weekdays, short=True),
-            "weekdays": [(n, str(WEEKDAYS_ABBR[n]), str(WEEKDAYS[n])) for n in WEEKDAYS],
+            "stale_day_count": sum(1 for row in team if row["state"] == "stale"),
+            "is_off_today": is_off_day,
+            "holiday": holiday,
+            "prev_date": (day - timedelta(days=1)).isoformat(),
+            "next_date": (day + timedelta(days=1)).isoformat() if not is_today else "",
         }
 
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "attendance/partials/_team_body.html", context)
-
-        return render(request, "attendance/team_attendance.html", context)
-
-
-    def _week(self, request):
-        today = timezone.localdate()
-        try:
-            anchor = date.fromisoformat(request.GET.get("week", ""))
-        except ValueError:
-            anchor = today
+    def _week(self, request, today, shift):
+        anchor = _picked_day(request, today, key="week" if "week" in request.GET else "date")
         monday = anchor - timedelta(days=anchor.weekday())
-        shift = service.shift_for(request.company)
         rows = service.get_team_week(request.company, monday, shift)
         for row in rows:
             row["is_me"] = row["user"].pk == request.user.pk
             row["total_formatted"] = format_minutes(row["total_minutes"]) if row["total_minutes"] else "–"
         rows.sort(key=lambda r: (not r["is_me"], r["user"].username.lower()))
-        return render(request, "attendance/team_week.html", {
+        this_monday = today - timedelta(days=today.weekday())
+        return {
+            "mode": "week",
             "rows": rows,
             "days": [
                 {"date": d, "off": shift.is_weekly_off(d)}
@@ -597,13 +623,10 @@ class TeamAttendanceView(CompanyAdminRequiredMixin, View):
             ],
             "monday": monday,
             "sunday": monday + timedelta(days=6),
-            "prev_week": (monday - timedelta(days=7)).isoformat(),
-            "next_week": (monday + timedelta(days=7)).isoformat(),
-            "is_this_week": monday == today - timedelta(days=today.weekday()),
-            "today": today,
-            "shift": shift,
-            "next": request.get_full_path(),
-        })
+            "prev_date": (monday - timedelta(days=7)).isoformat(),
+            "next_date": (monday + timedelta(days=7)).isoformat() if monday < this_monday else "",
+            "is_this_week": monday == this_monday,
+        }
 
 
 class WeeklyOffView(CompanyAdminRequiredMixin, View):

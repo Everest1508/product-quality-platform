@@ -4,8 +4,8 @@
 
 {% block pay_subtitle %}
 <p class="text-sm text-muted" style="margin-top:4px;">
-  Enter a monthly salary per person. Payroll divides it by the cycle's working days,
-  so weekends and holidays are already excluded. Tick only real staff.
+  Enter a monthly salary per person. Payroll divides it by every day in the cycle (28 to 31),
+  so weekends and holidays are paid days. Tick only real staff.
 </p>
 {% endblock %}
 
@@ -71,7 +71,7 @@
 
     <div x-data="{
           salary: '{{ row.form.monthly_salary.value|default_if_none:'' }}',
-          days: {{ working_days }},
+          days: {{ cycle_days }},
           get daily() {
             const v = parseFloat(this.salary);
             return v > 0 && this.days > 0 ? (v / this.days).toFixed(2) : null;
@@ -142,10 +142,16 @@
   {% endif %}
 </div>
 
-<div class="pay-note">
-  <span><b>On payroll</b> is the only thing that puts someone in a run — the switch decides, not their role.</span>
-  <span>Changing <b>effective from</b> starts a new rate from that day; saving the same date edits the current one.</span>
-  <span>Generated and locked runs are never rewritten, so past payslips keep the rate that applied then.</span>
-  <span>Weekends and <a href="{% url 'payroll:holidays' %}">holidays</a> are excluded from the divisor, and only unpaid leave reduces pay.</span>
-</div>
+<section class="card" style="margin-top:16px;padding:18px 22px;max-width:760px;">
+  <h2 style="font-size:14px;font-weight:600;margin:0 0 10px;">How this page works</h2>
+  <ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.7;">
+    <li><b>On</b> means the person gets a payslip. Off means they are skipped, even if they are an admin.</li>
+    <li><b>Monthly salary</b> is what you pay for a full month. The day rate is worked out from it: salary ÷ days in the cycle (30 for 27 Sep to 26 Oct).</li>
+    <li><b>Effective from</b> is the day the salary starts to count. A cycle uses the salary that was active on the cycle's first day (the 27th).</li>
+    <li><b>Giving a raise?</b> Change the salary and set Effective from to the 27th of the month it should start, or earlier. If the date is later than the cycle's start, that cycle still uses the old salary.</li>
+    <li><b>Not changing anything?</b> Then every payslip uses the salary already saved. You don't have to touch this page each month.</li>
+    <li><b>Old payslips never change.</b> A new salary only affects payslips you create after it.</li>
+    <li><b>This cycle</b> shows what the person would get right now. Weekends and <a href="{% url 'payroll:holidays' %}">holidays</a> are paid, and only unpaid leave and late arrivals reduce pay.</li>
+  </ul>
+</section>
 {% endblock %}

@@ -63,8 +63,9 @@
     <dd>{{ payslip.currency }} {{ payslip.breakdown.monthly_salary }}</dd>
     <dt>Divided by</dt>
     <dd>
-      {{ payslip.breakdown.working_days }} working days
-      <span class="sub">Sat, Sun and holidays are not working days</span>
+      {% if payslip.breakdown.cycle_days %}{{ payslip.breakdown.cycle_days }} days in the cycle
+      <span class="sub">Every day counts, Sat, Sun and holidays included</span>{% else %}{{ payslip.breakdown.working_days }} working days
+      <span class="sub">Sat, Sun and holidays are not working days</span>{% endif %}
     </dd>
     <dt>Daily rate</dt>
     <dd class="strong">{{ payslip.currency }} {{ payslip.breakdown.daily_rate }}</dd>

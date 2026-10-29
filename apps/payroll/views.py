@@ -339,6 +339,7 @@ class PayrollProfileListView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
             request.company, cycle_start, cycle_end
         )
         estimates = {row["user"].pk: row for row in preview_rows}
+        cycle_day_count = service.cycle_days(cycle_start, cycle_end)
 
         rows = []
         for member in _company_members(request.company):
@@ -389,6 +390,7 @@ class PayrollProfileListView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
             "cycle_start": cycle_start,
             "cycle_end": cycle_end,
             "working_days": working_days,
+            "cycle_days": cycle_day_count,
             "cycle_gross": sum(
                 (r["estimate"]["gross"] for r in rows if r["estimate"]), Decimal("0.00")
             ),

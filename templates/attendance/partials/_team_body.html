@@ -17,53 +17,23 @@
         </span>
       </div>
     </div>
-    <div class="me-week" aria-label="Your last seven days">
-      {% for d in me.week %}<i class="dot is-{{ d.state }}" title="{{ d.date|date:'D, M j' }}: {{ d.formatted }}"></i>{% endfor %}
-    </div>
     <a class="btn btn-sm btn-primary" href="{% url 'attendance:my_attendance' %}">Open my attendance</a>
   </section>
   {% endif %}
 
-  <div class="att-stats">
-    <button type="button" class="card stat kpi kpi-green" :class="{ 'is-on': filter === 'clock' }" @click="filter = filter === 'clock' ? 'all' : 'clock'">
-      <span class="kpi-icon">{% icon 'clock' %}</span>
-      <span class="kpi-num">{{ on_clock_count }}</span>
-      <span class="kpi-label">On the clock</span>
-    </button>
-    <div class="card stat kpi kpi-blue">
-      <span class="kpi-icon">{% icon 'circle-check' %}</span>
-      <span class="kpi-num">{{ present_count }}<small>/{{ team_count }}</small></span>
-      <span class="kpi-label">Checked in</span>
-    </div>
-    <button type="button" class="card stat kpi kpi-gray" :class="{ 'is-on': filter === 'absent' }" @click="filter = filter === 'absent' ? 'all' : 'absent'">
-      <span class="kpi-icon">{% icon 'user' %}</span>
-      <span class="kpi-num">{{ absent_count }}</span>
-      <span class="kpi-label">Not checked in</span>
-    </button>
-    <button type="button" class="card stat kpi kpi-orange" :class="{ 'is-on': filter === 'leave' }" @click="filter = filter === 'leave' ? 'all' : 'leave'">
-      <span class="kpi-icon">{% icon 'calendar-days' %}</span>
-      <span class="kpi-num">{{ leave_count }}</span>
-      <span class="kpi-label">On leave</span>
-    </button>
-    <button type="button" class="card stat kpi {% if stale_count %}kpi-red{% else %}kpi-gray{% endif %}" :class="{ 'is-on': filter === 'stale' }" @click="filter = filter === 'stale' ? 'all' : 'stale'">
-      <span class="kpi-icon">{% icon 'triangle-alert' %}</span>
-      <span class="kpi-num">{{ stale_count }}</span>
-      <span class="kpi-label">Missed check-outs</span>
-    </button>
+  <div class="day-head">
+    <h2>{{ day|date:"l, j F Y" }}{% if is_today %} <span class="day-tag">Today</span>{% endif %}{% if holiday %} <span class="pill closed">Holiday: {{ holiday }}</span>{% elif is_off_today %} <span class="pill closed">Weekly off</span>{% endif %}</h2>
+    <p class="day-summary">
+      <b>{{ present_count }}</b> of {{ team_count }} {% if is_today %}have checked in{% else %}came in{% endif %}{% if is_today and on_clock_count %} · <b>{{ on_clock_count }}</b> working now{% endif %}{% if leave_count %} · <b>{{ leave_count }}</b> on leave{% endif %}{% if absent_count %} · <b>{{ absent_count }}</b> {% if is_today %}not in yet{% else %}absent{% endif %}{% endif %}{% if stale_day_count %} · <b class="warn">{{ stale_day_count }}</b> never checked out{% endif %}
+    </p>
   </div>
-
-  {% if stale_count %}
-  <div class="alert alert-warn">
-    {{ stale_count }} record(s) still on the clock from a previous day. Use "Set check-out" below to close them out.
-  </div>
-  {% endif %}
 
   {% comment %} Open punches from earlier days. The roster below is today only, so without
      this list a forgotten check-out from last week would not appear anywhere
      except as a number in the stat strip. {% endcomment %}
-  {% if stale_count %}
+  {% if stale_count and is_today %}
   <section class="card roster stale-card" aria-label="Open from earlier days">
-    <header class="roster-head"><h2>Open from earlier days</h2></header>
+    <header class="roster-head"><h2>Never checked out <span class="text-muted">· from earlier days</span></h2></header>
     <table class="roster-table">
       <thead><tr><th>Employee</th><th>Since</th><th>Date</th><th></th></tr></thead>
       <tbody>
@@ -92,15 +62,16 @@
   </section>
   {% endif %}
 
-  <div class="team-grid">
-    <section class="card roster" aria-label="Today's attendance">
+  <div class="team-grid{% if not is_today %} is-solo{% endif %}">
+    <section class="card roster" aria-label="Attendance for {{ day|date:'j F' }}">
       <header class="roster-head">
-        <h2>Today <span class="text-muted">· {{ today|date:"l, F j" }}</span>{% if is_off_today %} <span class="pill closed">Weekly off</span>{% endif %}</h2>
-        <div class="chips" role="group" aria-label="Filter the roster">
+        <h2>Everyone</h2>
+        <div class="chips" role="group" aria-label="Filter the list">
           <button type="button" class="chip" :class="{ 'is-on': filter === 'all' }" @click="filter = 'all'">All</button>
-          <button type="button" class="chip" :class="{ 'is-on': filter === 'clock' }" @click="filter = 'clock'">On the clock</button>
-          <button type="button" class="chip" :class="{ 'is-on': filter === 'absent' }" @click="filter = 'absent'">Not in</button>
+          {% if is_today %}<button type="button" class="chip" :class="{ 'is-on': filter === 'clock' }" @click="filter = 'clock'">Working now</button>{% endif %}
+          <button type="button" class="chip" :class="{ 'is-on': filter === 'absent' }" @click="filter = 'absent'">{% if is_today %}Not in yet{% else %}Absent{% endif %}</button>
           <button type="button" class="chip" :class="{ 'is-on': filter === 'leave' }" @click="filter = 'leave'">On leave</button>
+          <button type="button" class="chip" :class="{ 'is-on': filter === 'stale' }" @click="filter = 'stale'">Never checked out</button>
         </div>
       </header>
       <table class="roster-table">
@@ -111,7 +82,6 @@
             <th>In</th>
             <th>Out</th>
             <th>Worked</th>
-            <th>Last 7 days</th>
             <th></th>
           </tr>
         </thead>
@@ -119,7 +89,7 @@
           {% for row in team %}
           <tr x-show="filter === 'all' || filter === '{{ row.state }}'" class="{% if row.is_me %}is-me{% endif %}">
             <td>
-              <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}" title="Open {{ row.user.get_full_name|default:row.user.username }}'s attendance history">
+              <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}&month={{ day|date:'Y-m' }}" title="See {{ row.user.get_full_name|default:row.user.username }}'s full history">
                 <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
                 <span>
                   <span class="title">{{ row.user.get_full_name|default:row.user.username }}{% if row.is_me %} <em class="you">You</em>{% endif %}</span>
@@ -132,10 +102,11 @@
               {% elif row.state == 'stale' %}<span class="pill high" title="Checked in on {{ row.record.date|date:"M d" }} and never checked out">No check-out</span>
               {% elif row.state == 'clock' %}<span class="pill open">On clock</span>
               {% elif row.state == 'done' %}<span class="pill resolved">Complete</span>
+              {% elif row.state == 'holiday' %}<span class="pill closed" title="{{ holiday }}: nobody is expected in">Holiday</span>
               {% elif row.state == 'off' %}<span class="pill closed" title="Weekly off: nobody is expected in">Weekly off</span>
               {% else %}<span class="pill closed">Absent</span>{% endif %}
             </td>
-            <td>{{ row.record.check_in|date:"g:i A"|default:"—" }}</td>
+            <td>{{ row.record.check_in|date:"g:i A"|default:"—" }}{% if row.late_minutes and row.late_band != 'on_time' %}<span class="late-note {{ row.late_band }}">{{ row.late_minutes }} min late</span>{% endif %}</td>
             <td>{{ row.record.check_out|date:"g:i A"|default:"—" }}</td>
             <td class="worked">
               {% if row.record and row.record.is_complete %}
@@ -150,13 +121,8 @@
                 </span>
                 <span class="mini-bar is-live"><i style="width:{{ row.progress }}%"></i></span>
               {% elif row.record and row.record.is_open %}
-                <span class="text-muted">{{ row.record.elapsed_formatted }}</span>
+                <span class="text-muted">Unknown</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
-            </td>
-            <td>
-              <span class="week-dots" aria-label="Last seven days">
-                {% for d in row.week %}<i class="dot is-{{ d.state }}" title="{{ d.date|date:'D, M j' }}: {% if d.state == 'leave' %}on leave{% else %}{{ d.formatted }}{% endif %}"></i>{% endfor %}
-              </span>
             </td>
             <td style="text-align:right;">
               {% if row.record and row.record.is_open %}
@@ -170,14 +136,14 @@
              hoist it out and the form would land in the wrong row. {% endcomment %}
           {% if row.record and row.record.is_open %}
           <tr x-show="editing === {{ row.record.pk }}" style="display:none;">
-            <td colspan="7" style="background:var(--panel);">
+            <td colspan="6" style="background:var(--panel);">
               {% include "attendance/partials/_record_edit_form.html" with record=row.record next=next %}
             </td>
           </tr>
           {% endif %}
           {% empty %}
           <tr>
-            <td colspan="7">
+            <td colspan="6">
               <div class="empty">
                 <h3>No team members</h3>
               </div>
@@ -188,8 +154,10 @@
       </table>
     </section>
 
+    {% if is_today %}
     <aside class="team-side">
       {% include "core/_presence_panel.html" %}
     </aside>
+    {% endif %}
   </div>
 </div>

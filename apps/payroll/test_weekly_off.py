@@ -43,14 +43,14 @@ class WeeklyOffPayrollTest(PayrollTestBase):
         self.assertEqual(count(), 31)
 
     def test_a_monthly_salary_is_still_paid_in_full_with_other_offs(self):
-        """The divisor moves with the calendar, so the whole salary is paid either way."""
+        """The divisor is calendar days, so the whole salary is paid whatever the offs."""
         profile = PayrollProfile.objects.create(
             company=self.company, user=self.dev, monthly_salary=Decimal("27000.00"),
             is_on_payroll=True, effective_from=date(2026, 1, 1),
         )
-        self.assertEqual(service.effective_rate(self.company, profile, self.start), Decimal("1173.91"))
+        self.assertEqual(service.effective_rate(self.company, profile, self.start), Decimal("870.97"))
         self.set_off(6)
-        self.assertEqual(service.effective_rate(self.company, profile, self.start), Decimal("1000.00"))
+        self.assertEqual(service.effective_rate(self.company, profile, self.start), Decimal("870.97"))
         self.assertEqual(self.row_for(self.dev)["gross"], Decimal("27000.00"))
 
     def test_a_late_saturday_costs_nothing_but_a_late_monday_does(self):

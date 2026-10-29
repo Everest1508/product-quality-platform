@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -16,6 +18,7 @@ def make(username, company, role, first="", last=""):
     return user
 
 
+@patch("apps.core.search.SEARCH_TICKETS", True)
 class SearchTest(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name="Acme", slug="acme")
@@ -43,6 +46,10 @@ class SearchTest(TestCase):
 
     def titles(self, groups, label):
         return [i["title"] for i in groups.get(label, [])]
+
+    def test_tickets_are_left_out_of_search_unless_switched_on(self):
+        with patch("apps.core.search.SEARCH_TICKETS", False):
+            self.assertNotIn("Tickets", self.search("dev", "invoice"))
 
     def test_a_member_finds_tickets_they_can_open(self):
         groups = self.search("dev", "invoice")

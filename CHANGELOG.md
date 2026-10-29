@@ -10,6 +10,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.58.0] "Hawfinch" — 2026-10-29 · team attendance you can read, and pay by the cycle
+
+> In short: Team Attendance is easier to read and lets you look at any past day, expenses follow the 27th-to-26th pay cycle, and salary is worked out a new way.
+
+### New
+
+- **Look at any past day on Team Attendance.** Pick a date, or step a day or a week back, to see who came in, when they left and who was late.
+- **Expenses show which pay cycles still need paying back.** A new list on the Expenses page names each cycle that has money not yet repaid, and opens it with one click.
+
+### Better
+
+- **Team Attendance is simpler to read.** The row of count boxes is now one plain sentence, late arrivals are written next to the check-in time, and the day view and the calendar view switch without reloading the page.
+- **The "Week" button is now called Calendar view.**
+- **Company holidays show as Holiday.** They are no longer shown as absent or "no punch" on the team page, the calendar, or a person's own month.
+- **Expenses now follow the pay cycle.** The 27th starts a new cycle, the same as payroll.
+- **The bell's unread count looks like the other counts in the sidebar.**
+- **Salary is now worked out per day of the pay cycle.** See Payroll for how a payslip is shown.
+
+### Fixed
+
+- **Asking for leave on a past date now tells you straight away.** The preview used to price it as if it were allowed, and only the Submit button refused it.
+- **Search no longer lists tickets.**
+
 ## [1.57.2] "Goldcrest" — 2026-10-28 · signing in with no company no longer crashes
 
 > In short: someone who signs in without belonging to a company is now sent to company setup instead of seeing an error page.

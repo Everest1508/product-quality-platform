@@ -29,8 +29,9 @@
     {% if payslip.breakdown.monthly_salary %}
     <dt>Divided by</dt>
     <dd>
-      {{ payslip.breakdown.working_days }} working days
-      <span class="sub">weekends and holidays are not working days</span>
+      {% if payslip.breakdown.cycle_days %}{{ payslip.breakdown.cycle_days }} days in the cycle
+      <span class="sub">every day counts, weekends and holidays included</span>{% else %}{{ payslip.breakdown.working_days }} working days
+      <span class="sub">weekends and holidays are not working days</span>{% endif %}
     </dd>
     {% endif %}
     <dt>Paid leave</dt>

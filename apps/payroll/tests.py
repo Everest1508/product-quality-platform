@@ -733,16 +733,18 @@ class PayrollSeedTest(TestCase):
             working, rows = service.preview(company, start, end)
             self.assertGreater(working, 0)
             for row in rows:
-                self.assertLessEqual(row["payable_days"], Decimal(str(working)))
+                self.assertLessEqual(row["payable_days"], Decimal(row["pay_days"]))
                 # Gross is days x rate, less any flat late penalty. This used to
                 # assert `gross == payable_days * daily_rate` outright, which
                 # only held because nothing could yet deduct cash -- and it
                 # failed or passed depending on the hour the seed ran, since
                 # the demo punch times were `now - N hours`.
-                self.assertEqual(
+                # Monthly salaries are rounded once (salary x days / cycle days), so
+                # allow the few paise the rounded day rate cannot reproduce.
+                self.assertAlmostEqual(
                     row["gross"],
-                    (row["payable_days"] * row["daily_rate"]
-                     - row["late_penalty"]).quantize(Decimal("0.01")),
+                    row["payable_days"] * row["daily_rate"] - row["late_penalty"],
+                    delta=Decimal("0.50"),
                 )
 
 
@@ -865,43 +867,56 @@ class MonthlySalaryTest(PayrollTestBase):
             effective_from=effective_from or date(2026, 1, 1),
         )
 
-    def test_daily_rate_is_salary_over_the_cycle_working_days(self):
-        """23 working days, so a 24,000 salary is 1043.48/day."""
+    def test_daily_rate_is_salary_over_every_day_of_the_cycle(self):
+        """27 Oct to 26 Nov is 31 days, so a 24,000 salary is 774.19/day."""
         self.monthly(self.dev, "24000.00")
         start, end = service.cycle_bounds(date(2026, 10, 27))
-        self.assertEqual(service.working_days(self.company, start, end), 23)
+        self.assertEqual(service.cycle_days(start, end), 31)
         self.assertEqual(
             service.effective_rate(self.company, PayrollProfile.objects.get(), start),
-            Decimal("1043.48"),
+            Decimal("774.19"),
         )
+
+    def test_the_photo_example_is_266_67_a_day_over_30_days(self):
+        """8000 over 27 Sep to 26 Oct (30 days); 15 paid days come to 4000."""
+        self.monthly(self.dev, "8000.00")
+        start, end = date(2026, 9, 27), date(2026, 10, 26)
+        self.assertEqual(service.cycle_days(start, end), 30)
+        self.assertEqual(
+            service.effective_rate(self.company, PayrollProfile.objects.get(), start),
+            Decimal("266.67"),
+        )
+
+    def test_february_cycle_uses_28_days(self):
+        start, end = date(2027, 1, 27), date(2027, 2, 26)
+        self.assertEqual(service.cycle_days(start, end), 31)
+        start, end = date(2027, 2, 27), date(2027, 3, 26)
+        self.assertEqual(service.cycle_days(start, end), 28)
 
     def test_a_full_cycle_pays_the_salary_exactly(self):
         self.monthly(self.dev, "24000.00")
         working, rows = service.preview(self.company, self.start, self.end)
-        # 1043.48 x 23 = 24,000.04, i.e. the salary to the nearest paisa.
-        self.assertEqual(rows[0]["gross"], Decimal("24000.04"))
-        self.assertLessEqual(
-            rows[0]["gross"] - Decimal("24000.00"), Decimal("0.05")
-        )
+        self.assertEqual(rows[0]["gross"], Decimal("24000.00"))
+        self.assertEqual(rows[0]["payable_days"], Decimal("31"))
 
-    def test_a_holiday_shortens_the_cycle_and_raises_the_day_rate(self):
-        """The point: pay does not silently shrink because of a holiday."""
+    def test_a_holiday_changes_nothing_because_it_is_a_paid_day(self):
+        """Holidays are paid days, so neither the rate nor the pay moves."""
         self.monthly(self.dev, "24000.00")
         Holiday.objects.create(
             company=self.company, date=date(2026, 11, 2), name="Diwali"
         )
         working, rows = service.preview(self.company, self.start, self.end)
         self.assertEqual(working, 22)
-        self.assertEqual(rows[0]["daily_rate"], Decimal("1090.91"))
-        self.assertEqual(rows[0]["gross"], Decimal("24000.02"))
+        self.assertEqual(rows[0]["daily_rate"], Decimal("774.19"))
+        self.assertEqual(rows[0]["gross"], Decimal("24000.00"))
 
     def test_unpaid_leave_costs_one_divisor_day(self):
         self.monthly(self.dev, "24000.00")
         self.leave(self.dev, date(2026, 11, 2), date(2026, 11, 4), self.unpaid)
         _, rows = service.preview(self.company, self.start, self.end)
-        # One day's worth of the derived rate, not a fixed 1/26th.
-        self.assertEqual(rows[0]["deduction"], Decimal("3130.44"))
-        self.assertEqual(rows[0]["payable_days"], Decimal("20.00"))
+        # Three unpaid days of a 31-day cycle: 24000 x 3 / 31.
+        self.assertEqual(rows[0]["deduction"], Decimal("2322.58"))
+        self.assertEqual(rows[0]["payable_days"], Decimal("28.00"))
 
     def test_every_person_gets_the_same_salary_for_a_different_day_count(self):
         """A fixed divisor would pay one of these short; there is only one rule."""
@@ -911,8 +926,8 @@ class MonthlySalaryTest(PayrollTestBase):
         )
         working, rows = service.preview(self.company, self.start, self.end)
         self.assertEqual(working, 22)               # the cycle still loses the day
-        self.assertEqual(rows[0]["daily_rate"], Decimal("1181.82"))
-        self.assertEqual(rows[0]["gross"], Decimal("26000.04"))
+        self.assertEqual(rows[0]["daily_rate"], Decimal("838.71"))
+        self.assertEqual(rows[0]["gross"], Decimal("26000.00"))
 
     def test_a_profile_without_a_salary_uses_its_daily_rate(self):
         self.profile(self.dev, "1200.00")
@@ -932,7 +947,8 @@ class MonthlySalaryTest(PayrollTestBase):
         run, _ = service.generate_run(self.company, self.start, self.end)
         breakdown = run.payslips.get().breakdown
         self.assertEqual(breakdown["monthly_salary"], "24000.00")
-        self.assertEqual(breakdown["daily_rate"], "1043.48")
+        self.assertEqual(breakdown["daily_rate"], "774.19")
+        self.assertEqual(breakdown["cycle_days"], 31)
         self.assertEqual(breakdown["working_days"], 23)
 
     def test_a_daily_rate_payslip_says_so(self):
@@ -946,13 +962,13 @@ class MonthlySalaryTest(PayrollTestBase):
         """A raise dated mid-cycle waits for the next one; no half-rate proration."""
         self.monthly(self.dev, "24000.00")
         run, _ = service.generate_run(self.company, self.start, self.end)
-        self.assertEqual(run.payslips.get().gross, Decimal("24000.04"))
+        self.assertEqual(run.payslips.get().gross, Decimal("24000.00"))
 
         # Effective 1 Nov, inside the 27 Oct - 26 Nov cycle, so this cycle is
         # still priced at 24,000 ...
         self.monthly(self.dev, "30000.00", effective_from=date(2026, 11, 1))
         run, _ = service.generate_run(self.company, self.start, self.end)
-        self.assertEqual(run.payslips.get().gross, Decimal("24000.04"))
+        self.assertEqual(run.payslips.get().gross, Decimal("24000.00"))
 
         # ... and the next cycle, which starts on the 27th, gets the raise.
         next_start, next_end = service.shift_cycle(self.start, 1)
@@ -961,11 +977,11 @@ class MonthlySalaryTest(PayrollTestBase):
             run.payslips.get().breakdown["monthly_salary"], "30000.00"
         )
 
-    def test_zero_working_days_pays_nothing_rather_than_dividing_by_zero(self):
+    def test_a_cycle_with_no_working_days_still_has_a_rate(self):
         self.monthly(self.dev, "24000.00")
         profile = PayrollProfile.objects.get()
         self.assertEqual(
-            service.effective_rate(self.company, profile, self.start), Decimal("1043.48")
+            service.effective_rate(self.company, profile, self.start), Decimal("774.19")
         )
         empty = Company.objects.create(name="Shut", slug="shut")
         for day in (date(2026, 10, 27) + timedelta(days=i) for i in range(31)):
@@ -974,8 +990,9 @@ class MonthlySalaryTest(PayrollTestBase):
         moved = PayrollProfile.objects.get()
         moved.company = empty
         moved.save()
+        # Every day is paid, so closing the office never divides by zero.
         self.assertEqual(
-            service.effective_rate(empty, moved, self.start), Decimal("0.00")
+            service.effective_rate(empty, moved, self.start), Decimal("774.19")
         )
 
 
@@ -1009,7 +1026,7 @@ class SalaryFormTest(PayrollTestBase):
         self.assertEqual(profile.daily_rate, Decimal("0.00"))
         start, _ = service.cycle_bounds(date(2026, 10, 27))
         self.assertEqual(
-            service.effective_rate(self.company, profile, start), Decimal("1043.48")
+            service.effective_rate(self.company, profile, start), Decimal("774.19")
         )
 
     def test_a_salary_is_required(self):
@@ -1074,8 +1091,8 @@ class SalaryScreenTest(PayrollTestBase):
     def test_the_derived_rate_hint_shows_the_division(self):
         body = self.html()
         self.assertIn("÷", body)
-        # 21 working days in the seeded cycle, not 26 or 30.
-        self.assertRegex(body, r"days: 21")
+        # Every calendar day of the cycle is the divisor (28 to 31).
+        self.assertRegex(body, r"days: (28|29|30|31)")
 
     def test_a_monthly_salary_survives_a_save_through_the_screen(self):
         self.post_row(monthly_salary="24000")
@@ -1085,7 +1102,7 @@ class SalaryScreenTest(PayrollTestBase):
         self.assertTrue(profile.is_on_payroll)
         start, end = service.cycle_bounds(date(2026, 10, 27))
         _, rows = service.preview(self.company, start, end)
-        self.assertEqual(rows[0]["gross"], Decimal("24000.04"))
+        self.assertEqual(rows[0]["gross"], Decimal("24000.00"))
 
     def test_the_screen_post_works_without_a_currency(self):
         """What the row actually sends: the currency box is not the only field

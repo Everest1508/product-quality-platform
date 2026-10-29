@@ -388,7 +388,7 @@ button.kpi:hover{box-shadow:0 6px 18px rgba(13,17,23,.08);transform:translateY(-
 .tb-btn .ic{width:16px;height:16px;}
 .tb-icon{padding:7px 9px;}
 .tb-count{font-variant-numeric:tabular-nums;font-weight:600;}
-.tb-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--accent);color:var(--on-accent);font-size:10.5px;font-weight:600;line-height:17px;text-align:center;}
+.tb-badge{position:absolute;top:-8px;right:-10px;min-width:20px;padding:1px 7px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;line-height:1.4;text-align:center;}
 .tb-user{display:flex;align-items:center;gap:9px;padding:3px 8px 3px 4px;border:none;background:none;border-radius:99px;cursor:pointer;font:inherit;color:var(--text);text-align:left;}
 .tb-user:hover{background:var(--panel);}
 .tb-user .side-avatar{width:30px;height:30px;font-size:12px;}
@@ -462,10 +462,10 @@ html .topbar .side-user-meta{display:flex;flex:none;}
 .tw-total{width:110px;text-align:center;}
 .tw-total b{display:block;font-variant-numeric:tabular-nums;}
 .tw-cell{text-align:center;height:76px;font-size:12px;}
-.tw-cell.is-weekend,.tw-cell.is-future{background:var(--bg);}
+.tw-cell.is-weekend,.tw-cell.is-future,.tw-cell.is-holiday{background:var(--bg);}
 .tw-cell.is-today{box-shadow:inset 0 0 0 2px var(--accent-line);}
 .tw-cell.is-none .tw-dash{color:var(--red);opacity:.7;}
-.tw-cell.is-weekend .tw-dash,.tw-cell.is-future .tw-dash{color:var(--muted-2);}
+.tw-cell.is-weekend .tw-dash,.tw-cell.is-future .tw-dash,.tw-cell.is-holiday .tw-dash{color:var(--muted-2);}
 .tw-time{display:block;font-weight:600;font-variant-numeric:tabular-nums;font-size:12.5px;}
 .tw-time small{font-size:9.5px;font-weight:600;color:var(--muted);margin-left:2px;}
 .tw-time.tw-out{color:var(--muted);font-weight:500;}
@@ -713,3 +713,18 @@ dialog.cl.is-closing{animation:clOut .2s ease-in forwards;}
 /* Brand fonts: DM Sans is the body font (set on html,body); Manrope is for headings and big figures. */
 h1,h2,h3,h4,.pg-head h1,.co-v,.ex-v,.brand-name{font-family:'Manrope','DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 
+
+/* ---- Team attendance: day picker, plain summary, late note ---- */
+.team-bar{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-5);}
+.date-nav{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;}
+.date-nav .form-input{width:auto;min-height:28px;padding:3px var(--space-2);font-size:var(--fs-sm);}
+.date-nav .btn.is-disabled{opacity:.4;pointer-events:none;}
+.day-head{margin-bottom:var(--space-4);}
+.day-head h2{font-size:var(--fs-lg);font-weight:650;letter-spacing:-.01em;margin:0;display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;}
+.day-tag{font-size:var(--fs-xs);font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:2px var(--space-2);}
+.day-summary{margin:var(--space-1) 0 0;font-size:var(--fs-base);color:var(--muted);}
+.day-summary b{color:var(--text);font-variant-numeric:tabular-nums;}
+.day-summary b.warn{color:var(--red);}
+.late-note{display:block;font-size:var(--fs-xs);font-weight:600;color:var(--orange);}
+.late-note.major,.late-note.half_day{color:var(--red);}
+.team-grid.is-solo{grid-template-columns:minmax(0,1fr);}

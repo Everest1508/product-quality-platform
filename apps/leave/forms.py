@@ -58,6 +58,7 @@ class LeaveRequestForm(forms.Form):
         ]
         today = timezone.localdate()
         self.fields["start_date"].widget.attrs["min"] = today.isoformat()
+        self.fields["end_date"].widget.attrs["min"] = today.isoformat()
 
     def clean(self):
         cleaned = super().clean()

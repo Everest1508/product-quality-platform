@@ -31,7 +31,7 @@
 </div>
 {% else %}
 <form method="get" class="ex-filters" id="ex-filters">
-  <select name="month" class="form-input" aria-label="Month" onchange="this.form.submit()">
+  <select name="month" class="form-input" aria-label="Pay cycle (27th to 26th)" onchange="this.form.submit()">
     <option value="all" {% if f.month == 'all' %}selected{% endif %}>All time</option>
     {% for m in months %}<option value="{{ m.value }}" {% if f.month == m.value %}selected{% endif %}>{{ m.label }}</option>{% endfor %}
   </select>
@@ -76,6 +76,10 @@
   </div>
 
   <aside class="ex-side">
+    <div class="card">
+      <h2 class="ex-h">Still to pay back</h2>
+      {% for c in to_pay %}<a class="ex-pay" href="?month={{ c.value }}"><span>{{ c.label }}<br><small class="text-muted">{{ c.count }} expense{{ c.count|pluralize }}</small></span><span class="ex-amt">{{ c.total }}</span></a>{% empty %}<p class="text-sm text-muted">Everything is paid back.</p>{% endfor %}
+    </div>
     <div class="card">
       <h2 class="ex-h">By category</h2>
       {% for c in by_category %}<div class="ex-pay"><span>{{ c.name }}</span><span class="ex-amt">{{ c.total }}</span></div>{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}

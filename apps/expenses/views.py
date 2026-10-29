@@ -13,7 +13,7 @@ from apps.accounts.models import User
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.expenses import service
-from apps.expenses.filters import Filters
+from apps.expenses.filters import Filters, cycle_key
 from apps.expenses.forms import CommentForm, ExpenseForm, display_name
 from apps.expenses.models import Expense, ExpenseComment
 
@@ -95,12 +95,23 @@ class ExpenseListView(ExpenseAccessMixin, View):
             for r in qs.values("category", "category_other").annotate(t=Sum("amount_paise")).order_by("-t")
         ]
 
-        months = [f"{d:%Y-%m}" for d in every.dates("date", "month", order="DESC")]
-        current = f"{timezone.localdate():%Y-%m}"
+        # Pay cycles (27th to 26th), newest first, not calendar months.
+        months = sorted({cycle_key(d) for d in every.values_list("date", flat=True).distinct()}, reverse=True)
+        current = cycle_key(timezone.localdate())
         if current not in months:
             months.insert(0, current)
         if f.month != "all" and f.month not in months:
             months.append(f.month)
+        # Cycles that still owe someone money: not repaid by hand, not taken by a payroll run.
+        owed = {}
+        for d, amount in every.filter(repaid_on__isnull=True, paid_in_run__isnull=True).values_list("date", "amount_paise"):
+            row = owed.setdefault(cycle_key(d), [0, 0])
+            row[0] += 1
+            row[1] += amount
+        to_pay = [
+            {"value": k, "label": Filters({"month": k}).period_label, "count": n, "total": service.format_paise(t)}
+            for k, (n, t) in sorted(owed.items(), reverse=True)
+        ]
         member_ids = every.values_list("paid_by", flat=True).distinct()
         return render(request, "expenses/index.html", {
             "form": form,
@@ -111,6 +122,7 @@ class ExpenseListView(ExpenseAccessMixin, View):
             "total": service.format_paise(total),
             "by_person": by_person,
             "by_category": by_category,
+            "to_pay": to_pay,
             "months": [{"value": m, "label": Filters({"month": m}).period_label} for m in months],
             "categories": Expense.Category.choices,
             "payers": [{"pk": u.pk, "name": display_name(u)} for u in User.objects.filter(pk__in=member_ids)],

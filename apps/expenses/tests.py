@@ -39,7 +39,7 @@ class ExpenseViewsTest(TestCase):
     def add(self, user, amount="300", payer=None):
         self.login(user)
         return self.client.post(reverse("expenses:expense_list"), {
-            "amount": amount, "paid_by": (payer or user).pk, "date": "2026-10-14",
+            "amount": amount, "paid_by": (payer or user).pk, "date": date.today().isoformat(),
             "category": "tea", "note": "",
         })
 
@@ -309,3 +309,41 @@ class RepaidDirectlyTest(ExpenseViewsTest):
         Expense.objects.filter(amount_paise=10000).update(to_salary=True)
         self.client.post(reverse("expenses:expense_salary_all"), {"paid_by": self.dev.pk, "month": "all", "mode": "direct"})
         self.assertEqual(Expense.objects.filter(repaid_on__isnull=False).count(), 1)
+
+
+class PayCycleTest(TestCase):
+    """The books run 27th to 26th, so 27 Oct already belongs to November's cycle."""
+
+    def test_the_27th_starts_the_next_cycle(self):
+        from apps.expenses.filters import cycle_key, cycle_range
+
+        self.assertEqual(cycle_key(date(2026, 10, 26)), "2026-10")
+        self.assertEqual(cycle_key(date(2026, 10, 27)), "2026-11")
+        self.assertEqual(cycle_range("2026-10"), (date(2026, 9, 27), date(2026, 10, 26)))
+
+    def test_filter_keeps_only_that_cycle_and_labels_it(self):
+        from apps.expenses.filters import Filters
+
+        f = Filters({"month": "2026-10"})
+        self.assertEqual(f.period_label, "October 2026 (27 Sep to 26 Oct)")
+        co = Company.objects.create(name="Acme", slug="acme")
+        u = User.objects.create_user("p", password="x")
+        for d in (date(2026, 9, 26), date(2026, 9, 27), date(2026, 10, 26), date(2026, 10, 27)):
+            Expense.objects.create(company=co, amount_paise=100, date=d, paid_by=u, created_by=u)
+        got = sorted(e.date for e in f.apply(Expense.objects.all()))
+        self.assertEqual(got, [date(2026, 9, 27), date(2026, 10, 26)])
+
+    def test_unpaid_cycles_are_listed_until_paid_back(self):
+        co = Company.objects.create(name="Acme", slug="acme")
+        u = User.objects.create_user("owner2", password="x")
+        Membership.objects.create(user=u, company=co, role="owner")
+        Expense.objects.create(company=co, amount_paise=5000, date=date(2026, 9, 30), paid_by=u, created_by=u)
+        Expense.objects.create(company=co, amount_paise=7000, date=date(2026, 10, 5), paid_by=u, created_by=u, repaid_on=date(2026, 10, 6))
+        self.client.force_login(u)
+        s = self.client.session
+        from django.conf import settings
+        s[settings.ACTIVE_COMPANY_SESSION_KEY] = co.pk
+        s.save()
+        page = self.client.get(reverse("expenses:expense_list"))
+        self.assertEqual([c["value"] for c in page.context["to_pay"]], ["2026-10"])
+        self.assertEqual(page.context["to_pay"][0]["count"], 1)

@@ -5,7 +5,7 @@
 {% block pay_subtitle %}
 <p class="text-sm text-muted" style="margin-top:4px;">
   Cycle {{ period_start|date:"j M Y" }} → {{ period_end|date:"j M Y" }} &middot;
-  {{ working_days }} working days (weekends and holidays are not counted)
+  {{ working_days }} working days &middot; salaries are paid per calendar day, so weekends and holidays are paid
 </p>
 {% endblock %}
 
@@ -69,7 +69,7 @@
           {% else %}<span class="text-muted">by the day</span>{% endif %}
         </td>
         <td class="pay-num">{{ row.currency }} {{ row.daily_rate }}</td>
-        <td class="pay-num"><strong>{{ row.payable_days|floatformat:"-2" }}</strong> <span class="text-muted">of {{ working_days }}</span></td>
+        <td class="pay-num"><strong>{{ row.payable_days|floatformat:"-2" }}</strong> <span class="text-muted">of {{ row.pay_days }}</span></td>
         <td class="pay-num">
           {% if row.paid_leave_days or row.unpaid_leave_days %}
             {% if row.paid_leave_days %}{{ row.paid_leave_days|floatformat:"-2" }} paid{% endif %}

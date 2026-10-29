@@ -11,7 +11,7 @@ from apps.attendance.models import (
     format_minutes,
     month_bounds,
 )
-from apps.leave.service import approved_leave_map
+from apps.leave.service import _holiday_dates as holiday_names, approved_leave_map
 from apps.core.timefmt import t12
 
 
@@ -51,11 +51,12 @@ def get_who_is_in(company):
         .select_related("user")
         .order_by("check_in")
     )
+    roles = _roles(company)
     return [
         {
             "user": record.user,
             "record": record,
-            "role": _role_for(record.user, company),
+            "role": roles.get(record.user_id, ""),
             "is_stale": record.is_stale,
         }
         for record in records
@@ -89,20 +90,21 @@ def _blank_row(user, on_leave=None):
     }
 
 
-def get_team_today(company):
-    """Every member with their record for today, checked in or not."""
-    today = timezone.localdate()
+def get_team_today(company, day=None):
+    """Every member with their record for `day` (default today), checked in or not."""
+    day = day or timezone.localdate()
     records = {
         r.user_id: r
-        for r in AttendanceRecord.objects.filter(company=company, date=today).select_related("user")
+        for r in AttendanceRecord.objects.filter(company=company, date=day)
     }
-    on_leave = approved_leave_map(company, today, today)
+    on_leave = approved_leave_map(company, day, day)
+    roles = _roles(company)
     return [
         {
             "user": member,
             "record": records.get(member.pk),
-            "role": _role_for(member, company),
-            "on_leave": today in on_leave.get(member.pk, ()),
+            "role": roles.get(member.pk, ""),
+            "on_leave": day in on_leave.get(member.pk, ()),
         }
         for member in _company_members(company)
     ]
@@ -113,6 +115,13 @@ def _role_for(user, company):
 
     membership = Membership.objects.filter(user=user, company=company).first()
     return membership.role if membership else ""
+
+
+def _roles(company):
+    """{user_id: role} in one query, for lists that used to ask once per person."""
+    from apps.accounts.models import Membership
+
+    return dict(Membership.objects.filter(company=company).values_list("user_id", "role"))
 
 
 def get_monthly_rows(company, year, month, user=None):
@@ -176,6 +185,7 @@ def get_month_grid(company, year, month, user):
         )
     }
     on_leave = approved_leave_map(company, first, last).get(user.pk, set())
+    holidays = holiday_names(company, first, last)
     # One shift lookup for the whole month, not one per day.
     shift = shift_for(company)
 
@@ -190,7 +200,9 @@ def get_month_grid(company, year, month, user):
             "weekday": cursor.weekday(),
             # A weekly off day (Saturday and Sunday unless the company changed
             # them). The key keeps its old name because templates read it.
-            "is_weekend": shift.is_weekly_off(cursor),
+            # A company holiday is shaded and never counted absent, like a weekly off.
+            "is_weekend": shift.is_weekly_off(cursor) or cursor in holidays,
+            "holiday": holidays.get(cursor),
             "is_today": cursor == timezone.localdate(),
             "record": record,
             "on_leave": cursor in on_leave,
@@ -505,6 +517,8 @@ def get_team_week(company, monday, shift=None):
         for r in AttendanceRecord.objects.filter(company=company, date__gte=monday, date__lte=sunday)
     }
     on_leave = approved_leave_map(company, monday, sunday)
+    holidays = holiday_names(company, monday, sunday)
+    roles = _roles(company)
     rows = []
     for member in members:
         days, minutes_total, late_days, leave_days = [], 0, 0, 0
@@ -527,6 +541,9 @@ def get_team_week(company, monday, shift=None):
                 minutes_total += minutes
             elif day > today:
                 cell["state"] = "future"
+            elif day in holidays:
+                cell["state"] = "holiday"
+                cell["holiday"] = holidays[day]
             elif shift.is_weekly_off(day):
                 cell["state"] = "weekend"
             else:
@@ -535,7 +552,7 @@ def get_team_week(company, monday, shift=None):
             days.append(cell)
         rows.append({
             "user": member,
-            "role": _role_for(member, company),
+            "role": roles.get(member.pk, ""),
             "days": days,
             "total_minutes": minutes_total,
             "late_days": late_days,

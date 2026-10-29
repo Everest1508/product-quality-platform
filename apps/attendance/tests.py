@@ -1691,9 +1691,21 @@ class TeamPageShowsYouTest(AttendanceTestBase):
         response = self.get()
         self.assertContains(response, f"?user_id={self.dev.pk}")
 
-    def test_each_row_carries_seven_days(self):
-        response = self.get()
-        self.assertTrue(all(len(row["week"]) == 7 for row in response.context["team"]))
+    def test_an_old_day_can_be_opened_and_a_future_one_cannot(self):
+        self.client.login(username="owner", password="pass1234")
+        old = timezone.localdate() - timedelta(days=3)
+        page = self.client.get(reverse("attendance:team_attendance"), {"date": old.isoformat()})
+        self.assertEqual(page.context["day"], old)
+        self.assertFalse(page.context["is_today"])
+        future = timezone.localdate() + timedelta(days=5)
+        page = self.client.get(reverse("attendance:team_attendance"), {"date": future.isoformat()})
+        self.assertEqual(page.context["day"], timezone.localdate())
+
+    def test_the_calendar_view_is_named_and_swaps_in_place(self):
+        self.assertContains(self.get(), "Calendar view")
+        partial = self.client.get(reverse("attendance:team_attendance"), {"view": "week"}, HTTP_HX_REQUEST="true")
+        self.assertContains(partial, 'id="team-main"')
+        self.assertNotContains(partial, "<html")
 
     def test_no_email_addresses_are_shown(self):
         self.assertNotContains(self.get(), "@test.local")
@@ -1758,3 +1770,36 @@ class TimesheetCsvTest(TestCase):
         r = self.client.get("/attendance/timesheet/?export=csv")
         self.assertEqual(r.status_code, 200)
         self.assertIn("Employee,Present days", r.content.decode("utf-8-sig"))
+
+
+class HolidayShowsAsHolidayTest(AttendanceTestBase):
+    """A company holiday is not an absence and not "no punch"."""
+
+    def test_team_day_and_calendar_say_holiday_not_absent(self):
+        from apps.payroll.models import Holiday
+
+        day = timezone.localdate() - timedelta(days=1)
+        while day.weekday() >= 5:
+            day -= timedelta(days=1)
+        Holiday.objects.create(company=self.company, date=day, name="Diwali")
+        self.client.login(username="owner", password="pass1234")
+        page = self.client.get(reverse("attendance:team_attendance"), {"date": day.isoformat()})
+        self.assertEqual(page.context["holiday"], "Diwali")
+        self.assertEqual(page.context["absent_count"], 0)
+        self.assertContains(page, "Holiday: Diwali")
+        week = self.client.get(reverse("attendance:team_attendance"), {"view": "week", "date": day.isoformat()})
+        self.assertContains(week, ">Holiday<")
+
+    def test_my_month_marks_the_day_as_rest_with_its_name(self):
+        from apps.payroll.models import Holiday
+
+        today = timezone.localdate()
+        day = today - timedelta(days=1)
+        while day.weekday() >= 5:
+            day -= timedelta(days=1)
+        if day.month != today.month:
+            self.skipTest("the last weekday is in the previous month")
+        Holiday.objects.create(company=self.company, date=day, name="Founders day")
+        self.client.login(username="dev", password="pass1234")
+        page = self.client.get(reverse("attendance:my_attendance"))
+        self.assertContains(page, "holiday: Founders day")
