@@ -898,3 +898,6 @@ decided what and strike the item** rather than deleting it.
 - Expenses filter by pay cycle, named by the month it ends in (`month=2026-10` is 27 Sep to 26 Oct; `filters.cycle_key`). Side panel "Still to pay back" lists cycles with expenses neither repaid by hand nor taken by a payroll run.
 - Attendance now treats a company `Holiday` like a weekly off: team day ("Holiday: Diwali" header and pill), calendar view cell, my month squares ("holiday: <name>" tooltip, not "no punch"), my week strip, and the month grid (never counted absent). Late penalties on a punch made on a holiday are not changed.
 - Search no longer returns tickets (`SEARCH_TICKETS = False` in `apps/core/search.py`; flip it to bring them back). The bell's unread count uses the same outlined count pill as the sidebar counts.
+
+## 2026-10-29 (mid-cycle joiners)
+- A person's first payroll profile that starts inside a cycle makes them a joiner (`payable_people(..., end)` sets `joins_on`): the cycle pays from that day to the 26th (salary x days / cycle days), leave and lateness before it are ignored, and the payslip says "Joined 10 Nov 2026, 17 of 31 days". A later raise is not a joiner. The date is the profile's Effective from; there is no separate joining-date field.

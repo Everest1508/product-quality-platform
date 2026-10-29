@@ -929,6 +929,36 @@ class MonthlySalaryTest(PayrollTestBase):
         self.assertEqual(rows[0]["daily_rate"], Decimal("838.71"))
         self.assertEqual(rows[0]["gross"], Decimal("26000.00"))
 
+    def test_someone_who_joins_mid_cycle_is_paid_from_that_day_to_the_26th(self):
+        """Joined 10 Nov: 10 Nov to 26 Nov is 17 of the cycle's 31 days."""
+        self.monthly(self.dev, "24000.00", effective_from=date(2026, 11, 10))
+        _, rows = service.preview(self.company, self.start, self.end)
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["joined_on"], date(2026, 11, 10))
+        self.assertEqual(row["pay_days"], 17)
+        self.assertEqual(row["payable_days"], Decimal("17"))
+        self.assertEqual(row["daily_rate"], Decimal("774.19"))
+        self.assertEqual(row["gross"], Decimal("13161.29"))  # 24000 x 17 / 31
+        self.assertEqual(row["deduction"], Decimal("0.00"))
+        run, _ = service.generate_run(self.company, self.start, self.end)
+        breakdown = run.payslips.get().breakdown
+        self.assertEqual(breakdown["joined_on"], "10 Nov 2026")
+        self.assertEqual(breakdown["paid_days_of"], "17 of 31")
+
+    def test_unpaid_leave_before_the_join_date_does_not_count(self):
+        self.monthly(self.dev, "24000.00", effective_from=date(2026, 11, 10))
+        self.leave(self.dev, date(2026, 11, 2), date(2026, 11, 4), self.unpaid)
+        _, rows = service.preview(self.company, self.start, self.end)
+        self.assertEqual(rows[0]["unpaid_leave_days"], Decimal("0"))
+
+    def test_a_raise_mid_cycle_is_not_a_joiner(self):
+        self.monthly(self.dev, "24000.00")
+        self.monthly(self.dev, "30000.00", effective_from=date(2026, 11, 10))
+        _, rows = service.preview(self.company, self.start, self.end)
+        self.assertIsNone(rows[0]["joined_on"])
+        self.assertEqual(rows[0]["gross"], Decimal("24000.00"))
+
     def test_a_profile_without_a_salary_uses_its_daily_rate(self):
         self.profile(self.dev, "1200.00")
         start, _ = service.cycle_bounds(date(2026, 10, 27))

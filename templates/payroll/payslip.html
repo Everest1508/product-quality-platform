@@ -69,6 +69,12 @@
     </dd>
     <dt>Daily rate</dt>
     <dd class="strong">{{ payslip.currency }} {{ payslip.breakdown.daily_rate }}</dd>
+    {% if payslip.breakdown.joined_on %}
+    <dt>Joined</dt>
+    <dd>{{ payslip.breakdown.joined_on }}
+      <span class="sub">Paid from this day to the end of the cycle: {{ payslip.breakdown.paid_days_of }} days</span>
+    </dd>
+    {% endif %}
     <dt>Paid</dt>
     <dd class="strong">{{ payslip.payable_days }} days × {{ payslip.breakdown.daily_rate }}</dd>
   </dl>

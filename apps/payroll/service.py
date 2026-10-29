@@ -228,7 +228,7 @@ def active_profile(company, user, on_date):
     )
 
 
-def payable_people(company, on_date):
+def payable_people(company, on_date, end=None):
     """Everyone on payroll as of `on_date`, with the rate that applies.
 
     Only the most recent profile per person matters, and its ``is_on_payroll``
@@ -236,17 +236,34 @@ def payable_people(company, on_date):
     appearing in later cycles, while their earlier cycles are unaffected
     because those runs were snapshotted. ``is_on_payroll`` is what keeps
     service accounts and bots out of a run.
+
+    With `end` (the cycle's last day), a person whose very first profile starts
+    inside the cycle is a joiner: they are listed too, on that first profile,
+    with `joins_on` set to its date so the cycle pays from that day to the end.
+    A raise for someone already paid never makes a joiner.
     """
-    latest = {}
-    for profile in PayrollProfile.objects.filter(
-        company=company, effective_from__lte=on_date
-    ).select_related("user").order_by("user__username", "-effective_from", "-created_at"):
-        latest.setdefault(profile.user_id, profile)
-    return [
+    latest, first = {}, {}
+    profiles = PayrollProfile.objects.filter(
+        company=company, effective_from__lte=end or on_date
+    ).select_related("user").order_by("user__username", "-effective_from", "-created_at")
+    for profile in profiles:
+        first[profile.user_id] = profile  # ends as the earliest profile
+        if profile.effective_from <= on_date:
+            latest.setdefault(profile.user_id, profile)
+    people = [
         latest[uid]
         for uid in sorted(latest, key=lambda uid: latest[uid].user.username)
         if latest[uid].is_on_payroll
     ]
+    for profile in people:
+        profile.joins_on = None
+    if end is not None:
+        for uid, profile in sorted(first.items(), key=lambda kv: kv[1].user.username):
+            if uid not in latest and on_date < profile.effective_from <= end and profile.is_on_payroll:
+                profile.joins_on = profile.effective_from
+                people.append(profile)
+        people.sort(key=lambda p: p.user.username)
+    return people
 
 
 # --- Generating a run ------------------------------------------------------
@@ -322,10 +339,13 @@ def preview(company, start, end):
     days = working_days(company, start, end)
     repay = reimbursements(company, start, end)
     rows = []
-    for profile in payable_people(company, start):
-        leave = leave_days_in_period(company, profile.user, start, end)
+    for profile in payable_people(company, start, end):
+        # A joiner is paid from their first day; everyone else from the cycle start.
+        paid_from = profile.joins_on or start
+        row_days = working_days(company, paid_from, end) if profile.joins_on else days
+        leave = leave_days_in_period(company, profile.user, paid_from, end)
         rate = effective_rate(company, profile, start)
-        late = late_pay_in_period(company, profile.user, start, end, rate)
+        late = late_pay_in_period(company, profile.user, paid_from, end, rate)
         # A half day lost to lateness is a working day not paid, so it reduces
         # payable days the same way unpaid leave does; the cash bands are a flat
         # charge on top and cannot be expressed as days.
@@ -333,7 +353,7 @@ def preview(company, start, end):
         # holidays included) minus the days lost; a per-day profile is paid for
         # working days only, as before.
         monthly = profile.monthly_salary is not None and profile.monthly_salary > 0
-        pay_days = cycle_days(start, end) if monthly else days
+        pay_days = cycle_days(paid_from, end) if monthly else row_days
         payable = max(
             Decimal("0.00"),
             Decimal(pay_days) - leave["unpaid_days"] - late["half_days"],
@@ -349,10 +369,11 @@ def preview(company, start, end):
         if monthly:
             # Salary over days, rounded once: multiplying the rounded day rate
             # back up would leave a full cycle a few paise short of the salary.
-            earned = (profile.monthly_salary * payable / Decimal(pay_days)).quantize(
+            whole = cycle_days(start, end)
+            earned = (profile.monthly_salary * payable / Decimal(whole)).quantize(
                 Decimal("0.01"), rounding=ROUND_HALF_UP
             )
-            lost = (profile.monthly_salary - earned).quantize(Decimal("0.01"))
+            lost = (profile.monthly_salary * Decimal(pay_days) / Decimal(whole) - earned).quantize(Decimal("0.01"))
         else:
             earned = (payable * rate).quantize(Decimal("0.01"))
             lost = (leave["unpaid_days"] * rate + late["half_day_loss"]).quantize(Decimal("0.01"))
@@ -365,8 +386,9 @@ def preview(company, start, end):
                 "profile": profile,
                 "daily_rate": rate,
                 "currency": profile.currency,
-                "working_days": days,
+                "working_days": row_days,
                 "pay_days": pay_days,
+                "joined_on": profile.joins_on,
                 "paid_leave_days": leave["paid_days"],
                 "unpaid_leave_days": leave["unpaid_days"],
                 "payable_days": payable,
@@ -381,7 +403,15 @@ def preview(company, start, end):
                         {"what": e.category_label, "date": f"{e.date:%d %b %Y}", "amount": format_money(Decimal(e.amount_paise) / 100)}
                         for e in owed
                     ],
-                    **rate_breakdown(company, profile, start, days),
+                    **rate_breakdown(company, profile, start, row_days),
+                    **(
+                        {
+                            "joined_on": f"{profile.joins_on:%d %b %Y}",
+                            "paid_days_of": f"{pay_days} of {cycle_days(start, end)}",
+                        }
+                        if profile.joins_on
+                        else {}
+                    ),
                     "late_penalty": format_money(cash_applied),
                     "late_half_days": format_days(late["half_days"]),
                     "late_half_day_loss": format_money(late["half_day_loss"]),
