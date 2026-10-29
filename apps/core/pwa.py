@@ -23,9 +23,16 @@ def manifest(request):
         "name": "PQ Platform",
         "short_name": "PQ",
         "description": "Errors, tickets, feedback, attendance and payroll, kept per product.",
+        "lang": "en",
+        "dir": "ltr",
+        "categories": ["business", "productivity"],
         "start_url": "/",
         "scope": "/",
         "display": "standalone",
+        # Browsers that cannot do standalone fall back down this list, never to a plain tab.
+        "display_override": ["standalone", "minimal-ui"],
+        # Opening a link from a notification or another app reuses the open window.
+        "launch_handler": {"client_mode": ["navigate-existing", "auto"]},
         "orientation": "any",
         "background_color": BACKGROUND_COLOR,
         "theme_color": THEME_COLOR,
@@ -39,6 +46,8 @@ def manifest(request):
             {"name": "Tickets", "url": "/tickets/", "icons": [icon("pwa-192.png", 192, "any")]},
             {"name": "Errors", "url": "/errors/", "icons": [icon("pwa-192.png", 192, "any")]},
             {"name": "Attendance", "url": "/attendance/", "icons": [icon("pwa-192.png", 192, "any")]},
+            {"name": "Leave", "url": "/leave/", "icons": [icon("pwa-192.png", 192, "any")]},
+            {"name": "Notifications", "url": "/notifications/", "icons": [icon("pwa-192.png", 192, "any")]},
         ],
     }
     response = JsonResponse(data, json_dumps_params={"indent": 2})

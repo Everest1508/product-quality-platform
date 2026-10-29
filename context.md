@@ -898,3 +898,6 @@ decided what and strike the item** rather than deleting it.
 - Expenses filter by pay cycle, named by the month it ends in (`month=2026-10` is 27 Sep to 26 Oct; `filters.cycle_key`). Side panel "Still to pay back" lists cycles with expenses neither repaid by hand nor taken by a payroll run.
 - Attendance now treats a company `Holiday` like a weekly off: team day ("Holiday: Diwali" header and pill), calendar view cell, my month squares ("holiday: <name>" tooltip, not "no punch"), my week strip, and the month grid (never counted absent). Late penalties on a punch made on a holiday are not changed.
 - Search no longer returns tickets (`SEARCH_TICKETS = False` in `apps/core/search.py`; flip it to bring them back). The bell's unread count uses the same outlined count pill as the sidebar counts.
+
+## 2026-10-29 (PWA)
+- Manifest gained `display_override`, `launch_handler`, categories, lang and two more shortcuts. The worker now warms htmx, Alpine and the font sheet at install (list `WARM` in `templates/pwa/sw.js`; a test fails if it drifts from `base.html`). htmx loads with `defer` so it no longer blocks first paint. iOS Safari gets the Install app button with a Share, Add to Home Screen hint. The unread count is set on the installed app's icon through the Badging API.

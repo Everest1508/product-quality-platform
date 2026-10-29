@@ -5,7 +5,9 @@
  *   1. Shows /offline/ when a page navigation fails.
  *   2. Caches the logo files (cache-first).
  *   3. Caches the CDN scripts and fonts (stale-while-revalidate), so the app
- *      shell still boots on a flaky connection.
+ *      shell still boots on a flaky connection. The scripts and the font sheet
+ *      are fetched once at install, so even the second page load never waits on
+ *      a CDN.
  * Non-GET requests (form posts, htmx writes, uploads) always go to the network.
  */
 const VERSION = "{{ version }}";
@@ -17,6 +19,12 @@ const PRECACHE = [
   "/brand/pwa-192.png",
   "/brand/apple-touch-icon.png",
 ];
+// Keep in step with the <script> and <link> tags in base.html (a test checks).
+const WARM = [
+  "https://unpkg.com/htmx.org@2.0.4",
+  "https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js",
+  "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap",
+];
 const CDN_HOSTS = [
   "unpkg.com",
   "cdn.jsdelivr.net",
@@ -24,9 +32,19 @@ const CDN_HOSTS = [
   "fonts.gstatic.com",
 ];
 
+// Best effort: a CDN that is down must not stop the worker installing.
+async function warmCdn() {
+  const cache = await caches.open(RUNTIME);
+  await Promise.all(
+    WARM.map((url) =>
+      fetch(url, { mode: "no-cors" }).then((r) => cache.put(url, r)).catch(() => {})
+    )
+  );
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(SHELL).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(SHELL).then((cache) => cache.addAll(PRECACHE)).then(warmCdn).then(() => self.skipWaiting())
   );
 });
 

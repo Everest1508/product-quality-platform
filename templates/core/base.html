@@ -12,6 +12,8 @@
 <meta name="color-scheme" content="light dark">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="PQ Platform">
+<meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PQ Platform">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -24,7 +26,7 @@
 <link rel="preconnect" href="https://unpkg.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 <script>
 /* Theme: "light", "dark" or "system" (the default), remembered in localStorage. Set before the CSS so nothing flashes. */
@@ -293,13 +295,18 @@
     });
   }
   var deferredPrompt = null;
+  // iOS Safari never fires beforeinstallprompt, so show the same button there with a how-to.
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  var iosSafari = /iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone;
+  if (iosSafari) document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = false; });
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
     document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = false; });
   });
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('[data-pwa-install]') || !deferredPrompt) return;
+    if (!e.target.closest('[data-pwa-install]')) return;
+    if (!deferredPrompt) { if (iosSafari) notify('Tap the Share button, then Add to Home Screen.', 'info'); return; }
     deferredPrompt.prompt();
     deferredPrompt.userChoice.finally(function () {
       deferredPrompt = null;
