@@ -36,10 +36,12 @@
 
 <form method="get" class="card toolbar" style="margin-bottom:16px;">
   <div>
-    <label class="text-sm text-muted" style="display:block;margin-bottom:4px;" for="anchor">Pick any date in the month you want to pay</label>
-    <input id="anchor" type="date" name="anchor" value="{{ period_start|date:'Y-m-d' }}" class="form-input">
+    <label class="text-sm text-muted" style="display:block;margin-bottom:4px;" for="cycle-month">Month to pay</label>
+    <select id="cycle-month" name="month" class="form-input" onchange="this.form.submit()">
+      {% for o in cycle_options %}<option value="{{ o.key }}"{% if o.key == cycle_key %} selected{% endif %}>{{ o.month }} ({{ o.range }}) · {{ o.status }}</option>{% endfor %}
+    </select>
   </div>
-  <button type="submit" class="btn">Show this cycle</button>
+  <noscript><button type="submit" class="btn">Show</button></noscript>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto;">
@@ -129,7 +131,7 @@
   {% else %}
   <form method="post">
     {% csrf_token %}
-    <input type="hidden" name="anchor" value="{{ period_start|date:'Y-m-d' }}">
+    <input type="hidden" name="month" value="{{ cycle_key }}">
     <button type="submit" class="btn btn-primary">{% if existing_run %}Create payslips again{% else %}Create payslips{% endif %}</button>
   </form>
   {% endif %}

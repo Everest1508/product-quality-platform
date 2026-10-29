@@ -901,3 +901,6 @@ decided what and strike the item** rather than deleting it.
 
 ## 2026-10-29 (mid-cycle joiners)
 - A person's first payroll profile that starts inside a cycle makes them a joiner (`payable_people(..., end)` sets `joins_on`): the cycle pays from that day to the 26th (salary x days / cycle days), leave and lateness before it are ignored, and the payslip says "Joined 10 Nov 2026, 17 of 31 days". A later raise is not a joiner. The date is the profile's Effective from; there is no separate joining-date field.
+
+## 2026-10-29 (payroll month picker)
+- The payroll preview picks a month from a list (`?month=2026-10` is 27 Sep to 26 Oct, named by the month it ends in; each option says In progress, Not created, Created or Locked). With no month it opens the newest finished cycle, the one ready to pay, not the running one. Fixed: "Create payslips" ignored the page and always created today's cycle; it now reads the same `month` the page shows (`views._requested_cycle`, `service.cycle_options`).

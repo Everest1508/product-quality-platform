@@ -578,13 +578,36 @@ class PayrollViewTest(PayrollTestBase):
         self.assertEqual(response.context["working_days"], 23)
         self.assertContains(response, "23000.00")
 
-    def test_preview_defaults_to_the_cycle_running_today(self):
-        """No date in the URL means the cycle containing today, not a fixed one."""
+    def test_preview_defaults_to_the_last_finished_cycle(self):
+        """No month in the URL means the cycle that is ready to pay, not the one still running."""
         self.profile(self.dev, "1000.00")
         response = self.client.get(reverse("payroll:preview"))
-        expected_start, expected_end = service.cycle_bounds(date.today())
+        expected_start, expected_end = service.last_finished_cycle(date.today())
         self.assertEqual(response.context["period_start"], expected_start)
         self.assertEqual(response.context["period_end"], expected_end)
+        self.assertLess(expected_end, date.today())
+
+    def test_a_month_can_be_picked_and_is_named_by_the_month_it_ends_in(self):
+        self.profile(self.dev, "1000.00")
+        response = self.client.get(reverse("payroll:preview"), {"month": "2026-10"})
+        self.assertEqual(response.context["period_start"], date(2026, 9, 27))
+        self.assertEqual(response.context["period_end"], date(2026, 10, 26))
+        self.assertEqual(response.context["cycle_key"], "2026-10")
+        self.assertIn("2026-10", [o["key"] for o in response.context["cycle_options"]])
+
+    def test_create_payslips_makes_the_month_on_screen_not_the_running_one(self):
+        """It used to ignore the page and always create today's cycle."""
+        self.profile(self.dev, "1000.00")
+        self.client.post(reverse("payroll:preview"), {"month": "2026-10"})
+        run = PayrollRun.objects.get()
+        self.assertEqual((run.period_start, run.period_end), (date(2026, 9, 27), date(2026, 10, 26)))
+
+    def test_the_month_list_says_where_each_cycle_stands(self):
+        self.profile(self.dev, "1000.00")
+        self.client.post(reverse("payroll:preview"), {"month": "2026-10"})
+        options = {o["key"]: o["status"] for o in service.cycle_options(self.company, date(2026, 11, 20))}
+        self.assertEqual(options["2026-10"], "Created")
+        self.assertEqual(options["2026-11"], "In progress")
 
     def test_generate_from_the_preview_screen(self):
         self.profile(self.dev, "1000.00")

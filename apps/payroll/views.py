@@ -11,7 +11,7 @@ from apps.attendance.service import shift_for
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.payroll import service
-from apps.payroll.forms import CycleForm, HolidayForm, PayrollProfileForm
+from apps.payroll.forms import HolidayForm, PayrollProfileForm
 from apps.payroll.models import Holiday, Payslip, PayrollProfile, PayrollRun
 
 
@@ -34,19 +34,24 @@ class PayrollPageMixin:
 
 
 def _requested_cycle(request):
-    """The cycle the user asked for, defaulting to the one running today."""
-    form = CycleForm(request.GET or None)
-    anchor = None
-    if request.method == "GET" and form.is_valid():
-        anchor = form.cleaned_data.get("anchor")
-    if not anchor:
-        raw = request.GET.get("cycle")
-        if raw:
-            try:
-                anchor = date.fromisoformat(raw)
-            except ValueError:
-                anchor = None
-    return service.cycle_bounds(anchor or timezone.localdate())
+    """The cycle asked for, from `month` (2026-10 is 27 Sep to 26 Oct) in the query or the form.
+
+    Read from the query string and the posted form alike, so "Create payslips"
+    makes exactly the cycle that was on screen. With nothing asked for it is the
+    newest finished cycle, the one that is ready to pay. An old `anchor` or
+    `cycle` date still works.
+    """
+    today = timezone.localdate()
+    data = request.POST if request.method == "POST" else request.GET
+    picked = service.cycle_from_key(data.get("month", ""))
+    if picked:
+        return picked
+    for name in ("anchor", "cycle"):
+        try:
+            return service.cycle_bounds(date.fromisoformat(data.get(name, "")))
+        except ValueError:
+            continue
+    return service.last_finished_cycle(today)
 
 
 def _log(request, event, title, target, description="", metadata=None,
@@ -107,7 +112,8 @@ class PayrollPreviewView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
                 "period_end": end,
                 "working_days": working,
                 "rows": rows,
-                "form": CycleForm(initial={"anchor": start}),
+                "cycle_options": service.cycle_options(request.company, timezone.localdate()),
+                "cycle_key": service.cycle_key(end),
                 "existing_run": PayrollRun.objects.filter(
                     company=request.company, period_start=start, period_end=end
                 ).first(),

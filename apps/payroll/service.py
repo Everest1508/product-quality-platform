@@ -76,6 +76,64 @@ def _add_months(value, months):
     return date(year, month, min(value.day, monthrange(year, month)[1]))
 
 
+def cycle_key(end):
+    """A cycle is named by the month it ends in: 27 Sep to 26 Oct is "2026-10"."""
+    return f"{end:%Y-%m}"
+
+
+def cycle_from_key(key):
+    """The (start, end) a `cycle_key` names, or None for anything else."""
+    try:
+        year, month = (int(part) for part in key.split("-"))
+        return cycle_bounds(date(year, month, 1))
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def last_finished_cycle(today):
+    """The newest cycle whose last day has passed: the one that is ready to pay."""
+    start, _ = cycle_bounds(today)
+    return cycle_bounds(start - timedelta(days=1))
+
+
+def cycle_options(company, today, limit=24):
+    """Cycles to choose from, newest first, from the first payroll record to the running one.
+
+    Each says where it stands, so nobody has to remember which month was done:
+    "In progress", "Not created", "Created" or "Locked".
+    """
+    firsts = [
+        d for d in (
+            PayrollProfile.objects.filter(company=company).order_by("effective_from").values_list("effective_from", flat=True).first(),
+            PayrollRun.objects.filter(company=company).order_by("period_start").values_list("period_start", flat=True).first(),
+        ) if d
+    ]
+    runs = {r.period_end: r for r in PayrollRun.objects.filter(company=company)}
+    running = cycle_bounds(today)
+    earliest = cycle_bounds(min(firsts))[0] if firsts else running[0]
+    options, start = [], running[0]
+    while len(options) < limit:
+        s, e = cycle_bounds(start)
+        run = runs.get(e)
+        options.append({
+            "key": cycle_key(e),
+            "month": f"{e:%B %Y}",
+            "range": f"{s.day} {s:%b} to {e.day} {e:%b}",
+            "start": s,
+            "end": e,
+            "status": (
+                "In progress" if e >= today
+                else "Locked" if run and run.is_locked
+                else "Created" if run
+                else "Not created"
+            ),
+        })
+        if s <= earliest:
+            break
+        start = s - timedelta(days=1)
+    return options
+
+
 def shift_cycle(start, delta):
     """The cycle `delta` months after the one starting on `start`."""
     return cycle_bounds(_add_months(start, delta))
