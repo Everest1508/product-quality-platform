@@ -963,7 +963,7 @@
 
   /* Custom Sleek Tooltip Component */
   .pq-tooltip {
-    position: absolute;
+    position: fixed;
     z-index: 2000;
     pointer-events: none;
     background: var(--tooltip-bg);
@@ -980,6 +980,7 @@
     transition: opacity .12s cubic-bezier(0.16,1,0.3,1), transform .12s cubic-bezier(0.16,1,0.3,1);
     display: none;
   }
+  .pq-tooltip.peek { white-space: pre-line; max-width: 240px; text-align: left; font-size: 12px; line-height: 1.55; padding: 9px 12px; }
   .pq-tooltip.show {
     opacity: 1;
     transform: scale(1) translateY(0);

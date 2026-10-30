@@ -422,8 +422,21 @@ def late_penalty_for(record, shift=None):
         "major": shift.major_penalty,
         "half_day": Decimal("0"),  # costs a half day of pay, priced in payroll
     }[band]
+    # Plain words for the "why this charge" line on a payslip, from the same
+    # thresholds `band_for_late_minutes` used, so the two cannot disagree.
+    if band == "minor":
+        rule = f"{shift.grace_minutes} to {shift.minor_band_end_minutes} min late is a flat {shift.penalty_currency} {amount:.0f} charge"
+    elif band == "major":
+        rule = f"{shift.minor_band_end_minutes} to {shift.major_band_end_minutes} min late is a flat {shift.penalty_currency} {amount:.0f} charge"
+    else:
+        rule = f"More than {shift.major_band_end_minutes} min late costs half a day's pay"
+    checked_in = timezone.localtime(record.check_in)
     return {
         "date": record.date.isoformat(),
+        "day_label": f"{record.date:%a} {record.date.day} {record.date:%b}",
+        "check_in": t12(checked_in),
+        "shift_start": t12(shift.start_time),
+        "rule": rule,
         "late_minutes": late_minutes,
         "band": band,
         "amount": str(amount),

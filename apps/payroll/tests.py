@@ -1381,9 +1381,9 @@ class LatenessDeductionTest(PayrollTestBase):
         self.punch(self.dev, date(2026, 11, 2), time(11, 30))
         row = self.row_for(self.dev)
         self.assertEqual(row["late_half_days"], Decimal("1"))
-        # One day stops being payable...
+        # Half a day stops being payable...
         self.assertEqual(
-            row["payable_days"], baseline["payable_days"] - Decimal("1")
+            row["payable_days"], baseline["payable_days"] - Decimal("0.5")
         )
         # ...and is reported as the loss, not folded in invisibly.
         self.assertEqual(row["breakdown"]["late_half_day_loss"], "INR 500")
@@ -1392,6 +1392,19 @@ class LatenessDeductionTest(PayrollTestBase):
             row["gross"],
             (row["payable_days"] * Decimal("1000.00")).quantize(Decimal("0.01")),
         )
+
+    def test_the_run_window_says_when_and_why_each_late_arrival_cost_money(self):
+        self.profile(self.dev, rate="1000.00")
+        self.punch(self.dev, date(2026, 11, 2), time(10, 40))  # 40 min: flat charge
+        self.punch(self.dev, date(2026, 11, 3), time(11, 30))  # over an hour: half day
+        run, _ = service.generate_run(self.company, self.start, self.end)
+        self.client.login(username="owner", password="pass1234")
+        page = self.client.get(reverse("payroll:run_detail", args=[run.pk]))
+        self.assertContains(page, "Mon 2 Nov")
+        self.assertContains(page, "Checked in at <b>10:40 AM</b>")
+        self.assertContains(page, "is a flat INR 100 charge")
+        self.assertContains(page, "costs half a day")
+        self.assertContains(page, "INR 500.00")  # what half a day is worth
 
     def test_a_half_day_also_shows_up_in_the_deduction_total(self):
         self.profile(self.dev, rate="1000.00")
@@ -1531,10 +1544,10 @@ class LatenessOnScreenTest(PayrollTestBase):
         html = self.as_admin().content.decode()
         self.assertContains(self.as_admin(), "Late arrivals")
         # Date, the lateness, and the money for each of the two events.
-        self.assertIn("2026-11-02", html)
-        self.assertIn("20 min after", html)
-        self.assertIn("2026-11-03", html)
-        self.assertIn("half day", html)
+        self.assertIn("Mon 2 Nov", html)
+        self.assertIn("<b>20 min</b> after", html)
+        self.assertIn("Tue 3 Nov", html)
+        self.assertIn("half a day", html)
         self.assertIn("50.00", html)
 
     def test_the_employee_sees_the_same_explanation(self):
@@ -1542,9 +1555,9 @@ class LatenessOnScreenTest(PayrollTestBase):
         html = response.content.decode()
         self.assertEqual(response.status_code, 200)
         self.assertIn("Your late arrivals", html)
-        self.assertIn("2026-11-02", html)
-        self.assertIn("20 min after", html)
-        self.assertIn("half day", html)
+        self.assertIn("Mon 2 Nov", html)
+        self.assertIn("<b>20 min</b> after", html)
+        self.assertIn("half a day", html)
 
     def test_the_deduction_total_reaches_the_page(self):
         self.assertContains(self.as_admin(), "50.00")  # Rs 50 band

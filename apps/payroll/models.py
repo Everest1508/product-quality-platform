@@ -194,5 +194,10 @@ class Payslip(TenantScopedModel):
         verbose_name = "Payslip"
         verbose_name_plural = "Payslips"
 
+    @property
+    def half_day_value(self):
+        """What half a day of this person's pay is worth, for the late-arrival lines."""
+        return (self.daily_rate / 2).quantize(Decimal("0.01"))
+
     def __str__(self):
         return f"{self.user.username} — {self.gross}"

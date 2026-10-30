@@ -404,8 +404,8 @@ def preview(company, start, end):
         leave = leave_days_in_period(company, profile.user, paid_from, end)
         rate = effective_rate(company, profile, start)
         late = late_pay_in_period(company, profile.user, paid_from, end, rate)
-        # A half day lost to lateness is a working day not paid, so it reduces
-        # payable days the same way unpaid leave does; the cash bands are a flat
+        # Each arrival over an hour late costs half a day, so it reduces payable
+        # days by 0.5 the same way unpaid leave reduces them by 1; the cash bands are a flat
         # charge on top and cannot be expressed as days.
         # A monthly salary pays every calendar day of the cycle (weekly offs and
         # holidays included) minus the days lost; a per-day profile is paid for
@@ -414,7 +414,7 @@ def preview(company, start, end):
         pay_days = cycle_days(paid_from, end) if monthly else row_days
         payable = max(
             Decimal("0.00"),
-            Decimal(pay_days) - leave["unpaid_days"] - late["half_days"],
+            Decimal(pay_days) - leave["unpaid_days"] - late["half_days"] / Decimal("2"),
         )
         cash = late["cash_penalty"]
         # Deductions cannot exceed earnings. Someone on a low salary who is

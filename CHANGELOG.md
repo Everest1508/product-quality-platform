@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.60.0] "Lorikeet" — 2026-10-30 · see exactly how each payslip was worked out
+
+> In short: click any person in a payroll run to see their pay worked out step by step, every late arrival is listed with its date, time and rule, and half-day lateness now costs half a day instead of a full one.
+
+### New
+
+- **Click a row in a payroll run to see how that pay was worked out.** A window walks through the day rate, the days paid, the days taken off, the salary earned and the net pay, with the reason for each step.
+- **Every late arrival now says what happened and why it cost money.** Each one shows the day, the time they checked in, how late that was, which rule applied and what it cost, on the run window, the payslip and My payslip.
+- **Out-of-date payslips are flagged.** An open run now tells you when its payslips would come out differently today, and a Recalculate now button fixes them in one click.
+
+### Better
+
+- **The What's new window is bigger and easier to read.** The text is larger, releases have more room, and the list is laid out more clearly.
+- **Details on board cards no longer get cut off.** The little summary on a ticket card now floats above the board instead of hiding behind the column edge.
+
+### Fixed
+
+- **An arrival over an hour late now costs half a day, not a full day.** It was described as half a day but took a whole day off the payable days. Recalculate an open run to correct it.
+
 ## [1.59.0] "Kiskadee" — 2026-10-29 · safer DSR filing, and links you can click
 
 > In short: the DSR tool can only file and change your own entries and now flags hand-typed ones for review, connected apps sign in for 30 days and can be signed out from your profile, and web links in DSR notes and ticket descriptions are clickable.

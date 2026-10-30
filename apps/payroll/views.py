@@ -144,10 +144,14 @@ def _calc_lines(run, p):
     cash = p.late_penalty or Decimal("0.00")
     back = p.reimbursement or Decimal("0.00")
     earned = p.gross + cash - back
+    paid_days = b.get("paid_days_of", "").split(" of ")[0] or cycle or p.working_days
     return {
+        # Whatever was taken off, so the steps always add up to the stored payable days.
+        "late_days": Decimal(paid_days) - p.unpaid_leave_days - p.payable_days,
+        "late_count": p.late_half_days,
+        "paid_days": paid_days,
         "monthly": b.get("monthly_salary"),
         "cycle_days": cycle,
-        "paid_from_days": b.get("paid_days_of", "").split(" of ")[0] or cycle,
         "joined_on": b.get("joined_on"),
         "earned": earned,
         "cash": cash,

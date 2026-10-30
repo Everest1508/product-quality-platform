@@ -104,43 +104,61 @@
 
 {% for payslip in payslips %}
 {% with c=payslip.calc cur=payslip.currency %}
-<dialog class="dlg" id="calc-{{ payslip.pk }}" style="max-width:520px">
+<dialog class="dlg" id="calc-{{ payslip.pk }}" style="max-width:640px">
   <div class="dlg-head">
     <h2>{{ payslip.user.get_full_name|default:payslip.user.username }}</h2>
     <p>{{ run.label }}{% if c.joined_on %} · joined {{ c.joined_on }}{% endif %}</p>
   </div>
   <div class="dlg-body">
-    <dl class="pay-kv">
-      {% if c.monthly %}
-      <dt>Monthly salary</dt><dd>{{ cur }} {{ c.monthly }}</dd>
-      <dt>Days in the cycle</dt><dd>{{ c.cycle_days }} <span class="sub">Weekly offs and holidays are paid days</span></dd>
-      <dt>Day rate</dt><dd>{{ c.monthly }} ÷ {{ c.cycle_days }} = {{ cur }} {{ payslip.daily_rate }}</dd>
-      <dt>Days paid{% if c.joined_on %} (from joining){% endif %}</dt><dd>{{ c.paid_from_days }}</dd>
-      {% else %}
-      <dt>Day rate</dt><dd>{{ cur }} {{ payslip.daily_rate }}</dd>
-      <dt>Working days</dt><dd>{{ payslip.working_days }}</dd>
-      {% endif %}
-      <dt>Unpaid leave</dt><dd>{% if payslip.unpaid_leave_days %}−{{ payslip.unpaid_leave_days }}{% else %}0{% endif %} days</dd>
-      <dt>Late over an hour</dt><dd>{% if payslip.late_half_days %}−{{ payslip.late_half_days }}{% else %}0{% endif %} days <span class="sub">half a day each</span></dd>
-      <dt class="strong">Payable days</dt><dd class="strong">{{ payslip.payable_days }}</dd>
-      <div class="rule"></div>
-      <dt>Salary earned</dt>
-      <dd>{% if c.monthly %}{{ c.monthly }} × {{ payslip.payable_days }} ÷ {{ c.cycle_days }}{% else %}{{ payslip.payable_days }} × {{ payslip.daily_rate }}{% endif %} = {{ cur }} {{ c.earned }}</dd>
-      {% if c.cash %}<dt>Flat late penalties</dt><dd style="color:var(--red);">−{{ cur }} {{ c.cash }}{% if c.uncapped %} <span class="sub">capped; {{ c.uncapped }} before the cap</span>{% endif %}</dd>{% endif %}
-      {% if c.back %}<dt>Expenses repaid</dt><dd style="color:var(--green);">+{{ cur }} {{ c.back }}</dd>{% endif %}
-      <div class="rule"></div>
-      <dt class="strong">Net pay</dt><dd class="strong" style="color:var(--green);">{{ cur }} {{ payslip.gross }}</dd>
-      <dt>Total deducted</dt><dd>{% if payslip.deduction %}−{{ cur }} {{ payslip.deduction }}{% else %}—{% endif %}</dd>
-    </dl>
-    {% if c.events %}
-    <ul style="list-style:none;margin:0;padding:0;font-size:13px;">
-      {% for e in c.events %}
-      <li style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--border);">
-        <span>{{ e.reason }}</span>
-        <span style="white-space:nowrap;color:var(--red);">{% if e.band == "half_day" %}½ day{% else %}−{{ cur }} {{ e.amount }}{% endif %}</span>
+    <ol class="calc-steps" style="list-style:none;margin:0;padding:0;display:grid;gap:14px;font-size:14px;">
+      <li>
+        <b>1. Pay for one day</b>
+        {% if c.monthly %}
+        <div>{{ cur }} {{ c.monthly }} salary ÷ {{ c.cycle_days }} days in the cycle = <b>{{ cur }} {{ payslip.daily_rate }}</b> a day.</div>
+        <div class="text-sm text-muted">Every calendar day is paid, Saturdays, Sundays and holidays too, so a full month always pays the full salary.</div>
+        {% else %}
+        <div><b>{{ cur }} {{ payslip.daily_rate }}</b> a day, paid for {{ payslip.working_days }} working days.</div>
+        {% endif %}
       </li>
-      {% endfor %}
-    </ul>
+      <li>
+        <b>2. Days they are paid for</b>
+        <div>{% if c.joined_on %}Joined on {{ c.joined_on }}, so pay starts that day and runs to the end of the cycle: <b>{{ c.paid_days }}</b>{% if c.cycle_days %} of {{ c.cycle_days }}{% endif %} days.{% else %}The whole cycle: <b>{{ c.paid_days }}</b> days.{% endif %}</div>
+      </li>
+      <li>
+        <b>3. Days taken off</b>
+        <div>Unpaid leave: <b>{{ payslip.unpaid_leave_days }}</b> day{{ payslip.unpaid_leave_days|pluralize }}.</div>
+        <div>Arrived more than an hour late: <b>{{ c.late_count|floatformat:"-2" }}</b> time{{ c.late_count|pluralize }}, each costs half a day = <b>{{ c.late_days|floatformat:"-2" }}</b> day{{ c.late_days|pluralize }}.</div>
+      </li>
+      <li>
+        <b>4. Payable days</b>
+        <div>{{ c.paid_days }} − {{ payslip.unpaid_leave_days|floatformat:"-2" }} − {{ c.late_days|floatformat:"-2" }} = <b>{{ payslip.payable_days }}</b> days.</div>
+      </li>
+      <li>
+        <b>5. Salary earned</b>
+        <div>{% if c.monthly %}{{ c.monthly }} × {{ payslip.payable_days }} ÷ {{ c.cycle_days }}{% else %}{{ payslip.payable_days }} × {{ payslip.daily_rate }}{% endif %} = <b>{{ cur }} {{ c.earned }}</b></div>
+      </li>
+      {% if c.cash %}
+      <li>
+        <b>6. Flat penalties for arriving late</b>
+        <div style="color:var(--red);">−{{ cur }} {{ c.cash }}{% if c.uncapped %} (capped, {{ c.uncapped }} before the cap){% endif %}</div>
+        <div class="text-sm text-muted">Up to an hour late is a fixed charge, not a part of a day. Over an hour is the half day in step 3.</div>
+      </li>
+      {% endif %}
+      {% if c.back %}
+      <li><b>Expenses paid back</b><div style="color:var(--green);">+{{ cur }} {{ c.back }}</div></li>
+      {% endif %}
+      <li style="border-top:1px solid var(--border);padding-top:12px;">
+        <b>Net pay</b>
+        <div style="font-size:18px;color:var(--green);"><b>{{ cur }} {{ payslip.gross }}</b>
+          <span class="text-sm text-muted" style="font-weight:400;">= {{ c.earned }}{% if c.cash %} − {{ c.cash }}{% endif %}{% if c.back %} + {{ c.back }}{% endif %}</span></div>
+      </li>
+    </ol>
+    {% if c.events %}
+    <div>
+      <b style="font-size:14px;">Why each late arrival cost money</b>
+      <div class="text-sm text-muted" style="margin:2px 0 4px;">Every arrival after the grace time is listed with the day, the time and the rule that applied.</div>
+      {% include "payroll/partials/_late_events.html" with events=c.events cur=cur half_value=payslip.half_day_value %}
+    </div>
     {% endif %}
     {% if payslip.stale %}
     <div class="text-sm" style="border:1px solid var(--red);border-radius:var(--radius);padding:10px 12px;">

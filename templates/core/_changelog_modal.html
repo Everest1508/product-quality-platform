@@ -5,7 +5,7 @@ type filters that look through every release. Opened by the sidebar footer butto
 itself once per release per browser. Content comes from /api/v1/changelog/, which escapes everything and only re-adds
 bold, code and http/https links, so the bullets go in as HTML on purpose.
 {% endcomment %}
-<dialog class="dlg cl" id="pq-changelog" aria-labelledby="cl-title" data-version="{{ app_version }}" style="max-width:680px">
+<dialog class="dlg cl" id="pq-changelog" aria-labelledby="cl-title" data-version="{{ app_version }}" >
   <div class="cl-head">
     <h2 id="cl-title"><span class="cl-spark">{% icon 'sparkles' 'ic' %}</span>What's new in <span class="cl-ver">v{{ app_version }}</span></h2>
     <p id="cl-sub"></p>
@@ -13,7 +13,7 @@ bold, code and http/https links, so the bullets go in as HTML on purpose.
   </div>
   <div class="cl-body">
     <div class="cl-tools" id="cl-tools" hidden>
-      <div class="input-icon" style="width:14rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" id="cl-search" placeholder="Search changes…" aria-label="Search the changelog" autocomplete="off"></div>
+      <div class="input-icon" style="width:18rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" id="cl-search" placeholder="Search changes…" aria-label="Search the changelog" autocomplete="off"></div>
       <div class="cl-chips" id="cl-chips" role="group" aria-label="Filter changes by type"></div>
     </div>
     <p class="cl-note" id="cl-note">Loading…</p>

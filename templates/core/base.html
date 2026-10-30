@@ -800,8 +800,10 @@
   function showTooltip(el) {
     var text = el.getAttribute('data-tooltip') || el.getAttribute('title') || el.getAttribute('data-native-title');
     // data-tip is a plain button name (from aria-label): shown as text, never as HTML.
-    var plain = !text && el.getAttribute('data-tip');
+    // data-peek is a multi-line summary (board cards): plain text, wrapped, never clipped by a column.
+    var plain = !text && (el.getAttribute('data-peek') || el.getAttribute('data-tip'));
     if (plain) text = plain;
+    tooltipEl.classList.toggle('peek', !!el.hasAttribute('data-peek') && !el.getAttribute('data-tooltip'));
     if (!text || !text.trim()) return;
 
     if (el.hasAttribute('title')) {
@@ -816,12 +818,13 @@
     tooltipEl.style.display = 'block';
 
     var tooltipRect = tooltipEl.getBoundingClientRect();
-    var top = rect.top + window.scrollY - tooltipRect.height - 7;
-    var left = rect.left + window.scrollX + (rect.width / 2) - (tooltipRect.width / 2);
+    // Fixed, so it is measured against the viewport and no scrolling parent can move or clip it.
+    var top = rect.top - tooltipRect.height - 7;
+    var left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
     var position = 'top';
 
-    if (top < window.scrollY + 8) {
-      top = rect.bottom + window.scrollY + 7;
+    if (top < 8) {
+      top = rect.bottom + 7;
       position = 'bottom';
     }
 
@@ -841,7 +844,7 @@
     currentTarget = null;
   }
 
-  var SEL = '[data-tooltip], [title], [data-native-title], [data-tip]';
+  var SEL = '[data-tooltip], [title], [data-native-title], [data-tip], [data-peek]';
   document.addEventListener('mouseover', function(e) {
     var target = e.target.closest(SEL);
     if (target) {
