@@ -1,19 +1,18 @@
 {% comment %}
-Every late arrival that cost money, one row each: the day, what time they checked in, which rule applied and what it cost.
+Late arrivals that cost money, one row each: day, check-in time, how late, what it cost.
 Needs: events, cur (currency), half_value (what half a day is worth in money, may be empty).
-Older payslips were saved without the time and the rule, so those rows fall back to the sentence that was stored.
+Payslips saved before the time was stored show a dash for it.
 {% endcomment %}
-<ul class="late-list">
-  {% for e in events %}
-  <li>
-    <div class="late-day">{{ e.day_label|default:e.date }}</div>
-    <div class="late-what">
-      {% if e.check_in %}Checked in at <b>{{ e.check_in }}</b>, <b>{{ e.late_minutes }} min</b> after the {{ e.shift_start }} start.{% else %}{{ e.reason }}{% endif %}
-      {% if e.rule %}<span class="late-rule">{{ e.rule }}.</span>{% endif %}
-    </div>
-    <div class="late-cost">
-      {% if e.band == "half_day" %}½ day{% if half_value %}<small>{{ cur }} {{ half_value }}</small>{% endif %}{% else %}−{{ cur }} {{ e.amount }}{% endif %}
-    </div>
-  </li>
-  {% endfor %}
-</ul>
+<table class="late-tbl">
+  <thead><tr><th>Day</th><th>In</th><th>Late</th><th class="r">Cost</th></tr></thead>
+  <tbody>
+    {% for e in events %}
+    <tr>
+      <td class="late-day">{{ e.day_label|default:e.date }}</td>
+      <td>{{ e.check_in|default:"–" }}</td>
+      <td>{{ e.late_minutes }} min</td>
+      <td class="r late-cost">{% if e.band == "half_day" %}½ day{% if half_value %}<small>{{ cur }} {{ half_value }}</small>{% endif %}{% else %}−{{ cur }} {{ e.amount }}<small>flat fee</small>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

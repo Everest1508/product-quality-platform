@@ -10,6 +10,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.61.0] "Magpie" — 2026-10-30 · lists that work on a phone, and a calmer What's new
+
+> In short: ticket and error lists turn into easy cards on a phone, project rows use the full width, the payroll calculation window is wide and short, and What's new has a release list beside the details.
+
+### Better
+
+- **Ticket and error lists are cards on a phone.** Each row shows the title on top with its status, priority and age underneath, instead of a table you had to slide sideways.
+- **Project, people and leave rows fill the phone screen.** The numbers, the small chart and the buttons now use the whole width of the card.
+- **The payroll calculation window is wide and short.** The steps sit on the left as a small ledger, and the late arrivals sit on the right as a table with the day, check-in time, minutes late and cost.
+- **What's new is easier to read.** The releases are listed on the left, the one you pick opens on the right, and search and type filters narrow the list as you type.
+
 ## [1.60.0] "Lorikeet" — 2026-10-30 · see exactly how each payslip was worked out
 
 > In short: click any person in a payroll run to see their pay worked out step by step, every late arrival is listed with its date, time and rule, and half-day lateness now costs half a day instead of a full one.

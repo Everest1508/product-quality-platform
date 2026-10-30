@@ -104,67 +104,50 @@
 
 {% for payslip in payslips %}
 {% with c=payslip.calc cur=payslip.currency %}
-<dialog class="dlg" id="calc-{{ payslip.pk }}" style="max-width:640px">
+<dialog class="dlg calc" id="calc-{{ payslip.pk }}">
   <div class="dlg-head">
-    <h2>{{ payslip.user.get_full_name|default:payslip.user.username }}</h2>
-    <p>{{ run.label }}{% if c.joined_on %} · joined {{ c.joined_on }}{% endif %}</p>
+    <div class="calc-top">
+      <div>
+        <h2>{{ payslip.user.get_full_name|default:payslip.user.username }}</h2>
+        <p>{{ run.label }}{% if c.joined_on %} · joined {{ c.joined_on }}{% endif %}</p>
+      </div>
+      <div class="calc-net"><b>{{ cur }} {{ payslip.gross }}</b><span>net pay</span></div>
+    </div>
   </div>
   <div class="dlg-body">
-    <ol class="calc-steps" style="list-style:none;margin:0;padding:0;display:grid;gap:14px;font-size:14px;">
-      <li>
-        <b>1. Pay for one day</b>
-        {% if c.monthly %}
-        <div>{{ cur }} {{ c.monthly }} salary ÷ {{ c.cycle_days }} days in the cycle = <b>{{ cur }} {{ payslip.daily_rate }}</b> a day.</div>
-        <div class="text-sm text-muted">Every calendar day is paid, Saturdays, Sundays and holidays too, so a full month always pays the full salary.</div>
+    <div class="calc-cols">
+      <div>
+        <h3 class="calc-h">How it adds up</h3>
+        <div class="calc-led">
+          {% if c.monthly %}
+          <span class="k">Day rate</span><span class="f">{{ c.monthly }} ÷ {{ c.cycle_days }} days</span><span class="v">{{ payslip.daily_rate }}</span>
+          {% else %}
+          <span class="k">Day rate</span><span class="f"></span><span class="v">{{ payslip.daily_rate }}</span>
+          {% endif %}
+          <span class="k">Days paid</span><span class="f">{% if c.joined_on %}from joining{% else %}whole cycle{% endif %}</span><span class="v">{{ c.paid_days }}</span>
+          <span class="k">Unpaid leave</span><span class="f"></span><span class="v{% if payslip.unpaid_leave_days %} neg{% endif %}">{% if payslip.unpaid_leave_days %}−{{ payslip.unpaid_leave_days|floatformat:"-2" }}{% else %}0{% endif %}</span>
+          <span class="k">Late over 1 hour</span><span class="f">{{ c.late_count|floatformat:"-2" }} × ½ day</span><span class="v{% if c.late_days %} neg{% endif %}">{% if c.late_days %}−{{ c.late_days|floatformat:"-2" }}{% else %}0{% endif %}</span>
+          <span class="k"><b>Payable days</b></span><span class="f"></span><span class="v">{{ payslip.payable_days|floatformat:"-2" }}</span>
+          <span class="k">Salary earned</span><span class="f">{% if c.monthly %}{{ c.monthly }} × {{ payslip.payable_days|floatformat:"-2" }} ÷ {{ c.cycle_days }}{% else %}{{ payslip.payable_days|floatformat:"-2" }} × {{ payslip.daily_rate }}{% endif %}</span><span class="v">{{ c.earned }}</span>
+          {% if c.cash %}<span class="k">Late fees</span><span class="f">{% if c.uncapped %}capped from {{ c.uncapped }}{% else %}flat, under 1 hour{% endif %}</span><span class="v neg">−{{ c.cash }}</span>{% endif %}
+          {% if c.back %}<span class="k">Expenses repaid</span><span class="f"></span><span class="v pos">+{{ c.back }}</span>{% endif %}
+          <span class="k tot">Net pay</span><span class="f tot"></span><span class="v tot">{{ payslip.gross }}</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="calc-h">Late arrivals</h3>
+        {% if c.events %}
+        {% include "payroll/partials/_late_events.html" with events=c.events cur=cur half_value=payslip.half_day_value %}
+        <p class="calc-note">Up to 1 hour late is a flat fee. Over 1 hour costs half a day's pay.</p>
         {% else %}
-        <div><b>{{ cur }} {{ payslip.daily_rate }}</b> a day, paid for {{ payslip.working_days }} working days.</div>
+        <p class="calc-note" style="margin:0;">None this cycle.</p>
         {% endif %}
-      </li>
-      <li>
-        <b>2. Days they are paid for</b>
-        <div>{% if c.joined_on %}Joined on {{ c.joined_on }}, so pay starts that day and runs to the end of the cycle: <b>{{ c.paid_days }}</b>{% if c.cycle_days %} of {{ c.cycle_days }}{% endif %} days.{% else %}The whole cycle: <b>{{ c.paid_days }}</b> days.{% endif %}</div>
-      </li>
-      <li>
-        <b>3. Days taken off</b>
-        <div>Unpaid leave: <b>{{ payslip.unpaid_leave_days }}</b> day{{ payslip.unpaid_leave_days|pluralize }}.</div>
-        <div>Arrived more than an hour late: <b>{{ c.late_count|floatformat:"-2" }}</b> time{{ c.late_count|pluralize }}, each costs half a day = <b>{{ c.late_days|floatformat:"-2" }}</b> day{{ c.late_days|pluralize }}.</div>
-      </li>
-      <li>
-        <b>4. Payable days</b>
-        <div>{{ c.paid_days }} − {{ payslip.unpaid_leave_days|floatformat:"-2" }} − {{ c.late_days|floatformat:"-2" }} = <b>{{ payslip.payable_days }}</b> days.</div>
-      </li>
-      <li>
-        <b>5. Salary earned</b>
-        <div>{% if c.monthly %}{{ c.monthly }} × {{ payslip.payable_days }} ÷ {{ c.cycle_days }}{% else %}{{ payslip.payable_days }} × {{ payslip.daily_rate }}{% endif %} = <b>{{ cur }} {{ c.earned }}</b></div>
-      </li>
-      {% if c.cash %}
-      <li>
-        <b>6. Flat penalties for arriving late</b>
-        <div style="color:var(--red);">−{{ cur }} {{ c.cash }}{% if c.uncapped %} (capped, {{ c.uncapped }} before the cap){% endif %}</div>
-        <div class="text-sm text-muted">Up to an hour late is a fixed charge, not a part of a day. Over an hour is the half day in step 3.</div>
-      </li>
-      {% endif %}
-      {% if c.back %}
-      <li><b>Expenses paid back</b><div style="color:var(--green);">+{{ cur }} {{ c.back }}</div></li>
-      {% endif %}
-      <li style="border-top:1px solid var(--border);padding-top:12px;">
-        <b>Net pay</b>
-        <div style="font-size:18px;color:var(--green);"><b>{{ cur }} {{ payslip.gross }}</b>
-          <span class="text-sm text-muted" style="font-weight:400;">= {{ c.earned }}{% if c.cash %} − {{ c.cash }}{% endif %}{% if c.back %} + {{ c.back }}{% endif %}</span></div>
-      </li>
-    </ol>
-    {% if c.events %}
-    <div>
-      <b style="font-size:14px;">Why each late arrival cost money</b>
-      <div class="text-sm text-muted" style="margin:2px 0 4px;">Every arrival after the grace time is listed with the day, the time and the rule that applied.</div>
-      {% include "payroll/partials/_late_events.html" with events=c.events cur=cur half_value=payslip.half_day_value %}
+      </div>
     </div>
-    {% endif %}
     {% if payslip.stale %}
-    <div class="text-sm" style="border:1px solid var(--red);border-radius:var(--radius);padding:10px 12px;">
+    <div class="calc-stale">
       <b>Out of date.</b> Today's rules give
-      {% if payslip.now %}{{ payslip.now.payable_days }} payable days, deduction {{ cur }} {{ payslip.now.deduction }}, net pay <b>{{ cur }} {{ payslip.now.gross }}</b>.
-      {% else %}no payslip for this person. {% endif %}
+      {% if payslip.now %}{{ payslip.now.payable_days|floatformat:"-2" }} payable days and net pay <b>{{ cur }} {{ payslip.now.gross }}</b>.{% else %}no payslip for this person.{% endif %}
       Recalculate the run to update it.
     </div>
     {% endif %}

@@ -1,5 +1,5 @@
 {% if request.htmx %}<span class="count" id="ticket-count" hx-swap-oob="true">{{ page.paginator.count }} ticket{{ page.paginator.count|pluralize }} · {{ open_count }} open</span>{% endif %}
-<table>
+<table class="pq-stack tk">
   <thead>
     <tr>
       <th class="ticket-select-th" style="width:30px;text-align:center;"><input type="checkbox" id="select-all-tickets" aria-label="Select all tickets"></th>

@@ -680,10 +680,10 @@ class ChangelogDialogTest(TestCase):
         Membership.objects.create(user=self.user, company=company, role="owner")
         self.client.force_login(self.user)
 
-    def test_the_whats_new_window_has_search_type_filters_paged_older_releases_and_shows_once(self):
+    def test_the_whats_new_window_has_search_type_filters_a_release_list_and_shows_once(self):
         body = self.client.get("/tickets/").content.decode()
         self.assertIn('id="pq-changelog"', body)
-        for marker in ('id="cl-search"', 'id="cl-chips"', 'id="cl-older"', "cl-card", "pq:seen-version", "inert"):
+        for marker in ('id="cl-search"', 'id="cl-chips"', 'id="cl-rail"', 'id="cl-pane"', "pq:seen-version"):
             self.assertIn(marker, body)
         self.assertIn(f'data-version="{settings.APP_VERSION}"', body)
 

@@ -71,6 +71,29 @@ img,svg,video{max-width:100%;}
 
 /* Phones. */
 @media (max-width:640px){
+  /* Ledger rows (project, person, leave lists): the 2-column tablet layout left an empty
+   * gutter under the icon. On a phone the icon sits beside the title and the numbers, the
+   * sparkline and the buttons each get the full card width. */
+  .lrow{gap:12px;padding:14px 14px 14px 18px;}
+  .lrow:not(.lr-nomark)>.lmetrics,.lrow:not(.lr-nomark)>.lspark,.lrow:not(.lr-nomark)>.lactions,.lrow>form{grid-column:1 / -1;}
+  .lrow>.lmetrics{justify-self:stretch;justify-content:space-between;gap:6px;padding:10px 0;border-top:1px solid var(--border);}
+  .lrow>.lmetrics>div{flex:1;min-width:0;}
+  .lrow>.lspark{justify-self:stretch;display:flex;align-items:center;justify-content:space-between;min-width:0;}
+  .lrow>.lactions{justify-self:stretch;flex-wrap:wrap;}
+  .lrow>.lactions .btn:first-child{flex:1 1 auto;}
+  /* Ticket and error lists: a row becomes a card (title across the top, badges under it)
+   * instead of a table that scrolls sideways. Opt in with .pq-stack on the table. */
+  .table-scroll>table.pq-stack,table.pq-stack{min-width:0;display:block;width:100%;}
+  .pq-stack thead{display:none;}
+  .pq-stack tbody{display:grid;gap:10px;}
+  .pq-stack tr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+  .pq-stack td{display:block;padding:0;border:0;width:auto !important;min-width:0 !important;font-size:13px;}
+  .pq-stack td.empty{flex:1 0 100%;}
+  .pq-stack:not(.tk) td:first-child,.pq-stack.tk td:nth-child(3){flex:1 0 100%;order:-1;}
+  .pq-stack.tk td:nth-child(2){order:-2;}
+  .pq-stack.tk td:nth-child(7){display:none;}
+  .pq-stack td:last-child{margin-left:auto;}
+  .pq-stack.tk td:last-child{order:-2;}
   .grid-3{grid-template-columns:minmax(0,1fr);}
   .card{padding:16px;}
   .kanban-col{min-width:min(84vw,300px);}
