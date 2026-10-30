@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.62.0] "Petrel" — 2026-10-30 · a bell and a count for new website leads
+
+> In short: owners and admins now get a notification when someone fills in your website form, and the sidebar counts the leads they have not seen.
+
+### New
+
+- **A notification for every new website lead.** It shows in the bell and on your phone if you have turned on alerts, and opens the leads page.
+- **A count beside Website leads in the sidebar.** It shows how many new leads you have not looked at yet and clears when you open the page.
+
+### Better
+
+- **The Website leads page shows your webhook link and copies it in one click.** Toasts across the app also got a cleaner look with an icon and a close button.
+
 ## [1.61.2] "Ovenbird" — 2026-10-30 · phone cards sit tighter
 
 > In short: the ticket and error cards on a phone no longer carry the extra padding the table gave each cell.

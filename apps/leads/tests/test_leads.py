@@ -42,3 +42,24 @@ class LeadWebhookTest(TestCase):
         self.client.force_login(u)
         self.client.post(reverse("leads:webhook_rotate"))
         self.assertEqual(self.client.post(self.url, GOOD).status_code, 404)
+
+
+class LeadNotifyTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme")
+        self.hook = LeadWebhook.objects.create(company=self.company)
+        self.owner = User.objects.create_user(username="o", email="o@x.com", password="p")
+        self.dev = User.objects.create_user(username="d", email="d@x.com", password="p")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
+
+    def test_admins_notified_then_cleared_on_visit(self):
+        from apps.notifications.models import Notification
+        self.client.post(reverse("lead_webhook", args=[self.hook.token]), GOOD)
+        self.assertEqual(Notification.objects.filter(user=self.owner, kind="lead").count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.dev).count(), 0)
+        self.client.force_login(self.owner)
+        r = self.client.get(reverse("dashboards:index"), follow=True)
+        self.assertEqual(r.context["nav_new_leads"], 1)
+        r = self.client.get(reverse("leads:lead_list"))
+        self.assertEqual(r.context["nav_new_leads"], 0)

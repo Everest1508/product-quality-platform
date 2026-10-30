@@ -97,6 +97,11 @@ def workspace_context(request):
                 ctx["nav_pending_corrections"] = AttendanceCorrection.objects.filter(
                     company=company, status="pending"
                 ).count()
+                from apps.notifications.models import Notification
+
+                ctx["nav_new_leads"] = Notification.objects.filter(
+                    user=request.user, company=company, kind="lead", read_at__isnull=True
+                ).count()
         except Exception:
             pass
 

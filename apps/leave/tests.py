@@ -15,7 +15,7 @@ from apps.accounts.models import Company, Membership
 from apps.dashboards.models import ActivityLog
 from apps.leave import service
 from apps.leave.forms import LeaveRequestForm
-from apps.core.icons import ICONS, ICON_NAMES, render_icon
+from apps.core.icons import ICONS, ICON_NAMES, UI_ICONS, render_icon
 from apps.leave.models import LeavePolicy, LeaveRequest
 
 
@@ -1584,7 +1584,8 @@ class SidebarActiveStateTest(LeaveTestBase):
         template = Path(settings.BASE_DIR / "templates/core/_sidebar.html").read_text()
         for name in re.findall(r"\{% icon '([a-z0-9-]+)'", template):
             with self.subTest(icon=name):
-                self.assertIn(name, ICON_NAMES)
+                # The sidebar also uses the interface glyphs (UI_ICONS), which the policy picker leaves out.
+                self.assertIn(name, ICON_NAMES | set(UI_ICONS))
 
     def test_no_page_is_left_with_nothing_highlighted(self):
         """Every page a member can reach must resolve to one nav item.
