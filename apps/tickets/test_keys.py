@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -111,6 +113,10 @@ class TicketNumberTest(TestCase):
 
 class TicketKeyScreensTest(TestCase):
     def setUp(self):
+        # Search leaves tickets out by default; these tests are about finding one by its key.
+        patcher = patch("apps.core.search.SEARCH_TICKETS", True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.company = Company.objects.create(name="Acme", slug="acme")
         self.owner = User.objects.create_user("own", "o@t.local", "pass1234")
         Membership.objects.create(user=self.owner, company=self.company, role="owner")
