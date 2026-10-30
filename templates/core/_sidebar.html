@@ -240,8 +240,8 @@
     </button>
     <div class="fold-body"><div class="fold-inner">
     <a href="{% url 'leads:lead_list' %}" data-label="Website leads"
-       {% if u == 'lead_list' or u == 'webhook_rotate' %}aria-current="page"{% endif %}
-       class="side-item {% if u == 'lead_list' or u == 'webhook_rotate' %}active{% endif %}">
+       {% if u == 'lead_list' or u == 'webhook_rotate' or u == 'lead_detail' or u == 'lead_log' or u == 'lead_status' or u == 'lead_convert' %}aria-current="page"{% endif %}
+       class="side-item {% if u == 'lead_list' or u == 'webhook_rotate' or u == 'lead_detail' or u == 'lead_log' or u == 'lead_status' or u == 'lead_convert' %}active{% endif %}">
       {% icon 'inbox' %} <span class="side-label">Website leads</span>
       {% if nav_new_leads %}<span class="side-badge">{{ nav_new_leads }}</span>{% endif %}
     </a>

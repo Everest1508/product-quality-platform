@@ -10,6 +10,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.64.0] "Roller" — 2026-10-30 · a page for each website lead, with a log and one-click conversion
+
+> In short: each website lead now has its own page where you log what you did, track its status and turn it into a project.
+
+### New
+
+- **A page for every website lead.** Click a lead's name to see their details, the full message and everything done on it. Only owners and admins can see these pages.
+
+- **A log of what you did.** Add a line after each call or message, and status changes are recorded in the same list, so anyone picking up the lead sees where it stands.
+
+- **Lead status.** Mark a lead New, Contacted, Qualified or Lost, and see it in the leads table.
+
+- **Convert a lead to a project.** One button creates a project named after their company, with their message as its description, and links the two. A lead can only be converted once.
+
+- **A phone number on website leads.** It is optional and kept exactly as typed, so "+91 98765 43210" works. It shows in the table and on the lead page as a tap-to-call link.
+
 ## [1.63.0] "Raven" — 2026-10-30 · a clearer payslip, delete by mistake, no late marks for some people
 
 > In short: a payslip now reads in two columns instead of one long list, an open payslip can be deleted, and chosen people are never marked late.

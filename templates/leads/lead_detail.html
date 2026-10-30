@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+{% load dropdown_tags component_tags icon_tags %}
+
+{% block title %}{{ lead.full_name }} — Website leads — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'leads:lead_list' %}">Website leads</a>
+  <span class="sep">/</span>
+  <span class="current">{{ lead.full_name }}</span>
+</nav>
+
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>{{ lead.full_name }}</h1>
+    <p class="sub">{% if lead.company_name %}{{ lead.company_name }} · {% endif %}received {{ lead.created_at|date:"j M Y, g:i a" }}</p>
+  </div>
+  <div class="pg-actions">
+    {% if lead.product %}
+    <a href="{% url 'products:product_detail' lead.product.pk %}" class="btn btn-primary">{% icon 'package' 'ic' %}Open project</a>
+    {% else %}
+    <form method="post" action="{% url 'leads:lead_convert' lead.pk %}" data-confirm="Convert this lead to a project?" data-confirm-text="A project named {{ lead.company_name|default:lead.full_name }} is created from it." data-confirm-label="Convert">
+      {% csrf_token %}<button type="submit" class="btn btn-primary">Convert to project</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="lead-cols">
+  <div>
+    <div class="card lead-card">
+      <h2 class="lead-h">Contact</h2>
+      <dl class="lead-kv">
+        <dt>Email</dt><dd><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></dd>
+        <dt>Phone</dt><dd>{% if lead.phone %}<a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>{% else %}<span class="text-muted">not given</span>{% endif %}</dd>
+        <dt>Company</dt><dd>{{ lead.company_name|default:"—" }}</dd>
+        <dt>Needs</dt><dd>{% if lead.need %}<span class="bdg bdg-outline">{{ lead.need }}</span>{% else %}—{% endif %}</dd>
+      </dl>
+      <h2 class="lead-h" style="margin-top:20px">Project details</h2>
+      <p style="white-space:pre-wrap;margin:0">{{ lead.details }}</p>
+    </div>
+
+    <div class="card lead-card">
+      <h2 class="lead-h">What was done</h2>
+      <form method="post" action="{% url 'leads:lead_log' lead.pk %}" class="lead-log-form">
+        {% csrf_token %}
+        <textarea name="text" class="form-input" rows="2" maxlength="2000" placeholder="Called, sent the proposal, waiting for their reply…" required></textarea>
+        <button type="submit" class="btn btn-primary">Add to log</button>
+      </form>
+      <ol class="lead-log">
+        {% for log in logs %}
+        <li class="{{ log.kind }}">
+          <div class="lead-log-text">{{ log.text }}</div>
+          <div class="lead-log-by">{{ log.author.get_full_name|default:log.author.username|default:"Someone" }} · {{ log.created_at|date:"j M, g:i a" }}</div>
+        </li>
+        {% empty %}
+        <li class="empty">Nothing logged yet. Write down each call or message so the next person knows where it stands.</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card lead-card">
+      <h2 class="lead-h">Status</h2>
+      {% if lead.product %}
+      <p style="margin:0"><span class="bdg bdg-green">Converted</span> {{ lead.converted_at|date:"j M Y" }}</p>
+      <p class="text-sm text-muted" style="margin:8px 0 0">The project <a href="{% url 'products:product_detail' lead.product.pk %}">{{ lead.product.name }}</a> was made from this lead.</p>
+      {% else %}
+      <form method="post" action="{% url 'leads:lead_status' lead.pk %}">
+        {% csrf_token %}
+        {% dropdown "status" statuses lead.status placeholder="Status" label="Status" submit=True %}
+      </form>
+      <p class="text-sm text-muted" style="margin:10px 0 0">Converting makes a project from this lead and ends the follow-up.</p>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

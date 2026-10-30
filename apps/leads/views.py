@@ -2,7 +2,7 @@ import json
 
 from django.contrib import messages
 from django.http import Http404, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -11,6 +11,7 @@ from apps.accounts.models import User
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.core.pagination import paginate
 from apps.leads.forms import LeadForm
+from apps.leads import service
 from apps.leads.models import Lead, LeadWebhook, new_token
 from apps.notifications.models import Notification
 from apps.notifications.service import mark_read, notify_many
@@ -38,7 +39,7 @@ class LeadWebhookView(View):
             return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
         d = form.cleaned_data
         lead = Lead.objects.create(
-            company=hook.company, full_name=d["full_name"], email=d["email"],
+            company=hook.company, full_name=d["full_name"], email=d["email"], phone=d["phone"],
             company_name=d["company"], need=d["need"], details=d["details"],
         )
         admins = User.objects.filter(
@@ -73,3 +74,56 @@ class LeadWebhookRotateView(CompanyAdminRequiredMixin, View):
         LeadWebhook.objects.update_or_create(company=request.company, defaults={"token": new_token()})
         messages.success(request, "New webhook URL created. The old one no longer works.")
         return redirect("leads:lead_list")
+
+
+class LeadDetailView(CompanyAdminRequiredMixin, View):
+    """One lead: who they are, what was done on it, and the button that turns it into a project."""
+
+    def get(self, request, pk):
+        lead = get_object_or_404(Lead.objects.select_related("product"), pk=pk, company=request.company)
+        return render(request, "leads/lead_detail.html", {
+            "lead": lead,
+            "logs": lead.logs.select_related("author"),
+            "statuses": [(v, t) for v, t in Lead.Status.choices if v != Lead.Status.CONVERTED],
+        })
+
+
+class LeadLogView(CompanyAdminRequiredMixin, View):
+    def post(self, request, pk):
+        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        text = request.POST.get("text", "").strip()[:2000]
+        if text:
+            service.add_log(lead, request.user, text)
+            messages.success(request, "Added to the log.")
+        else:
+            messages.error(request, "Write what you did first.")
+        return redirect("leads:lead_detail", pk=lead.pk)
+
+
+class LeadStatusView(CompanyAdminRequiredMixin, View):
+    def post(self, request, pk):
+        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        status = request.POST.get("status", "")
+        if lead.product_id:
+            messages.error(request, "This lead is already a project.")
+        elif status == Lead.Status.CONVERTED:
+            return LeadConvertView.convert(request, lead)
+        elif status in Lead.Status.values:
+            service.set_status(lead, status, request.user)
+            messages.success(request, f"Marked {lead.get_status_display().lower()}.")
+        return redirect("leads:lead_detail", pk=lead.pk)
+
+
+class LeadConvertView(CompanyAdminRequiredMixin, View):
+    @staticmethod
+    def convert(request, lead):
+        product = service.convert(lead, request.user)
+        messages.success(request, f"Created the project {product.name}.")
+        return redirect("leads:lead_detail", pk=lead.pk)
+
+    def post(self, request, pk):
+        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        if lead.product_id:
+            messages.error(request, "This lead is already a project.")
+            return redirect("leads:lead_detail", pk=lead.pk)
+        return self.convert(request, lead)

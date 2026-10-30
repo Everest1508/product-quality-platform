@@ -33,6 +33,7 @@ Webhook URL (POST):
 Form fields to send (JSON body with Content-Type: application/json, or a normal form post):
 - full_name  (required, text)
 - email      (required, valid email)
+- phone      (optional, free text such as "+91 98765 43210"; send "" when blank)
 - company    (optional, text)
 - need       (optional, the "What do you need?" dropdown value, e.g. CRM)
 - details    (required, the "Project details" textarea)
@@ -48,25 +49,27 @@ Example:
 fetch("{{ webhook_url }}", {
   method: "POST",
   headers: {"Content-Type": "application/json"},
-  body: JSON.stringify({full_name, email, company, need, details})
+  body: JSON.stringify({full_name, email, phone, company, need, details})
 })</script>
 
 <div class="card-flush">
   <div class="table-scroll">
   <table class="tbl">
-    <thead><tr><th>Received</th><th>Name</th><th>Email</th><th>Company</th><th>Needs</th><th>Project details</th></tr></thead>
+    <thead><tr><th>Received</th><th>Name</th><th>Status</th><th>Email</th><th>Phone</th><th>Company</th><th>Needs</th><th>Project details</th></tr></thead>
     <tbody>
     {% for lead in page %}
       <tr>
         <td style="white-space:nowrap" title="{{ lead.created_at|date:'d M Y, g:i a' }}">{{ lead.created_at|timesince }} ago</td>
-        <td class="task">{{ lead.full_name }}</td>
+        <td class="task"><a href="{% url 'leads:lead_detail' lead.pk %}">{{ lead.full_name }}</a></td>
+        <td><span class="bdg {% if lead.status == 'converted' %}bdg-green{% elif lead.status == 'lost' %}bdg-outline{% else %}bdg-blue{% endif %}">{{ lead.get_status_display }}</span></td>
         <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
+        <td style="white-space:nowrap">{% if lead.phone %}<a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>{% else %}—{% endif %}</td>
         <td>{{ lead.company_name|default:"—" }}</td>
         <td>{% if lead.need %}<span class="bdg bdg-outline">{{ lead.need }}</span>{% else %}—{% endif %}</td>
         <td style="white-space:pre-wrap;min-width:240px;max-width:420px">{{ lead.details }}</td>
       </tr>
     {% empty %}
-      <tr><td colspan="6"><div class="empty-state"><strong>No leads yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
+      <tr><td colspan="8"><div class="empty-state"><strong>No leads yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
     {% endfor %}
     </tbody>
   </table>

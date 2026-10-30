@@ -41,3 +41,20 @@
 .slip-top h2{margin:0;font-size:20px;}
 .slip-top p{margin:2px 0 0;font-size:13px;color:var(--muted);}
 @media print{.slip{border:0;padding:0;max-width:none;}}
+
+/* Lead page: details and log on the left, status on the right. */
+.lead-cols{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:var(--space-5);align-items:start;}
+.lead-card{padding:var(--space-5);margin-bottom:var(--space-4);}
+.lead-h{margin:0 0 var(--space-3);font-size:11.5px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
+.lead-log-form{display:grid;gap:var(--space-2);justify-items:end;margin-bottom:var(--space-4);}
+.lead-log-form textarea{width:100%;}
+.lead-log{list-style:none;margin:0;padding:0;}
+.lead-log li{padding:10px 0 10px 14px;border-left:2px solid var(--border);margin-left:4px;}
+.lead-log li.status,.lead-log li.converted{border-left-color:var(--accent);}
+.lead-log li.empty{border:0;color:var(--muted);font-size:13px;padding-left:0;}
+.lead-log-text{white-space:pre-wrap;font-size:14px;}
+.lead-log-by{font-size:12px;color:var(--muted);margin-top:2px;}
+@media (max-width:860px){.lead-cols{grid-template-columns:minmax(0,1fr);}}
+.lead-kv{display:grid;grid-template-columns:90px minmax(0,1fr);gap:8px 16px;margin:0;font-size:14px;align-items:baseline;}
+.lead-kv dt{color:var(--muted);}
+.lead-kv dd{margin:0;word-break:break-word;}
