@@ -137,6 +137,26 @@ class PayrollPreviewView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
         return redirect("payroll:run_detail", pk=run.pk)
 
 
+def _calc_lines(run, p):
+    """The arithmetic behind one stored payslip, from its own snapshot, for the popup."""
+    b = p.breakdown or {}
+    cycle = b.get("cycle_days")
+    cash = p.late_penalty or Decimal("0.00")
+    back = p.reimbursement or Decimal("0.00")
+    earned = p.gross + cash - back
+    return {
+        "monthly": b.get("monthly_salary"),
+        "cycle_days": cycle,
+        "paid_from_days": b.get("paid_days_of", "").split(" of ")[0] or cycle,
+        "joined_on": b.get("joined_on"),
+        "earned": earned,
+        "cash": cash,
+        "back": back,
+        "events": b.get("late_events") or [],
+        "uncapped": b.get("late_penalty_uncapped"),
+    }
+
+
 class PayrollRunDetailView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
     template_name = "payroll/run_detail.html"
     pay_section = "runs"
@@ -152,11 +172,29 @@ class PayrollRunDetailView(PayrollPageMixin, CompanyAdminRequiredMixin, View):
                 ["Employee", "Currency", "Monthly salary", "Working days", "Paid leave days", "Unpaid leave days", "Late half days", "Late penalty", "Payable days", "Deduction", "Expenses repaid", "Gross"],
                 [[(p.user.get_full_name() or p.user.username), p.currency, (p.breakdown or {}).get("monthly_salary", ""), p.working_days, p.paid_leave_days, p.unpaid_leave_days, p.late_half_days, p.late_penalty, p.payable_days, p.deduction, p.reimbursement, p.gross] for p in slips],
             )
+        slips = list(slips)
+        fresh = {}
+        if not run.is_locked:
+            _, rows = service.preview(request.company, run.period_start, run.period_end)
+            fresh = {r["user"].pk: r for r in rows}
+        stale = 0
+        for p in slips:
+            p.calc = _calc_lines(run, p)
+            row = fresh.get(p.user_id)
+            # An open run is a snapshot; flag it when today's rules give other numbers.
+            p.stale = bool(fresh) and (
+                row is None
+                or (row["daily_rate"], row["payable_days"], row["deduction"], row["gross"])
+                != (p.daily_rate, p.payable_days, p.deduction, p.gross)
+            )
+            p.now = row
+            stale += p.stale
         return self.page(
             request,
             {
                 "run": run,
                 "payslips": slips,
+                "stale_count": stale,
                 "total_gross": run.total_gross,
                 "total_deduction": run.total_deduction,
                 "total_payable": sum(

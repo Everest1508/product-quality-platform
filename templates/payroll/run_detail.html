@@ -38,6 +38,18 @@
   </div>
 </div>
 
+{% if stale_count %}
+<div class="card" style="margin-bottom:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-color:var(--red);">
+  <span class="text-sm"><b>{{ stale_count }} payslip{{ stale_count|pluralize }} out of date.</b>
+    These were created before the current rules and would come out differently today. Click a row to see the old and the new figures.</span>
+  <form method="post" action="{% url 'payroll:preview' %}">
+    {% csrf_token %}
+    <input type="hidden" name="month" value="{{ run.period_end|date:'Y-m' }}">
+    <button type="submit" class="btn btn-primary">Recalculate now</button>
+  </form>
+</div>
+{% endif %}
+
 <div class="card" style="padding:0;overflow:hidden;">
   <table>
     <thead>
@@ -55,11 +67,13 @@
     </thead>
     <tbody>
       {% for payslip in payslips %}
-      <tr>
+      <tr style="cursor:pointer;" tabindex="0" title="Show the calculation"
+          onclick="if(!event.target.closest('a'))document.getElementById('calc-{{ payslip.pk }}').showModal()"
+          onkeydown="if(event.key==='Enter')this.click()">
         <td>
           <span class="avatar">{{ payslip.user.get_full_name|default:payslip.user.username|make_list|first|upper }}</span>
           <span class="title">{{ payslip.user.get_full_name|default:payslip.user.username }}</span>
-          <div class="sub">{{ payslip.user.username }}</div>
+          <div class="sub">{{ payslip.user.username }}{% if payslip.stale %} · <span style="color:var(--red);">out of date</span>{% endif %}</div>
         </td>
         <td class="pay-num">{{ payslip.currency }} {{ payslip.daily_rate }}</td>
         <td class="pay-num">{{ payslip.working_days }}</td>
@@ -87,6 +101,63 @@
     </tbody>
   </table>
 </div>
+
+{% for payslip in payslips %}
+{% with c=payslip.calc cur=payslip.currency %}
+<dialog class="dlg" id="calc-{{ payslip.pk }}" style="max-width:520px">
+  <div class="dlg-head">
+    <h2>{{ payslip.user.get_full_name|default:payslip.user.username }}</h2>
+    <p>{{ run.label }}{% if c.joined_on %} · joined {{ c.joined_on }}{% endif %}</p>
+  </div>
+  <div class="dlg-body">
+    <dl class="pay-kv">
+      {% if c.monthly %}
+      <dt>Monthly salary</dt><dd>{{ cur }} {{ c.monthly }}</dd>
+      <dt>Days in the cycle</dt><dd>{{ c.cycle_days }} <span class="sub">Weekly offs and holidays are paid days</span></dd>
+      <dt>Day rate</dt><dd>{{ c.monthly }} ÷ {{ c.cycle_days }} = {{ cur }} {{ payslip.daily_rate }}</dd>
+      <dt>Days paid{% if c.joined_on %} (from joining){% endif %}</dt><dd>{{ c.paid_from_days }}</dd>
+      {% else %}
+      <dt>Day rate</dt><dd>{{ cur }} {{ payslip.daily_rate }}</dd>
+      <dt>Working days</dt><dd>{{ payslip.working_days }}</dd>
+      {% endif %}
+      <dt>Unpaid leave</dt><dd>{% if payslip.unpaid_leave_days %}−{{ payslip.unpaid_leave_days }}{% else %}0{% endif %} days</dd>
+      <dt>Late over an hour</dt><dd>{% if payslip.late_half_days %}−{{ payslip.late_half_days }}{% else %}0{% endif %} days <span class="sub">half a day each</span></dd>
+      <dt class="strong">Payable days</dt><dd class="strong">{{ payslip.payable_days }}</dd>
+      <div class="rule"></div>
+      <dt>Salary earned</dt>
+      <dd>{% if c.monthly %}{{ c.monthly }} × {{ payslip.payable_days }} ÷ {{ c.cycle_days }}{% else %}{{ payslip.payable_days }} × {{ payslip.daily_rate }}{% endif %} = {{ cur }} {{ c.earned }}</dd>
+      {% if c.cash %}<dt>Flat late penalties</dt><dd style="color:var(--red);">−{{ cur }} {{ c.cash }}{% if c.uncapped %} <span class="sub">capped; {{ c.uncapped }} before the cap</span>{% endif %}</dd>{% endif %}
+      {% if c.back %}<dt>Expenses repaid</dt><dd style="color:var(--green);">+{{ cur }} {{ c.back }}</dd>{% endif %}
+      <div class="rule"></div>
+      <dt class="strong">Net pay</dt><dd class="strong" style="color:var(--green);">{{ cur }} {{ payslip.gross }}</dd>
+      <dt>Total deducted</dt><dd>{% if payslip.deduction %}−{{ cur }} {{ payslip.deduction }}{% else %}—{% endif %}</dd>
+    </dl>
+    {% if c.events %}
+    <ul style="list-style:none;margin:0;padding:0;font-size:13px;">
+      {% for e in c.events %}
+      <li style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--border);">
+        <span>{{ e.reason }}</span>
+        <span style="white-space:nowrap;color:var(--red);">{% if e.band == "half_day" %}½ day{% else %}−{{ cur }} {{ e.amount }}{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if payslip.stale %}
+    <div class="text-sm" style="border:1px solid var(--red);border-radius:var(--radius);padding:10px 12px;">
+      <b>Out of date.</b> Today's rules give
+      {% if payslip.now %}{{ payslip.now.payable_days }} payable days, deduction {{ cur }} {{ payslip.now.deduction }}, net pay <b>{{ cur }} {{ payslip.now.gross }}</b>.
+      {% else %}no payslip for this person. {% endif %}
+      Recalculate the run to update it.
+    </div>
+    {% endif %}
+  </div>
+  <div class="dlg-foot">
+    <a href="{% url 'payroll:payslip' payslip.pk %}" class="btn">Open payslip</a>
+    <form method="dialog"><button class="btn btn-primary">Close</button></form>
+  </div>
+</dialog>
+{% endwith %}
+{% endfor %}
 
 <div class="pay-note">
   <span>Regenerating an <b>open</b> run rewrites its payslips with today's numbers — useful after fixing a holiday or a leave record.</span>

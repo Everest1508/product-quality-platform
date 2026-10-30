@@ -1622,3 +1622,25 @@ class RunIntegrityAndAuditTest(PayrollTestBase):
         self.assertIsNotNone(entry)
         self.assertIn("per month", entry.description)
         self.assertNotIn("0.00 per day", entry.description)
+
+
+class RunCalculationPopupTest(PayrollTestBase):
+    def test_popup_and_stale_flag(self):
+        self.profile(self.dev, "1000.00")
+        run, _ = service.generate_run(self.company, self.start, self.end)
+        self.client.login(username="owner", password="pass1234")
+        url = reverse("payroll:run_detail", args=[run.pk])
+
+        page = self.client.get(url)
+        self.assertContains(page, f'id="calc-{run.payslips.get().pk}"')
+        self.assertNotContains(page, "out of date")
+
+        # A payslip written under older rules no longer matches today's numbers.
+        run.payslips.update(gross=Decimal("1.00"))
+        page = self.client.get(url)
+        self.assertContains(page, "1 payslip out of date")
+        self.assertContains(page, "Recalculate now")
+
+        run.is_locked = True
+        run.save(update_fields=["is_locked"])
+        self.assertNotContains(self.client.get(url), "out of date")
