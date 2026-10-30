@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.61.2] "Ovenbird" — 2026-10-30 · phone cards sit tighter
+
+> In short: the ticket and error cards on a phone no longer carry the extra padding the table gave each cell.
+
+### Fixed
+
+- **Ticket and error cards on a phone are tighter.** Each field inside a card had inherited the table's padding, which made the cards taller than they needed to be.
+
 ## [1.61.1] "Mockingbird" — 2026-10-30 · tab strips and stat cards stay full size
 
 > In short: the tabs and summary cards at the top of a page no longer get squashed on a page taller than the window, and the lines in the payroll calculation window line up.

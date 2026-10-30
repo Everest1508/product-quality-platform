@@ -700,7 +700,6 @@ dialog.calc{width:min(960px,calc(100vw - 32px));max-width:none;}
    Short and quiet. Everything animated lives inside no-preference, so reduced motion gets the plain page. */
 @media (prefers-reduced-motion:no-preference){
   /* Moving between pages cross-fades the content; the sidebar and top bar stay put. */
-  @view-transition{navigation:auto;}
   .sidebar{view-transition-name:pq-sidebar;}
   .topbar{view-transition-name:pq-topbar;}
   ::view-transition-old(root){animation:pqFadeOut var(--dur-2) ease both;}

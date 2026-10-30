@@ -1,0 +1,19 @@
+/* New and reworked CSS goes here. This file is the `ui` layer, which beats everything in the older
+ * files (the `legacy` layer) whatever their selectors' specificity, so a rule here never has to be
+ * made longer or louder to win. See apps/core/assets.py. */
+
+@media (max-width:640px){
+  /* Ticket and error lists: a row becomes a card (title across the top, badges under it)
+   * instead of a table that scrolls sideways. Opt in with .pq-stack on the table. */
+  .table-scroll>table.pq-stack,table.pq-stack{min-width:0;display:block;width:100%;}
+  .pq-stack thead{display:none;}
+  .pq-stack tbody{display:grid;gap:10px;}
+  .pq-stack tr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+  .pq-stack td{display:block;padding:0;border:0;width:auto !important;min-width:0 !important;font-size:13px;}
+  .pq-stack td.empty{flex:1 0 100%;}
+  .pq-stack:not(.tk) td:first-child,.pq-stack.tk td:nth-child(3){flex:1 0 100%;order:-1;}
+  .pq-stack.tk td:nth-child(2){order:-2;}
+  .pq-stack.tk td:nth-child(7){display:none;}
+  .pq-stack td:last-child{margin-left:auto;}
+  .pq-stack.tk td:last-child{order:-2;}
+}
