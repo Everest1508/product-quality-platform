@@ -8,6 +8,7 @@ from apps.core.pagination import paginate
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -337,6 +338,8 @@ def _profile_context(request, form):
 
     return {
         "form": form, "overview": my_overview(request.user, request.company), "kinds": notes.settings_for(request.user),
+        "tokens": ExternalAccessToken.objects.filter(user=request.user, revoked_at__isnull=True)
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())),
         "sdk_guide": docs.sdk_guide(request.build_absolute_uri("/")), "sdk_check": docs.SDK_CHECK,
     }
 
@@ -360,6 +363,17 @@ class ProfileView(CompanyMemberRequiredMixin, View):
             messages.success(request, "Profile updated.")
             return redirect("accounts:profile")
         return render(request, "accounts/profile.html", _profile_context(request, form))
+
+
+class TokenRevokeView(CompanyMemberRequiredMixin, View):
+    """Sign one of the person's connected apps out. Only their own tokens are found."""
+
+    def post(self, request, pk):
+        token = get_object_or_404(ExternalAccessToken, pk=pk, user=request.user, revoked_at__isnull=True)
+        token.revoked_at = timezone.now()
+        token.save(update_fields=["revoked_at"])
+        messages.success(request, f"{token.client_id} was signed out.")
+        return redirect("accounts:profile")
 
 
 class NotificationSettingView(CompanyMemberRequiredMixin, View):
@@ -474,7 +488,7 @@ class OAuthMeView(View):
         if not auth_header.startswith("Bearer "):
             return JsonResponse({"ok": False, "error": "Missing bearer token."}, status=401)
 
-        token_obj = ExternalAccessToken.validate(auth_header[len("Bearer "):])
+        token_obj = ExternalAccessToken.validate(auth_header[len("Bearer "):], ip=request.META.get("REMOTE_ADDR"))
         if not token_obj:
             return JsonResponse({"ok": False, "error": "Invalid or revoked token."}, status=401)
 

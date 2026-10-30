@@ -907,3 +907,8 @@ decided what and strike the item** rather than deleting it.
 
 ## 2026-10-29 (PWA)
 - Manifest gained `display_override`, `launch_handler`, categories, lang and two more shortcuts. The worker now warms htmx, Alpine and the font sheet at install (list `WARM` in `templates/pwa/sw.js`; a test fails if it drifts from `base.html`). htmx loads with `defer` so it no longer blocks first paint. iOS Safari gets the Install app button with a Share, Add to Home Screen hint. The unread count is set on the installed app's icon through the Badging API.
+
+## 2026-10-29 (DSR API hardening, clickable links)
+- DSR API: PUT on another person's entry is now 403 (was 404); owner always comes from the token. Hours: one entry max `DSR_MAX_ENTRY_HOURS` (12); non-manual entries must fit the punch card's net minutes + `DSR_ATTENDANCE_TOLERANCE_MINUTES`. A day with no punch is not checked. Blank `source` becomes `manual`, and `DSREntry.unverified` (source == manual) shows a badge in the manager view. Deliberately not added: a 7-day back-date window, since non-managers are already limited to today.
+- `ExternalAccessToken` expires after `EXTERNAL_TOKEN_LIFETIME_DAYS` (30), keeps `last_used_at`/`last_used_ip`, and is revoked from the profile "Connected apps" tab. Existing tokens got a fresh 30 days in the migration.
+- `linkify` filter (`apps/core/templatetags/text_tags.py`) escapes then links http(s) only; used for DSR notes and ticket descriptions. The editable note input on today's row is plain text.

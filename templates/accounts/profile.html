@@ -4,7 +4,7 @@
 {% block title %}Profile — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="pf" x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','settings','sdk','notifications','shortcuts'].includes(tab)) tab='overview'">
+<div class="pf" x-data="{ tab: (location.hash || '#overview').slice(1) }" x-init="if(!['overview','settings','sdk','notifications','sessions','shortcuts'].includes(tab)) tab='overview'">
   <section class="pf-banner">
     <span class="avatar pf-avatar">{{ request.user.username.0|upper }}</span>
     <div class="pf-who">
@@ -26,6 +26,7 @@
     <button type="button" role="tab" :class="{ 'is-on': tab==='settings' }" @click="tab='settings'; history.replaceState(null,'','#settings')">Settings</button>
     <button type="button" role="tab" :class="{ 'is-on': tab==='sdk' }" @click="tab='sdk'; history.replaceState(null,'','#sdk')">SDK guide</button>
     <button type="button" role="tab" :class="{ 'is-on': tab==='notifications' }" @click="tab='notifications'; history.replaceState(null,'','#notifications')">Notifications</button>
+    <button type="button" role="tab" :class="{ 'is-on': tab==='sessions' }" @click="tab='sessions'; history.replaceState(null,'','#sessions')">Connected apps</button>
     <button type="button" role="tab" :class="{ 'is-on': tab==='shortcuts' }" @click="tab='shortcuts'; history.replaceState(null,'','#shortcuts')">Keyboard shortcuts</button>
   </div>
 
@@ -69,6 +70,28 @@
           <label class="sw"><input type="checkbox" {% if k.enabled %}checked{% endif %} {% if k.locked %}disabled{% endif %} data-kind="{{ k.kind }}" aria-label="{{ k.label }}"><span class="sw-track"></span></label></li>
         {% endfor %}
       </ul>
+    </div>
+  </section>
+
+  <section x-show="tab==='sessions'" class="pf-pane" style="display:none;max-width:760px">
+    <div class="card-flush pf-card">
+      <h2>Connected apps</h2>
+      <p class="sub" style="margin-bottom:6px">Apps signed in as you, like Server Operator and the DSR tool. Sign one out if you do not recognise it or lost a device. Each sign-in lasts 30 days.</p>
+      <table class="tbl">
+        <thead><tr><th>App</th><th>Signed in</th><th>Last used</th><th>From</th><th>Ends</th><th></th></tr></thead>
+        <tbody>
+        {% for t in tokens %}
+        <tr>
+          <td>{{ t.client_id }}</td>
+          <td>{{ t.created_at|date:"j M Y" }}</td>
+          <td>{% if t.last_used_at %}<span title="{{ t.last_used_at|date:'j M Y, g:i A' }}">{{ t.last_used_at|timesince }} ago</span>{% else %}Never{% endif %}</td>
+          <td>{{ t.last_used_ip|default:"-" }}</td>
+          <td>{{ t.expires_at|date:"j M Y"|default:"-" }}</td>
+          <td class="c"><form method="post" action="{% url 'accounts:token_revoke' pk=t.pk %}" data-confirm="Sign this app out?" data-confirm-text="It will need to sign in again." data-confirm-label="Sign out">{% csrf_token %}<button class="btn btn-sm">Sign out</button></form></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="hm-empty">No app is signed in as you.</td></tr>{% endfor %}
+        </tbody>
+      </table>
     </div>
   </section>
 

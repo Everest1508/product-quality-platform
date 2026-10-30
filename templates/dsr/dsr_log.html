@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load icon_tags dsr_tags %}
+{% load icon_tags dsr_tags text_tags %}
 
 {% block title %}Daily Status Report — PQ Platform{% endblock %}
 
@@ -95,9 +95,10 @@
           <td>
             <div class="task task-clamp"><span class="clamp-2" title="{{ e.task_name }}">{% if e.ticket %}<a href="{% url 'tickets:ticket_detail' pk=e.ticket_id %}">{{ e.task_name }}</a>{% else %}{{ e.task_name }}{% endif %}</span>
               {% if e.is_auto_logged %}<span class="bdg bdg-blue" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
-              {% if e.source %}<span class="bdg bdg-outline" title="Submitted through the DSR MCP from {{ e.source }}">via MCP</span>{% endif %}</div>
+              {% if e.source %}<span class="bdg bdg-outline" title="Submitted through the DSR MCP from {{ e.source }}">via MCP</span>{% endif %}
+              {% if e.unverified %}<span class="bdg bdg-orange" title="Typed in by hand through the DSR tool, not read from git or a ticket. Worth a look.">Unverified</span>{% endif %}</div>
             {% if e.elapsed %}<p class="sub">Created {{ e.created_time|date:"j M H:i" }} → completed {{ e.completed_time|date:"j M H:i" }} · open for <b>{{ e.elapsed }}</b>{% if e.needs_time %} (not counted){% endif %}</p>{% endif %}
-            {% if e.notes %}<p class="sub">{{ e.notes }}</p>{% endif %}
+            {% if e.notes %}<p class="sub" style="overflow-wrap:anywhere">{{ e.notes|linkify }}</p>{% endif %}
           </td>
           <td style="white-space:nowrap">{% if e.product %}{{ e.product.name }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
           <td style="white-space:nowrap">{{ e.get_category_display }}</td>

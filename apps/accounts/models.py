@@ -2,6 +2,7 @@ import hashlib
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -135,6 +136,8 @@ class ExternalAccessToken(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
+    last_used_ip = models.GenericIPAddressField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -146,16 +149,20 @@ class ExternalAccessToken(models.Model):
     def create_token(cls, user, client_id="serop"):
         raw_token = secrets.token_hex(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        obj = cls.objects.create(user=user, client_id=client_id, token_hash=token_hash)
+        expires_at = timezone.now() + timedelta(days=settings.EXTERNAL_TOKEN_LIFETIME_DAYS)
+        obj = cls.objects.create(user=user, client_id=client_id, token_hash=token_hash, expires_at=expires_at)
         return obj, raw_token
 
     @classmethod
-    def validate(cls, raw_token):
+    def validate(cls, raw_token, ip=None):
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         try:
             obj = cls.objects.select_related("user").get(token_hash=token_hash, revoked_at__isnull=True)
         except cls.DoesNotExist:
             return None
-        obj.last_used_at = timezone.now()
-        obj.save(update_fields=["last_used_at"])
+        now = timezone.now()
+        if obj.expires_at and obj.expires_at <= now:
+            return None
+        obj.last_used_at, obj.last_used_ip = now, ip or None
+        obj.save(update_fields=["last_used_at", "last_used_ip"])
         return obj

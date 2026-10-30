@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load icon_tags %}
+{% load icon_tags text_tags %}
 
 {% block title %}{{ ticket.key }} — PQ Platform{% endblock %}
 
@@ -38,7 +38,7 @@
 
   <div class="td-sec-head"><h2>Description</h2>{% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}</div>
   <div class="card-flush" style="padding:18px 20px">
-    {% if ticket.description %}<div style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px">{{ ticket.description }}</div>{% else %}<p style="color:var(--muted);font-size:13.5px">No description.</p>{% endif %}
+    {% if ticket.description %}<div style="overflow-wrap:anywhere;font-size:13.5px">{{ ticket.description|linkify }}</div>{% else %}<p style="color:var(--muted);font-size:13.5px">No description.</p>{% endif %}
     {% if ticket.linked_error_group %}
       <p style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px"><span style="color:var(--muted)">Linked error: </span>
       {% if ticket.product %}<a style="color:var(--accent)" href="{% url 'products:product_error_detail' pk=ticket.product.pk error_pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>

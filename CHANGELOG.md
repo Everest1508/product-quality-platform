@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.59.0] "Kiskadee" — 2026-10-29 · safer DSR filing, and links you can click
+
+> In short: the DSR tool can only file and change your own entries and now flags hand-typed ones for review, connected apps sign in for 30 days and can be signed out from your profile, and web links in DSR notes and ticket descriptions are clickable.
+
+### New
+
+- **A Connected apps tab on your profile.** It lists the apps signed in as you, when each was last used and from where, and lets you sign any of them out.
+- **Unverified badge on DSR entries.** Entries typed in by hand through the DSR tool are marked so a manager can look them over.
+- **Web links in DSR notes and ticket descriptions are clickable.** A list of commit links now opens each commit in a new tab.
+
+### Better
+
+- **Connected apps sign in for 30 days.** After that the app asks you to sign in again.
+- **DSR entries have sensible limits.** One entry cannot be more than 12 hours, and work taken from git or tickets has to fit the hours you were punched in.
+
+### Security
+
+- **Nobody can change another person's DSR through the DSR tool.** It now refuses with a clear message.
+
 ## [1.58.0] "Hawfinch" — 2026-10-29 · team attendance you can read, and pay by the cycle
 
 > In short: Team Attendance is easier to read and lets you look at any past day, expenses follow the 27th-to-26th pay cycle, and salary is worked out a new way.

@@ -5,6 +5,9 @@ window, hours cap, product access) is applied here by reusing the same form and
 service code. A token only works here if it was issued to client_id "dsr-mcp".
 """
 from datetime import datetime
+from decimal import Decimal
+
+from django.conf import settings
 
 from django.utils import timezone
 from rest_framework import status
@@ -37,7 +40,7 @@ class DSRTokenAuthentication(BaseAuthentication):
         header = request.headers.get("Authorization", "")
         if not header.startswith("Bearer ") or not header[7:].strip():
             raise AuthenticationFailed("Missing or invalid Authorization header. Use: Bearer <token>")
-        token = ExternalAccessToken.validate(header[7:].strip())
+        token = ExternalAccessToken.validate(header[7:].strip(), ip=request.META.get("REMOTE_ADDR"))
         if not token or token.client_id != CLIENT_ID:
             raise AuthenticationFailed("Invalid or revoked token.")
         return (token.user, token)
@@ -82,6 +85,7 @@ def _entry(e):
         "notes": e.notes,
         "source": e.source,
         "source_id": e.source_id,
+        "unverified": e.unverified,
         "is_auto_logged": e.is_auto_logged,
     }
 
@@ -173,6 +177,29 @@ class ActivitiesView(DSRAPIView):
         } for r in rows])
 
 
+def _check_hours(user, company, day, hours, source, exclude_pk=None):
+    """An error message when these hours are not believable, else None.
+
+    One entry may not claim more than DSR_MAX_ENTRY_HOURS. Entries that say they came from git, a ticket
+    and so on must also fit the day's punch card (plus a little slack); typed-in ("manual") entries are
+    flagged `unverified` for a manager instead. A day with no punch card has nothing to compare with.
+    """
+    if hours > settings.DSR_MAX_ENTRY_HOURS:
+        return f"One entry cannot be more than {settings.DSR_MAX_ENTRY_HOURS} hours."
+    if source == "manual":
+        return None
+    att = _attendance(company, user, day)
+    if att is None:
+        return None
+    others = DSREntry.objects.filter(company=company, user=user, date=day).exclude(pk=exclude_pk)
+    total = sum((e.hours_spent for e in others), Decimal(0)) + hours
+    allowed = Decimal(att["net_minutes"] + settings.DSR_ATTENDANCE_TOLERANCE_MINUTES) / 60
+    if total > allowed:
+        return (f"That brings the day to {total.quantize(Decimal('0.01'))}h, more than the {att['net_minutes'] / 60:.1f}h "
+                "you were punched in. Lower the time, or check your attendance.")
+    return None
+
+
 def _form_data(body, entry=None):
     """The posted fields, falling back to the stored entry so a PUT can send only what changed."""
     keep = {
@@ -199,7 +226,8 @@ class DSRCreateView(DSRAPIView):
                 if str(body["ticket"]).isdigit() else None
             if ticket is None:
                 return Response({"error": "Unknown ticket."}, status=400)
-        source, source_id = str(body.get("source", ""))[:32], str(body.get("source_id", ""))[:128]
+        # Every entry records where it came from; one that does not say is hand-typed.
+        source, source_id = (str(body.get("source") or "manual").strip() or "manual")[:32], str(body.get("source_id", ""))[:128]
 
         mine = DSREntry.objects.filter(company=self.company, user=request.user, date=day)
         task = str(body.get("task_name", "")).strip()
@@ -221,6 +249,9 @@ class DSRCreateView(DSRAPIView):
         form = DSREntryForm(data, products=products)
         if not form.is_valid():
             return Response({"error": "Invalid entry.", "fields": form.errors.get_json_data()}, status=400)
+        problem = _check_hours(request.user, self.company, day, form.cleaned_data["hours_spent"], source)
+        if problem:
+            return Response({"error": problem, "fields": {"hours_spent": problem}}, status=400)
         entry = form.save(commit=False)
         entry.company, entry.user, entry.date = self.company, request.user, day
         entry.ticket, entry.source, entry.source_id = ticket, source, source_id
@@ -231,10 +262,12 @@ class DSRCreateView(DSRAPIView):
 
 class DSRDetailView(DSRAPIView):
     def put(self, request, pk):
-        # Own entries only: a missing entry and someone else's both answer 404.
-        entry = DSREntry.objects.filter(pk=pk, company=self.company, user=request.user).first()
+        entry = DSREntry.objects.filter(pk=pk, company=self.company).first()
         if entry is None:
             return Response({"error": "Not found."}, status=404)
+        # The token decides who you are; nobody changes another person's DSR through it, managers included.
+        if entry.user_id != request.user.pk:
+            return Response({"error": "You can only change your own DSR entries."}, status=403)
         can_edit, reason = submission_window(entry.date, _is_privileged(request.user, self.company))
         if not can_edit:
             return Response({"error": reason}, status=403)
@@ -244,6 +277,11 @@ class DSRDetailView(DSRAPIView):
         )
         if not form.is_valid():
             return Response({"error": "Invalid entry.", "fields": form.errors.get_json_data()}, status=400)
+        problem = _check_hours(
+            request.user, self.company, entry.date, form.cleaned_data["hours_spent"], entry.source, exclude_pk=entry.pk
+        )
+        if problem:
+            return Response({"error": problem, "fields": {"hours_spent": problem}}, status=400)
         form.save()
         return Response(_entry(entry))
 

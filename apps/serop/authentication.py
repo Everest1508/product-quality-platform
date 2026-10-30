@@ -19,7 +19,7 @@ class ExternalTokenAuthentication(BaseAuthentication):
         if not raw_token:
             raise AuthenticationFailed("Empty token.")
 
-        token_obj = ExternalAccessToken.validate(raw_token)
+        token_obj = ExternalAccessToken.validate(raw_token, ip=request.META.get("REMOTE_ADDR"))
         if not token_obj:
             raise AuthenticationFailed("Invalid or revoked token.")
 

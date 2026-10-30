@@ -90,6 +90,11 @@ class DSREntry(models.Model):
         return f"{self.user.username} - {self.date} - {self.task_name}"
 
     @property
+    def unverified(self):
+        """Typed in by hand through the MCP rather than read from git or a ticket, so a manager should look at it."""
+        return self.source == "manual"
+
+    @property
     def needs_time(self):
         """An auto-logged long ticket whose worked time has not been entered yet."""
         return self.is_auto_logged and self.elapsed_hours is not None and self.hours_spent == 0

@@ -15,6 +15,7 @@ urlpatterns = [
     path("team/<int:pk>/edit/", views.TeamEditView.as_view(), name="team_edit"),
     path("team/<int:pk>/remove/", views.TeamRemoveView.as_view(), name="team_remove"),
     path("profile/", views.ProfileView.as_view(), name="profile"),
+    path("profile/apps/<int:pk>/revoke/", views.TokenRevokeView.as_view(), name="token_revoke"),
     path("profile/notifications/", views.NotificationSettingView.as_view(), name="notification_setting"),
     path("team/<int:pk>/", views.TeamMemberView.as_view(), name="team_member"),
     path("oauth/authorize/", views.OAuthAuthorizeView.as_view(), name="oauth_authorize"),

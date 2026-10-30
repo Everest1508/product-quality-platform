@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load dropdown_tags %}
+{% load dropdown_tags text_tags %}
 {% block title %}{{ ticket.title }} — {{ product.name }}{% endblock %}
 {% block content %}
 <nav class="breadcrumbs">
@@ -40,7 +40,7 @@
       </span>
       <span class="prio {{ ticket.priority }}"><span class="bar"></span>{{ ticket.get_priority_display }}</span>
     </div>
-    {% if ticket.description %}<div class="text-sm mb-4">{{ ticket.description|linebreaksbr }}</div>{% endif %}
+    {% if ticket.description %}<div class="text-sm mb-4">{{ ticket.description|linkify }}</div>{% endif %}
     <div class="text-sm text-muted mb-4">Type: {{ ticket.get_ticket_type_display }}</div>
     <div class="text-sm text-muted mb-4">Created <span title="{{ ticket.created_at|date:'M j, Y, g:i A' }}">{{ ticket.created_at|timesince }} ago</span></div>
     <div class="text-sm text-muted mb-4">Updated <span title="{{ ticket.updated_at|date:'M j, Y, g:i A' }}">{{ ticket.updated_at|timesince }} ago</span></div>

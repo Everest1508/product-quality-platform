@@ -152,7 +152,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.58.0")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.59.0")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth
@@ -163,6 +163,12 @@ LOGOUT_REDIRECT_URL = "/login/"
 
 # The active workspace is stored in the session under this key.
 ACTIVE_COMPANY_SESSION_KEY = "active_company_id"
+
+# How long an OAuth bearer token (Serop, DSR MCP) works before the person signs in again.
+EXTERNAL_TOKEN_LIFETIME_DAYS = 30
+# A DSR entry's single-entry cap, and how far past the punch card a day's non-manual entries may run.
+DSR_MAX_ENTRY_HOURS = 12
+DSR_ATTENDANCE_TOLERANCE_MINUTES = 30
 
 # django-allauth
 SITE_ID = 1

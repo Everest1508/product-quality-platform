@@ -1,4 +1,4 @@
-{% load dropdown_tags time_tags %}{% comment %}
+{% load dropdown_tags time_tags text_tags %}{% comment %}
 One table row. It is a form (a <form> cannot wrap a <tr>), laid out by CSS grid to
 line up with the header row in _dsr_table.html, so each row keeps its own radio
 groups: radios that share a name and have no form are one group for the whole
@@ -18,11 +18,12 @@ page, so choosing a category on one row cleared it on every other row.
       {% endif %}
       {% if entry.is_auto_logged %}<span class="dsr-tag auto" title="Added automatically when the ticket was resolved">Auto</span>{% endif %}
       {% if entry.source %}<span class="dsr-tag mcp" title="Submitted through the DSR MCP from {{ entry.source }}{% if entry.source_id %} ({{ entry.source_id }}){% endif %}">via MCP</span>{% endif %}
+      {% if entry.unverified %}<span class="dsr-tag" title="Typed in by hand, not read from git or a ticket">Unverified</span>{% endif %}
     </div>
     {% if can_submit %}
     <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Add a note" class="sheet-input dsr-note" aria-label="Notes">
     {% elif entry.notes %}
-    <span class="dsr-note-text">{{ entry.notes }}</span>
+    <span class="dsr-note-text" style="white-space:normal;overflow-wrap:anywhere">{{ entry.notes|linkify }}</span>
     {% endif %}
   </div>
   <div role="cell" class="dsr-c" data-label="Project">
