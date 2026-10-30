@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.61.1] "Mockingbird" — 2026-10-30 · tab strips and stat cards stay full size
+
+> In short: the tabs and summary cards at the top of a page no longer get squashed on a page taller than the window, and the lines in the payroll calculation window line up.
+
+### Fixed
+
+- **Tabs and summary cards no longer get squashed.** On a long page, such as a payroll run with the out-of-date notice, the tab strip and the numbers under it were cut to half height.
+- **The lines in the payroll calculation window are unbroken.** The dividers between the label, the formula and the amount now line up across each row.
+
 ## [1.61.0] "Magpie" — 2026-10-30 · lists that work on a phone, and a calmer What's new
 
 > In short: ticket and error lists turn into easy cards on a phone, project rows use the full width, the payroll calculation window is wide and short, and What's new has a release list beside the details.

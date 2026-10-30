@@ -685,7 +685,7 @@ dialog.calc{width:min(960px,calc(100vw - 32px));max-width:none;}
 .calc-led{display:grid;grid-template-columns:auto minmax(0,1fr) auto;font-size:14px;font-variant-numeric:tabular-nums;}
 .calc-led>*{padding:7px 0;border-bottom:1px solid var(--border);}
 .calc-led .k{color:var(--muted);padding-right:16px;}
-.calc-led .f{padding-right:14px;color:var(--muted);font-size:12.5px;align-self:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.calc-led .f{padding-right:14px;color:var(--muted);font-size:12.5px;display:flex;align-items:center;min-width:0;white-space:nowrap;}
 .calc-led .v{text-align:right;font-weight:600;}
 .calc-led .neg{color:var(--red);}.calc-led .pos{color:var(--green);}
 .calc-led .tot{font-weight:700;border-bottom:0;border-top:2px solid var(--border-strong);}

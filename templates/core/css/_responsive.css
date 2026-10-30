@@ -16,6 +16,12 @@ img,svg,video{max-width:100%;}
   .kanban-board{height:calc(100dvh - 188px);}
 }
 
+/* .main is a fixed-height flex column that scrolls. Its children with overflow set (the tab strip,
+ * the stat strips) were allowed to shrink once a page got taller than the window, so they showed
+ * squashed. Keep every top-level block its natural height; :where() keeps this at zero
+ * specificity, so a block that sets its own flex (a board that fills the rest) still wins. */
+:where(.main>*){flex-shrink:0;}
+
 /* Wide screens: keep line lengths and card rows readable instead of stretching
  * to the full width of a 4K monitor. Boards and tables still scroll inside. */
 @media (min-width:1700px){
