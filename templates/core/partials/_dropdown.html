@@ -23,6 +23,11 @@ is already correct on first paint.
       </span>
     </summary>
     <div class="dd-menu">
+      {% if searchable %}
+      <div class="dd-search">
+        <input type="search" data-dd-search placeholder="Search…" aria-label="Search {{ field_label }}" autocomplete="off">
+      </div>
+      {% endif %}
       {% for value, text in options %}
       <label class="dd-opt" title="{{ text }}">
         <input type="{{ input_type }}" name="{{ name }}" value="{{ value }}" data-label="{{ text }}"{% if value in selected %} checked{% endif %}>
@@ -32,6 +37,7 @@ is already correct on first paint.
         <span class="dd-text">{{ text }}</span>
       </label>
       {% endfor %}
+      {% if searchable %}<div class="dd-none" hidden>Nothing matches</div>{% endif %}
     </div>
   </details>
 </div>

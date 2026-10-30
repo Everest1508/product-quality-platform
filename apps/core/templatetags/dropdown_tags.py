@@ -2,6 +2,8 @@ from django import template
 
 register = template.Library()
 
+SEARCH_AFTER = 6
+
 
 @register.filter
 def opts(spec):
@@ -63,7 +65,7 @@ def _current_label(options, selected, placeholder):
 
 
 @register.inclusion_tag("core/partials/_dropdown.html")
-def dropdown(name, choices, current="", placeholder="All", label="", multiple=False, empty_value=None, navigate=False, submit=False, trigger_class="", extra_choices=None):
+def dropdown(name, choices, current="", placeholder="All", label="", multiple=False, empty_value=None, navigate=False, submit=False, trigger_class="", extra_choices=None, searchable=None):
     """Render one choice control in the house `<details>` idiom.
 
     Replaces a native `<select>` while keeping the two things a hand-rolled
@@ -84,6 +86,9 @@ def dropdown(name, choices, current="", placeholder="All", label="", multiple=Fa
     to me" / "Unassigned" followed by the company's members. A template cannot
     concatenate two iterables into one `choices` argument, and duplicating a
     context block per view to achieve it is worse than one parameter.
+
+    `searchable` puts a filter box at the top of the menu. Left as None it turns
+    itself on once the list is long enough that scanning it is slower than typing.
     """
     options = [(str(v), str(text)) for v, text in choices]
     if extra_choices:
@@ -105,4 +110,5 @@ def dropdown(name, choices, current="", placeholder="All", label="", multiple=Fa
         "navigate": navigate,
         "submit": submit,
         "trigger_class": trigger_class,
+        "searchable": len(options) > SEARCH_AFTER if searchable is None else searchable,
     }

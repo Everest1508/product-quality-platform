@@ -153,6 +153,11 @@
     {% endif %}
   </div>
   <div class="dlg-foot">
+    {% if not run.is_locked %}
+    <form method="post" action="{% url 'payroll:payslip_delete' payslip.pk %}" data-confirm="Delete {{ payslip.user.get_full_name|default:payslip.user.username }}'s payslip? You can create it again by generating the cycle." style="margin-right:auto;">
+      {% csrf_token %}<button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+    {% endif %}
     <a href="{% url 'payroll:payslip' payslip.pk %}" class="btn">Open payslip</a>
     <form method="dialog"><button class="btn btn-primary">Close</button></form>
   </div>

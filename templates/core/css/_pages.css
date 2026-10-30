@@ -1121,3 +1121,10 @@ html.sidebar-collapsed .nav-fold.is-open{background:transparent;border:0;padding
 html.sidebar-collapsed .nav-fold .fold-inner .side-item{padding:7px 10px;}
 html.sidebar-collapsed .nav-fold .fold-head > .ic:first-child{width:17px;height:17px;padding:0;background:transparent;color:inherit;}
 html.sidebar-collapsed .nav-fold.is-open .fold-head > .ic:first-child,html.sidebar-collapsed .nav-fold:has(.fold-inner .side-item.active) .fold-head > .ic:first-child{background:transparent;color:inherit;}
+
+/* New and edit ticket: choice controls fill their column; the bar of buttons is opaque so nothing reads through it. */
+.tk-attrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 16px;}
+.tk-attrs .tk-wide{grid-column:1/-1;}
+.form-card .dd,.form-card .dd-wrap{display:block;width:100%;}
+.form-card .dd-btn{max-width:none;width:100%;height:38px;}
+.form-card .form-actions{background:var(--bg);backdrop-filter:none;}

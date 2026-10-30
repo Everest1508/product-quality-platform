@@ -293,13 +293,26 @@ A silent success is a bug. The action worked and the screen says nothing, which 
 
 Project-level `templates/` (plus `APP_DIRS: true`). `core/base.html` is the app shell; the sidebar is `core/_sidebar.html`, fed by the `product_context` and `workspace_context` processors in `apps/core/context_processors.py` (these attach `product` + per-product counts, `nav_products`, and company-wide open counts). Partials are prefixed `_` and live in `<app>/partials/`. For an htmx request (`HX-Request: true` header) a view returns a `partials/` fragment instead of the full page.
 
-- **There is no native `<select>` in `templates/` any more.** Every choice control is `{% dropdown %}` (`apps/core/templatetags/dropdown_tags.py` → `templates/core/partials/_dropdown.html`): a native `<details>` holding radios/checkboxes, styled by `.dd-*` in the single `<style>` block in `base.html`. It is the same idiom as the leave icon picker, and it keeps the two things a hand-rolled dropdown usually loses — the value posts with **no JavaScript**, and a change still fires a native `change`, so `hx-trigger="change"` and the HTMX quick-edit forms work untouched. **Do not add a `<select>` back.** The one exception is the assignee multiselect, which is already a richer custom dropdown and keeps a `display:none` `<select>` solely to carry the form value.
+- **There is no native `<select>` in `templates/` any more.** Every choice control is `{% dropdown %}` (`apps/core/templatetags/dropdown_tags.py` → `templates/core/partials/_dropdown.html`): a native `<details>` holding radios/checkboxes, styled by `.dd-*` in the single `<style>` block in `base.html`. It is the same idiom as the leave icon picker, and it keeps the two things a hand-rolled dropdown usually loses — the value posts with **no JavaScript**, and a change still fires a native `change`, so `hx-trigger="change"` and the HTMX quick-edit forms work untouched. **Do not add a `<select>` back.** The one exception is the `multiselect` component, which keeps a `display:none` `<select multiple>` solely to carry the form value.
   - **Mode is explicit**, and the three are not interchangeable: `navigate=True` (a filter outside a form, reloads via `buildUrl`), `submit=True` (posts its own form on change), neither (an ordinary form field). Choosing wrongly turns a form field into a page reload.
   - **`empty_value` is not decoration.** An unchecked radio group submits *nothing*, so a filter the user never touches would vanish from the query string instead of arriving as `""`. Any filter with an "everything" state needs `empty_value=""`. Two failure modes to check for when adding one: a spec that already starts with `":All …"` *and* `empty_value=""` renders the option **twice**, and a queryset filter with neither has **no way back to "all"** once chosen.
   - **Replacing a `<select>` with a hand-written list is how options go missing.** The ticket assigned filter kept only `me`/`unassigned` while `TicketListView` still resolved `assignees__id=<pk>`; see `extra_choices` for the fix. When converting, diff the *option set*, not just the markup.
   - **`obj_pairs` calls a callable label.** `get_full_name` is a method, and `str()` on it renders `<bound method …>`. `obj_pairs` calls it, falling back to `username` when a member has no full name. Keep it that way.
   - **`{% extends %}` must stay the first tag** in a template. `{% load dropdown_tags %}` goes *after* it; prepending is a `TemplateSyntaxError`.
   - A dropdown names itself on its `<summary>` (`aria-label`), and its options are wrapped in implicit `<label>`s — so there is **no `<label for>` and no `id`**. Tests that asserted "every input has a matching label" must accept the summary's `aria-label` instead; do not weaken them to pass.
+
+### Components — build once, reuse
+
+Reusable UI lives in **`templates/components/`**, one template per component, each with a tag in `apps/core/templatetags/component_tags.py` (load it with `{% load component_tags %}`). Before building a control or form row by hand, check this list; if it is here, use it, and if you need a new shape of it, extend it rather than copying it.
+
+| Component | Use | What it is |
+|---|---|---|
+| `{% dropdown %}` | one choice, or several as a plain list | `templates/core/partials/_dropdown.html`, tag in `dropdown_tags.py`. Shows a search box once there are more than 6 options (`searchable=True/False` overrides). |
+| `{% multiselect name choices current %}` | several values with chips and search | `components/multiselect.html`. A hidden `<select multiple>` posts the value; `auto_submit=True` posts the surrounding form on each change. |
+| `{% assignee_picker %}` | ticket assignees | `multiselect` fed from the page context (`assignees_qs`, `form`, `selected_ids`, `assignee_selected_ids`). |
+| `{% field "Label" for_id=… hint=… error=… %}…{% endfield %}` | label + control + hint + error | `components/field.html`; use it for every form row so spacing and error text stay the same. |
+
+Rules for a component: its CSS goes in `templates/core/css/_ui.css` (the `ui` layer), its Alpine behaviour is an `Alpine.data(...)` in `core/base.html`, and it carries **no inline `<style>` or `<script>`** (the old assignee picker had both and looked different from every other dropdown). Colours come from tokens. Add a row to the table above in the same change, and show the new component on a real page before calling it done.
 
 ### Serop integration (`apps/serop/`, `apps/accounts` OAuth views)
 

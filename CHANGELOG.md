@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.63.0] "Raven" — 2026-10-30 · a clearer payslip, delete by mistake, no late marks for some people
+
+> In short: a payslip now reads in two columns instead of one long list, an open payslip can be deleted, and chosen people are never marked late.
+
+### New
+
+- **Delete a payslip made by mistake.** Open the payslip, or click the person in a run, and press Delete. It only works while the run is open; a locked run keeps what was issued.
+
+- **Exempt someone from late marks.** Edit a team member and tick "Exempt from late marks". They are never shown as late and never charged for it, in attendance and on payslips.
+
+- **Ticket dropdowns you can search.** Long lists such as products now have a search box, and the assignee picker looks like the other dropdowns.
+
+### Better
+
+- **The payslip is laid out side by side.** The sum is on the left and the late arrivals and repaid expenses are on the right, with the net pay at the top. Your own payslip looks the same.
+
+- **The new ticket form is easier to read.** Type, priority and product sit in one row and fill their space.
+
 ## [1.62.0] "Petrel" — 2026-10-30 · a bell and a count for new website leads
 
 > In short: owners and admins now get a notification when someone fills in your website form, and the sidebar counts the leads they have not seen.

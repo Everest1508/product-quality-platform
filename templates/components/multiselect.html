@@ -1,0 +1,32 @@
+{% comment %}
+Several-choice picker with chips and a search box. Use through {% multiselect %} or {% assignee_picker %}
+(apps/core/templatetags/component_tags.py); the behaviour is Alpine.data('multiselect') in core/base.html and the
+look is .ms-* in core/css/_ui.css.
+{% endcomment %}
+<div class="ms" x-data="multiselect({ autoSubmit: {% if auto_submit %}true{% else %}false{% endif %} })" @click.outside="open = false" @keydown.escape="open = false">
+  <select name="{{ name }}" multiple class="ms-native" x-ref="select">
+    {% for value, text, picked in options %}<option value="{{ value }}"{% if picked %} selected{% endif %}>{{ text }}</option>{% endfor %}
+  </select>
+  <div class="ms-trigger" :class="{ 'open': open }" @click="toggleOpen()" role="button" tabindex="0"
+       @keydown.enter.prevent="toggleOpen()" @keydown.space.prevent="toggleOpen()"
+       aria-label="{{ label }}" aria-haspopup="listbox" :aria-expanded="open ? 'true' : 'false'">
+    <div class="ms-chips" x-show="selected.size > 0" x-cloak>
+      <template x-for="opt in selectedOptions" :key="opt.id">
+        <span class="ms-chip"><span x-text="opt.name"></span>
+          <button type="button" @click.stop="toggle(opt.id)" :aria-label="'Remove ' + opt.name">×</button></span>
+      </template>
+    </div>
+    <span class="ms-placeholder" x-show="selected.size === 0">{{ placeholder }}</span>
+    <svg class="ms-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </div>
+  <div class="ms-panel" x-show="open" x-cloak>
+    <div class="dd-search"><input type="search" x-ref="search" x-model="search" placeholder="Search…" aria-label="Search {{ label }}" autocomplete="off" @keydown.enter.prevent="pickFirst()"></div>
+    <template x-for="opt in filtered" :key="opt.id">
+      <label class="dd-opt" :class="{ 'on': isSelected(opt.id) }" @click.prevent="toggle(opt.id)">
+        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg></span>
+        <span class="dd-text" x-text="opt.name"></span>
+      </label>
+    </template>
+    <div class="dd-none" x-show="filtered.length === 0">Nothing matches</div>
+  </div>
+</div>

@@ -10,6 +10,7 @@ urlpatterns = [
     path("runs/<int:pk>/", views.PayrollRunDetailView.as_view(), name="run_detail"),
     path("runs/<int:pk>/lock/", views.PayrollRunLockView.as_view(), name="run_lock"),
     path("payslips/<int:pk>/", views.PayslipDetailView.as_view(), name="payslip"),
+    path("payslips/<int:pk>/delete/", views.PayslipDeleteView.as_view(), name="payslip_delete"),
     # "mine" comes first so a payslip pk cannot be probed through the admin
     # route, and so the self-scoped pair reads as the default entry point.
     path("me/", views.MyPayslipListView.as_view(), name="my_payslips"),

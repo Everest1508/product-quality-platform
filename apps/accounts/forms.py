@@ -201,6 +201,11 @@ class TeamEditForm(forms.Form):
         widget=forms.CheckboxInput(),
         label="Can approve leave",
     )
+    late_exempt = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(),
+        label="Exempt from late marks",
+    )
 
     def __init__(self, *args, membership=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -209,6 +214,7 @@ class TeamEditForm(forms.Form):
         self.fields["is_leave_approver"].initial = (
             membership.is_leave_approver if membership else False
         )
+        self.fields["late_exempt"].initial = membership.late_exempt if membership else False
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower().strip()
@@ -230,7 +236,8 @@ class TeamEditForm(forms.Form):
         self.membership.is_leave_approver = self.cleaned_data.get(
             "is_leave_approver", False
         )
-        self.membership.save(update_fields=["role", "is_leave_approver"])
+        self.membership.late_exempt = self.cleaned_data.get("late_exempt", False)
+        self.membership.save(update_fields=["role", "is_leave_approver", "late_exempt"])
         return self.membership
 
 

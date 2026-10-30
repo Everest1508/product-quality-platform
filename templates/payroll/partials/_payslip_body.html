@@ -1,0 +1,48 @@
+{% comment %}
+One payslip laid out in two columns: the sum on the left, the late arrivals and repaid expenses on the right.
+Needs: payslip, c (views._calc_lines); mine=True words the headings for the employee. Shared by the admin and the "my payslip" pages.
+{% endcomment %}
+{% with cur=payslip.currency %}
+<div class="card slip">
+  <div class="slip-top">
+    <div>
+      <h2>{{ payslip.user.get_full_name|default:payslip.user.username }}</h2>
+      <p>{{ payslip.run.label }}{% if c.joined_on %} · joined {{ c.joined_on }}{% endif %}</p>
+    </div>
+    <div class="calc-net"><b>{{ cur }} {{ payslip.gross }}</b><span>net pay</span></div>
+  </div>
+  <div class="calc-cols">
+    <div>
+      <h3 class="calc-h">How it adds up</h3>
+      <div class="calc-led">
+        {% if c.monthly %}<span class="k">Day rate</span><span class="f">{{ c.monthly }} ÷ {{ c.cycle_days }} days</span><span class="v">{{ payslip.daily_rate }}</span>
+        {% else %}<span class="k">Day rate</span><span class="f"></span><span class="v">{{ payslip.daily_rate }}</span>{% endif %}
+        <span class="k">Days paid</span><span class="f">{% if c.joined_on %}from joining{% else %}whole cycle{% endif %}</span><span class="v">{{ c.paid_days }}</span>
+        <span class="k">Paid leave</span><span class="f">casual / sick</span><span class="v">{{ payslip.paid_leave_days|floatformat:"-2" }}</span>
+        <span class="k">Unpaid leave</span><span class="f"></span><span class="v{% if payslip.unpaid_leave_days %} neg{% endif %}">{% if payslip.unpaid_leave_days %}−{{ payslip.unpaid_leave_days|floatformat:"-2" }}{% else %}0{% endif %}</span>
+        <span class="k">Late over 1 hour</span><span class="f">{{ c.late_count|floatformat:"-2" }} × ½ day</span><span class="v{% if c.late_days %} neg{% endif %}">{% if c.late_days %}−{{ c.late_days|floatformat:"-2" }}{% else %}0{% endif %}</span>
+        <span class="k"><b>Payable days</b></span><span class="f"></span><span class="v">{{ payslip.payable_days|floatformat:"-2" }}</span>
+        <span class="k">Salary earned</span><span class="f">{% if c.monthly %}{{ c.monthly }} × {{ payslip.payable_days|floatformat:"-2" }} ÷ {{ c.cycle_days }}{% else %}{{ payslip.payable_days|floatformat:"-2" }} × {{ payslip.daily_rate }}{% endif %}</span><span class="v">{{ c.earned }}</span>
+        {% if c.cash %}<span class="k">Late fees</span><span class="f">{% if c.uncapped %}capped from {{ c.uncapped }}{% else %}flat, under 1 hour{% endif %}</span><span class="v neg">−{{ c.cash }}</span>{% endif %}
+        {% if c.back %}<span class="k">Expenses repaid</span><span class="f"></span><span class="v pos">+{{ c.back }}</span>{% endif %}
+        <span class="k tot">Net pay</span><span class="f tot"></span><span class="v tot">{{ payslip.gross }}</span>
+      </div>
+    </div>
+    <div>
+      <h3 class="calc-h">{% if mine %}Your late arrivals{% else %}Late arrivals{% endif %}</h3>
+      {% if c.events %}
+      {% include "payroll/partials/_late_events.html" with events=c.events cur=cur half_value=payslip.half_day_value %}
+      <p class="calc-note">Up to 1 hour late is a flat fee. Over 1 hour costs half a day's pay.</p>
+      {% else %}
+      <p class="calc-note" style="margin:0;">None this cycle.</p>
+      {% endif %}
+      {% if payslip.reimbursement %}
+      <h3 class="calc-h" style="margin-top:22px;">Expenses repaid</h3>
+      <div class="calc-led" style="grid-template-columns:minmax(0,1fr) auto;">
+        {% for r in payslip.breakdown.reimbursements %}<span class="k">{{ r.what }} <span class="text-muted">· {{ r.date }}</span></span><span class="v pos">+{{ r.amount }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endwith %}

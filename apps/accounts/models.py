@@ -60,6 +60,10 @@ class Membership(models.Model):
         default=False,
         help_text="Can approve or reject any employee's leave in this company.",
     )
+    late_exempt = models.BooleanField(
+        default=False,
+        help_text="Never marked late and never charged for it (owners, field staff, flexible hours).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = MembershipManager()

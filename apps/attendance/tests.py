@@ -343,6 +343,18 @@ class TeamViewAccessTest(AttendanceTestBase):
         response = self.client.get(reverse("attendance:team_attendance"))
         self.assertEqual(response.status_code, 200)
 
+    def test_links_out_of_the_team_list_are_not_swapped_into_it(self):
+        """The list is hx-boost'ed into #team-main; a link to another page must opt out, or that
+        page's whole shell (a second sidebar) is rendered inside this one."""
+        self.client.login(username="owner", password="pass1234")
+        for query in ("", "?view=week"):
+            html = self.client.get(reverse("attendance:team_attendance") + query).content.decode()
+            html = html[html.index('id="team-main"'):]
+            tags = re.findall(r'<a [^>]*href="/attendance/(?:\?[^"]*)?"[^>]*>', html)
+            self.assertTrue(tags)
+            for tag in tags:
+                self.assertIn('hx-boost="false"', tag)
+
     def test_developer_cannot_view_team(self):
         self.client.login(username="dev", password="pass1234")
         response = self.client.get(reverse("attendance:team_attendance"))

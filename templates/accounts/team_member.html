@@ -10,7 +10,7 @@
     <span class="avatar pf-avatar">{{ m.user.username.0|upper }}</span>
     <div class="pf-who">
       <h1>{{ m.user.get_full_name|default:m.user.username }}{% if m.user == request.user %} <span style="font-size:13px;font-weight:400;color:var(--muted)">(you)</span>{% endif %}</h1>
-      <p>@{{ m.user.username }} <span class="bdg bdg-blue">{{ m.get_role_display }}</span>{% if m.is_leave_approver %}<span class="bdg bdg-outline">Leave approver</span>{% endif %}
+      <p>@{{ m.user.username }} <span class="bdg bdg-blue">{{ m.get_role_display }}</span>{% if m.is_leave_approver %}<span class="bdg bdg-outline">Leave approver</span>{% endif %}{% if m.late_exempt %}<span class="bdg bdg-outline">No late marks</span>{% endif %}
         {% if streak >= 2 %}<span class="bdg bdg-orange">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span>{% endif %}</p>
       {% if show_email %}<p class="pf-mail">{{ m.user.email }}</p>{% endif %}
     </div>

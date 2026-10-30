@@ -1,0 +1,5 @@
+<div class="form-group">
+  {% if label %}<{% if for_id %}label for="{{ for_id }}"{% else %}span class="dd-label"{% endif %}>{{ label }}{% if hint %} <span class="text-sm text-muted">{{ hint }}</span>{% endif %}</{% if for_id %}label{% else %}span{% endif %}>{% endif %}
+  {{ content }}
+  {% if error %}<p class="field-error">{{ error }}</p>{% endif %}
+</div>

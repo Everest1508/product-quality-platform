@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load dropdown_tags %}
+{% load dropdown_tags component_tags %}
 
 {% block title %}{% if editing %}Edit Ticket {{ ticket.key }}{% else %}New Ticket{% endif %} — PQ Platform{% endblock %}
 
@@ -46,20 +46,17 @@
     
     <div class="form-section">
       <div class="form-section-label">General Information</div>
-      <div class="form-group">
-        <label for="title">Title</label>
+      {% field "Title" for_id="title" error=form.title.errors.0 %}
         <input id="title" type="text" name="title" value="{{ form.title.value|default:'' }}" class="form-input" required placeholder="What needs to be done?" autofocus>
-        {% if form.title.errors %}<p class="field-error">{{ form.title.errors.0 }}</p>{% endif %}
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label for="description">Description</label>
+      {% endfield %}
+      {% field "Description" for_id="description" %}
         <textarea id="description" name="description" class="form-input" rows="4" placeholder="Detailed description of the issue or feature request...">{{ form.description.value|default:'' }}</textarea>
-      </div>
+      {% endfield %}
     </div>
 
     <div class="form-section">
       <div class="form-section-label">Attributes &amp; Context</div>
-      <div class="grid-2">
+      <div class="tk-attrs">
         <div class="form-group">
           <span class="dd-label">Type</span>
           {% dropdown "ticket_type" "bug:Bug|feature:Feature|question:Question"|opts form.ticket_type.value placeholder="Type" label="Type" %}
@@ -68,32 +65,27 @@
           <span class="dd-label">Priority</span>
           {% dropdown "priority" "low:Low|medium:Medium|high:High|critical:Critical"|opts form.priority.value|default:"medium" placeholder="Priority" label="Priority" %}
         </div>
-      </div>
-
-      {% if editing %}
-      <div class="form-group">
-        <span class="dd-label">Status</span>
-        {% dropdown "status" "open:Open|assigned:Assigned|in_progress:In Progress|testing:Testing|resolved:Resolved|closed:Closed"|opts form.status.value placeholder="Status" label="Status" %}
-      </div>
-      {% endif %}
-
-      <div class="form-group" style="margin-bottom:0;">
-        <span class="dd-label">Product</span>
-        {% dropdown "product" form.fields.product.queryset|obj_pairs:"pk:name" form.product.value placeholder="No product (Company-wide)" label="Product" empty_value="" %}
+        {% if editing %}
+        <div class="form-group">
+          <span class="dd-label">Status</span>
+          {% dropdown "status" "open:Open|assigned:Assigned|in_progress:In Progress|testing:Testing|resolved:Resolved|closed:Closed"|opts form.status.value placeholder="Status" label="Status" %}
+        </div>
+        {% endif %}
+        <div class="form-group tk-wide">
+          <span class="dd-label">Product</span>
+          {% dropdown "product" form.fields.product.queryset|obj_pairs:"pk:name" form.product.value placeholder="No product (company-wide)" label="Product" empty_value="" searchable=True %}
+        </div>
       </div>
     </div>
 
     <div class="form-section">
       <div class="form-section-label">Assignment &amp; Schedule</div>
-      <div class="form-group">
-        <label>Assignees</label>
+      {% field "Assignees" %}
         {% include "tickets/partials/_assignee_multiselect.html" %}
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label for="deadline">Deadline <span class="text-sm text-muted">(optional)</span></label>
+      {% endfield %}
+      {% field "Deadline" for_id="deadline" hint="(optional)" error=form.deadline.errors.0 %}
         <input id="deadline" type="datetime-local" name="deadline" value="{{ form.deadline.value|date:'Y-m-d\TH:i' }}" class="form-input">
-        {% if form.deadline.errors %}<p class="field-error">{{ form.deadline.errors.0 }}</p>{% endif %}
-      </div>
+      {% endfield %}
     </div>
 
     <div class="form-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">

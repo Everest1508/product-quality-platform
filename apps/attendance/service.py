@@ -378,6 +378,21 @@ def early_line(minutes, day):
     return EARLY_LINES[day.toordinal() % len(EARLY_LINES)].format(n=minutes)
 
 
+def is_late_exempt(company_id, user_id):
+    """Whether this person is never marked late (`Membership.late_exempt`).
+
+    Checked inside `lateness_for`, so the punch panel, the late label, the penalty and the
+    payslip all agree without each one knowing about it.
+    """
+    from apps.accounts.models import Membership
+
+    if company_id is None or user_id is None:
+        return False
+    return Membership.objects.filter(
+        company_id=company_id, user_id=user_id, late_exempt=True
+    ).exists()
+
+
 def lateness_for(record, shift=None):
     """Minutes late for one attendance row, or 0 when on time.
 
@@ -385,12 +400,16 @@ def lateness_for(record, shift=None):
     never clocked in has no arrival time to be late with, and guessing one
     would silently cost them money.
 
+    Someone marked `late_exempt` is never late.
+
     A weekly off day (Saturday and Sunday unless the company changed them) has
     no start time, so working one is never late. This is where that rule lives:
     `late_penalty_for`, `late_label_for`, the payslip and the punch panel all
     derive from it, so none of them can charge for an off day.
     """
     if record.check_in is None:
+        return 0
+    if is_late_exempt(getattr(record, "company_id", None), getattr(record, "user_id", None)):
         return 0
     shift = shift or shift_for(record.company)
     if shift.is_weekly_off(record.date):

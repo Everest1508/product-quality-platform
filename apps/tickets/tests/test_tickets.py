@@ -422,7 +422,7 @@ class TicketProductAccessTest(TestCase):
 class AssigneeDropdownLabellingTest(TicketViewTest):
     """The assignees picker hides the native select and stands up a div.
 
-    `.assignee-dd__native` is `display:none`, so the `role="button"` trigger is
+    `.ms-native` is `display:none`, so the `role="button"` trigger is
     the control assistive tech actually meets. As a bare interactive div it had
     no accessible name, no `aria-haspopup` and no expansion state, and its
     "remove" chip said the same thing for every assignee.
@@ -430,7 +430,7 @@ class AssigneeDropdownLabellingTest(TicketViewTest):
 
     def trigger(self):
         body = self.client.get(reverse("tickets:ticket_create")).content.decode()
-        start = body.index('class="assignee-dd__trigger"')
+        start = body.index('class="ms-trigger"')
         start = body.rindex("<div", 0, start)
         return body[start : body.index(">", start) + 1]
 
@@ -442,8 +442,8 @@ class AssigneeDropdownLabellingTest(TicketViewTest):
 
     def test_the_search_box_inside_the_panel_is_named(self):
         body = self.client.get(reverse("tickets:ticket_create")).content.decode()
-        panel = body[body.index('class="assignee-dd__panel"') :]
-        search = re.search(r'<input[^>]*class="assignee-dd__search"[^>]*>', panel)
+        panel = body[body.index('class="ms-panel"') :]
+        search = re.search(r'<input[^>]*data-ms-search[^>]*>|<input[^>]*x-ref="search"[^>]*>', panel)
         self.assertIsNotNone(search)
         self.assertIn("aria-label=", search.group(0))
 

@@ -3,7 +3,7 @@
   <div class="lmain">
     <div class="lt"><a href="{% url 'accounts:team_member' pk=membership.pk %}">{{ membership.user.get_full_name|default:membership.user.username }}</a>{% if membership.user == request.user %}<span class="ls" style="font-weight:400;display:inline">(you)</span>{% endif %}
       <span class="bdg {% if membership.role == 'owner' or membership.role == 'admin' %}bdg-blue{% elif membership.role == 'developer' %}bdg-green{% elif membership.role == 'support' %}bdg-orange{% else %}bdg-outline{% endif %}">{{ membership.get_role_display }}</span>
-      {% if membership.is_leave_approver %}<span class="bdg bdg-outline">Leave approver</span>{% endif %}</div>
+      {% if membership.is_leave_approver %}<span class="bdg bdg-outline">Leave approver</span>{% endif %}{% if membership.late_exempt %}<span class="bdg bdg-outline">No late marks</span>{% endif %}</div>
     <p class="ls">{{ membership.user.email }}{% if membership.user.discord_id %} · @{{ membership.user.discord_id }}{% endif %}</p>
   </div>
   <div class="lmetrics"><div><span class="v" style="font-size:13px;font-weight:500">{{ membership.created_at|date:"M j, Y" }}</span><span class="l">Joined</span></div></div>

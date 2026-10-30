@@ -13,82 +13,15 @@
 <div class="head-actions">
   <a href="{% url 'payroll:run_detail' payslip.run.pk %}" class="btn">Back to run</a>
   <button type="button" class="btn" onclick="window.print()">Print</button>
+  {% if not payslip.run.is_locked %}
+  <form method="post" action="{% url 'payroll:payslip_delete' payslip.pk %}" data-confirm="Delete this payslip? You can create it again by generating the cycle.">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+  {% endif %}
 </div>
 {% endblock %}
 
 {% block pay_body %}
-<div class="card" style="padding:22px 24px;max-width:640px;">
-  <dl class="pay-kv">
-    <dt>Employee</dt>
-    <dd class="strong">{{ payslip.user.get_full_name|default:payslip.user.username }}</dd>
-    <dt>Cycle</dt>
-    <dd>{{ payslip.run.label }}</dd>
-    <dt>Daily rate</dt>
-    <dd>{{ payslip.currency }} {{ payslip.daily_rate }}</dd>
-    <dt>Working days</dt>
-    <dd>{{ payslip.working_days }}</dd>
-    <dt>Paid leave <span class="text-muted">(casual / sick)</span></dt>
-    <dd>{{ payslip.paid_leave_days }}</dd>
-    <dt>Unpaid leave</dt>
-    <dd>{% if payslip.unpaid_leave_days %}<span style="color:var(--red);">{{ payslip.unpaid_leave_days }}</span>{% else %}0{% endif %}</dd>
-    {% if payslip.late_penalty or payslip.late_half_days %}
-    <dt>Late arrivals</dt>
-    <dd>
-      <span style="color:var(--red);">
-        {% if payslip.late_half_days %}{{ payslip.late_half_days }} half day(s){% if payslip.late_penalty %}, {% endif %}{% endif %}{% if payslip.late_penalty %}{{ payslip.currency }} {{ payslip.late_penalty }}{% endif %}
-      </span>
-    </dd>
-    {% endif %}
-    <dt>Deduction</dt>
-    <dd style="color:var(--red);">−{{ payslip.currency }} {{ payslip.deduction }}</dd>
-    <dt>Payable days</dt>
-    <dd class="strong">{{ payslip.payable_days }}</dd>
-    {% if payslip.reimbursement %}
-    <dt>Expenses repaid</dt>
-    <dd style="color:var(--green);">+{{ payslip.currency }} {{ payslip.reimbursement }}
-      {% for r in payslip.breakdown.reimbursements %}<span class="sub">{{ r.what }}, {{ r.date }}: {{ r.amount }}</span>{% endfor %}
-    </dd>
-    {% endif %}
-    <div class="rule"></div>
-    <dt class="strong">Net pay</dt>
-    <dd class="strong" style="font-size:18px;color:var(--green);">{{ payslip.currency }} {{ payslip.gross }}</dd>
-  </dl>
-</div>
-
-{% if payslip.breakdown.monthly_salary %}
-<div class="card" style="margin-top:14px;max-width:640px;padding:18px 24px;">
-  <h2 style="font-size:13px;font-weight:600;margin:0 0 10px;">How this was worked out</h2>
-  <dl class="pay-kv">
-    <dt>Monthly salary</dt>
-    <dd>{{ payslip.currency }} {{ payslip.breakdown.monthly_salary }}</dd>
-    <dt>Divided by</dt>
-    <dd>
-      {% if payslip.breakdown.cycle_days %}{{ payslip.breakdown.cycle_days }} days in the cycle
-      <span class="sub">Every day counts, Sat, Sun and holidays included</span>{% else %}{{ payslip.breakdown.working_days }} working days
-      <span class="sub">Sat, Sun and holidays are not working days</span>{% endif %}
-    </dd>
-    <dt>Daily rate</dt>
-    <dd class="strong">{{ payslip.currency }} {{ payslip.breakdown.daily_rate }}</dd>
-    {% if payslip.breakdown.joined_on %}
-    <dt>Joined</dt>
-    <dd>{{ payslip.breakdown.joined_on }}
-      <span class="sub">Paid from this day to the end of the cycle: {{ payslip.breakdown.paid_days_of }} days</span>
-    </dd>
-    {% endif %}
-    <dt>Paid</dt>
-    <dd class="strong">{{ payslip.payable_days }} days × {{ payslip.breakdown.daily_rate }}</dd>
-  </dl>
-</div>
-{% endif %}
-
-{% if payslip.breakdown.late_events %}
-<div class="card" style="margin-top:14px;max-width:640px;padding:18px 24px;">
-  <h2 style="font-size:13px;font-weight:600;margin:0 0 4px;">Late arrivals</h2>
-  <p class="text-sm text-muted" style="margin:0 0 10px;">
-    Each one is a deduction from this slip. Half days cost half a day's pay;
-    the other bands are flat penalties.
-  </p>
-  {% include "payroll/partials/_late_events.html" with events=payslip.breakdown.late_events cur=payslip.currency half_value=payslip.half_day_value %}
-</div>
-{% endif %}
+{% include "payroll/partials/_payslip_body.html" %}
 {% endblock %}

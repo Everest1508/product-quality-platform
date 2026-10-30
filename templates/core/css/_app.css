@@ -745,6 +745,11 @@
   .dd-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .dd-opt:has(input:checked){background:var(--accent-soft);color:var(--accent);font-weight:500;}
   .dd-opt:has(input:checked) .dd-tick{opacity:1;}
+  .dd-search{position:sticky;top:-5px;z-index:1;margin:-5px -5px 5px;padding:8px;background:var(--bg);border-bottom:1px solid var(--line);}
+  .dd-search input{width:100%;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:7px;background:var(--panel);color:var(--text);font-size:13px;outline:none;}
+  .dd-search input:focus{border-color:var(--accent);background:var(--bg);}
+  .dd-opt[hidden]{display:none;}
+  .dd-none{padding:12px 9px;text-align:center;font-size:13px;color:var(--muted);}
   .dd-opt:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px;}
 
   .lp-save{white-space:nowrap;}

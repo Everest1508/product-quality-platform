@@ -17,7 +17,7 @@
       {% for row in rows %}
       <tr class="{% if row.is_me %}is-me{% endif %}">
         <td class="tw-who">
-          <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}&month={{ monday|date:'Y-m' }}" title="See {{ row.user.get_full_name|default:row.user.username }}'s full history">
+          <a class="person" hx-boost="false" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}&month={{ monday|date:'Y-m' }}" title="See {{ row.user.get_full_name|default:row.user.username }}'s full history">
             <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
             <span><span class="title">{{ row.user.get_full_name|default:row.user.username }}{% if row.is_me %} <em class="you">You</em>{% endif %}</span><span class="sub">{{ row.role }}</span></span>
           </a>

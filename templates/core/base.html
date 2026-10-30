@@ -61,6 +61,39 @@
   // before Alpine walks the DOM — that is the correct use of the hook (define a
   // component); it is reading the DOM from it that is too early.
   document.addEventListener('alpine:init', function () {
+    // Chip-and-search picker (templates/components/multiselect.html). The hidden <select multiple>
+    // is the source of options and the thing that posts; this keeps it and the chips in step.
+    Alpine.data('multiselect', function (config) {
+      return {
+        open: false, search: '', options: [], selected: new Set(), autoSubmit: !!(config && config.autoSubmit),
+        init() {
+          Array.from(this.$refs.select.options).forEach((o) => {
+            this.options.push({ id: o.value, name: o.textContent.trim() });
+            if (o.selected) this.selected.add(o.value);
+          });
+        },
+        get filtered() {
+          const q = this.search.trim().toLowerCase();
+          return this.options.filter((o) => o.name.toLowerCase().includes(q));
+        },
+        get selectedOptions() { return this.options.filter((o) => this.selected.has(o.id)); },
+        isSelected(id) { return this.selected.has(id); },
+        toggleOpen() {
+          this.open = !this.open;
+          if (this.open) { this.search = ''; this.$nextTick(() => this.$refs.search && this.$refs.search.focus()); }
+        },
+        pickFirst() { if (this.filtered.length) this.toggle(this.filtered[0].id); },
+        toggle(id) {
+          if (this.selected.has(id)) this.selected.delete(id); else this.selected.add(id);
+          this.selected = new Set(this.selected);
+          Array.from(this.$refs.select.options).forEach((o) => { o.selected = this.selected.has(o.value); });
+          if (this.autoSubmit) {
+            const form = this.$el.closest('form');
+            if (form && form.requestSubmit) form.requestSubmit();
+          }
+        },
+      };
+    });
     Alpine.data('dd', function () {
       return {
         init() {
@@ -109,6 +142,33 @@
       };
     });
   });
+  // Search box inside a long dropdown: hide the options whose label does not contain the text.
+  // Focus it on open so typing works at once; Enter must not submit the surrounding form.
+  document.addEventListener('input', function (e) {
+    var box = e.target.closest && e.target.closest('[data-dd-search]');
+    if (!box) return;
+    var menu = box.closest('.dd-menu'), q = box.value.trim().toLowerCase(), shown = 0;
+    menu.querySelectorAll('.dd-opt').forEach(function (o) {
+      var hit = o.textContent.toLowerCase().indexOf(q) !== -1;
+      o.hidden = !hit;
+      if (hit) shown++;
+    });
+    var none = menu.querySelector('.dd-none');
+    if (none) none.hidden = shown > 0;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-dd-search]')) {
+      e.preventDefault();
+      var first = e.target.closest('.dd-menu').querySelector('.dd-opt:not([hidden]) input');
+      if (first) { first.click(); }
+    }
+  });
+  document.addEventListener('toggle', function (e) {
+    var t = e.target;
+    if (!t.matches || !t.matches('details.dd-wrap') || !t.open) return;
+    var box = t.querySelector('[data-dd-search]');
+    if (box) { box.value = ''; box.dispatchEvent(new Event('input', { bubbles: true })); box.focus({ preventScroll: true }); }
+  }, true);
   // One menu open at a time. <details> knows nothing about its siblings, so opening
   // a second filter left the first one open on top of it. `toggle` does not bubble,
   // so listen in the capture phase. Clicking elsewhere, pressing Escape and picking

@@ -17,7 +17,7 @@
         </span>
       </div>
     </div>
-    <a class="btn btn-sm btn-primary" href="{% url 'attendance:my_attendance' %}">Open my attendance</a>
+    <a class="btn btn-sm btn-primary" hx-boost="false" href="{% url 'attendance:my_attendance' %}">Open my attendance</a>
   </section>
   {% endif %}
 
@@ -40,7 +40,7 @@
         {% for row in on_clock %}{% if row.is_stale %}
         <tr>
           <td>
-            <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}">
+            <a class="person" hx-boost="false" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}">
               <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
               <span><span class="title">{{ row.user.get_full_name|default:row.user.username }}</span><span class="sub">{{ row.role }}</span></span>
             </a>
@@ -89,7 +89,7 @@
           {% for row in team %}
           <tr x-show="filter === 'all' || filter === '{{ row.state }}'" class="{% if row.is_me %}is-me{% endif %}">
             <td>
-              <a class="person" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}&month={{ day|date:'Y-m' }}" title="See {{ row.user.get_full_name|default:row.user.username }}'s full history">
+              <a class="person" hx-boost="false" href="{% url 'attendance:my_attendance' %}?user_id={{ row.user.pk }}&month={{ day|date:'Y-m' }}" title="See {{ row.user.get_full_name|default:row.user.username }}'s full history">
                 <span class="avatar">{{ row.user.get_full_name|default:row.user.username|make_list|first|upper }}</span>
                 <span>
                   <span class="title">{{ row.user.get_full_name|default:row.user.username }}{% if row.is_me %} <em class="you">You</em>{% endif %}</span>

@@ -1564,7 +1564,7 @@ class LatenessOnScreenTest(PayrollTestBase):
         self.assertContains(self.as_admin(), "50.00")  # Rs 50 band
 
     def test_an_on_time_payslip_has_no_late_section_at_all(self):
-        """No charge means no scary heading: absence is the correct display."""
+        """No charge means no table of charges, just a calm "none"."""
         clean = make_user("clean", self.company)
         self.profile(clean, "1000.00")
         service.generate_run(self.company, self.start, self.end)
@@ -1573,7 +1573,8 @@ class LatenessOnScreenTest(PayrollTestBase):
         html = self.client.get(
             reverse("payroll:payslip", args=[slip.pk])
         ).content.decode()
-        self.assertNotIn("Late arrivals", html)
+        self.assertNotIn("late-tbl", html)
+        self.assertIn("None this cycle", html)
 
 
 class RunIntegrityAndAuditTest(PayrollTestBase):
@@ -1658,3 +1659,58 @@ class RunCalculationPopupTest(PayrollTestBase):
         run.is_locked = True
         run.save(update_fields=["is_locked"])
         self.assertNotContains(self.client.get(url), "out of date")
+
+
+class PayslipDeleteAndLateExemptTest(PayrollTestBase):
+    def run_with_slip(self):
+        self.profile(self.dev, "1000.00")
+        run, _ = service.generate_run(self.company, self.start, self.end)
+        return run, run.payslips.get()
+
+    def test_admin_can_delete_a_payslip_from_an_open_run(self):
+        run, slip = self.run_with_slip()
+        self.client.login(username="owner", password="pass1234")
+        resp = self.client.post(reverse("payroll:payslip_delete", args=[slip.pk]))
+        self.assertRedirects(resp, reverse("payroll:run_detail", args=[run.pk]))
+        self.assertFalse(run.payslips.exists())
+
+    def test_locked_run_keeps_its_payslips(self):
+        run, slip = self.run_with_slip()
+        run.is_locked = True
+        run.save(update_fields=["is_locked"])
+        self.client.login(username="owner", password="pass1234")
+        self.client.post(reverse("payroll:payslip_delete", args=[slip.pk]))
+        self.assertTrue(run.payslips.exists())
+
+    def test_a_member_cannot_delete(self):
+        run, slip = self.run_with_slip()
+        self.client.login(username="dev", password="pass1234")
+        self.client.post(reverse("payroll:payslip_delete", args=[slip.pk]))
+        self.assertTrue(run.payslips.exists())
+
+    def test_delete_needs_post(self):
+        _run, slip = self.run_with_slip()
+        self.client.login(username="owner", password="pass1234")
+        self.assertEqual(self.client.get(reverse("payroll:payslip_delete", args=[slip.pk])).status_code, 405)
+
+    def test_late_exempt_person_is_never_charged(self):
+        from datetime import datetime as _dt
+        from datetime import time as _t
+
+        from django.utils import timezone
+
+        from apps.accounts.models import Membership
+        from apps.attendance.models import AttendanceRecord
+
+        self.profile(self.dev, "1000.00")
+        day = date(2026, 11, 2)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=day,
+            check_in=timezone.make_aware(_dt.combine(day, _t(12, 0))),
+            check_out=timezone.make_aware(_dt.combine(day, _t(19, 0))),
+        )
+        row = lambda: next(r for r in service.preview(self.company, self.start, self.end)[1] if r["user"] == self.dev)
+        self.assertEqual(row()["late_half_days"], Decimal("1"))
+        Membership.objects.filter(company=self.company, user=self.dev).update(late_exempt=True)
+        self.assertEqual(row()["late_half_days"], Decimal("0"))
+        self.assertEqual(row()["late_penalty"], Decimal("0.00"))
