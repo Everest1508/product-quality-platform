@@ -58,3 +58,108 @@
 .lead-kv{display:grid;grid-template-columns:90px minmax(0,1fr);gap:8px 16px;margin:0;font-size:14px;align-items:baseline;}
 .lead-kv dt{color:var(--muted);}
 .lead-kv dd{margin:0;word-break:break-word;}
+
+/* ───────── Home as one desk, not six boxes ─────────
+ * Regions are separated by a hairline and space. Only the to-do list stays framed: it holds a
+ * form, so it is a real separate object. Tickets read as a ledger with the ticket key first. */
+.hm-home .hm-card:not(#todo-card){background:none;border:0;border-top:1px solid var(--border);border-radius:0;padding:var(--space-4) 0 0;box-shadow:none;}
+.hm-home .hm-grid,.hm-home .hm-tiles{gap:var(--space-8);}
+.hm-home .hm-col,.hm-home .hm-side{gap:var(--space-8);}
+.hm-home .hm-tiles{margin-top:var(--space-8);}
+.hm-home .hm-today{border-top-color:var(--text);}
+.hm-home .hm-card h2{font-size:var(--fs-sm);font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+.hm-home #todo-card h2{color:var(--text);}
+.hm-home .hm-figure{font-size:var(--fs-xl);font-weight:650;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:var(--space-2);}
+.hm-home .hm-figure small{font-size:var(--fs-sm);font-weight:500;color:var(--muted);letter-spacing:0;}
+.hm-home .hm-rows .k{flex:0 0 64px;font-size:var(--fs-xs);font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;}
+.hm-home .hm-rows a .t{flex:1 1 auto;}
+.hm-home .hm-rows a{padding:var(--space-3) 0;}
+.hm-home .hm-tabs{background:none;padding:0;gap:var(--space-4);}
+.hm-home .hm-tabs button{padding:var(--space-1) 0;border-radius:0;border-bottom:2px solid transparent;color:var(--muted);}
+.hm-home .hm-tabs button.is-on{background:none;box-shadow:none;color:var(--text);border-bottom-color:var(--accent);}
+.hm-attn{gap:0;}
+.hm-attn a{border:0;border-radius:0;background:none;padding:0 var(--space-4) 0 0;margin-right:var(--space-4);border-right:1px solid var(--border);}
+.hm-attn a:last-child{border-right:0;}
+.hm-attn b.is-bad{color:var(--red);}
+@media (max-width:640px){
+  .hm-attn a{padding-block:var(--space-2);}
+  .hm-home .hm-tabs button{min-height:44px;}
+  .hm-home .hm-rows .k{flex-basis:56px;}
+}
+
+/* Home, pass 3: an empty list says so in one quiet line, left-aligned with the rows it stands in
+ * for, instead of a tall centred block that outweighs the data on the page. */
+.hm-home .hm-empty,.hm-home .td-empty{display:grid;flex:none;place-content:start;justify-items:start;gap:var(--space-1);padding:var(--space-4) 0 var(--space-2);text-align:left;color:var(--muted);}
+.hm-home .hm-empty .hm-sub{color:var(--muted);}
+.hm-home .hm-empty .hm-more,.hm-home .hm-empty .hm-sub+.hm-more{margin-top:var(--space-1);}
+.hm-home .hm-card h2 .hm-sub-inline{text-transform:none;letter-spacing:0;}
+
+/* ───────── Sign in: a whole page, not a card floating on dots ─────────
+ * The left half is the product's own colour with Pintu on it; the right half is the form, left-aligned
+ * and wide enough to type in. The panel is dark in both themes, so its text uses --on-brand, never --text. */
+.auth-shell{display:block;min-height:100dvh;padding:0;background:var(--surface);background-image:none;}
+.auth-wrap{max-width:none;min-height:100dvh;border:0;border-radius:0;box-shadow:none;background:var(--surface);}
+.auth-brand{color:var(--on-brand);position:relative;overflow:hidden;
+  background:linear-gradient(165deg,var(--brand-panel) 0%,var(--brand-panel-2) 100%);}
+/* A pixel grid, because Pintu is made of pixels. Quiet enough that the text never fights it. */
+.auth-brand::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--brand-line) 1px,transparent 1px),linear-gradient(90deg,var(--brand-line) 1px,transparent 1px);
+  background-size:32px 32px;-webkit-mask-image:linear-gradient(200deg,#000 0%,transparent 60%);mask-image:linear-gradient(200deg,#000 0%,transparent 60%);}
+.auth-brand>*{position:relative;}
+.auth-brand .brand{color:var(--on-brand);font-size:var(--fs-md);}
+.auth-brand .brand .mark svg{stroke:var(--on-brand);}
+.auth-brand .brand-line{color:var(--on-brand);font-size:clamp(26px,2.6vw,36px);font-weight:650;line-height:1.2;letter-spacing:-.02em;max-width:20ch;}
+.auth-pintu{width:180px;height:160px;margin-top:auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.35));}
+.auth-points{margin-top:0;gap:0;border-bottom:1px solid var(--brand-line);}
+.auth-points li{display:grid;grid-template-columns:20px 72px minmax(0,1fr);gap:var(--space-3);align-items:baseline;padding:var(--space-3) 0;border-top:1px solid var(--brand-line);color:var(--on-brand);}
+.auth-points li>div{display:contents;}
+.auth-points svg{stroke:var(--on-brand-muted);align-self:center;}
+.auth-points b{color:var(--on-brand);display:block;}
+.auth-points span{color:var(--on-brand-muted);}
+
+.auth-form h1{font-size:var(--fs-xl);font-weight:650;letter-spacing:-.02em;}
+.auth-form .auth-sub{font-size:var(--fs-base);margin-bottom:var(--space-8);}
+.auth-field{margin-bottom:var(--space-5);}
+.auth-label{font-size:var(--fs-sm);margin-bottom:var(--space-2);}
+.auth-input{min-height:44px;padding:0 var(--space-3);border-radius:var(--radius);font-size:var(--fs-base);}
+.auth-submit{min-height:44px;margin-top:var(--space-2);}
+.auth-foot{margin-top:var(--space-8);}
+
+@media (min-width:861px){
+  .auth-wrap{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);}
+  .auth-brand{padding:var(--space-10) clamp(40px,6vw,96px);gap:var(--space-8);}
+  .auth-form{padding:var(--space-10) clamp(32px,6vw,96px);}
+  .auth-form>*{width:100%;max-width:380px;margin-inline:auto;}
+}
+@media (max-width:860px){
+  .auth-wrap{min-height:100dvh;align-content:center;max-width:none;}
+  .auth-form{padding:var(--space-10) var(--space-6);max-width:440px;width:100%;margin-inline:auto;}
+}
+@media (prefers-reduced-motion:no-preference){
+  .auth-form>*{animation:authIn var(--dur-3) var(--ease-out) both;}
+  .auth-form>:nth-child(2){animation-delay:40ms;}.auth-form>:nth-child(3){animation-delay:80ms;}.auth-form>:nth-child(4){animation-delay:120ms;}
+  @keyframes authIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+.auth-foot{text-align:left;}
+/* On a phone the brand panel is gone, so the form carries a small mark of its own. */
+@media (max-width:860px){
+  .auth-mini{display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-8);font-size:var(--fs-md);font-weight:600;color:var(--text);}
+  .auth-mini .mark svg{width:28px;height:28px;stroke:var(--accent);}
+}
+
+/* Home greeting: the same deep blue and pixel grid as the sign-in panel, so Pintu looks at home on both.
+ * Dark in both themes, so its text uses --on-brand. The time-of-day variants only move the glow. */
+.hm-hero,.hm-hero.is-afternoon,.hm-hero.is-evening,.hm-hero.is-night,
+html.dark .hm-hero,html.dark .hm-hero.is-afternoon,html.dark .hm-hero.is-evening,html.dark .hm-hero.is-night{
+  border:0;color:var(--on-brand);padding:var(--space-6) var(--space-8);
+  background:linear-gradient(165deg,var(--brand-panel) 0%,var(--brand-panel-2) 100%);}
+.hm-hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.45;
+  background-image:linear-gradient(var(--brand-line) 1px,transparent 1px),linear-gradient(90deg,var(--brand-line) 1px,transparent 1px);
+  background-size:24px 24px;-webkit-mask-image:linear-gradient(100deg,transparent 30%,#000 100%);mask-image:linear-gradient(100deg,transparent 30%,#000 100%);}
+.hm-hero-art{color:var(--on-brand);opacity:.08;}
+.hm-hero-date{color:var(--on-brand-muted);}
+.hm-hero h1{color:var(--on-brand);font-size:var(--fs-xl);}
+.hm-hero-line{color:var(--on-brand-muted);}
+.hm-hero-badge{background:var(--brand-line);color:var(--on-brand);box-shadow:none;}
+.hm-hero .pt{width:120px;height:107px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35));}
+.hm-mile li{color:var(--on-brand-muted);}

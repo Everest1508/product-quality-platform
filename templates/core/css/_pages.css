@@ -452,22 +452,22 @@ a.dsr-link::after{content:" \2197";font-size:11px;color:var(--muted);}
 .dsr-total{border-radius:0 0 10px 10px;}
 
 /* ---- Home: to-do card (befui look: slate border, blue ring, 8px corners) ---- */
-.td-add{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px;align-items:center;}
-.td-input{height:38px;padding:0 12px;border:1px solid var(--bf-border);border-radius:var(--bf-radius);background:var(--surface);font:inherit;font-size:14px;color:var(--text);outline:none;transition:box-shadow .12s,border-color .12s;}
+.td-add{display:flex;flex-wrap:wrap;gap:var(--space-2);margin:var(--space-2) 0 var(--space-3);align-items:center;}
+.td-input{height:38px;padding:0 var(--space-3);border:1px solid var(--bf-border);border-radius:var(--bf-radius);background:var(--surface);font:inherit;font-size:var(--fs-base);color:var(--text);outline:none;transition:box-shadow .12s,border-color .12s;}
 .td-input:focus{border-color:var(--bf-ring);box-shadow:0 0 0 3px rgba(59,130,246,.18);}
 .td-add .td-text{flex:1 1 180px;min-width:0;}
 .td-add .td-due{width:150px;flex-shrink:0;}
 .td-add .dd-btn{height:38px;border-radius:var(--bf-radius);border-color:var(--bf-border);}
-.td-btn{height:38px;padding:0 16px;border:0;border-radius:var(--bf-radius);background:var(--bf-primary);color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:filter .12s;}
+.td-btn{height:38px;padding:0 var(--space-4);border:0;border-radius:var(--bf-radius);background:var(--bf-primary);color:var(--on-accent);font:inherit;font-size:var(--fs-base);font-weight:500;cursor:pointer;transition:filter .12s;}
 .td-btn:hover{filter:brightness(1.08);}
 .td-progress{height:6px;border-radius:99px;background:var(--bf-border);overflow:hidden;}
 .td-progress span{display:block;height:100%;background:var(--bf-primary);border-radius:99px;transition:width .25s ease;}
-.td-count{font-size:13px;color:var(--bf-muted-fg);margin:8px 0 6px;}
+.td-count{font-size:var(--fs-sm);color:var(--bf-muted-fg);margin:var(--space-2) 0 var(--space-1);}
 .td-link{border:0;background:none;padding:0;font:inherit;color:var(--bf-primary);cursor:pointer;}
 .td-link:hover{text-decoration:underline;}
-.td-note{font-size:12px;color:var(--bf-muted-fg);margin:10px 0 2px;}
+.td-note{font-size:var(--fs-xs);color:var(--bf-muted-fg);margin:var(--space-2) 0 2px;}
 .td-list{list-style:none;margin:0;padding:0;max-height:340px;overflow-y:auto;}
-.td-item{display:flex;align-items:center;gap:10px;padding:11px 10px;margin-bottom:6px;border:1px solid var(--bf-border);border-radius:var(--bf-radius);background:var(--surface);font-size:15px;transition:background .12s,border-color .12s;}
+.td-item{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3);margin-bottom:6px;border:1px solid var(--bf-border);border-radius:var(--bf-radius);background:var(--surface);font-size:var(--fs-base);transition:background .12s,border-color .12s;}
 .td-item:hover{background:var(--bf-muted);}
 .td-item.is-late{border-color:var(--bf-destructive);background:var(--bf-destructive-bg);}
 .td-item.is-late .td-label{color:var(--bf-destructive);font-weight:500;}
@@ -479,19 +479,19 @@ a.dsr-link::after{content:" \2197";font-size:11px;color:var(--muted);}
 .td-label{flex:1;min-width:0;overflow-wrap:anywhere;}
 .is-done .td-label{text-decoration:line-through;color:var(--bf-muted-fg);}
 .is-done{opacity:.75;}
-.td-badge{font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;border:1px solid transparent;}
+.td-badge{font-size:var(--fs-xs);font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;border:1px solid transparent;}
 .td-badge.p3{background:var(--red-bg);color:var(--red);}
 .td-badge.p2{background:var(--orange-bg);color:var(--orange);}
 .td-badge.p1{background:var(--bf-muted);color:var(--bf-muted-fg);border-color:var(--bf-border);}
 .is-done .td-badge{display:none;}
-.td-chip{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--bf-muted);color:var(--bf-muted-fg);border:1px solid var(--bf-border);white-space:nowrap;flex-shrink:0;}
+.td-chip{font-size:var(--fs-xs);padding:2px 9px;border-radius:99px;background:var(--bf-muted);color:var(--bf-muted-fg);border:1px solid var(--bf-border);white-space:nowrap;flex-shrink:0;}
 .td-chip.is-today{background:var(--blue-bg);color:var(--bf-primary);border-color:transparent;}
 .td-chip.is-late{background:var(--bf-destructive);color:#fff;border-color:transparent;font-weight:500;}
 .td-del{border:0;background:none;color:var(--bf-muted-fg);font-size:18px;line-height:1;cursor:pointer;opacity:0;padding:0 2px;transition:opacity .12s;}
 .td-item:hover .td-del,.td-del:focus-visible{opacity:1;}
 .td-del:hover{color:var(--bf-destructive);}
 @media (hover:none){.td-del{opacity:1;}}
-.td-empty{color:var(--bf-muted-fg);font-size:14px;padding:28px 4px;text-align:center;}
+.td-empty{color:var(--bf-muted-fg);font-size:var(--fs-base);padding:var(--space-6) var(--space-1);text-align:center;}
 .pd-due-list{list-style:none;margin:0;padding:0;}
 .pd-due-list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
 .pd-due-list li:last-child{border-bottom:0;}
@@ -524,12 +524,12 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .hm-hero-art .ic{width:128px;height:128px;stroke-width:1.5;}
 @keyframes hmFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(6px) rotate(4deg)}}
 .hm-hero-main{position:relative;min-width:0;}
-.hm-hero-date{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
+.hm-hero-date{font-size:var(--fs-xs);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
 .hm-hero h1{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:24px;font-weight:650;letter-spacing:-.02em;color:var(--text);}
 .hm-hero-badge{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--surface) 75%,transparent);color:var(--accent);box-shadow:var(--shadow-sm);transition:transform .3s;}
 .hm-hero-badge:hover{transform:scale(1.1);}
 .hm-hero-badge .ic{width:19px;height:19px;}
-.hm-hero-line{min-height:20px;margin-top:4px;font-size:13.5px;color:var(--muted);}
+.hm-hero-line{min-height:20px;margin-top:4px;font-size:var(--fs-base);color:var(--muted);}
 .hm-caret{display:inline-block;width:1px;height:1em;margin-left:2px;vertical-align:middle;background:currentColor;animation:hmBlink 1s steps(2) infinite;}
 @keyframes hmBlink{50%{opacity:0}}
 .hm-hero-actions{position:relative;display:flex;gap:8px;flex-wrap:wrap;}
@@ -537,9 +537,13 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .hm-note.is-info{background:var(--blue-bg);border-color:color-mix(in srgb,var(--blue) 30%,transparent);}
 .hm-note.is-warn{background:var(--accent-soft);border-color:var(--accent-line);}
 .hm-note a{font-weight:600;margin-left:6px;text-decoration:underline;}
-.hm-attn{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);margin:-4px 0 14px;}
-.hm-attn a:hover{color:var(--text);}
-.hm-attn b{color:var(--text);}
+/* The three "needs your attention" counts are the most actionable thing on Home, so
+   they are pressable-looking pills, not a line of grey caption text. 36px tall
+   (44 on a phone, see the touch rules because they were 20px links). */
+.hm-attn{display:flex;gap:var(--space-2);flex-wrap:wrap;margin:0 0 var(--space-4);font-size:var(--fs-sm);color:var(--muted);}
+.hm-attn a{display:inline-flex;align-items:center;gap:var(--space-2);min-height:36px;padding:0 var(--space-3);border:1px solid var(--border);border-radius:99px;background:var(--surface);color:var(--muted);transition:border-color var(--dur-1) ease,color var(--dur-1) ease;}
+.hm-attn a:hover{border-color:var(--border-strong);color:var(--text);}
+.hm-attn b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;}
 .hm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px;}
 .hm-kpi{display:block;padding:16px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);transition:box-shadow .2s,border-color .2s,transform .2s;}
 .hm-kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
@@ -547,51 +551,48 @@ html.dark .hm-hero.is-night{background:linear-gradient(90deg,#1a1f45 0%,#111a2b 
 .hm-kpi .l{display:block;font-size:13px;color:var(--muted);}
 .hm-kpi.is-alert{border-color:color-mix(in srgb,var(--red) 40%,transparent);}
 .hm-kpi.is-alert .v{color:var(--red);}
-.hm-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-bottom:18px;}
-.hm-side{display:grid;gap:16px;}
-.hm-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;}
-.hm-card h2{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--text);}
-.hm-card h2 .ic{width:15px;height:15px;color:var(--muted);}
-.hm-sub{font-size:12.5px;color:var(--muted);}
-.hm-sub-inline{font-size:11.5px;font-weight:400;color:var(--muted);margin-left:auto;}
-.hm-tabs{display:inline-flex;gap:2px;padding:3px;margin-bottom:12px;background:var(--panel);border-radius:var(--radius);}
-.hm-tabs button{border:0;background:transparent;padding:5px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--muted);transition:background .2s,color .2s,box-shadow .2s;}
+.hm-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-5);}
+.hm-card h2{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-md);font-weight:600;color:var(--text);}
+.hm-card h2 .ic{width:16px;height:16px;color:var(--muted);}
+.hm-sub{font-size:var(--fs-sm);color:var(--muted);}
+.hm-sub-inline{font-size:var(--fs-xs);font-weight:400;color:var(--muted);margin-left:auto;}
+.hm-tabs{display:inline-flex;gap:2px;padding:3px;margin-bottom:var(--space-3);background:var(--panel);border-radius:var(--radius);}
+.hm-tabs button{border:0;background:transparent;padding:5px 12px;border-radius:var(--radius);font-size:var(--fs-sm);font-weight:500;color:var(--muted-strong);transition:background .2s,color .2s,box-shadow .2s;}
 .hm-tabs button.is-on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);}
 .hm-rows{list-style:none;}
 .hm-rows li+li{border-top:1px solid var(--line);}
-.hm-rows a{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;font-size:13.5px;}
+.hm-rows a{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding:10px 2px;font-size:var(--fs-base);}
 .hm-rows a:hover .t{text-decoration:underline;}
-.hm-rows li.is-plain{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:var(--space-2) 2px;font-size:13.5px;}
+.hm-rows li.is-plain{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-2) 2px;font-size:var(--fs-base);}
 .hm-rows .t{font-weight:500;min-width:0;}
-.hm-rows .m{font-size:12px;color:var(--muted);white-space:nowrap;}
+.hm-rows .m{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;}
 .chip-d{font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:99px;border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
 .chip-d.is-late{background:var(--red-bg);color:var(--red);border-color:transparent;}
-.hm-empty{padding:26px 0;text-align:center;font-size:13.5px;color:var(--muted);}
-.hm-more{display:inline-block;margin-top:10px;font-size:13px;font-weight:500;color:var(--accent);}
+.hm-empty{padding:26px 0;text-align:center;font-size:var(--fs-base);color:var(--muted);}
+.hm-more{display:inline-block;margin-top:10px;font-size:var(--fs-sm);font-weight:500;color:var(--accent);}
 .hm-more:hover{text-decoration:underline;}
 .hm-team .hm-rows{margin-top:var(--space-2);}
 .hm-today-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .hm-today .hm-sub{margin-top:2px;}
-.hm-foot{margin-top:12px;font-size:12px;color:var(--muted);}
+.hm-foot{margin-top:var(--space-3);font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums;}
 .hm-foot b{color:var(--text);}
-.hm-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
-.hm-tile-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.hm-tile-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:var(--space-3);}
 .hm-bars{display:flex;gap:8px;height:110px;align-items:stretch;}
 .hm-bar{flex:1;display:flex;flex-direction:column;gap:6px;align-items:center;}
 .hm-bar-track{flex:1;width:100%;display:flex;align-items:flex-end;border-radius:6px;background:var(--panel);overflow:hidden;}
 .hm-bar-track i{display:block;width:100%;min-height:2px;border-radius:6px;background:var(--accent);opacity:.75;transition:height .6s cubic-bezier(.22,1,.36,1);}
 .hm-bar.is-met .hm-bar-track i{background:var(--green);opacity:1;}
 .hm-bar.is-future{opacity:.45;}
-.hm-bar-lab{font-size:11.5px;color:var(--muted);}
+.hm-bar-lab{font-size:var(--fs-xs);color:var(--muted);}
 .hm-bar.is-today .hm-bar-lab{color:var(--text);font-weight:600;}
 .hm-leave{list-style:none;display:grid;gap:12px;}
-.hm-leave .r{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
+.hm-leave .r{display:flex;justify-content:space-between;gap:var(--space-3);font-size:var(--fs-sm);margin-bottom:var(--space-1);font-variant-numeric:tabular-nums;}
 .hm-meter{display:block;height:6px;border-radius:99px;background:var(--panel);overflow:hidden;}
 .hm-meter i{display:block;height:100%;border-radius:99px;background:var(--accent);}
 .hm-meter.is-pending i{background:var(--purple);}
 .hm-big{font-size:26px;font-weight:650;letter-spacing:-.02em;}
 .hm-big small{font-size:14px;font-weight:500;color:var(--muted);margin-left:2px;}
-@media (max-width:960px){.hm-grid{grid-template-columns:1fr;}.hm-tiles{grid-template-columns:1fr;}.hm-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:960px){.hm-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
 /* ───────── Ticket page: one column, properties in a strip ───────── */
 .td-page{max-width:1240px;margin:0;display:grid;gap:var(--space-5);}
@@ -721,27 +722,44 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 @media (prefers-reduced-motion:reduce){.icon-hover:hover .icon-draw :is(path,circle,rect){animation:none}}
 
 
-/* ───────── Home as a bento grid ─────────
-   One 12-column grid; the wrappers from the markup dissolve so every card is a cell. Cards stretch to the row,
-   so an empty card still fills its cell instead of leaving a hole, and the to-do list scrolls inside its card. */
-.hm-bento{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;grid-auto-flow:dense;}
-.hm-bento .hm-kpis,.hm-bento .hm-grid,.hm-bento .hm-side,.hm-bento .hm-tiles{display:contents;}
-.hm-bento .hm-kpi{grid-column:span 3;}
-.hm-bento .hm-work{grid-column:span 8;grid-row:span 2;}
-.hm-bento .hm-today,.hm-bento .hm-team,.hm-bento #todo-card{grid-column:span 4;}
-.hm-bento .hm-tiles>.hm-card{grid-column:span 4;}
-.hm-bento .hm-card{display:flex;flex-direction:column;min-width:0;}
-.hm-bento .hm-work>div:not(.hm-tabs){flex:1;display:flex;flex-direction:column;}
-.hm-bento .hm-empty{flex:1;display:grid;place-content:center;gap:4px;padding:30px 0;}
-.hm-bento #todo-list{flex:1;display:flex;flex-direction:column;min-height:0;}
-.hm-bento .td-list{flex:1;max-height:280px;}
-.hm-bento .td-add{margin-top:10px;}
-.hm-bento .td-add .td-text{flex:1 1 100%;}
-.hm-bento .td-add .td-due{flex:1 1 130px;width:auto;min-width:0;}
-.hm-bento .td-add .td-btn{margin-left:auto;}
-.hm-bento .td-empty{flex:1;display:grid;place-content:center;padding:20px 8px;}
-@media (max-width:1180px){.hm-bento .hm-work{grid-column:span 12;grid-row:auto;}.hm-bento .hm-today,.hm-bento #todo-card{grid-column:span 6;}.hm-bento .hm-tiles>.hm-card{grid-column:span 6;}.hm-bento .hm-tiles>.hm-card:last-child{grid-column:span 12;}}
-@media (max-width:720px){.hm-bento .hm-kpi{grid-column:span 6;}.hm-bento .hm-today,.hm-bento #todo-card,.hm-bento .hm-tiles>.hm-card{grid-column:span 12;}}
+/* ───────── Home: two independent columns ─────────
+   The left column is your day (Today, My work); the right rail is your own list
+   (My to-do, Team today); This week and Leave share the width underneath.
+   Two flex columns, not one 12-column grid, on purpose: in a single grid every row
+   is as tall as its tallest card, so the rail was stretched to the left column's
+   height (a 791px card wrapped around ~200px of content) and a card with no span
+   shrank to a quarter width — Team today was 104px wide on a phone and sat alone
+   under 8 empty columns on a desktop. Each column now sizes its own cards. */
+.hm-home{display:block;}
+.hm-grid{display:flex;align-items:flex-start;gap:var(--space-5);}
+.hm-col{flex:1 1 0;min-width:0;display:grid;gap:var(--space-5);align-content:start;}
+.hm-side{flex:0 1 420px;min-width:360px;display:grid;gap:var(--space-5);align-content:start;}
+.hm-home .hm-card{display:flex;flex-direction:column;min-width:0;}
+.hm-tiles{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,420px);gap:var(--space-5);margin-top:var(--space-5);}
+.hm-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,420px);}
+.hm-work .hm-tile-head{align-items:center;}
+.hm-work .hm-tile-head .hm-tabs{margin-bottom:0;}
+.hm-home .hm-work>div:not(.hm-tile-head){flex:none;display:block;}
+.hm-home .hm-empty{flex:1;display:grid;place-content:center;gap:var(--space-1);padding:var(--space-5) 0;text-align:center;}
+.hm-home #todo-list{display:flex;flex-direction:column;min-height:0;margin-top:var(--space-2);}
+.hm-home .td-list{flex:0 1 auto;max-height:320px;min-height:96px;overflow-y:auto;overscroll-behavior:contain;padding-right:var(--space-1);}
+.hm-home .td-add{margin-top:var(--space-3);}
+.hm-home .td-add .td-text{flex:1 1 100%;}
+.hm-home .td-add .td-due{flex:0 0 150px;margin-left:auto;}
+.hm-home .td-add .td-btn{margin-left:0;}
+.hm-home .td-empty{flex:1;display:grid;place-content:center;padding:var(--space-4) var(--space-2);}
+@media (max-width:1180px){
+  .hm-grid{grid-template-columns:minmax(0,1fr);}
+  .hm-col,.hm-side{flex:1 1 auto;width:100%;min-width:0;}
+  .hm-tiles{grid-template-columns:1fr;}
+}
+/* Thumb-sized controls on a phone: the pills, tabs and to-do row were 27–38px, and the
+   whole page is now a single column of them. Desktop keeps its tighter rhythm. */
+@media (max-width:640px){
+  .hm-attn a{min-height:44px;}
+  .hm-tabs button{display:inline-flex;align-items:center;min-height:40px;padding-inline:var(--space-4);}
+  .hm-home .td-add .td-input,.hm-home .td-add .td-btn,.hm-home .td-add .dd-btn{height:44px;}
+}
 
 /* ───────── Attendance stat tiles: separate cards, icon beside the number ───────── */
 .att-stats{gap:12px;background:none;border:0;border-radius:0;overflow:visible;}
@@ -898,7 +916,6 @@ body.board-compact .kanban-card .card-title{margin-bottom:4px;}
 .pj-board{gap:var(--space-4);}.pj-col{padding:var(--space-3);gap:var(--space-3);}.pj-cards{gap:var(--space-3);}.pj-card{padding:var(--space-4);gap:var(--space-3);}
 .pj-journey{gap:var(--space-4);}.pj-row{padding:var(--space-5) var(--space-6);}.pj-row-head{margin-bottom:var(--space-4);}
 .pj-add-crunch form{gap:var(--space-2);}.pj-add-crunch .dd-label{margin:var(--space-2) 0 0;}
-.hm-bento{gap:var(--space-5);}
 .pg-head{margin-bottom:var(--space-6);}
 @media (max-width:760px){.pj-crunch-head{display:none}.pj-sec-head{flex-direction:column}}
 
@@ -940,15 +957,13 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
 @keyframes accIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .pj-settings #overview{margin-bottom:var(--space-6);}
 
-/* ───────── Simpler Home: Today carries the DSR bar, This week is one wide card, the rest sits under More ───────── */
-.hm-bento .hm-tiles>.hm-card{grid-column:1 / -1;}
-.hm-bento .hm-bars{height:96px;}
+/* ───────── Simpler Home: Today carries the DSR bar, This week is one short chart ───────── */
+.hm-home .hm-bars{height:96px;}
 .hm-dsr{display:grid;gap:var(--space-2);margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--line);color:inherit;}
 .hm-dsr-text{font-size:var(--fs-sm);color:var(--muted);}.hm-dsr-text b{color:var(--text);font-weight:600;}
 .hm-dsr:hover .hm-dsr-text{color:var(--text);}
 .hm-meter.is-low i{background:var(--purple);}
 .hm-more-acc{margin-top:var(--space-5);}
-@media (max-width:1180px){.hm-bento .hm-tiles>.hm-card:last-child{grid-column:1 / -1;}}
 
 /* ───────── Expense discussion ───────── */
 .cm-card{max-width:860px;margin-top:var(--space-5);}
@@ -963,19 +978,7 @@ html.sidebar-collapsed .nav-fold .fold-caret{display:none;}
 .cm-body{margin:var(--space-1) 0 0;font-size:var(--fs-base);white-space:pre-wrap;overflow-wrap:anywhere;}
 .cm-form{display:flex;flex-direction:column;gap:var(--space-2);}
 
-/* ───────── Home layout: Today, Assigned and This week stack on the left; the to-do runs the full height on the right and scrolls inside ───────── */
-.hm-bento .hm-today,.hm-bento .hm-work,.hm-bento .hm-tiles>.hm-card{grid-column:1 / span 7;grid-row:auto;}
-.hm-bento .hm-today{grid-row:1;}.hm-bento .hm-work{grid-row:2;}.hm-bento .hm-tiles>.hm-card{grid-row:3;}.hm-bento .hm-tiles>.hm-leave-card{grid-row:4;}
 .hm{width:100%;}
-.hm-bento #todo-card{grid-column:8 / span 5;grid-row:1 / span 4;contain:size;min-height:480px;}
-.hm-bento .hm-work>div:not(.hm-tabs){flex:none;display:block;}
-.hm-bento .hm-empty{flex:none;display:grid;gap:var(--space-1);padding:var(--space-5) 0;text-align:center;}
-.hm-bento .td-list{flex:1 1 0;max-height:none;min-height:120px;overflow-y:auto;overscroll-behavior:contain;padding-right:var(--space-1);}
-@media (max-width:1180px){
-  .hm-bento .hm-today,.hm-bento .hm-work,.hm-bento .hm-tiles>.hm-card,.hm-bento #todo-card{grid-column:1 / -1;grid-row:auto;}
-  .hm-bento #todo-card{contain:none;min-height:0;max-height:520px;}
-}
-@media (max-width:720px){.hm-bento #todo-card{max-height:none;}.hm-bento .td-list{max-height:360px;}}
 
 /* ───────── Pintu, the Home mascot: 18 x 16 pixels, scaled by a whole number (6x) and never smoothed ───────── */
 .pt{flex:none;display:block;width:108px;height:96px;image-rendering:pixelated;align-self:flex-end;margin:0 var(--space-2) calc(-1 * var(--space-4)) 0;}

@@ -19,6 +19,7 @@ from apps.accounts import throttle
 from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.core.redirects import safe_next
+from apps.dashboards.greetings import PINTU
 from apps.dashboards.service import log_activity
 
 User = get_user_model()
@@ -98,6 +99,7 @@ class LoginView(View):
         return render(request, "accounts/login.html", {
             "form": form,
             "next": safe_next(next_url) or "",
+            "pintu": PINTU,
         })
 
 

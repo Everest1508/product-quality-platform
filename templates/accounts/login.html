@@ -25,6 +25,14 @@
     <p class="brand-line">Errors, tickets, feedback, attendance and payroll — kept
       per product.</p>
 
+    {% comment %}
+      Pintu, the mascot from Home, keeps the visitor company: he waves once, blinks now and then,
+      looks away while a password is typed, and frowns when sign-in fails. Pure decoration, so
+      it is hidden from assistive technology and the form works the same without it.
+    {% endcomment %}
+    {{ pintu|json_script:"login-pintu" }}
+    <canvas class="auth-pintu" id="login-pintu-cv" width="18" height="16" aria-hidden="true"></canvas>
+
     <ul class="auth-points">
       <li>
         {% icon 'chart-column' %}
@@ -42,6 +50,7 @@
   </aside>
 
   <div class="auth-form" x-data="{ show: false, busy: false }">
+    <div class="auth-mini" aria-hidden="true"><span class="mark">{% brand_mark %}</span><span>PQ Platform</span></div>
     <h1>Sign in</h1>
     <p class="auth-sub">Welcome back. Enter your details to continue.</p>
 
@@ -114,4 +123,32 @@
   </div>
 
 </div>
+<script>
+(function () {
+  var cv = document.getElementById('login-pintu-cv'), node = document.getElementById('login-pintu');
+  if (!cv || !node) return;
+  var P = JSON.parse(node.textContent), ctx = cv.getContext('2d'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hold = null, timers = [];
+  function draw(name) {
+    var rows = P.frames[name] || P.frames.idle, pal = Object.assign({}, P.palette, P.tints[name] || {});
+    ctx.clearRect(0, 0, 18, 16);
+    rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var c = pal[row[x]]; if (c) { ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; ctx.fillRect(x, y, 1, 1); } } });
+  }
+  function rest() { draw(hold || 'idle'); }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function hello() {
+    if (calm || hold) return rest();
+    P.sequence.forEach(function (f, k) { later(function () { if (!hold) draw(f); }, k * P.delay_ms); });
+    later(function () { blinkLoop(); }, P.sequence.length * P.delay_ms);
+  }
+  function blinkLoop() { if (!calm && !hold) { draw('blink'); later(rest, 140); } later(blinkLoop, 3200 + Math.random() * 2800); }
+  function mood(name) { hold = name; rest(); }
+  var pw = document.getElementById('{{ form.password.id_for_label }}');
+  if (pw) { pw.addEventListener('focus', function () { mood('cool'); }); pw.addEventListener('blur', function () { mood(null); }); }
+  var form = document.querySelector('.auth-form form');
+  if (form) form.addEventListener('submit', function () { mood('thinking'); });
+  if (document.querySelector('.auth-alert, .auth-err')) mood('error'); else hello();
+  rest();
+})();
+</script>
 {% endblock %}

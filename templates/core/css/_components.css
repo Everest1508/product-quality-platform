@@ -711,15 +711,15 @@ dialog.calc{width:min(960px,calc(100vw - 32px));max-width:none;}
   @keyframes pqGrowY{from{height:0}}
 
   /* Cards and rows rise in one after another (the first twelve), so a page assembles instead of appearing. */
-  :is(.hm-bento>*,.hm-bento .hm-card,.ledger>.lrow,.pj-cards>.pj-card,.pj-journey>.pj-row,.pj-formwrap>*,.pj-sections>*,.pj-feed .pj-entry,.pj-side>*,.dsr-notices,.dsr-today,.acc){
+  :is(.hm-home>*,.hm-home .hm-card,.ledger>.lrow,.pj-cards>.pj-card,.pj-journey>.pj-row,.pj-formwrap>*,.pj-sections>*,.pj-feed .pj-entry,.pj-side>*,.dsr-notices,.dsr-today,.acc){
     animation:pqRiseIn .45s var(--ease-out) both;
   }
-  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(2){animation-delay:40ms;}
-  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(3){animation-delay:80ms;}
-  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(4){animation-delay:120ms;}
-  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(5){animation-delay:160ms;}
-  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(6){animation-delay:200ms;}
-  :is(.hm-bento,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(n+7){animation-delay:240ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(2){animation-delay:40ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(3){animation-delay:80ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(4){animation-delay:120ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(5){animation-delay:160ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(6){animation-delay:200ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(n+7){animation-delay:240ms;}
 
   /* Things you can press respond. */
   .btn,.icon-btn,.seg a,.seg button,.side-item,.switch-btn,.chip{transition:background var(--dur-1) ease,border-color var(--dur-1) ease,color var(--dur-1) ease,box-shadow var(--dur-2) ease,transform var(--dur-1) ease;}

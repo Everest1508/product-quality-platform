@@ -118,6 +118,14 @@ def balance_for(company, user, policy, year=None):
     approved = consumed_days(company, user, policy, year, include_pending=False)
     pending = consumed_days(company, user, policy, year) - approved
     remaining = None if limit is None else max(Decimal("0.0"), limit - approved - pending)
+    # The share of the allowance still available, as a whole percent. The dashboard
+    # meter draws *this*, so the bar and the "11.5 of 12 left" label say the same
+    # thing: it used to draw approved/limit, so a row reading "11.5 left" showed an
+    # empty bar. Pending leave is already subtracted from `remaining`, so a reserved
+    # day shows as used (the dashboard tints that case purple), not as spare.
+    remaining_percent = 0
+    if limit:
+        remaining_percent = max(0, min(100, int(round(100 * remaining / limit))))
     return {
         "policy": policy,
         "limit": limit,
@@ -128,6 +136,7 @@ def balance_for(company, user, policy, year=None):
         "approved_label": format_days(approved),
         "pending_label": format_days(pending),
         "remaining_label": format_days(remaining),
+        "remaining_percent": remaining_percent,
         "is_unlimited": limit is None,
         "has_pending": pending > 0,
     }

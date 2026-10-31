@@ -12,3 +12,6 @@ pq_sdk/
 
 # Build leftovers from the React line of work
 frontend/
+
+# ui-fix run artifacts (screenshots, scan JSON, demos). .ui-fix/memory.md stays tracked.
+.ui-fix/runs/

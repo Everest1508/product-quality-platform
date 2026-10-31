@@ -107,8 +107,14 @@ class AuditLogFilterLabellingTest(TestCase):
         This page has no custom dropdown with a hidden `<select>` backing it
         (unlike the ticket assignee picker), so "no `<select>` anywhere" is
         the exact statement that the rollout reached this screen.
+
+        Markup only, for the same reason as `test_every_filter_select_is_named`:
+        `core/base.html` explains the multiselect component in a JS comment
+        that contains the literal text `<select multiple>`, which is not a
+        control on the page and must not fail a markup assertion.
         """
-        self.assertNotIn("<select", self.body)
+        markup = re.sub(r"<script\b.*?</script>", "", self.body, flags=re.S)
+        self.assertNotIn("<select", markup)
 
     def test_date_inputs_are_named_by_a_real_label(self):
         for field in ("from", "to"):

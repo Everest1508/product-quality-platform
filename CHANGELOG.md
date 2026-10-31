@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.65.0] "Shrike" — 2026-10-31 · a home page that fits on one screen and is readable everywhere
+
+> In short: the home page is now two columns — your day on the left, your own list on the right — so everything fits a laptop screen, and the small text, faint labels and leave bars are fixed.
+
+### New
+
+- **A home page that fits on one screen.** Your day sits on the left and your own list — to-do and who is in today — on the right, so nothing you need is pushed below the fold on a laptop.
+
+### Better
+
+- **Every card is the height of what is in it.** The to-do card used to be a tall empty block while the team card was squeezed into a sliver beside it; on a phone the cards are now full width.
+- **Leave balances read the right way round.** The bar fills with the days you have left. Before, it drew the days you had used while the label said "left", so a full balance showed as an empty bar.
+- **The Assigned and Due soon tabs answer the keyboard.** They are announced properly, and the arrow keys, Home and End move between them.
+- **Readable in dark mode as well as light.** Tab labels, open dropdowns and the to-do Add button were too faint to read; they now meet the contrast minimum in both themes.
+- **Thumb-sized controls on a phone.** The summary pills, the tabs and the to-do row were 27–38px; they now match everything else you tap.
+- **Home reads as one page, not six boxes.** Sections are set apart by a thin line and space, the tickets list leads with the ticket key, the tabs are underlined, and today shows your hours as a big number. Only the to-do list stays framed, because you type into it.
+- **A new sign-in page.** It fills the whole window instead of a small card on dots. Pintu waves, looks away while you type a password, and frowns when sign-in fails. On a dark theme the panel text was almost invisible; it is readable now. The Home greeting uses the same deep blue.
+
 ## [1.64.0] "Roller" — 2026-10-30 · a page for each website lead, with a log and one-click conversion
 
 > In short: each website lead now has its own page where you log what you did, track its status and turn it into a project.

@@ -3,121 +3,145 @@
 {% if is_privileged %}
   <div class="hm-attn">
     {% if leave_approval_count %}<a href="{% url 'leave:approvals' %}"><b>{{ leave_approval_count }}</b> leave to approve</a>{% endif %}
-    {% if team.open_errors %}<a href="{% url 'errors:error_list' %}"><b>{{ team.open_errors }}</b> open errors</a>{% endif %}
+    {% if team.open_errors %}<a href="{% url 'errors:error_list' %}"><b class="is-bad">{{ team.open_errors }}</b> open errors</a>{% endif %}
     {% if team.open_tickets %}<a href="{% url 'tickets:ticket_board' %}"><b>{{ team.open_tickets }}</b> open tickets</a>{% endif %}
   </div>
 {% endif %}
 
-<div class="hm-bento">
+{% comment %}
+  Two independent columns, not one 12-column grid: the left stack is your day and
+  the right rail is your own list. Rows in a single grid are as tall as their
+  tallest card, so a grid would stretch the rail to the left column's height (the
+  to-do card used to be 791px tall around 200px of content) and any card without a
+  span would shrink to one column — which is what happened to Team today below
+  1180px. Each column now lays out its own cards; every card is content height.
+{% endcomment %}
+<div class="hm-home">
+  <div class="hm-grid">
+    <div class="hm-col">
 
-<div class="hm-grid">
-  <section class="hm-card hm-work" x-data="{ tab: 'assigned' }">
-    <div class="hm-tabs" role="tablist" aria-label="My work">
-      <button type="button" role="tab" :aria-selected="tab === 'assigned'" :class="{ 'is-on': tab === 'assigned' }" @click="tab = 'assigned'">Assigned{% if my_ticket_count %} ({{ my_ticket_count }}){% endif %}</button>
-      <button type="button" role="tab" :aria-selected="tab === 'due'" :class="{ 'is-on': tab === 'due' }" @click="tab = 'due'">Due soon{% if due_soon %} ({{ due_soon|length }}){% endif %}</button>
-    </div>
-    <div x-show="tab === 'assigned'">
-      {% if my_tickets %}
-        <ul class="hm-rows">
-          {% for t in my_tickets|slice:":6" %}
-            <li><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span class="t">{{ t.title|truncatechars:70 }}</span><span class="m">{{ t.product.name }} · {{ t.get_status_display }}</span></a></li>
-          {% endfor %}
-        </ul>
-        <a class="hm-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
-      {% else %}<div class="hm-empty"><span>No open tickets assigned to you.</span><span class="hm-sub">Enjoy the quiet, or pick something up from the board.</span><a class="hm-more" href="{% url 'tickets:ticket_board' %}">Open the board →</a></div>{% endif %}
-    </div>
-    <div x-show="tab === 'due'" style="display:none;">
-      {% if due_soon %}
-        <ul class="hm-rows">
-          {% for t in due_soon %}
-            <li><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span class="t">{{ t.key }} {{ t.title|truncatechars:60 }}</span>
-              <span class="chip-d{% if t.is_overdue %} is-late{% endif %}">{% if t.is_overdue %}Overdue{% else %}{{ t.deadline|date:"M j" }}{% endif %}</span></a></li>
-          {% endfor %}
-        </ul>
-      {% else %}<div class="hm-empty"><span>Nothing is due in the next 7 days.</span></div>{% endif %}
-    </div>
-  </section>
-
-  <div class="hm-side">
-    <section class="hm-card hm-today">
-      {% with rec=attendance.record %}
-        <div class="hm-today-row">
-          <div>
-            <h2>Today</h2>
-            <p class="hm-sub">
-              {% if attendance.on_leave_today %}On approved leave
-              {% elif rec.is_open %}Working since {{ rec.check_in|date:"g:i A" }}
-              {% elif rec %}{{ attendance.today_minutes|hours }}h · {{ rec.check_in|date:"g:i A" }} → {{ rec.check_out|date:"g:i A" }}
-              {% elif attendance.is_weekly_off %}Weekly off · punch in only if you work
-              {% else %}Not punched in{% endif %}
-            </p>
-          </div>
-          {% if not attendance.on_leave_today %}
-            {% if rec.is_open %}
-              <form method="post" action="{% url 'attendance:punch' %}" data-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ rec.check_in|date:'U' }}000">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboards:index' %}"><button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
-            {% elif not rec %}
-              <form method="post" action="{% url 'attendance:punch' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboards:index' %}"><button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch in</button></form>
+      <section class="hm-card hm-today">
+        {% with rec=attendance.record %}
+          <div class="hm-today-row">
+            <div>
+              <h2>Today</h2>
+              <p class="hm-figure">{{ attendance.today_minutes|hours }}<small>h worked today</small></p>
+              <p class="hm-sub">
+                {% if attendance.on_leave_today %}On approved leave
+                {% elif rec.is_open %}Working since {{ rec.check_in|date:"g:i A" }}
+                {% elif rec %}{{ attendance.today_minutes|hours }}h · {{ rec.check_in|date:"g:i A" }} → {{ rec.check_out|date:"g:i A" }}
+                {% elif attendance.is_weekly_off %}Weekly off · punch in only if you work
+                {% else %}Not punched in{% endif %}
+              </p>
+            </div>
+            {% if not attendance.on_leave_today %}
+              {% if rec.is_open %}
+                <form method="post" action="{% url 'attendance:punch' %}" data-confirm="Punch out for today?" data-confirm-text="You will be punched out for today." data-confirm-label="Punch out" data-confirm-tone="primary" data-confirm-since="{{ rec.check_in|date:'U' }}000">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboards:index' %}"><button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch out</button></form>
+              {% elif not rec %}
+                <form method="post" action="{% url 'attendance:punch' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboards:index' %}"><button class="btn btn-primary">{% icon 'log-in' 'ic' %}Punch in</button></form>
+              {% endif %}
             {% endif %}
-          {% endif %}
+          </div>
+        {% endwith %}
+        {% if attendance.early_line %}<p style="margin-top:10px"><span class="bdg bdg-green">{% icon 'flame' 'ic' %}{{ attendance.early_line }}</span></p>{% endif %}
+        {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
+        {% if dsr_today %}
+        <a class="hm-dsr" href="{% url 'dsr:dsr_sheet' %}" title="Open the DSR">
+          <span class="hm-dsr-text"><b>{{ dsr_today.logged }}</b> of <b>{{ dsr_today.basis }}</b> in your DSR</span>
+          <span class="hm-meter{% if dsr_today.state == 'low' %} is-low{% endif %}"><i style="width:{{ dsr_today.percent }}%"></i></span>
+        </a>
+        {% endif %}
+        <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
+      </section>
+
+      <section class="hm-card hm-work" x-data="{ tab: 'assigned' }">
+        <div class="hm-tile-head"><h2>My tickets</h2>
+        <div class="hm-tabs" role="tablist" aria-label="My tickets">
+          <button type="button" role="tab" id="hm-tab-assigned" aria-controls="hm-panel-assigned" aria-selected="true"
+                  :aria-selected="tab === 'assigned'" :tabindex="tab === 'assigned' ? 0 : -1" :class="{ 'is-on': tab === 'assigned' }"
+                  x-ref="tabAssigned" @click="tab = 'assigned'"
+                  @keydown.arrow-right.prevent="tab = 'due'; $refs.tabDue.focus()"
+                  @keydown.arrow-left.prevent="tab = 'due'; $refs.tabDue.focus()"
+                  @keydown.end.prevent="tab = 'due'; $refs.tabDue.focus()"
+                  @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Assigned{% if my_ticket_count %} ({{ my_ticket_count }}){% endif %}</button>
+          <button type="button" role="tab" id="hm-tab-due" aria-controls="hm-panel-due" aria-selected="false"
+                  :aria-selected="tab === 'due'" :tabindex="tab === 'due' ? 0 : -1" :class="{ 'is-on': tab === 'due' }"
+                  x-ref="tabDue" @click="tab = 'due'"
+                  @keydown.arrow-right.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                  @keydown.arrow-left.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                  @keydown.end.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                  @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Due soon{% if due_soon %} ({{ due_soon|length }}){% endif %}</button>
         </div>
-      {% endwith %}
-      {% if attendance.early_line %}<p style="margin-top:10px"><span class="bdg bdg-green">{% icon 'flame' 'ic' %}{{ attendance.early_line }}</span></p>{% endif %}
-      {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
-      {% if dsr_today %}
-      <a class="hm-dsr" href="{% url 'dsr:dsr_sheet' %}" title="Open the DSR">
-        <span class="hm-dsr-text"><b>{{ dsr_today.logged }}</b> of <b>{{ dsr_today.basis }}</b> in your DSR</span>
-        <span class="hm-meter{% if dsr_today.state == 'low' %} is-low{% endif %}"><i style="width:{{ dsr_today.percent }}%"></i></span>
-      </a>
+        </div>
+        <div role="tabpanel" id="hm-panel-assigned" aria-labelledby="hm-tab-assigned" tabindex="0" x-show="tab === 'assigned'">
+          {% if my_tickets %}
+            <ul class="hm-rows">
+              {% for t in my_tickets|slice:":6" %}
+                <li><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span class="k">{{ t.key }}</span><span class="t">{{ t.title|truncatechars:70 }}</span><span class="m">{{ t.product.name }} · {{ t.get_status_display }}</span></a></li>
+              {% endfor %}
+            </ul>
+            <a class="hm-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
+          {% else %}<div class="hm-empty"><span>No open tickets assigned to you.</span><span class="hm-sub">Enjoy the quiet, or pick something up from the board.</span><a class="hm-more" href="{% url 'tickets:ticket_board' %}">Open the board →</a></div>{% endif %}
+        </div>
+        <div role="tabpanel" id="hm-panel-due" aria-labelledby="hm-tab-due" tabindex="0" x-show="tab === 'due'" style="display:none;">
+          {% if due_soon %}
+            <ul class="hm-rows">
+              {% for t in due_soon %}
+                <li><a href="{% url 'tickets:ticket_detail' pk=t.pk %}"><span class="k">{{ t.key }}</span><span class="t">{{ t.title|truncatechars:60 }}</span>
+                  <span class="chip-d{% if t.is_overdue %} is-late{% endif %}">{% if t.is_overdue %}Overdue{% else %}{{ t.deadline|date:"M j" }}{% endif %}</span></a></li>
+              {% endfor %}
+            </ul>
+          {% else %}<div class="hm-empty"><span>Nothing is due in the next 7 days.</span></div>{% endif %}
+        </div>
+      </section>
+
+    </div>
+
+    <div class="hm-side">
+
+      <section class="hm-card" id="todo-card">
+        <h2>My to-do <span class="hm-sub-inline">only you can see this</span></h2>
+        <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"></div>
+      </section>
+
+      {% if is_privileged %}
+      <section class="hm-card hm-team">
+        <h2>Team today{% if team_today %} <span class="hm-sub-inline">{{ team_today|length }} in</span>{% endif %}</h2>
+        {% if team_today %}
+          <ul class="hm-rows">
+            {% for r in team_today %}
+              <li class="is-plain"><span class="t">{{ r.user.get_full_name|default:r.user.username }}</span><span class="m">{{ r.check_in|date:"g:i A" }} → {% if r.check_out %}{{ r.check_out|date:"g:i A" }}{% else %}working{% endif %}</span></li>
+            {% endfor %}
+          </ul>
+        {% else %}<div class="hm-empty"><span>Nobody has punched in yet.</span></div>{% endif %}
+      </section>
       {% endif %}
-      <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
-    </section>
 
-    {% if is_privileged %}
-    <section class="hm-card hm-team">
-      <h2>Team today <span class="hm-sub-inline">{{ team_today|length }} in</span></h2>
-      {% if team_today %}
-        <ul class="hm-rows">
-          {% for r in team_today %}
-            <li class="is-plain"><span class="t">{{ r.user.get_full_name|default:r.user.username }}</span><span class="m">{{ r.check_in|date:"g:i A" }} → {% if r.check_out %}{{ r.check_out|date:"g:i A" }}{% else %}working{% endif %}</span></li>
-          {% endfor %}
-        </ul>
-      {% else %}<div class="hm-empty"><span>Nobody has punched in yet.</span></div>{% endif %}
-    </section>
-    {% endif %}
+    </div>
+  </div>
 
-    <section class="hm-card" id="todo-card">
-      <h2>My to-do <span class="hm-sub-inline">only you can see this</span></h2>
-      <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"></div>
+  <div class="hm-tiles">
+    <section class="hm-card">
+      <div class="hm-tile-head"><h2>This week</h2><span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span></div>
+      <div class="hm-bars" role="img" aria-label="Hours worked each day this week">
+        {% for d in chart_week %}
+          <div class="hm-bar{% if d.today %} is-today{% endif %}{% if d.future %} is-future{% endif %}{% if d.met %} is-met{% endif %}" title="{{ d.label }}: {{ d.hours }}">
+            <span class="hm-bar-track"><i style="height:{{ d.pct }}%"></i></span>
+            <span class="hm-bar-lab">{{ d.label }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="hm-card hm-leave-card">
+      <div class="hm-tile-head"><h2>Leave</h2><a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a></div>
+      <ul class="hm-leave">
+        {% for b in leave_balances|slice:":3" %}
+          <li>
+            <div class="r"><span>{{ b.policy.name }}</span><span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> of {{ b.limit_label }} left{% endif %}</span></div>
+            {% if not b.is_unlimited %}<span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{{ b.remaining_percent }}%"></i></span>{% endif %}
+          </li>
+        {% empty %}<li class="hm-empty">No leave policies configured yet.</li>{% endfor %}
+      </ul>
     </section>
   </div>
 </div>
-
-<div class="hm-tiles">
-  <section class="hm-card">
-    <div class="hm-tile-head"><h2>This week</h2><span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span></div>
-    <div class="hm-bars" role="img" aria-label="Hours worked each day this week">
-      {% for d in chart_week %}
-        <div class="hm-bar{% if d.today %} is-today{% endif %}{% if d.future %} is-future{% endif %}{% if d.met %} is-met{% endif %}" title="{{ d.label }}: {{ d.hours }}">
-          <span class="hm-bar-track"><i style="height:{{ d.pct }}%"></i></span>
-          <span class="hm-bar-lab">{{ d.label }}</span>
-        </div>
-      {% endfor %}
-    </div>
-  </section>
-  <section class="hm-card hm-leave-card">
-    <div class="hm-tile-head"><h2>Leave</h2><a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a></div>
-    <ul class="hm-leave">
-      {% for b in leave_balances|slice:":3" %}
-        <li>
-          <div class="r"><span>{{ b.policy.name }}</span><span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> left{% endif %}</span></div>
-          {% if not b.is_unlimited %}<span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{% widthratio b.approved b.limit 100 %}%"></i></span>{% endif %}
-        </li>
-      {% empty %}<li class="hm-empty">No leave policies configured yet.</li>{% endfor %}
-    </ul>
-  </section>
-
-
-</div>
-</div>
-
-
