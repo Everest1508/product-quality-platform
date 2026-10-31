@@ -1,16 +1,42 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
-{% block title %}{{ product.name }} — PQ Platform{% endblock %}
+{% block title %}{{ product.name }} — Dashboard — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="head">
-  <h1>{{ product.name }} <span class="count">Dashboard</span></h1>
-  <div class="head-actions">
-    <a href="{% url 'dashboards:index' %}" class="btn">Overview</a>
+<div class="pg-head">
+  <div>
+    <nav class="breadcrumbs" aria-label="Breadcrumbs">
+      <a href="{% url 'dashboards:index' %}">Home</a>
+      <span class="sep">/</span>
+      <a href="{% url 'products:project_board' %}">Projects</a>
+      <span class="sep">/</span>
+      <span class="current">{{ product.name }}</span>
+    </nav>
+    <div class="pg-title-row">
+      <h1 class="pg-title">{{ product.name }}</h1>
+      <span class="bdg bdg-blue">{{ product.default_environment|default:"Production"|title }}</span>
+    </div>
+  </div>
+  <div class="pg-actions">
+    <a href="{% url 'products:product_ticket_create' pk=product.pk %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New ticket</a>
+    <a href="{% url 'products:product_board' pk=product.pk %}" class="btn">{% icon 'kanban' 'ic' %}Board</a>
   </div>
 </div>
 
-<div id="product-dashboard-content">
+<div class="seg pj-tabs mb-6" role="tablist" aria-label="Project sections">
+  <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="is-on" aria-current="page">Dashboard</a>
+  <a href="{% url 'products:product_board' pk=product.pk %}">Tickets</a>
+  <a href="{% url 'products:product_errors' pk=product.pk %}">Errors</a>
+  <a href="{% url 'products:project_lifecycle' pk=product.pk %}">Lifecycle</a>
+  <a href="{% url 'products:product_detail' pk=product.pk %}">Settings</a>
+</div>
+
+<div id="product-dashboard-content"
+     hx-get="{% url 'dashboards:product_dashboard' product_pk=product.pk %}"
+     hx-trigger="dash:refresh from:body"
+     hx-target="#product-dashboard-content"
+     hx-swap="innerHTML">
   {% include "dashboards/partials/_product_dashboard_content.html" %}
 </div>
 {% endblock %}

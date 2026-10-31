@@ -198,6 +198,17 @@ class DSRHardeningTests(TestCase):
         self.assertEqual(self.post(hours_spent="8", source="git", source_id="a1").status_code, 400)
         self.assertEqual(self.post(task_name="Typed", hours_spent="8").status_code, 201)  # manual: flagged, not capped
 
+    def test_open_punch_allows_hours_exceeding_elapsed_time(self):
+        from apps.attendance.models import AttendanceRecord
+
+        start = timezone.now() - timedelta(hours=3)
+        AttendanceRecord.objects.create(
+            company=self.company, user=self.dev, date=self.today, check_in=start, check_out=None
+        )
+        # Working on multiple projects while punched in for 3h: 7h submission must succeed.
+        res = self.post(hours_spent="7", source="git", source_id="a2")
+        self.assertEqual(res.status_code, 201)
+
     def test_source_defaults_to_manual_and_is_unverified(self):
         manual = self.post().json()
         self.assertEqual((manual["source"], manual["unverified"]), ("manual", True))

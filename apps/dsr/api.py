@@ -189,7 +189,7 @@ def _check_hours(user, company, day, hours, source, exclude_pk=None):
     if source == "manual":
         return None
     att = _attendance(company, user, day)
-    if att is None:
+    if att is None or att.get("check_out") is None:
         return None
     others = DSREntry.objects.filter(company=company, user=user, date=day).exclude(pk=exclude_pk)
     total = sum((e.hours_spent for e in others), Decimal(0)) + hours

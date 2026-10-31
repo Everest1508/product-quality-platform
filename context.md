@@ -70,6 +70,68 @@ entry here is unfinished.
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
 
+### 2026-10-31 (changelog & all dashboards) — ui-fix on Changelog modal, Home, Product, Reports, and Audit Log dashboards
+
+**What changed.**
+
+1. **Changelog / What's New modal overhaul** (`templates/core/_changelog_modal.html`, `templates/core/css/_ui.css`, `_pages.css`, `_app.css`):
+   - Refactored the What's new dialog (`#pq-changelog`) to a two-pane layout with token-based styling:
+     - Header: flex layout with `.cl-head-main` (title, sparkles icon in `.cl-spark`, subtitle `#cl-sub`) and accessible `.cl-x` close button, eliminating position collisions. Fixed `{{ app_version }}` variable evaluation by removing newline wrapping.
+     - Toolbar: `.cl-search-wrap` with search icon and fully rounded pill `.cl-search-input` (matching chip radius), plus type filter chips (`#cl-chips`) with category indicator dots (`.cl-chip-dot`: green for New/Added, blue for Improved/Changed, orange for Fixed, red for Security).
+     - Release rail (`#cl-rail`): cards with `.cl-rel-top` (version, codename, and `Latest` badge for newest release) and `.cl-rel-bottom` (date and change count). Added keyboard arrow navigation (`ArrowUp`/`ArrowDown`/`ArrowLeft`/`ArrowRight`).
+     - Detail pane (`#cl-pane`): display heading with badges, sentence-cased release title, executive summary callout (`.cl-summary`) with left accent border and icon tag, category headers (`.cl-sec`) with colored dots and count badges, and clean card-grouped item lists (`.cl-item-list`, `.cl-item`) with hover effects and nested sub-bullets (`ul.changelog-sub`). Subtitle properly separates codename and title with an em-dash.
+     - Header actions: added keyboard `<kbd>Esc</kbd>` hint and accessible focus states. Added releases count badge on left rail (`.cl-rail-count-badge`).
+     - Zero-match empty state: when search or filter yields no results, displays an empty state with a "Clear filters" button that resets filters and search input.
+     - Mobile responsiveness (<768px): switches to vertical stack with horizontally scrollable release tabs at the top.
+     - Cleaned up dead legacy CSS: removed 65 lines of unused `.changelog` rules from `_pages.css` and 43 lines from `_app.css`. Installed `ady-uifix-skill` into `.agent/skills/ui-fix/`.
+
+2. **Product Dashboard overhaul** (`templates/dashboards/product_dashboard.html`, `templates/dashboards/partials/_product_dashboard_content.html`, `apps/dashboards/service.py`, `templates/core/css/_ui.css`):
+   - Replaced basic `.head` with standard `.pg-head` breadcrumbs (`Home / Projects / {product}`) and environment pill.
+   - Added `.pj-tabs` segment navigation linking between Dashboard, Tickets, Errors, Lifecycle, and Settings.
+   - Replaced dead, unlinked stat cards with actionable `.pd-stat` cards that link directly to product errors, ticket board, and surveys. Replaced ad-hoc SVGs with design system `{% icon %}`.
+   - Replaced inline styles on error severity and ticket status meters with semantic token classes (`.meter.critical`, `.meter.high`, `.meter.medium`, `.meter.low`, etc.).
+   - Wired up the previously unused `recent_activity` query to display a structured 10-item product event feed.
+   - Handled `uptime_percentage` cleanly, defaulting to 100.0% when 0 errors exist.
+   - Cleaned up remaining inline styles to use `.pd-card-head-divider` and `.pd-empty-state`.
+
+3. **Home Dashboard polish and dead query cleanup** (`templates/dashboards/partials/_dashboard_content.html`, `apps/dashboards/service.py`, `_ui.css`):
+   - Eliminated dead queries from `_dashboard_charts` (status donut conic-gradient calculation and 14-day error occurrences) and `get_personal_dashboard_data` (`my_activity`, `my_leave_requests`, `overdue_count`, `todo_open`), noticeably reducing page load query count.
+   - Kept `_personal_payroll` in `get_personal_dashboard_data` — verified that `UnreadableDecimalTakesDownTheDashboardTest` specifically protects against corrupt floating-point / invalid decimal numbers in SQLite by reading `profile.monthly_salary` during page load.
+   - Replaced inline styles (`style="margin-top:10px"`, `style="display:none;"`) with `.hm-pill-row` and `x-cloak`.
+   - Deleted unused legacy partial templates (`_product_cards.html`, `_attention.html`, `_my_work.html`).
+
+4. **Reports Dashboard overhaul** (`templates/dashboards/reports.html`, `templates/dashboards/partials/_report_content.html`, `templates/core/css/_ui.css`):
+   - Upgraded header to `.pg-head` breadcrumbs (`Home / Reports`), dynamic scope pill (`My Activity` / `Company-Wide`), and `.rep-range-pill` showing active date bounds with calendar icon.
+   - Refactored filter bar into tokenized `.rep-toolbar`: accessible date pickers with `<label>` tags, generate button with filter icon, and pill-styled preset chips (`.rchips`, `.rchip`).
+   - Cleaned up inline styles on KPI comparison cards (`.rk-row`, `.rk`), bento completion rate rings, collapsible ticket/error summary tables (`.rep-fold`, `.rep-table-wrap`, `.rep-table`) with right-aligned numeric data, and interactive recent activity log table.
+
+5. **Audit Log Dashboard overhaul** (`templates/dashboards/audit_log.html`, `templates/dashboards/partials/_audit_log_rows.html`, `templates/core/css/_ui.css`):
+   - Replaced old `.head` with standard `.pg-head` breadcrumbs (`Home / Audit Log`) and count badge.
+   - Built modern `.audit-toolbar`: search field with icon, app-wide accessible `<summary>` dropdowns (`{% dropdown "type" %}`, `{% dropdown "actor" %}`), and accessible date range inputs with explicit `<label for="audit-from">From</label>` and `<label for="audit-to">To</label>`, strictly adhering to `AuditLogFilterLabellingTest`.
+   - Replaced unstyled table with card-wrapped `.audit-table`: styled timestamps (`.audit-date-main`, `.audit-date-sub`), semantic event type pills (`.pill`), actor user avatars (`.audit-avatar`), and empty state with history icon (`.audit-empty`).
+   - Eliminated all inline `style="..."` attributes, migrating them to CSS token rules in `_ui.css`.
+
+6. **Home Dashboard: Two-Column Balanced Layout (Spacious To-Do & Team Today)** (`templates/dashboards/partials/_dashboard_content.html`, `templates/core/css/_ui.css`, `_pages.css`):
+   - Restructured Home into an equal 50/50 two-column grid (`.hm-grid` with `minmax(0, 1fr) minmax(0, 1fr)`).
+   - Expanded `#todo-card` (My To-Do) to the full 50% column width, providing generous room for the task input, priority selector, due date picker, progress bar, and task rows.
+   - Expanded `.hm-team` (Team Today) to full 50% column width with user avatars, name display, punch time status, and active pulse status dots.
+   - Left column holds `.hm-today` (Today clock & punch card) and `.hm-work` (My Tickets with Assigned / Due soon tabs).
+   - Bottom row holds `.hm-tiles` (This Week activity bar chart and Leave balance cards) across a matching 50/50 split.
+
+7. **DSR MCP Attendance Constraint Relaxation for Multi-Project / Active Shifts** (`apps/dsr/api.py`, `apps/dsr/tests_api.py`):
+   - In `_check_hours`, relaxed the attendance punch check when `att["check_out"] is None` (active shift). When on the clock, elapsed time since punch-in does not cap multi-project DSR submissions (e.g. logging 7h across 3 projects while punched in for 3h).
+   - Added test `test_open_punch_allows_hours_exceeding_elapsed_time` to lock in the behavior.
+
+**How verified.**
+- `venv/bin/python manage.py check` → 0 errors (only expected `staticfiles.W004`).
+- `venv/bin/python manage.py test apps.dashboards` → 70 tests passed.
+- `venv/bin/python manage.py test apps.dsr.tests_api` → 37 tests passed.
+- `venv/bin/python manage.py test apps.core` → 192 tests passed.
+
+
+**Still undecided.** None.
+
+
 ### 2026-10-12 (audit) — toasts for the silent mutations, audit rows for the unlogged ones
 
 **What changed.** An AST scan of every mutation handler in `apps/*/views.py`

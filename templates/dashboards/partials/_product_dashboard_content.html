@@ -1,136 +1,196 @@
-<div class="grid-4 mb-6">
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Errors</div>
-      <div class="stat-icon red">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-      </div>
-    </div>
-    <div class="stat-val">{{ total_errors }}<small>/{{ open_errors }} open</small></div>
-    <div class="stat-foot"><b>{{ resolved_errors }}</b> resolved</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Tickets</div>
-      <div class="stat-icon orange">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2c0 .5-.4 1-.9 1.2a1.6 1.6 0 0 0 0 4.6c.5.2.9.7.9 1.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2c0-.5.4-1 .9-1.2a1.6 1.6 0 0 0 0-4.6C3.4 9.5 3 9 3 8.5Z"/><path d="M9 6v12"/></svg>
-      </div>
-    </div>
-    <div class="stat-val">{{ total_tickets }}<small>/{{ open_tickets }} open</small></div>
-    <div class="stat-foot">lifetime for this product</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Avg Survey Score</div>
-      <div class="stat-icon blue">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.7 8l6 .8-4.4 4.1 1.1 5.9L12 15.9l-5.4 2.9 1.1-5.9L3.3 8.8l6-.8Z"/></svg>
-      </div>
-    </div>
-    <div class="stat-val">{{ avg_score|default:"—" }}</div>
-    <div class="stat-foot"><b>{{ total_responses }}</b> response{{ total_responses|pluralize }} collected</div>
-  </div>
-  <div class="card stat-card">
-    <div class="stat-top">
-      <div class="stat-label">Uptime</div>
-      <div class="stat-icon green">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8L9 4l-3 8H2"/></svg>
-      </div>
-    </div>
-    <div class="stat-val" style="{% if uptime_percentage is not None %}{% if uptime_percentage >= 99 %}color:var(--green);{% elif uptime_percentage >= 95 %}color:var(--orange);{% else %}color:var(--red);{% endif %}{% endif %}">{{ uptime_percentage|default:"—" }}{% if uptime_percentage is not None %}%{% endif %}</div>
-    <div class="stat-foot">estimated from critical errors</div>
-  </div>
-</div>
+{% load icon_tags %}
 
-<div class="grid-2 mb-6">
-  <div class="card">
-    <div class="flex-between mb-4">
-      <div>
-        <div style="font-size:14px;font-weight:600;color:var(--text);">Error Occurrences</div>
-        <div class="text-sm text-muted" style="font-size:12px;margin-top:2px;">Last 30 days daily capture trend</div>
+<div class="pd-page">
+  <div class="pd-stats mb-6">
+    <a href="{% url 'products:product_errors' pk=product.pk %}" class="pd-stat" title="View product errors">
+      <div class="pd-stat-head">
+        <span class="pd-stat-label">Errors</span>
+        <span class="pd-stat-icon red">{% icon 'alert-triangle' 'ic' %}</span>
       </div>
-      <div class="chart-meta">
-        <span class="dot" style="background:linear-gradient(180deg, var(--chart-error-a) 0%, var(--chart-error-b) 100%);"></span>
-        <span>occurrences</span>
+      <div class="pd-stat-val">{{ total_errors }}<small>/ {{ open_errors }} open</small></div>
+      <div class="pd-stat-foot">
+        <span><b>{{ resolved_errors }}</b> resolved</span>
+        <span class="pd-stat-link">View errors &rarr;</span>
+      </div>
+    </a>
+
+    <a href="{% url 'products:product_board' pk=product.pk %}" class="pd-stat" title="Open ticket board">
+      <div class="pd-stat-head">
+        <span class="pd-stat-label">Tickets</span>
+        <span class="pd-stat-icon orange">{% icon 'ticket' 'ic' %}</span>
+      </div>
+      <div class="pd-stat-val">{{ total_tickets }}<small>/ {{ open_tickets }} open</small></div>
+      <div class="pd-stat-foot">
+        <span><b>{{ open_tickets }}</b> active backlog</span>
+        <span class="pd-stat-link">Open board &rarr;</span>
+      </div>
+    </a>
+
+    <a href="{% url 'products:product_surveys' pk=product.pk %}" class="pd-stat" title="View feedback and surveys">
+      <div class="pd-stat-head">
+        <span class="pd-stat-label">CSAT Score</span>
+        <span class="pd-stat-icon blue">{% icon 'star' 'ic' %}</span>
+      </div>
+      <div class="pd-stat-val">{{ avg_score|default:"—" }}<small>{% if avg_score %}/ 10{% endif %}</small></div>
+      <div class="pd-stat-foot">
+        <span><b>{{ total_responses }}</b> response{{ total_responses|pluralize }}</span>
+        <span class="pd-stat-link">Feedback &rarr;</span>
+      </div>
+    </a>
+
+    <div class="pd-stat">
+      <div class="pd-stat-head">
+        <span class="pd-stat-label">Uptime</span>
+        <span class="pd-stat-icon green">{% icon 'activity' 'ic' %}</span>
+      </div>
+      <div class="pd-stat-val {% if uptime_percentage is not None %}{% if uptime_percentage >= 99 %}is-good{% elif uptime_percentage >= 95 %}is-warn{% else %}is-bad{% endif %}{% endif %}">
+        {{ uptime_percentage|default:"100" }}%
+      </div>
+      <div class="pd-stat-foot">
+        <span>Estimated stability</span>
+        <span class="text-muted">30-day window</span>
       </div>
     </div>
-    <div class="chart-container">
-      <div class="chart-lines">
-        <div></div>
-        <div></div>
-        <div></div>
+  </div>
+
+  <div class="pd-charts mb-6">
+    <div class="pd-card">
+      <div class="pd-card-head">
+        <div>
+          <h2 class="pd-card-title">Error Occurrences</h2>
+          <p class="pd-card-sub">Daily captured volume over the last 30 days</p>
+        </div>
+        <div class="pd-card-badge">
+          <span class="dot dot-error"></span>
+          <span>Occurrences</span>
+        </div>
       </div>
-      <div class="chart">
-        {% for day in errors_by_day %}
-        <div class="bar errors" style="height:{% widthratio day.count errors_by_day_max 100 %}%;" data-tooltip="{{ day.date|date:'M d, Y' }} &middot; <b>{{ day.count }}</b> occurrence{{ day.count|pluralize }}"></div>
+      <div class="chart-container" role="img" aria-label="Daily error occurrence volume over last 30 days">
+        <div class="chart-lines" aria-hidden="true">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="chart">
+          {% for day in errors_by_day %}
+          <div class="bar errors" style="height:{% widthratio day.count errors_by_day_max 100 %}%;" data-tooltip="{{ day.date }} &middot; <b>{{ day.count }}</b> occurrence{{ day.count|pluralize }}"></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="chart-axis">
+        <span>30d ago</span>
+        <span>15d ago</span>
+        <span>Today</span>
+      </div>
+    </div>
+
+    <div class="pd-card">
+      <div class="pd-card-head">
+        <div>
+          <h2 class="pd-card-title">Ticket Burndown</h2>
+          <p class="pd-card-sub">Open backlog volume over the last 30 days</p>
+        </div>
+        <div class="pd-card-badge">
+          <span class="dot dot-burn"></span>
+          <span>Open tickets</span>
+        </div>
+      </div>
+      <div class="chart-container" role="img" aria-label="Ticket burndown trend over last 30 days">
+        <div class="chart-lines" aria-hidden="true">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="chart">
+          {% for day in ticket_burndown %}
+          <div class="bar burn" style="height:{% widthratio day.open ticket_burndown_max 100 %}%;" data-tooltip="{{ day.date }} &middot; <b>{{ day.open }}</b> open ticket{{ day.open|pluralize }}"></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="chart-axis">
+        <span>30d ago</span>
+        <span>15d ago</span>
+        <span>Today</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pd-bottom-grid">
+    <div class="pd-card">
+      <div class="pd-card-head">
+        <div>
+          <h2 class="pd-card-title">Error Severity</h2>
+          <p class="pd-card-sub">Distribution of error groups by priority</p>
+        </div>
+        <a href="{% url 'products:product_errors' pk=product.pk %}" class="pd-stat-link">View all &rarr;</a>
+      </div>
+      <div class="pd-meter-list">
+        {% for item in errors_by_severity %}
+        <div class="pd-meter-row">
+          <div class="pd-meter-labels">
+            <span class="name">{{ item.severity|title }}</span>
+            <span class="val">{{ item.count }}</span>
+          </div>
+          <div class="meter {{ item.severity }}"><i style="width:{% widthratio item.count errors_by_severity_max 100 %}%;"></i></div>
+        </div>
+        {% empty %}
+        <div class="empty-quiet pd-empty-state">
+          <span>No errors recorded for this product.</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="pd-card-head pd-card-head-divider">
+        <div>
+          <h2 class="pd-card-title">Ticket Status</h2>
+          <p class="pd-card-sub">Backlog breakdown by workflow stage</p>
+        </div>
+        <a href="{% url 'products:product_board' pk=product.pk %}" class="pd-stat-link">Board &rarr;</a>
+      </div>
+      <div class="pd-meter-list">
+        {% for item in tickets_by_status %}
+        <div class="pd-meter-row">
+          <div class="pd-meter-labels">
+            <span class="name">{{ item.status|title }}</span>
+            <span class="val">{{ item.count }}</span>
+          </div>
+          <div class="meter {{ item.status }}"><i style="width:{% widthratio item.count tickets_by_status_max 100 %}%;"></i></div>
+        </div>
+        {% empty %}
+        <div class="empty-quiet pd-empty-state">
+          <span>No tickets recorded for this product.</span>
+        </div>
         {% endfor %}
       </div>
     </div>
-    <div class="chart-axis">
-      <span>30d ago</span>
-      <span>15d ago</span>
-      <span>Today</span>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="flex-between mb-4">
-      <div>
-        <div style="font-size:14px;font-weight:600;color:var(--text);">Ticket Burn-down</div>
-        <div class="text-sm text-muted" style="font-size:12px;margin-top:2px;">Last 30 days open backlog trend</div>
+    <div class="pd-card">
+      <div class="pd-card-head">
+        <div>
+          <h2 class="pd-card-title">Recent Activity</h2>
+          <p class="pd-card-sub">Latest changes, updates and resolutions</p>
+        </div>
       </div>
-      <div class="chart-meta">
-        <span class="dot" style="background:linear-gradient(180deg, var(--chart-burn-a) 0%, var(--chart-burn-b) 100%);"></span>
-        <span>open tickets</span>
-      </div>
-    </div>
-    <div class="chart-container">
-      <div class="chart-lines">
-        <div></div>
-        <div></div>
-        <div></div>
-      </div>
-      <div class="chart">
-        {% for day in ticket_burndown %}
-        <div class="bar burn" style="height:{% widthratio day.open ticket_burndown_max 100 %}%;" data-tooltip="{{ day.date|date:'M d, Y' }} &middot; <b>{{ day.open }}</b> open ticket{{ day.open|pluralize }}"></div>
+      {% if recent_activity %}
+      <ul class="pd-activity-list">
+        {% for log in recent_activity %}
+        <li class="pd-activity-item">
+          <span class="pd-activity-dot"></span>
+          <div class="pd-activity-content">
+            <div class="pd-activity-title">{{ log.title }}</div>
+            <div class="pd-activity-time">
+              {% if log.actor %}<b>{{ log.actor.get_full_name|default:log.actor.username }}</b> &middot; {% endif %}
+              <time datetime="{{ log.created_at|date:'c' }}">{{ log.created_at|timesince }} ago</time>
+            </div>
+          </div>
+        </li>
         {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-quiet pd-empty-state">
+        <span>No recent activity logged for this product.</span>
       </div>
+      {% endif %}
     </div>
-    <div class="chart-axis">
-      <span>30d ago</span>
-      <span>15d ago</span>
-      <span>Today</span>
-    </div>
-  </div>
-</div>
-
-<div class="grid-2">
-  <div class="card">
-    <div class="text-sm font-medium mb-4">Error Severity</div>
-    {% for item in errors_by_severity %}
-    <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <div class="flex-between" style="margin-bottom:5px;">
-        <span class="text-sm">{{ item.severity|title }}</span>
-        <span class="text-sm font-medium">{{ item.count }}</span>
-      </div>
-      <div class="meter {{ item.severity }}"><i style="width:{% widthratio item.count errors_by_severity_max 100 %}%;"></i></div>
-    </div>
-    {% empty %}
-    <p class="text-sm text-muted" style="text-align:center;padding:20px;">No errors yet.</p>
-    {% endfor %}
-  </div>
-
-  <div class="card">
-    <div class="text-sm font-medium mb-4">Ticket Status</div>
-    {% for item in tickets_by_status %}
-    <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line);{% endif %}">
-      <div class="flex-between" style="margin-bottom:5px;">
-        <span class="text-sm">{{ item.status|title }}</span>
-        <span class="text-sm font-medium">{{ item.count }}</span>
-      </div>
-      <div class="meter {{ item.status }}"><i style="width:{% widthratio item.count tickets_by_status_max 100 %}%;"></i></div>
-    </div>
-    {% empty %}
-    <p class="text-sm text-muted" style="text-align:center;padding:20px;">No tickets yet.</p>
-    {% endfor %}
   </div>
 </div>

@@ -134,7 +134,7 @@ def get_product_dashboard_data(company, product):
             "avg": round(day_avg, 1) if day_avg else None,
         })
 
-    uptime_percentage = None
+    uptime_percentage = 100.0
     if total_errors > 0:
         total_occurrences = ErrorOccurrence.objects.filter(
             company=company, error_group__product=product,
@@ -147,10 +147,25 @@ def get_product_dashboard_data(company, product):
                 ((total_occurrences - critical_errors) / total_occurrences) * 100, 2
             ) if total_occurrences > 0 else 100.0
 
-    recent_activity = ActivityLog.objects.filter(
-        company=company,
-        target_content_type__contains="product",
-    ).select_related("actor")[:10]
+    recent_activity = list(
+        ActivityLog.objects.filter(company=company)
+        .filter(
+            Q(target_content_type__contains="product", target_object_id=product.pk)
+            | Q(metadata__product_id=product.pk)
+            | Q(metadata__product=product.slug)
+        )
+        .select_related("actor")
+        .order_by("-created_at")[:10]
+    )
+    if not recent_activity:
+        recent_activity = list(
+            ActivityLog.objects.filter(
+                company=company,
+                target_content_type__contains="product",
+            )
+            .select_related("actor")
+            .order_by("-created_at")[:10]
+        )
 
     return {
         "product": product,
@@ -675,6 +690,7 @@ def _personal_attendance(company, user, today):
     }
 
 
+
 def _personal_payroll(company, user):
     """Latest issued payslip, or an explicit 'not on payroll' state.
 
@@ -690,9 +706,6 @@ def _personal_payroll(company, user):
         .first()
     )
 
-    # "On payroll" is a profile fact, not a payslip fact. Reading it off the
-    # payslip alone would tell someone whose admin simply hasn't run payroll
-    # yet that they are not on payroll at all.
     latest = (
         PayrollProfile.objects.filter(company=company, user=user, is_on_payroll=True)
         .order_by("-effective_from")
@@ -783,55 +796,10 @@ def _dashboard_charts(user, company, today):
         for i, m in enumerate(mins)
     ]
     week_total = sum(mins)
-
-    # Tickets by status across everything this person can open.
-    palette = {
-        "open": "#1C75BC", "in_progress": "#75BAE6", "in_review": "#7c3aed",
-        "resolved": "#177a4c", "closed": "#9aa3b2",
-    }
-    counts = dict(
-        accessible_tickets(user, company).values_list("status").annotate(n=Count("pk")).order_by()
-    )
-    total = sum(counts.values())
-    statuses, stops, at = [], [], 0.0
-    for value, label in Ticket.Status.choices:
-        n = counts.get(value, 0)
-        if not n:
-            continue
-        color = palette.get(value, "#9aa3b2")
-        pct = n * 100 / total
-        stops.append(f"{color} {at:.2f}% {at + pct:.2f}%")
-        at += pct
-        statuses.append({"label": label, "n": n, "color": color})
-    donut = f"conic-gradient({', '.join(stops)})" if stops else "none"
-
-    # Error occurrences per day, last 14 days.
-    since = today - timedelta(days=13)
-    per_day = dict(
-        ErrorOccurrence.objects.filter(
-            company=company,
-            error_group__in=accessible_error_groups(user, company),
-            created_at__date__gte=since,
-        )
-        .values_list("created_at__date")
-        .annotate(n=Count("pk"))
-        .order_by()
-    )
-    series = [per_day.get(since + timedelta(days=i), 0) for i in range(14)]
-    peak = max(series) or 1
-    errors = [
-        {"n": n, "pct": max(4, round(n * 100 / peak)) if n else 2, "label": (since + timedelta(days=i)).strftime("%b %d")}
-        for i, n in enumerate(series)
-    ]
     return {
         "chart_week": week,
         "chart_week_total": f"{week_total // 60}h {week_total % 60:02d}m",
         "chart_week_target": f"{target // 60}h {target % 60:02d}m",
-        "chart_status": statuses,
-        "chart_status_total": total,
-        "chart_donut": donut,
-        "chart_errors": errors,
-        "chart_errors_total": sum(series),
     }
 
 
@@ -891,15 +859,6 @@ def get_personal_dashboard_data(user, company):
 
     attendance = _personal_attendance(company, user, today)
 
-    my_leave = (
-        LeaveRequest.objects.filter(company=company, user=user)
-        .select_related("policy")
-        .order_by("-start_date")[:4]
-    )
-    pending_leave = LeaveRequest.objects.filter(
-        company=company, user=user, status="pending"
-    ).count()
-
     # `accessible_tickets`, not `company=company`: a ticket is product-owned,
     # and a developer assigned a ticket in a product they cannot otherwise see
     # must not have it surface here.
@@ -913,24 +872,15 @@ def get_personal_dashboard_data(user, company):
         .select_related("product").order_by("deadline")[:4]
     )
 
-    from apps.dashboards.models import ActivityLog, Todo
-
-    overdue_count = open_mine.filter(deadline__lt=timezone.now()).count()
-    todo_open = Todo.objects.filter(user=user, done=False).count()
-    # The person's own recent actions only, so nothing from a product they cannot open appears here.
-    my_activity = list(ActivityLog.objects.filter(company=company, actor=user)[:5])
-
     data = {
-        "overdue_count": overdue_count,
-        "todo_open": todo_open,
-        "my_activity": my_activity,
         "is_privileged": is_privileged,
         "role": membership.role if membership else None,
         "today": today,
         "attendance": attendance,
         "leave_balances": balances_for(company, user, today.year),
-        "my_leave_requests": list(my_leave),
-        "pending_leave": pending_leave,
+        "pending_leave": LeaveRequest.objects.filter(
+            company=company, user=user, status="pending"
+        ).count(),
         "payroll": _personal_payroll(company, user),
         "dsr": _personal_dsr(company, user, today),
         "my_tickets": list(my_tickets),

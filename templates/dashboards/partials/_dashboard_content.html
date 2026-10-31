@@ -8,16 +8,10 @@
   </div>
 {% endif %}
 
-{% comment %}
-  Two independent columns, not one 12-column grid: the left stack is your day and
-  the right rail is your own list. Rows in a single grid are as tall as their
-  tallest card, so a grid would stretch the rail to the left column's height (the
-  to-do card used to be 791px tall around 200px of content) and any card without a
-  span would shrink to one column — which is what happened to Team today below
-  1180px. Each column now lays out its own cards; every card is content height.
-{% endcomment %}
 <div class="hm-home">
   <div class="hm-grid">
+
+    {# ── Left Column: Today's Clock + My Tickets ── #}
     <div class="hm-col">
 
       <section class="hm-card hm-today">
@@ -43,35 +37,40 @@
             {% endif %}
           </div>
         {% endwith %}
-        {% if attendance.early_line %}<p style="margin-top:10px"><span class="bdg bdg-green">{% icon 'flame' 'ic' %}{{ attendance.early_line }}</span></p>{% endif %}
-        {% if streak >= 2 %}<p style="margin-top:10px"><span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span></p>{% endif %}
+        {% if attendance.early_line or streak >= 2 %}
+          <div class="hm-pill-row">
+            {% if attendance.early_line %}<span class="bdg bdg-green">{% icon 'flame' 'ic' %}{{ attendance.early_line }}</span>{% endif %}
+            {% if streak >= 2 %}<span class="bdg bdg-blue" title="Working days in a row you checked in on time">{% icon 'flame' 'ic' %}{{ streak }}-day on-time streak</span>{% endif %}
+          </div>
+        {% endif %}
         {% if dsr_today %}
-        <a class="hm-dsr" href="{% url 'dsr:dsr_sheet' %}" title="Open the DSR">
-          <span class="hm-dsr-text"><b>{{ dsr_today.logged }}</b> of <b>{{ dsr_today.basis }}</b> in your DSR</span>
-          <span class="hm-meter{% if dsr_today.state == 'low' %} is-low{% endif %}"><i style="width:{{ dsr_today.percent }}%"></i></span>
-        </a>
+          <a class="hm-dsr" href="{% url 'dsr:dsr_sheet' %}" title="Open the DSR">
+            <span class="hm-dsr-text"><b>{{ dsr_today.logged }}</b> of <b>{{ dsr_today.basis }}</b> in your DSR</span>
+            <span class="hm-meter{% if dsr_today.state == 'low' %} is-low{% endif %}"><i style="width:{{ dsr_today.percent }}%"></i></span>
+          </a>
         {% endif %}
         <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
       </section>
 
       <section class="hm-card hm-work" x-data="{ tab: 'assigned' }">
-        <div class="hm-tile-head"><h2>My tickets</h2>
-        <div class="hm-tabs" role="tablist" aria-label="My tickets">
-          <button type="button" role="tab" id="hm-tab-assigned" aria-controls="hm-panel-assigned" aria-selected="true"
-                  :aria-selected="tab === 'assigned'" :tabindex="tab === 'assigned' ? 0 : -1" :class="{ 'is-on': tab === 'assigned' }"
-                  x-ref="tabAssigned" @click="tab = 'assigned'"
-                  @keydown.arrow-right.prevent="tab = 'due'; $refs.tabDue.focus()"
-                  @keydown.arrow-left.prevent="tab = 'due'; $refs.tabDue.focus()"
-                  @keydown.end.prevent="tab = 'due'; $refs.tabDue.focus()"
-                  @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Assigned{% if my_ticket_count %} ({{ my_ticket_count }}){% endif %}</button>
-          <button type="button" role="tab" id="hm-tab-due" aria-controls="hm-panel-due" aria-selected="false"
-                  :aria-selected="tab === 'due'" :tabindex="tab === 'due' ? 0 : -1" :class="{ 'is-on': tab === 'due' }"
-                  x-ref="tabDue" @click="tab = 'due'"
-                  @keydown.arrow-right.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
-                  @keydown.arrow-left.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
-                  @keydown.end.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
-                  @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Due soon{% if due_soon %} ({{ due_soon|length }}){% endif %}</button>
-        </div>
+        <div class="hm-tile-head">
+          <h2>My tickets</h2>
+          <div class="hm-tabs" role="tablist" aria-label="My tickets">
+            <button type="button" role="tab" id="hm-tab-assigned" aria-controls="hm-panel-assigned" aria-selected="true"
+                    :aria-selected="tab === 'assigned'" :tabindex="tab === 'assigned' ? 0 : -1" :class="{ 'is-on': tab === 'assigned' }"
+                    x-ref="tabAssigned" @click="tab = 'assigned'"
+                    @keydown.arrow-right.prevent="tab = 'due'; $refs.tabDue.focus()"
+                    @keydown.arrow-left.prevent="tab = 'due'; $refs.tabDue.focus()"
+                    @keydown.end.prevent="tab = 'due'; $refs.tabDue.focus()"
+                    @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Assigned{% if my_ticket_count %} ({{ my_ticket_count }}){% endif %}</button>
+            <button type="button" role="tab" id="hm-tab-due" aria-controls="hm-panel-due" aria-selected="false"
+                    :aria-selected="tab === 'due'" :tabindex="tab === 'due' ? 0 : -1" :class="{ 'is-on': tab === 'due' }"
+                    x-ref="tabDue" @click="tab = 'due'"
+                    @keydown.arrow-right.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                    @keydown.arrow-left.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                    @keydown.end.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                    @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Due soon{% if due_soon %} ({{ due_soon|length }}){% endif %}</button>
+          </div>
         </div>
         <div role="tabpanel" id="hm-panel-assigned" aria-labelledby="hm-tab-assigned" tabindex="0" x-show="tab === 'assigned'">
           {% if my_tickets %}
@@ -81,9 +80,11 @@
               {% endfor %}
             </ul>
             <a class="hm-more" href="{% url 'tickets:ticket_board' %}?assigned=me">All my tickets →</a>
-          {% else %}<div class="hm-empty"><span>No open tickets assigned to you.</span><span class="hm-sub">Enjoy the quiet, or pick something up from the board.</span><a class="hm-more" href="{% url 'tickets:ticket_board' %}">Open the board →</a></div>{% endif %}
+          {% else %}
+            <div class="hm-empty"><span>No open tickets assigned to you.</span><span class="hm-sub">Enjoy the quiet, or pick something up from the board.</span><a class="hm-more" href="{% url 'tickets:ticket_board' %}">Open the board →</a></div>
+          {% endif %}
         </div>
-        <div role="tabpanel" id="hm-panel-due" aria-labelledby="hm-tab-due" tabindex="0" x-show="tab === 'due'" style="display:none;">
+        <div role="tabpanel" id="hm-panel-due" aria-labelledby="hm-tab-due" tabindex="0" x-show="tab === 'due'" x-cloak>
           {% if due_soon %}
             <ul class="hm-rows">
               {% for t in due_soon %}
@@ -91,38 +92,69 @@
                   <span class="chip-d{% if t.is_overdue %} is-late{% endif %}">{% if t.is_overdue %}Overdue{% else %}{{ t.deadline|date:"M j" }}{% endif %}</span></a></li>
               {% endfor %}
             </ul>
-          {% else %}<div class="hm-empty"><span>Nothing is due in the next 7 days.</span></div>{% endif %}
+          {% else %}
+            <div class="hm-empty"><span>Nothing is due in the next 7 days.</span></div>
+          {% endif %}
         </div>
       </section>
 
     </div>
 
+    {# ── Right Column: My To-Do (Bigger!) + Team Today (Bigger!) ── #}
     <div class="hm-side">
 
-      <section class="hm-card" id="todo-card">
-        <h2>My to-do <span class="hm-sub-inline">only you can see this</span></h2>
+      <section class="hm-card hm-todo-card" id="todo-card">
+        <div class="hm-tile-head">
+          <h2>My to-do</h2>
+          <span class="hm-sub-inline">only you can see this</span>
+        </div>
         <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"></div>
       </section>
 
       {% if is_privileged %}
       <section class="hm-card hm-team">
-        <h2>Team today{% if team_today %} <span class="hm-sub-inline">{{ team_today|length }} in</span>{% endif %}</h2>
+        <div class="hm-tile-head">
+          <h2>Team today</h2>
+          {% if team_today %}<span class="bdg bdg-green hm-team-count-bdg">{{ team_today|length }} in</span>{% endif %}
+        </div>
         {% if team_today %}
-          <ul class="hm-rows">
+          <ul class="hm-rows hm-team-rows">
             {% for r in team_today %}
-              <li class="is-plain"><span class="t">{{ r.user.get_full_name|default:r.user.username }}</span><span class="m">{{ r.check_in|date:"g:i A" }} → {% if r.check_out %}{{ r.check_out|date:"g:i A" }}{% else %}working{% endif %}</span></li>
+              <li class="is-plain hm-team-row">
+                <div class="hm-team-user">
+                  <span class="hm-team-avatar" aria-hidden="true">{{ r.user.get_full_name|default:r.user.username|slice:":1"|upper }}</span>
+                  <div class="hm-team-info">
+                    <span class="t">{{ r.user.get_full_name|default:r.user.username }}</span>
+                    <span class="hm-sub-xs">{% if r.check_out %}Checked out{% else %}Active now{% endif %}</span>
+                  </div>
+                </div>
+                <div class="hm-team-time">
+                  {% if not r.check_out %}
+                    <span class="hm-status-dot pulse" title="Working now"></span>
+                    <span class="m">{{ r.check_in|date:"g:i A" }} → working</span>
+                  {% else %}
+                    <span class="m">{{ r.check_in|date:"g:i A" }} → {{ r.check_out|date:"g:i A" }}</span>
+                  {% endif %}
+                </div>
+              </li>
             {% endfor %}
           </ul>
-        {% else %}<div class="hm-empty"><span>Nobody has punched in yet.</span></div>{% endif %}
+        {% else %}
+          <div class="hm-empty"><span>Nobody has punched in yet.</span></div>
+        {% endif %}
       </section>
       {% endif %}
 
     </div>
   </div>
 
+  {# ── Bottom Row: This Week Chart + Leave Balances ── #}
   <div class="hm-tiles">
     <section class="hm-card">
-      <div class="hm-tile-head"><h2>This week</h2><span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span></div>
+      <div class="hm-tile-head">
+        <h2>This week</h2>
+        <span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span>
+      </div>
       <div class="hm-bars" role="img" aria-label="Hours worked each day this week">
         {% for d in chart_week %}
           <div class="hm-bar{% if d.today %} is-today{% endif %}{% if d.future %} is-future{% endif %}{% if d.met %} is-met{% endif %}" title="{{ d.label }}: {{ d.hours }}">
@@ -132,15 +164,26 @@
         {% endfor %}
       </div>
     </section>
+
     <section class="hm-card hm-leave-card">
-      <div class="hm-tile-head"><h2>Leave</h2><a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a></div>
+      <div class="hm-tile-head">
+        <h2>Leave</h2>
+        <a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a>
+      </div>
       <ul class="hm-leave">
         {% for b in leave_balances|slice:":3" %}
           <li>
-            <div class="r"><span>{{ b.policy.name }}</span><span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> of {{ b.limit_label }} left{% endif %}</span></div>
-            {% if not b.is_unlimited %}<span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{{ b.remaining_percent }}%"></i></span>{% endif %}
+            <div class="r">
+              <span>{{ b.policy.name }}</span>
+              <span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> of {{ b.limit_label }} left{% endif %}</span>
+            </div>
+            {% if not b.is_unlimited %}
+              <span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{{ b.remaining_percent }}%"></i></span>
+            {% endif %}
           </li>
-        {% empty %}<li class="hm-empty">No leave policies configured yet.</li>{% endfor %}
+        {% empty %}
+          <li class="hm-empty">No leave policies configured yet.</li>
+        {% endfor %}
       </ul>
     </section>
   </div>
