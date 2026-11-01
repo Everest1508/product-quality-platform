@@ -9,7 +9,7 @@ next session — including an AI agent landing cold.
 |---|---|
 | find the code for an area | [Quick reference](#quick-reference--where-things-live) |
 | know why something is the way it is | the date section for that area |
-| check a decision is not being re-litigated | [Open questions](#open-questions--still-unanswered) |
+| check a decision is not being re-litigated | [Open questions](#open-questions--still-unanswered) |  
 | see what changed on a day | [Change log by date](#change-log-by-date) |
 
 Rules for keeping it current are in `AGENTS.md`, under *"`context.md` is the
@@ -69,6 +69,37 @@ entry here is unfinished.
 > the working memory** — a new day gets a section *here*, not a new `changes-`
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
+
+### 2026-11-01 (HTMX boosted navigation & resilience) — fix blank page on navigation, requestSubmit for DSR filters, and unit label on dashboard
+
+**What changed.**
+
+1. **Root cause of stuck/blank page on boosted navigation** (`apps/core/middleware.py::HtmxBoostMiddleware`, `core/settings.py`):
+   - *Why it was wrong*: Multiple views (`errors/views.py`, `tickets/views.py`, `dashboards/views.py`, `feedback/views.py`, etc.) check `if request.headers.get("HX-Request") == "true":` to return partial HTML snippets (e.g. `_error_list_body.html`, `_dashboard_content.html`). When a sidebar link or tab uses `hx-boost="true"` with `hx-target=".main" hx-select=".main"`, HTMX sends both `HX-Request: "true"` and `HX-Boosted: "true"`. The views returned small partial fragments without `<div class="main">`. HTMX's `hx-select=".main"` matched 0 elements in the snippet, swapping an empty string into `.main` (causing the page to get stuck blank). On browser refresh, a full GET without `HX-Request` rendered the full page.
+   - *How it works now*: Added `HtmxBoostMiddleware` before `HtmxMiddleware` in `core/settings.py`. When `request.META["HTTP_HX_BOOSTED"] == "true"`, the middleware temporarily removes `HTTP_HX_REQUEST` and invalidates any cached `request.headers` (`request.__dict__.pop("headers", None)`). Views render their full page template containing `<div class="main">`, allowing HTMX to select and swap `.main` smoothly with AJAX and push history. Regular unboosted partial requests (e.g. live filter/search) keep `HTTP_HX_REQUEST` and continue returning partial snippets.
+
+2. **DSR filter and search dispatch** (`templates/dsr/dsr_log.html`):
+   - Changed `this.form.submit()` and `f.submit()` to `this.form.requestSubmit()` and `f.requestSubmit()`. Standard `form.submit()` bypasses DOM event listeners, causing full-page reloads on filter changes. `requestSubmit()` dispatches submit events, allowing HTMX `hx-boost` to handle filter changes asynchronously.
+
+3. **Dashboard monthly attendance unit** (`templates/dashboards/partials/_dashboard_content.html`):
+   - Appended `"h"` to `{{ attendance.worked_minutes|hours }}h worked` so the hours total clearly displays its unit (e.g. `27.7h worked`).
+
+4. **HTMX error recovery** (`templates/core/base.html`):
+   - Added `htmx:responseError` and `htmx:sendError` listeners to reset the top progress bar (`.htmx-top-bar`) and automatically fall back to full-page navigation (`window.location.href`) on boosted errors so users are never trapped on broken states.
+
+5. **1st-of-the-month test resilience** (`apps/dashboards/tests/test_dashboards.py`, `apps/attendance/tests.py`):
+   - Fixed `test_my_month_total_counts_a_day_i_forgot_to_check_out_of` and `test_monthly_rows_totals` which used `now - timedelta(days=1)`. When run on the 1st of any month, `today - 1` landed in the prior month while the monthly aggregations queried the current month, causing 0 != 1 / 0 != 300 assertion failures.
+
+**How it was verified.**
+- `manage.py test apps.tickets`: 119/119 passed
+- `manage.py test apps.dashboards`: 70/70 passed
+- `manage.py test apps.errors`: 41/41 passed
+- `manage.py test apps.payroll`: 153/153 passed
+- `manage.py test apps.dsr`: 146/146 passed
+- `manage.py test apps.attendance.tests.ReportTest.test_monthly_rows_totals`: passed
+- `manage.py check`: 0 errors (only expected `staticfiles.W004` warning)
+- All 24 sidebar routes tested with boosted headers: all returned 200 with `<div class="main">` present.
+- Unboosted requests tested: correctly returned partial snippets without `.main`.
 
 ### 2026-10-31 (changelog & all dashboards) — ui-fix on Changelog modal, Home, Product, Reports, and Audit Log dashboards
 

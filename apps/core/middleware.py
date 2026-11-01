@@ -98,3 +98,35 @@ class HtmxMessagesMiddleware:
         if items:
             response.headers["HX-Trigger"] = json.dumps({"django-message": {"messages": items}})
         return response
+
+
+class HtmxBoostMiddleware:
+    """Ensure boosted requests receive the full page template, not a partial fragment.
+
+    When an anchor or form uses `hx-boost="true"`, htmx sends both `HX-Request: true`
+    and `HX-Boosted: true`. Views check `request.headers.get("HX-Request") == "true"`
+    to determine if they should return a small partial fragment (e.g. table rows).
+    Returning a fragment to a boosted navigation breaks htmx swapping because the
+    outer container (`.main`) is missing from the partial response.
+
+    By temporarily hiding `HTTP_HX_REQUEST` during view processing when `HTTP_HX_BOOSTED`
+    is true, views render their full template containing `.main`, allowing htmx to
+    extract and swap `.main` smoothly.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        is_boosted = request.META.get("HTTP_HX_BOOSTED") == "true"
+        hx_req = request.META.get("HTTP_HX_REQUEST")
+        if is_boosted and hx_req:
+            del request.META["HTTP_HX_REQUEST"]
+            request.__dict__.pop("headers", None)
+            try:
+                response = self.get_response(request)
+            finally:
+                request.META["HTTP_HX_REQUEST"] = hx_req
+                request.__dict__.pop("headers", None)
+            return response
+        return self.get_response(request)

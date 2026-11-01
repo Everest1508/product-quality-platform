@@ -415,12 +415,13 @@ class PersonalDashboardTest(TestCase):
         from apps.attendance.service import net_minutes_for, shift_for
 
         today = tz.localdate()
+        record_date = today if today.day == 1 else today - timedelta(days=1)
         start = tz.make_aware(
-            datetime.combine(today - timedelta(days=1), time(10, 0))
+            datetime.combine(record_date, time(10, 0))
         )
         record = AttendanceRecord.objects.create(
             company=self.company, user=self.dev,
-            date=today - timedelta(days=1), check_in=start,
+            date=record_date, check_in=start,
         )
         record.check_in = tz.now() - timedelta(minutes=300)
         record.save()

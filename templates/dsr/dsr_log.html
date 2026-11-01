@@ -42,13 +42,13 @@
   </div>
   {% if rng != 'custom' and rng != 'day' %}<input type="hidden" name="range" value="{{ rng }}">{% endif %}
   {% if privileged %}
-    <select class="form-input" name="user_id" aria-label="Whose work" style="width:11rem" onchange="this.form.submit()">
+    <select class="form-input" name="user_id" aria-label="Whose work" style="width:11rem" onchange="this.form.requestSubmit()">
       <option value="">Me</option>
       <option value="all"{% if who == 'all' %} selected{% endif %}>Everyone</option>
       {% for m in members %}{% if m != request.user %}<option value="{{ m.pk }}"{% if who == m.pk|stringformat:"s" %} selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endif %}{% endfor %}
     </select>
   {% endif %}
-  <div class="input-icon" style="width:16rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ q }}" placeholder="Search entries…" aria-label="Search entries" oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.submit()},450)"></div>
+  <div class="input-icon" style="width:16rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ q }}" placeholder="Search entries…" aria-label="Search entries" oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.requestSubmit()},450)"></div>
   <p class="grow"><b>{{ total_label }}</b> · {{ count }} {% if count == 1 %}entry{% else %}entries{% endif %} · {{ completed }} completed</p>
 </form>
 

@@ -1168,6 +1168,19 @@
 
   document.body.addEventListener('htmx:pushedIntoHistory', syncNav);
   window.addEventListener('popstate', syncNav);
+
+  document.body.addEventListener('htmx:responseError', function(e) {
+    bar.style.opacity = '0';
+    setTimeout(function() { bar.style.width = '0%'; }, 200);
+    if (e.detail && e.detail.boosted && e.detail.xhr && e.detail.xhr.responseURL) {
+      window.location.href = e.detail.xhr.responseURL;
+    }
+  });
+
+  document.body.addEventListener('htmx:sendError', function(e) {
+    bar.style.opacity = '0';
+    setTimeout(function() { bar.style.width = '0%'; }, 200);
+  });
 })();
 </script>
 </body>

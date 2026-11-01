@@ -497,7 +497,8 @@ class ReportTest(AttendanceTestBase):
 
     def test_monthly_rows_totals(self):
         now = timezone.now()
-        punch(self.company, self.dev, moment=now - timedelta(days=1))
+        punch_moment = now if now.day == 1 else now - timedelta(days=1)
+        punch(self.company, self.dev, moment=punch_moment)
         record = AttendanceRecord.objects.get(user=self.dev)
         record.check_out = record.check_in + timedelta(hours=6)
         record.save()

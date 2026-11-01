@@ -54,7 +54,7 @@
             <span class="hm-meter{% if dsr_today.state == 'low' %} is-low{% endif %}"><i style="width:{{ dsr_today.percent }}%"></i></span>
           </a>
         {% endif %}
-        <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}</b> worked</p>
+        <p class="hm-foot">{{ attendance.month_label }}: <b>{{ attendance.present_days }}</b> days present · <b>{{ attendance.worked_minutes|hours }}h</b> worked</p>
       </section>
 
       <section class="hm-card hm-work" x-data="{ tab: 'assigned' }">
