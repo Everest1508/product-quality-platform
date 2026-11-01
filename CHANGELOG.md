@@ -10,6 +10,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.67.0] "Uguisu" — 2026-11-01 · resilient boosted navigation and smoother DSR filtering
+
+> In short: moving between pages and tabs never gets stuck on blank states, search and filters update smoothly via AJAX, and hours are clearly labeled.
+
+### Better
+
+- **Resilient page and tab transitions.** Navigating through the sidebar or switching between tabs (Attendance, Leave, Calendar, DSR, Payslips) always loads complete, seamless content without getting stuck on blank states.
+- **Smoother DSR filtering.** Changing team member views or typing in the search bar on the DSR sheet updates instantly without full browser reloads.
+- **Automatic navigation fallback.** If a network interruption or server issue occurs during page switching, the app safely and automatically falls back to full browser navigation.
+
+### Fixed
+
+- **Blank screen on boosted page transitions.** Fixed an issue where switching between sections could swap an empty container into the view.
+- **Missing hours unit on Home.** The monthly attendance footer stat on the Home dashboard now clearly displays `"h"` (e.g. `27.7h worked`).
+
 ## [1.66.0] "Turnstone" — 2026-10-31 · instant tab switching and smooth page transitions
 
 > In short: moving between tabs, projects, tickets, and attendance no longer reloads the page — everything updates instantly via HTMX.

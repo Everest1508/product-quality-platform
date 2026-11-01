@@ -48,7 +48,7 @@ entry here is unfinished.
 - Branch `main`, **47 uncommitted paths** (many untracked). The 2026-10-02 work is
   real and uncommitted — do not assume a clean tree, and do not discard untracked
   files without checking this file first.
-- Release **1.66.0**. Full suite **768 tests, 2 failures**, both pre-existing and
+- Release **1.67.0**. Full suite **768 tests, 2 failures**, both pre-existing and
   unrelated to any recent work: `test_signup_creates_user` (`accounts:signup`
   route no longer exists — a product question, see Q6) and
   `test_attendance_reflects_only_my_own_punches` (time-of-day dependent; it
