@@ -13,7 +13,7 @@
       <span class="switch-role">{{ m.get_role_display }}</span>
     </div>
     {% else %}
-    <form method="post" action="{% url 'accounts:company_switch' %}">
+    <form method="post" action="{% url 'accounts:company_switch' %}" hx-boost="false">
       {% csrf_token %}
       <input type="hidden" name="company_id" value="{{ m.company_id }}">
       <button type="submit" class="switch-item">

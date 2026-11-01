@@ -13,13 +13,23 @@
   </div>
   <div class="pg-actions">
     <button type="button" class="btn" onclick="pqCopy(this)" data-copy="{{ summary_text }}">{% icon 'copy' 'ic' %}Copy summary</button>
-    <a class="btn" href="{{ here }}?range={{ rng }}{% if who %}&user_id={{ who }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if rng == 'day' %}&date={{ start|date:'Y-m-d' }}{% endif %}{% if rng == 'custom' %}&from={{ start|date:'Y-m-d' }}&to={{ end|date:'Y-m-d' }}{% endif %}&export=csv">{% icon 'download' 'ic' %}Export CSV</a>
+    <a class="btn" href="{{ here }}?range={{ rng }}{% if who %}&user_id={{ who }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if rng == 'day' %}&date={{ start|date:'Y-m-d' }}{% endif %}{% if rng == 'custom' %}&from={{ start|date:'Y-m-d' }}&to={{ end|date:'Y-m-d' }}{% endif %}&export=csv" hx-boost="false">{% icon 'download' 'ic' %}Export CSV</a>
     {% if can_log %}<button type="button" class="btn btn-primary" onclick="dsrOpen()">{% icon 'plus' 'ic' %}Log work</button>{% endif %}
   </div>
 </div>
 
-<form class="toolbar" method="get" action="{{ here }}" id="dsr-filters">
-  <div class="seg" role="group" aria-label="Range">
+<form class="toolbar" method="get" action="{{ here }}" id="dsr-filters"
+      hx-boost="true"
+      hx-target=".main"
+      hx-select=".main"
+      hx-swap="outerHTML show:window:top"
+      hx-push-url="true">
+  <div class="seg" role="group" aria-label="Range"
+       hx-boost="true"
+       hx-target=".main"
+       hx-select=".main"
+       hx-swap="outerHTML show:window:top"
+       hx-push-url="true">
     <a href="{{ here }}?range=today{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == 'today' %}is-on{% endif %}">Today</a>
     <a href="{{ here }}?range=yesterday{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == 'yesterday' %}is-on{% endif %}">Yesterday</a>
     <a href="{{ here }}?range=7d{% if who %}&user_id={{ who }}{% endif %}" class="{% if rng == '7d' %}is-on{% endif %}">Last 7 days</a>

@@ -1,4 +1,9 @@
-{% load icon_tags %}<aside class="sidebar">
+{% load icon_tags %}<aside class="sidebar"
+       hx-boost="true"
+       hx-target=".main"
+       hx-select=".main"
+       hx-swap="outerHTML show:window:top"
+       hx-push-url="true">
   <a href="{% url 'dashboards:index' %}" class="side-brand" aria-label="PQ Platform home" data-label="PQ Platform">
     <span class="side-brand-mark">{% brand_mark %}</span>
     <span class="side-label">PQ Platform</span>

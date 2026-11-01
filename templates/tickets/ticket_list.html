@@ -19,7 +19,12 @@
     <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "tickets:ticket_bulk_delete" %}')">
       Delete Selected (<span id="bulk-delete-count">0</span>)
     </button>
-    <div class="view-toggle">
+    <div class="view-toggle"
+         hx-boost="true"
+         hx-target=".main"
+         hx-select=".main"
+         hx-swap="outerHTML show:window:top"
+         hx-push-url="true">
       <a href="{% url 'tickets:ticket_board' %}?{{ request.GET.urlencode }}">Kanban</a>
       <a href="{% url 'tickets:ticket_list' %}?{{ request.GET.urlencode }}" class="active">List</a>
     </div>

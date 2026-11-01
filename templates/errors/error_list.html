@@ -20,7 +20,12 @@
   </div>
 </div>
 
-<div class="tabs">
+<div class="tabs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <a href="{% url 'errors:error_list' %}" class="tab {% if not current_status and not regressed %}active{% endif %}">All</a>
   <a href="?status=open" class="tab {% if current_status == 'open' %}active{% endif %}">Open</a>
   <a href="?status=investigating" class="tab {% if current_status == 'investigating' %}active{% endif %}">Investigating</a>

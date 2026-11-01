@@ -34,7 +34,8 @@ highlighted without moving focus off the input.
             <template x-for="item in group.items" :key="item.url + item.title">
               <a :href="item.url" class="palette-item" role="option" @click="if (item.run) { $event.preventDefault(); close(); item.run(); return; }"
                  :id="'palette-opt-' + item.index" :aria-selected="(item.index === active).toString()"
-                 :class="{ 'is-active': item.index === active }" @mousemove="active = item.index" @click="remember(); close()">
+                 :class="{ 'is-active': item.index === active }" @mousemove="active = item.index" @click="remember(); close()"
+                 hx-boost="true" hx-target=".main" hx-select=".main" hx-swap="outerHTML show:window:top" hx-push-url="true">
                 <span class="palette-title" x-html="hl(item.title)"></span>
                 <span class="palette-sub" x-text="item.subtitle"></span>
                 <span class="palette-snip" x-show="item.snippet" x-html="hl(item.snippet || '')"></span>
@@ -92,7 +93,21 @@ function palette() {
     show() { this.open = true; this.query = ''; this.recent = this.loadRecent(); this.fetchNow(); this.$nextTick(() => this.$refs.input.focus()); },
     close() { this.open = false; if (this.ctl) this.ctl.abort(); },
     move(d) { const n = this.flat.length; if (n) this.active = (this.active + d + n) % n; },
-    go() { const it = this.flat[this.active]; if (it) { this.remember(); this.close(); if (it.run) it.run(); else window.location.href = it.url; } },
+    go() {
+      const it = this.flat[this.active];
+      if (it) {
+        this.remember();
+        this.close();
+        if (it.run) {
+          it.run();
+        } else if (window.htmx && it.url && !it.url.startsWith('#')) {
+          window.htmx.ajax('GET', it.url, { target: '.main', select: '.main', swap: 'outerHTML show:window:top' });
+          window.history.pushState({}, '', it.url);
+        } else {
+          window.location.href = it.url;
+        }
+      }
+    },
     debounced() { clearTimeout(this.timer); this.timer = setTimeout(() => this.fetchNow(), 150); },
     fetchNow() {
       if (this.ctl) this.ctl.abort();

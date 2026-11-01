@@ -8,7 +8,12 @@
     <a href="{% url 'products:product_rule_create' pk=product.pk %}" class="btn btn-primary">New rule</a>
   </div>
 </div>
-<div class="tabs">
+<div class="tabs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <a href="{% url 'products:product_rules' pk=product.pk %}" class="tab {% if not current_active %}active{% endif %}">All</a>
   <a href="?active=1" class="tab {% if current_active == '1' %}active{% endif %}">Active</a>
   <a href="?active=0" class="tab {% if current_active == '0' %}active{% endif %}">Inactive</a>

@@ -11,7 +11,12 @@
   </div>
 </div>
 
-<div class="tabs">
+<div class="tabs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <a href="{% url 'feedback:survey_list' %}" class="tab {% if not current_status and not current_type %}active{% endif %}">All</a>
   <a href="?status=active" class="tab {% if current_status == 'active' %}active{% endif %}">Active</a>
   <a href="?status=draft" class="tab {% if current_status == 'draft' %}active{% endif %}">Draft</a>

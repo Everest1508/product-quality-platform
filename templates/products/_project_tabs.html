@@ -1,6 +1,13 @@
-{% comment %}Lifecycle / Settings / Tickets tabs for one project. Needs `product` and `here`.{% endcomment %}
-<div class="seg pj-tabs" role="tablist" aria-label="Project sections">
+{% comment %}Project sections navigation. Needs `product` and `here`.{% endcomment %}
+<div class="seg pj-tabs" role="tablist" aria-label="Project sections"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
+  <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="{% if here == 'dashboard' %}is-on{% endif %}">Dashboard</a>
+  <a href="{% url 'products:product_board' pk=product.pk %}" class="{% if here == 'tickets' %}is-on{% endif %}">Tickets</a>
+  <a href="{% url 'products:product_errors' pk=product.pk %}" class="{% if here == 'errors' %}is-on{% endif %}">Errors</a>
   <a href="{% url 'products:project_lifecycle' pk=product.pk %}" class="{% if here == 'lifecycle' %}is-on{% endif %}">Lifecycle</a>
   <a href="{% url 'products:product_detail' pk=product.pk %}" class="{% if here == 'settings' %}is-on{% endif %}">Settings</a>
-  <a href="{% url 'products:product_board' pk=product.pk %}">Tickets</a>
 </div>

@@ -45,7 +45,7 @@
   </select>
   <input type="search" name="q" class="form-input" value="{{ f.q }}" placeholder="Search details" aria-label="Search details">
   {% if f.is_filtered %}<a href="?month={{ f.month }}" class="btn btn-ghost btn-sm">{% icon 'x' 'ic' %}Clear filters</a>{% endif %}
-  <a href="{% url 'expenses:expense_export' %}?{{ f.query }}" class="btn btn-sm">{% icon 'download' 'ic' %}Export CSV</a>
+  <a href="{% url 'expenses:expense_export' %}?{{ f.query }}" class="btn btn-sm" hx-boost="false">{% icon 'download' 'ic' %}Export CSV</a>
 </form>
 
 <div class="ex-stats">

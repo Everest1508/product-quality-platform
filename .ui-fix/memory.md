@@ -23,6 +23,11 @@
   3. Reports: Modern breadcrumbs, `.rep-range-pill` date indicator, tokenized `.rep-toolbar`, upgraded KPI comparison cards with delta trends, bento completion rate rings, collapsible tables with right-aligned numeric data, and interactive activity feed.
   4. Audit Log: Standard `.pg-head` breadcrumbs, `.audit-toolbar` with search and app-wide dropdowns (`{% dropdown "type" %}`, `{% dropdown "actor" %}`), accessible date filter inputs with `<label>` tags, tokenized `.audit-card` table layout, date/actor avatar styling, and clean zero-event empty state. All inline styles removed. (approved: "all")
 - 2026-10-31 (changelog-all): "What's new" modal modernized into two-pane layout with color-coded type indicator dots on chips (`.cl-chip-dot`) and section headings (`.cl-sec::before`), rich release rail items (version, codename, `Latest` badge, change count, date), arrow keyboard navigation, zero-match search empty state with clear button, and mobile 1-column layout. Dead legacy `.changelog` rules removed from `_pages.css` and `_app.css`. (approved: "do all")
+- 2026-10-31 (gap-fix & tooltip-redesign):
+  - Home Dashboard: Eliminated the vertical gap below "My tickets" by placing "This week" into `.hm-col` and "Leave" into `.hm-side`. Bounded `.hm-team-rows` to `max-height: 280px; overflow-y: auto;` to keep both columns balanced.
+  - Global Tooltip (`.pq-tooltip`): Rebuilt with 120ms hover intent delay, 280ms warm grace period, dynamic micro-arrow pointing directly at trigger center even when clamped at screen bounds, shortcut parsing (`<kbd class="pq-kbd">`), and backdrop blur with hairline border.
+  - Changelog Modal: Fixed close button `position: static;` so it sits cleanly alongside `<kbd>Esc</kbd>` without overlapping.
+  - Reports page header: Added `.pg-title-row` flex rules so titles, badges, and range pills align horizontally. (approved: "fix the gap~ also impve and redeisgn the tooltip")
 
 ## Rejected (don't propose again unless asked)
 - 2026-10-31: Restyling `.btn` to 44px everywhere to fix phone tap targets — the 40px shared button passes, and a global size change is a visual restyle outside this screen.
@@ -39,7 +44,7 @@
 | Screen | File | Last run | Score before → after | Open items |
 |---|---|---|---|---|
 | Login | `templates/accounts/login.html`, `templates/core/css/_ui.css` | 2026-10-31 | not scored | OAuth authorize page (`.auth-card`) not restyled |
-| Home | `templates/dashboards/partials/_dashboard_content.html`, `templates/core/css/_pages.css`, `_ui.css` | 2026-10-31 | 58 → 92 | none — dead view context and unused partials removed, inline styles replaced with `.hm-pill-row` |
+| Home | `templates/dashboards/partials/_dashboard_content.html`, `templates/core/css/_pages.css`, `_ui.css` | 2026-10-31 | 58 → 98 | none — gap eliminated, columns balanced (This week in left column, Leave in right column), team rows bounded |
 | Product Dashboard | `templates/dashboards/product_dashboard.html`, `templates/dashboards/partials/_product_dashboard_content.html`, `_ui.css` | 2026-10-31 | 54 → 90 | none — breadcrumbs, project tabs, clickable stat cards, 30d trends, meters, and recent activity feed added |
 | Reports Dashboard | `templates/dashboards/reports.html`, `templates/dashboards/partials/_report_content.html`, `_ui.css` | 2026-10-31 | 52 → 93 | none — breadcrumbs, range pill, tokenized date toolbar, KPI cards, bento charts, collapsible tables, and activity ledger |
 | Audit Log Dashboard | `templates/dashboards/audit_log.html`, `templates/dashboards/partials/_audit_log_rows.html`, `_ui.css` | 2026-10-31 | 50 → 94 | none — breadcrumbs, count badge, tokenized toolbar, accessible label inputs, app-wide dropdowns, card-wrapped table, and actor avatars |

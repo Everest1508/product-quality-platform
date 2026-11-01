@@ -130,7 +130,7 @@
 /* ── Team Today Card (Spacious!) ── */
 .hm-team{display:flex;flex-direction:column;min-width:0;}
 .hm-team-count-bdg{font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:99px;}
-.hm-team-rows{display:flex;flex-direction:column;gap:var(--space-2);list-style:none;margin:0;padding:0;}
+.hm-team-rows{display:flex;flex-direction:column;gap:var(--space-2);list-style:none;margin:0;padding:0;max-height:280px;overflow-y:auto;overscroll-behavior:contain;padding-right:2px;}
 .hm-team-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-3) var(--space-3);border-radius:var(--radius);border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 30%,var(--surface));transition:background var(--dur-1);}
 .hm-team-row:hover{background:var(--panel);}
 .hm-team-user{display:flex;align-items:center;gap:var(--space-3);min-width:0;}
@@ -144,7 +144,8 @@
 @keyframes hmPulseDot{0%{box-shadow:0 0 0 0 rgba(34,197,94,.7);}70%{box-shadow:0 0 0 6px rgba(34,197,94,0);}100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}}
 
 /* ── Bottom Tiles (This Week & Leave) ── */
-.hm-tiles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-5);margin-top:var(--space-5);}
+.hm-tiles:not(.hm-card){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-5);margin-top:var(--space-5);}
+.hm-card.hm-tiles{display:flex;flex-direction:column;min-width:0;margin-top:0;}
 .hm-tiles .hm-card{display:flex;flex-direction:column;min-width:0;}
 .hm-bars{display:flex;gap:var(--space-2);height:110px;align-items:stretch;margin-top:var(--space-2);}
 .hm-bar{flex:1;display:flex;flex-direction:column;gap:6px;align-items:center;}
@@ -328,7 +329,7 @@ dialog.cl::backdrop{background:rgba(15,23,42,.6);backdrop-filter:blur(6px);}
 .cl-head-actions{display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;}
 .cl-kbd-hint{font-size:var(--fs-xs);color:var(--muted);display:inline-flex;align-items:center;}
 .cl-kbd-hint kbd{font-family:inherit;font-size:11px;padding:2px 6px;border-radius:4px;background:var(--panel);border:1px solid var(--border);color:var(--muted);}
-.cl-head .cl-x{flex-shrink:0;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius);color:var(--muted);border:1px solid transparent;background:transparent;cursor:pointer;transition:background var(--dur-1),color var(--dur-1);}
+.cl-head .cl-x,.cl-head-actions .cl-x{position:static;flex-shrink:0;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius);color:var(--muted);border:1px solid transparent;background:transparent;cursor:pointer;transition:background var(--dur-1),color var(--dur-1);}
 .cl-head .cl-x:hover{color:var(--text);background:var(--panel);border-color:var(--border);}
 .cl-head .cl-x:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 
@@ -448,6 +449,7 @@ dialog.cl::backdrop{background:rgba(15,23,42,.6);backdrop-filter:blur(6px);}
 /* ───────── Dashboards Redesign (Reports, Audit Log, Product Dashboard) ───────── */
 
 /* Reports Dashboard */
+.pg-title-row{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-1);}
 .rep-range-pill{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-xs);font-weight:600;padding:var(--space-1) var(--space-3);border-radius:99px;background:var(--surface);border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
 .rep-range-pill .ic{width:14px;height:14px;flex-shrink:0;}
 .rep-toolbar{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;}
@@ -532,5 +534,22 @@ dialog.cl::backdrop{background:rgba(15,23,42,.6);backdrop-filter:blur(6px);}
 .audit-empty-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--panel);color:var(--muted);margin-bottom:var(--space-2);}
 .audit-empty-icon svg,.audit-empty-icon .ic{width:20px;height:20px;}
 .audit-empty h3{font-size:var(--fs-md);font-weight:600;color:var(--text);margin:0 0 var(--space-1);}
+
+/* ── Modern Tooltip Design ── */
+.pq-tooltip{position:fixed;z-index:2000;pointer-events:none;background:var(--tooltip-bg,#0f172a);color:var(--tooltip-text,#f8fafc);font-size:11.5px;font-weight:500;line-height:1.35;letter-spacing:-.01em;padding:5px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 6px -1px rgba(0,0,0,.12),0 10px 20px -3px rgba(0,0,0,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap;opacity:0;transform:scale(.96) translateY(2px);transition:opacity .14s cubic-bezier(.16,1,.3,1),transform .14s cubic-bezier(.16,1,.3,1);display:none;}
+.pq-tooltip.peek{white-space:pre-line;max-width:260px;text-align:left;font-size:12px;line-height:1.55;padding:8px 12px;}
+.pq-tooltip.show{opacity:1;transform:scale(1) translateY(0);}
+.pq-tooltip-arrow{position:absolute;width:6px;height:6px;background:var(--tooltip-bg,#0f172a);transform:translateX(-50%) rotate(45deg);}
+.pq-tooltip-arrow.top{bottom:-3px;border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);}
+.pq-tooltip-arrow.bottom{top:-3px;border-left:1px solid rgba(255,255,255,.12);border-top:1px solid rgba(255,255,255,.12);}
+:root.dark .pq-tooltip{background:#1e293b;color:#f8fafc;border:1px solid rgba(255,255,255,.14);box-shadow:0 4px 12px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.2);}
+:root.dark .pq-tooltip-arrow{background:#1e293b;}
+:root.dark .pq-tooltip-arrow.top{border-right-color:rgba(255,255,255,.14);border-bottom-color:rgba(255,255,255,.14);}
+:root.dark .pq-tooltip-arrow.bottom{border-left-color:rgba(255,255,255,.14);border-top-color:rgba(255,255,255,.14);}
+.pq-tooltip kbd,.pq-tooltip .pq-kbd{display:inline-flex;align-items:center;justify-content:center;font-family:inherit;font-size:10px;font-weight:600;line-height:1;padding:2px 5px;margin-left:6px;border-radius:4px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);color:#fff;vertical-align:baseline;}
+:root.dark .pq-tooltip kbd,:root.dark .pq-tooltip .pq-kbd{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.16);color:#e2e8f0;}
+
+/* ── HTMX SPA Top Progress Bar ── */
+.htmx-top-bar{position:fixed;top:0;left:0;height:2.5px;background:var(--accent);z-index:99999;width:0%;opacity:0;transition:width .2s cubic-bezier(.16,1,.3,1),opacity .15s ease;pointer-events:none;box-shadow:0 0 8px var(--accent);}
 
 

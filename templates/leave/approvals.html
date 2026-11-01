@@ -21,7 +21,12 @@
   </div>
 </div>
 
-<div class="toolbar" style="display:flex;align-items:center;gap:6px;margin-bottom:18px;flex-wrap:wrap;">
+<div class="toolbar" style="display:flex;align-items:center;gap:6px;margin-bottom:18px;flex-wrap:wrap;"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   {% for tab in tabs %}
   <a href="?status={{ tab.value }}"
      class="btn btn-sm {% if tab.is_active %}btn-primary{% endif %}">

@@ -115,7 +115,12 @@ forgotten-check-out warning, which is the reason they opened the page.
 <div class="card history-card" style="padding:0;overflow:hidden;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
     <h2 style="font-size:15px;font-weight:600;margin:0;">Recent days</h2>
-    <div style="display:flex;gap:6px;align-items:center;">
+    <div style="display:flex;gap:6px;align-items:center;"
+         hx-boost="true"
+         hx-target=".main"
+         hx-select=".main"
+         hx-swap="outerHTML show:none"
+         hx-push-url="true">
       <a href="?month={{ prev_month }}" class="btn btn-sm">←</a>
       <span class="text-sm text-muted">{{ month_label }}</span>
       <a href="?month={{ next_month }}" class="btn btn-sm">→</a>

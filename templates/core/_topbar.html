@@ -18,7 +18,12 @@
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         <span class="tb-text">New</span>
       </button>
-      <div class="side-user-menu tb-menu" x-show="open" x-transition.opacity.duration.100ms style="display:none;" @click="open = false">
+      <div class="side-user-menu tb-menu" x-show="open" x-transition.opacity.duration.100ms style="display:none;" @click="open = false"
+           hx-boost="true"
+           hx-target=".main"
+           hx-select=".main"
+           hx-swap="outerHTML show:window:top"
+           hx-push-url="true">
         <a href="{% if product %}{% url 'products:product_ticket_create' pk=product.pk %}{% else %}{% url 'tickets:ticket_create' %}{% endif %}">{% icon 'ticket' 'side-menu-ic' %} New ticket{% if product %} in {{ product.name }}{% endif %}</a>
         <a href="{% url 'leave:apply' %}">{% icon 'calendar-days' 'side-menu-ic' %} Request leave</a>
         <a href="{% url 'attendance:correction_request' %}">{% icon 'clock' 'side-menu-ic' %} Request a correction</a>
@@ -89,11 +94,12 @@
           <button type="button" :class="{ 'is-on': t === 'system' }" @click.stop="pqTheme.set('system')" aria-label="Match system theme">{% icon 'monitor' 'side-menu-ic' %}</button>
           <button type="button" :class="{ 'is-on': t === 'dark' }" @click.stop="pqTheme.set('dark')" aria-label="Dark theme">{% icon 'moon' 'side-menu-ic' %}</button>
         </div>
-        <a href="{% url 'accounts:profile' %}"{% if request.resolver_match.url_name == 'profile' %} aria-current="page" style="background:var(--panel);font-weight:500;"{% endif %}>
+        <a href="{% url 'accounts:profile' %}"{% if request.resolver_match.url_name == 'profile' %} aria-current="page" style="background:var(--panel);font-weight:500;"{% endif %}
+           hx-boost="true" hx-target=".main" hx-select=".main" hx-swap="outerHTML show:window:top" hx-push-url="true">
           {% icon 'settings' 'side-menu-ic' %} My profile
         </a>
         <button type="button" onclick="document.getElementById('kbd-help').showModal()">{% icon 'chart' 'side-menu-ic' %} Keyboard shortcuts <kbd style="margin-left:auto">?</kbd></button>
-        <form method="post" action="{% url 'accounts:logout' %}">
+        <form method="post" action="{% url 'accounts:logout' %}" hx-boost="false">
           {% csrf_token %}
           <button type="submit">
             {% icon 'log-out' 'side-menu-ic' %} Sign out

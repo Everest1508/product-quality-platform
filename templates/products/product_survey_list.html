@@ -8,7 +8,12 @@
     <a href="{% url 'products:product_survey_create' pk=product.pk %}" class="btn btn-primary">New survey</a>
   </div>
 </div>
-<div class="tabs">
+<div class="tabs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <a href="{% url 'products:product_surveys' pk=product.pk %}" class="tab {% if not current_status and not current_type %}active{% endif %}">All</a>
   <a href="?status=active" class="tab {% if current_status == 'active' %}active{% endif %}">Active</a>
   <a href="?status=draft" class="tab {% if current_status == 'draft' %}active{% endif %}">Draft</a>

@@ -11,7 +11,7 @@
     <p class="sub">Work out what a project costs us and what to charge. Only owners and admins can see this.</p>
   </div>
   <div class="head-actions">
-    {% if has_any %}<a href="{% url 'costing:estimate_export' %}" class="btn">{% icon 'download' 'ic' %}Export CSV</a>{% endif %}
+    {% if has_any %}<a href="{% url 'costing:estimate_export' %}" class="btn" hx-boost="false">{% icon 'download' 'ic' %}Export CSV</a>{% endif %}
     <a href="{% url 'costing:estimate_new' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New project</a>
   </div>
 </div>

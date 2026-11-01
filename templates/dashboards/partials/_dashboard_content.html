@@ -8,10 +8,15 @@
   </div>
 {% endif %}
 
-<div class="hm-home">
+<div class="hm-home"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <div class="hm-grid">
 
-    {# ── Left Column: Today's Clock + My Tickets ── #}
+    {# ── Left Column: Today's Clock + My Tickets + This Week ── #}
     <div class="hm-col">
 
       <section class="hm-card hm-today">
@@ -68,7 +73,7 @@
                     x-ref="tabDue" @click="tab = 'due'"
                     @keydown.arrow-right.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
                     @keydown.arrow-left.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
-                    @keydown.end.prevent="tab = 'assigned'; $refs.tabAssigned.focus()"
+                    @keydown.end.prevent="tab = 'due'; $refs.tabDue.focus()"
                     @keydown.home.prevent="tab = 'assigned'; $refs.tabAssigned.focus()">Due soon{% if due_soon %} ({{ due_soon|length }}){% endif %}</button>
           </div>
         </div>
@@ -98,9 +103,24 @@
         </div>
       </section>
 
+      <section class="hm-card hm-tiles hm-week-card">
+        <div class="hm-tile-head">
+          <h2>This week</h2>
+          <span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span>
+        </div>
+        <div class="hm-bars" role="img" aria-label="Hours worked each day this week">
+          {% for d in chart_week %}
+            <div class="hm-bar{% if d.today %} is-today{% endif %}{% if d.future %} is-future{% endif %}{% if d.met %} is-met{% endif %}" title="{{ d.label }}: {{ d.hours }}">
+              <span class="hm-bar-track"><i style="height:{{ d.pct }}%"></i></span>
+              <span class="hm-bar-lab">{{ d.label }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
     </div>
 
-    {# ── Right Column: My To-Do (Bigger!) + Team Today (Bigger!) ── #}
+    {# ── Right Column: My To-Do + Team Today + Leave Balances ── #}
     <div class="hm-side">
 
       <section class="hm-card hm-todo-card" id="todo-card">
@@ -145,46 +165,28 @@
       </section>
       {% endif %}
 
+      <section class="hm-card hm-tiles hm-leave-card">
+        <div class="hm-tile-head">
+          <h2>Leave</h2>
+          <a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a>
+        </div>
+        <ul class="hm-leave">
+          {% for b in leave_balances|slice:":3" %}
+            <li>
+              <div class="r">
+                <span>{{ b.policy.name }}</span>
+                <span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> of {{ b.limit_label }} left{% endif %}</span>
+              </div>
+              {% if not b.is_unlimited %}
+                <span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{{ b.remaining_percent }}%"></i></span>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="hm-empty">No leave policies configured yet.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
     </div>
-  </div>
-
-  {# ── Bottom Row: This Week Chart + Leave Balances ── #}
-  <div class="hm-tiles">
-    <section class="hm-card">
-      <div class="hm-tile-head">
-        <h2>This week</h2>
-        <span class="hm-sub">{{ chart_week_total }} · goal {{ chart_week_target }}/day</span>
-      </div>
-      <div class="hm-bars" role="img" aria-label="Hours worked each day this week">
-        {% for d in chart_week %}
-          <div class="hm-bar{% if d.today %} is-today{% endif %}{% if d.future %} is-future{% endif %}{% if d.met %} is-met{% endif %}" title="{{ d.label }}: {{ d.hours }}">
-            <span class="hm-bar-track"><i style="height:{{ d.pct }}%"></i></span>
-            <span class="hm-bar-lab">{{ d.label }}</span>
-          </div>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="hm-card hm-leave-card">
-      <div class="hm-tile-head">
-        <h2>Leave</h2>
-        <a class="hm-more" href="{% url 'leave:my_leave' %}">All my leave →</a>
-      </div>
-      <ul class="hm-leave">
-        {% for b in leave_balances|slice:":3" %}
-          <li>
-            <div class="r">
-              <span>{{ b.policy.name }}</span>
-              <span>{% if b.is_unlimited %}{{ b.approved_label }} used{% else %}<b>{{ b.remaining_label }}</b> of {{ b.limit_label }} left{% endif %}</span>
-            </div>
-            {% if not b.is_unlimited %}
-              <span class="hm-meter{% if b.has_pending %} is-pending{% endif %}"><i style="width:{{ b.remaining_percent }}%"></i></span>
-            {% endif %}
-          </li>
-        {% empty %}
-          <li class="hm-empty">No leave policies configured yet.</li>
-        {% endfor %}
-      </ul>
-    </section>
   </div>
 </div>

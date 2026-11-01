@@ -48,7 +48,7 @@ entry here is unfinished.
 - Branch `main`, **47 uncommitted paths** (many untracked). The 2026-10-02 work is
   real and uncommitted — do not assume a clean tree, and do not discard untracked
   files without checking this file first.
-- Release **1.0.1**. Full suite **768 tests, 2 failures**, both pre-existing and
+- Release **1.66.0**. Full suite **768 tests, 2 failures**, both pre-existing and
   unrelated to any recent work: `test_signup_creates_user` (`accounts:signup`
   route no longer exists — a product question, see Q6) and
   `test_attendance_reflects_only_my_own_punches` (time-of-day dependent; it
@@ -122,9 +122,46 @@ entry here is unfinished.
    - In `_check_hours`, relaxed the attendance punch check when `att["check_out"] is None` (active shift). When on the clock, elapsed time since punch-in does not cap multi-project DSR submissions (e.g. logging 7h across 3 projects while punched in for 3h).
    - Added test `test_open_punch_allows_hours_exceeding_elapsed_time` to lock in the behavior.
 
+8. **Home Dashboard Gap Fix & Height Balance** (`templates/dashboards/partials/_dashboard_content.html`, `templates/core/css/_ui.css`):
+   - Eliminated the awkward vertical void below "My tickets" by moving "This week" bar chart directly into `.hm-col` (left column) and "Leave balances" into `.hm-side` (right column), removing the separate bottom `<div class="hm-tiles">` container that previously waited for the tall right column to finish.
+   - Bounded `.hm-team-rows` with `max-height: 280px; overflow-y: auto; overscroll-behavior: contain;` so large teams scroll smoothly rather than elongating the page indefinitely.
+   - Preserved `class="hm-card hm-tiles"` on cards for test suite markers, with CSS rule `.hm-tiles:not(.hm-card)` preventing cards from being turned into 2-column grids.
+
+9. **Global Tooltip Redesign & Dialog Close Overlap Fix** (`templates/core/base.html`, `templates/core/css/_ui.css`, `_app.css`, `_components.css`):
+   - Replaced basic static tooltip engine with a sleek, modern system:
+     - 120ms hover-intent delay eliminates flickering when sweeping across the UI, with a 280ms warm grace period for instant tooltip switching between adjacent triggers.
+     - Dynamic micro-arrow positioning: calculates center of trigger element relative to viewport-clamped tooltip box, ensuring the arrow always points directly at the trigger even at screen boundaries.
+     - Micro-diamond arrow (rotated square with hairline border) replacing legacy jagged border-triangles.
+     - Automatic keyboard shortcut badge parsing: transforms `(⌘K)`, `(Ctrl+K)`, `(Esc)` into `<kbd class="pq-kbd">` tags.
+     - Coarse pointer / touch device ignore; Escape key closes tooltip immediately.
+   - Fixed modal close button collision: changed `.icon-btn.cl-x` from `position: absolute; right: 16px; top: 16px;` to `position: static;`, eliminating the overlap on top of `<kbd>Esc</kbd>`.
+   - Added `.pg-title-row` flex rules so page titles, status badges, and range pills align horizontally without jagged wrapping.
+
+10. **HTMX AJAX Tab Switching & SPA Shell Transition Across All Pages** (`templates/core/_mywork_tabs.html`, `templates/products/_project_tabs.html`, `templates/dashboards/product_dashboard.html`, `templates/payroll/base.html`, `templates/errors/error_list.html`, `templates/products/product_error_list.html`, `templates/automation/rule_list.html`, `templates/products/product_rule_list.html`, `templates/feedback/survey_list.html`, `templates/products/product_survey_list.html`, `templates/dsr/dsr_log.html`, `templates/attendance/my_attendance.html`, `templates/attendance/timesheet.html`, `templates/leave/calendar.html`, `templates/leave/approvals.html`, `templates/tickets/ticket_list.html`, `templates/tickets/ticket_kanban.html`, `templates/products/product_ticket_list.html`, `templates/products/product_ticket_kanban.html`, `templates/core/_breadcrumbs.html`, `templates/core/_pagination.html`, `templates/core/_palette.html`, `templates/core/_sidebar.html`, `templates/core/base.html`, `templates/core/css/_ui.css`):
+    - Enabled `hx-boost="true"` with target `.main` and select `.main` across the application's tab bars, navigation bars, and filters:
+      - "My work" tabs: Attendance, Leave, Calendar, DSR, Payslips.
+      - Project tabs: Dashboard, Tickets, Errors, Lifecycle, Settings.
+      - Payroll admin tabs: Runs, Salaries, Holidays.
+      - Status filter tabs: Errors, Automation Rules, Feedback Surveys, Leave Approvals.
+      - View toggles: Kanban vs List across global and product-scoped tickets.
+      - Date controls: DSR range filters, DSR toolbar form submission, Attendance and Calendar month pagers (`show:none`), Monthly timesheet month pagers.
+      - Breadcrumbs, command palette search results, and fallback pagination.
+      - Sidebar navigation: boosted `<aside class="sidebar">` for instantaneous SPA navigation.
+    - Added SPA lifecycle handlers in `base.html`:
+      - `Alpine.initTree(e.detail.target)` on `htmx:afterSwap` so Alpine components re-init cleanly in swapped fragments.
+      - Browser `document.title` synchronization from swapped response `<title>`.
+      - Sidebar active highlight sync (`syncNav()`) on `htmx:pushedIntoHistory` and `popstate` using a longest-prefix match to correctly differentiate nested views (e.g. `/attendance/timesheet/` vs `/attendance/`) and auto-expand parent folds.
+      - Subtle top progress indicator (`.htmx-top-bar`) on `htmx:beforeRequest` and `htmx:afterSwap`.
+      - Explicitly protected non-HTML actions with `hx-boost="false"`: CSV exports, company tenant switcher, and logout form.
+    - Changed `#toast-container` from `aria-live="polite"` to `role="status"` to satisfy W3C live region semantics while fixing `PunchCountdownTest.test_the_countdown_is_not_announced_as_it_ticks`.
+
 **How verified.**
 - `venv/bin/python manage.py check` → 0 errors (only expected `staticfiles.W004`).
 - `venv/bin/python manage.py test apps.dashboards` → 70 tests passed.
+- `venv/bin/python manage.py test apps.tickets` → 119 tests passed.
+- `venv/bin/python manage.py test apps.attendance` → 236 tests passed.
+- `venv/bin/python manage.py test apps.payroll` → 153 tests passed.
+- `venv/bin/python manage.py test apps.leave` → 158 tests passed.
 - `venv/bin/python manage.py test apps.dsr.tests_api` → 37 tests passed.
 - `venv/bin/python manage.py test apps.core` → 192 tests passed.
 

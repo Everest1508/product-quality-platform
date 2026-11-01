@@ -85,7 +85,7 @@
   /* A hairline between sections in *both* states: expanded, the "Operations"
      and "Admin" labels are not enough to group 5 and 8 items; collapsed, the
      labels are display:none and the rule is the only thing left. */
-  .nav-section+.nav-section {
+  .nav-section + .nav-section{
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--border);
@@ -144,7 +144,7 @@
     padding-inline: 0;
   }
 
-  .side-item {
+  .side-item{
     position: relative;
     display: flex;
     align-items: center;
@@ -199,12 +199,7 @@
     stroke-width: 1.75;
   }
 
-  .side-item .side-label {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .side-item .side-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 
   .side-badge {
     font-size: 10.5px;
@@ -4972,23 +4967,27 @@
     font-size: 11.5px;
     font-weight: 500;
     line-height: 1.35;
+    letter-spacing: -0.01em;
     padding: 5px 9px;
     border-radius: 6px;
-    box-shadow: 0 8px 20px -3px rgba(13, 17, 23, .2), 0 4px 6px -4px rgba(13, 17, 23, .1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.12), 0 10px 20px -3px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     white-space: nowrap;
     opacity: 0;
-    transform: scale(0.95) translateY(2px);
-    transition: opacity .12s cubic-bezier(0.16, 1, 0.3, 1), transform .12s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.96) translateY(2px);
+    transition: opacity .14s cubic-bezier(0.16, 1, 0.3, 1), transform .14s cubic-bezier(0.16, 1, 0.3, 1);
     display: none;
   }
 
   .pq-tooltip.peek {
     white-space: pre-line;
-    max-width: 240px;
+    max-width: 260px;
     text-align: left;
     font-size: 12px;
     line-height: 1.55;
-    padding: 9px 12px;
+    padding: 8px 12px;
   }
 
   .pq-tooltip.show {
@@ -4998,25 +4997,68 @@
 
   .pq-tooltip-arrow {
     position: absolute;
-    width: 0;
-    height: 0;
-    border-style: solid;
+    width: 6px;
+    height: 6px;
+    background: var(--tooltip-bg);
+    transform: translateX(-50%) rotate(45deg);
   }
 
   .pq-tooltip-arrow.top {
-    bottom: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 4px 4px 0 4px;
-    border-color: var(--tooltip-bg) transparent transparent transparent;
+    bottom: -3px;
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .pq-tooltip-arrow.bottom {
-    top: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 0 4px 4px 4px;
-    border-color: transparent transparent var(--tooltip-bg) transparent;
+    top: -3px;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  :root.dark .pq-tooltip {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  :root.dark .pq-tooltip-arrow {
+    background: #1e293b;
+  }
+
+  :root.dark .pq-tooltip-arrow.top {
+    border-right-color: rgba(255, 255, 255, 0.14);
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+  }
+
+  :root.dark .pq-tooltip-arrow.bottom {
+    border-left-color: rgba(255, 255, 255, 0.14);
+    border-top-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .pq-tooltip kbd,
+  .pq-tooltip .pq-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px 5px;
+    margin-left: 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    vertical-align: baseline;
+  }
+
+  :root.dark .pq-tooltip kbd,
+  :root.dark .pq-tooltip .pq-kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #e2e8f0;
   }
 
   /* Enhanced Dashboard Chart System */

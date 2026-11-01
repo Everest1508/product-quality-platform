@@ -402,7 +402,7 @@
 })();
 </script>
 
-<div id="toast-container" aria-live="polite"
+<div id="toast-container" role="status"
      x-data="{ messages: [], n: 0,
        push(m) { m = Object.assign({}, m, { id: ++this.n }); this.messages.push(m); setTimeout(() => this.dismiss(m), 4000) },
        dismiss(m) { this.messages = this.messages.filter(x => x.id !== m.id) } }"
@@ -846,24 +846,43 @@
   window.addEventListener('scroll', function(e) { if (!selectPopover.contains(e.target)) hideSelectPopover(); }, true);
 })();
 
-// Custom Tooltip Component Script
+// Custom Tooltip Component Script (Redesigned with hover-intent, dynamic micro-arrow, and shortcut parsing)
 (function() {
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    return; // Touch devices don't benefit from hover tooltips and they stick on tap
+  }
+
   var tooltipEl = document.createElement('div');
   tooltipEl.className = 'pq-tooltip';
+  tooltipEl.setAttribute('role', 'tooltip');
+  tooltipEl.setAttribute('aria-hidden', 'true');
   tooltipEl.innerHTML = '<span class="pq-tooltip-text"></span><div class="pq-tooltip-arrow top"></div>';
   document.body.appendChild(tooltipEl);
 
   var textEl = tooltipEl.querySelector('.pq-tooltip-text');
   var arrowEl = tooltipEl.querySelector('.pq-tooltip-arrow');
   var currentTarget = null;
+  var showTimer = null;
+  var hideTimer = null;
+  var isWarm = false;
+  var warmTimer = null;
 
-  function showTooltip(el) {
+  function parseShortcut(str) {
+    if (!str) return '';
+    return str.replace(/\s*\(([⌘⌃⌥⇧A-Za-z0-9+–— -]+)\)$/, function(_, kbd) {
+      return ' <kbd class="pq-kbd">' + kbd + '</kbd>';
+    });
+  }
+
+  function showTooltip(el, immediate) {
+    clearTimeout(hideTimer);
+    clearTimeout(showTimer);
+
+    if (!el || !el.isConnected) return;
+
     var text = el.getAttribute('data-tooltip') || el.getAttribute('title') || el.getAttribute('data-native-title');
-    // data-tip is a plain button name (from aria-label): shown as text, never as HTML.
-    // data-peek is a multi-line summary (board cards): plain text, wrapped, never clipped by a column.
     var plain = !text && (el.getAttribute('data-peek') || el.getAttribute('data-tip'));
     if (plain) text = plain;
-    tooltipEl.classList.toggle('peek', !!el.hasAttribute('data-peek') && !el.getAttribute('data-tooltip'));
     if (!text || !text.trim()) return;
 
     if (el.hasAttribute('title')) {
@@ -871,44 +890,85 @@
       el.removeAttribute('title');
     }
 
-    currentTarget = el;
-    if (plain) textEl.textContent = text; else textEl.innerHTML = text;
+    var delay = (immediate || isWarm) ? 0 : 120;
 
-    var rect = el.getBoundingClientRect();
-    tooltipEl.style.display = 'block';
+    showTimer = setTimeout(function() {
+      if (!el.isConnected) return;
+      currentTarget = el;
+      tooltipEl.classList.toggle('peek', !!el.hasAttribute('data-peek') && !el.getAttribute('data-tooltip'));
 
-    var tooltipRect = tooltipEl.getBoundingClientRect();
-    // Fixed, so it is measured against the viewport and no scrolling parent can move or clip it.
-    var top = rect.top - tooltipRect.height - 7;
-    var left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-    var position = 'top';
+      if (plain) {
+        textEl.textContent = text;
+      } else {
+        textEl.innerHTML = parseShortcut(text);
+      }
 
-    if (top < 8) {
-      top = rect.bottom + 7;
-      position = 'bottom';
-    }
+      tooltipEl.style.display = 'block';
+      tooltipEl.setAttribute('aria-hidden', 'false');
 
-    left = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8));
+      var rect = el.getBoundingClientRect();
+      var tooltipRect = tooltipEl.getBoundingClientRect();
 
-    arrowEl.className = 'pq-tooltip-arrow ' + position;
-    tooltipEl.style.top = top + 'px';
-    tooltipEl.style.left = left + 'px';
-    tooltipEl.classList.add('show');
+      var top = rect.top - tooltipRect.height - 7;
+      var position = 'top';
+
+      if (top < 8) {
+        top = rect.bottom + 7;
+        position = 'bottom';
+      }
+
+      var targetCenter = rect.left + (rect.width / 2);
+      var left = targetCenter - (tooltipRect.width / 2);
+
+      // Clamp tooltip inside viewport with 8px margin
+      var clampedLeft = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8));
+
+      // Arrow position relative to tooltip box so it points directly at target center
+      var arrowLeft = targetCenter - clampedLeft;
+      arrowLeft = Math.max(10, Math.min(arrowLeft, tooltipRect.width - 10));
+
+      arrowEl.className = 'pq-tooltip-arrow ' + position;
+      arrowEl.style.left = Math.round(arrowLeft) + 'px';
+
+      tooltipEl.style.top = Math.round(top) + 'px';
+      tooltipEl.style.left = Math.round(clampedLeft) + 'px';
+
+      requestAnimationFrame(function() {
+        tooltipEl.classList.add('show');
+      });
+
+      isWarm = true;
+      clearTimeout(warmTimer);
+    }, delay);
   }
 
   function hideTooltip() {
+    clearTimeout(showTimer);
     tooltipEl.classList.remove('show');
+    tooltipEl.setAttribute('aria-hidden', 'true');
+
+    hideTimer = setTimeout(function() {
+      if (!tooltipEl.classList.contains('show')) {
+        tooltipEl.style.display = 'none';
+      }
+    }, 150);
+
     if (currentTarget && currentTarget.hasAttribute('data-native-title')) {
       currentTarget.setAttribute('title', currentTarget.getAttribute('data-native-title'));
     }
     currentTarget = null;
+
+    clearTimeout(warmTimer);
+    warmTimer = setTimeout(function() {
+      isWarm = false;
+    }, 280);
   }
 
   var SEL = '[data-tooltip], [title], [data-native-title], [data-tip], [data-peek]';
   document.addEventListener('mouseover', function(e) {
     var target = e.target.closest(SEL);
     if (target) {
-      showTooltip(target);
+      showTooltip(target, false);
     }
   }, true);
 
@@ -919,12 +979,16 @@
     }
   }, true);
 
-  // Keyboard users get the name of an icon-only button too.
+  // Keyboard accessibility
   document.addEventListener('focusin', function(e) {
-    var target = e.target.closest('[data-tip]');
-    if (target && target.matches(':focus-visible')) showTooltip(target);
+    var target = e.target.closest(SEL);
+    if (target && target.matches(':focus-visible')) showTooltip(target, true);
   });
   document.addEventListener('focusout', hideTooltip);
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') hideTooltip();
+  });
 
   window.addEventListener('scroll', hideTooltip, true);
 })();
@@ -1040,6 +1104,71 @@
 /* Icon-only buttons and links get their name as a tooltip. */
 (function(){function tip(root){(root||document).querySelectorAll('.icon-btn[aria-label],.tb-icon[aria-label],.topbar-burger[aria-label],button[aria-label].tb-btn').forEach(function(el){if(!el.hasAttribute('data-tip'))el.setAttribute('data-tip',el.getAttribute('aria-label'))})}
   tip(); document.body.addEventListener('htmx:afterSwap',function(e){tip(e.target)});})();
+</script>
+<script>
+/* HTMX SPA navigation: Alpine re-init, title sync, sidebar highlight, and progress bar */
+(function() {
+  var bar = document.createElement('div');
+  bar.className = 'htmx-top-bar';
+  document.body.appendChild(bar);
+
+  function syncNav() {
+    var path = window.location.pathname;
+    var bestMatch = null;
+    var bestLen = -1;
+    document.querySelectorAll('.sidebar .side-item[href]').forEach(function(el) {
+      el.classList.remove('active');
+      el.removeAttribute('aria-current');
+      var href = el.getAttribute('href');
+      if (href) {
+        if (href === path) {
+          bestMatch = el;
+          bestLen = 9999;
+        } else if (href !== '/' && path.startsWith(href) && href.length > bestLen) {
+          bestMatch = el;
+          bestLen = href.length;
+        }
+      }
+    });
+    if (bestMatch) {
+      bestMatch.classList.add('active');
+      bestMatch.setAttribute('aria-current', 'page');
+      var fold = bestMatch.closest('.nav-fold');
+      if (fold) fold.classList.add('is-open');
+    }
+  }
+
+  document.body.addEventListener('htmx:beforeRequest', function(e) {
+    if (e.detail && e.detail.boosted) {
+      bar.style.width = '35%';
+      bar.style.opacity = '1';
+      setTimeout(function() { if (bar.style.opacity === '1') bar.style.width = '75%'; }, 150);
+    }
+  });
+
+  document.body.addEventListener('htmx:afterSwap', function(e) {
+    // 1. Re-initialize Alpine in swapped container
+    if (window.Alpine && e.detail && e.detail.target) {
+      window.Alpine.initTree(e.detail.target);
+    }
+    // 2. Synchronize title
+    if (e.detail && e.detail.xhr) {
+      var match = e.detail.xhr.responseText.match(/<title>([^<]*)<\/title>/i);
+      if (match && match[1]) document.title = match[1];
+    }
+    // 3. Complete progress bar
+    bar.style.width = '100%';
+    setTimeout(function() {
+      bar.style.opacity = '0';
+      setTimeout(function() { bar.style.width = '0%'; }, 200);
+    }, 120);
+    // 4. Update sidebar
+    syncNav();
+  });
+
+  document.body.addEventListener('htmx:pushedIntoHistory', syncNav);
+  window.addEventListener('popstate', syncNav);
+})();
 </script>
 </body>
 </html>

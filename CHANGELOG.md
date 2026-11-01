@@ -10,6 +10,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.66.0] "Turnstone" — 2026-10-31 · instant tab switching and smooth page transitions
+
+> In short: moving between tabs, projects, tickets, and attendance no longer reloads the page — everything updates instantly via HTMX.
+
+### New
+
+- **Instant tab transitions everywhere.** Switching tabs across My Work (Attendance, Leave, Calendar, DSR, Payslips) and Projects (Dashboard, Tickets, Errors, Lifecycle, Settings) no longer triggers full-page reloads. Content swaps smoothly in place.
+- **Top loading bar indicator.** A sleek, subtle top progress bar shows immediately when switching pages or tabs, giving clear feedback on connection status.
+
+### Better
+
+- **Seamless sidebar and shell navigation.** Navigating through the sidebar is instantaneous. The active indicator highlights the exact page you are on, expanding nested folds automatically.
+- **Fast status filtering and view toggles.** Switching between Kanban and List views for tickets, filtering error statuses, rule states, survey types, and leave approval categories updates without refreshing the window.
+- **Instant month and range navigation.** Flipping through past attendance months, timesheets, leave calendars, and DSR date presets swaps data in place without jumping scroll position.
+- **Redesigned tooltips.** Tooltips now appear with a natural hover-intent delay, use micro-diamond directional arrows that clamp cleanly within screen boundaries, and automatically display keyboard shortcuts like `Esc` and `Ctrl+K`.
+
+### Fixed
+
+- **Dialog close button overlap.** The close button on dialogs no longer collides with the `Esc` keyboard shortcut hint in the header.
+- **DSR punch clock constraint for multi-project work.** Employees working across multiple projects simultaneously can now submit their full day's timesheet without active punch duration blocking the submission.
+
 ## [1.65.0] "Shrike" — 2026-10-31 · a home page that fits on one screen and is readable everywhere
 
 > In short: the home page is now two columns — your day on the left, your own list on the right — so everything fits a laptop screen, and the small text, faint labels and leave bars are fixed.

@@ -116,7 +116,12 @@ title, a subtitle, its actions and its body.
   {% block pay_actions %}{% endblock %}
 </div>
 
-<nav class="tabs">
+<nav class="tabs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   {% if pay_section != 'mine' %}
     <a class="tab{% if pay_section == 'runs' %} active{% endif %}" href="{% url 'payroll:run_list' %}">Runs</a>
     <a class="tab{% if pay_section == 'salaries' %} active{% endif %}" href="{% url 'payroll:profiles' %}">Salaries</a>

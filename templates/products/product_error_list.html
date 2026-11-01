@@ -19,7 +19,12 @@
     <a href="{% url 'products:product_error_create' pk=product.pk %}" class="btn btn-primary" style="font-size:13px;">Report error</a>
   </div>
 </div>
-<div class="tabs">
+<div class="tabs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <a href="{% url 'products:product_errors' pk=product.pk %}" class="tab {% if not current_status %}active{% endif %}">All</a>
   <a href="?status=open" class="tab {% if current_status == 'open' %}active{% endif %}">Open</a>
   <a href="?status=investigating" class="tab {% if current_status == 'investigating' %}active{% endif %}">Investigating</a>

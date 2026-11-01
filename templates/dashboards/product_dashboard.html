@@ -24,7 +24,12 @@
   </div>
 </div>
 
-<div class="seg pj-tabs mb-6" role="tablist" aria-label="Project sections">
+<div class="seg pj-tabs mb-6" role="tablist" aria-label="Project sections"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   <a href="{% url 'dashboards:product_dashboard' product_pk=product.pk %}" class="is-on" aria-current="page">Dashboard</a>
   <a href="{% url 'products:product_board' pk=product.pk %}">Tickets</a>
   <a href="{% url 'products:product_errors' pk=product.pk %}">Errors</a>

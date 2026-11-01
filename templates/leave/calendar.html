@@ -15,7 +15,12 @@
     <h1>Leave calendar <span class="count">{{ month_label }}</span></h1>
     <p class="text-sm text-muted" style="margin-top:4px;">Who is off and when, with company holidays. Solid is approved, dashed is still waiting for a decision.</p>
   </div>
-  <div class="head-actions">
+  <div class="head-actions"
+       hx-boost="true"
+       hx-target=".main"
+       hx-select=".main"
+       hx-swap="outerHTML show:none"
+       hx-push-url="true">
     <a href="?month={{ prev_month }}" class="btn btn-sm" aria-label="Previous month">&larr;</a>
     <a href="{% url 'leave:calendar' %}" class="btn btn-sm {% if is_current %}btn-primary{% endif %}">This month</a>
     <a href="?month={{ next_month }}" class="btn btn-sm" aria-label="Next month">&rarr;</a>

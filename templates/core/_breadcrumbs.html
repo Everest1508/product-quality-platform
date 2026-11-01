@@ -1,5 +1,10 @@
 {% if breadcrumbs %}
-<nav class="breadcrumbs">
+<nav class="breadcrumbs"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:window:top"
+     hx-push-url="true">
   {% for crumb in breadcrumbs %}
     {% if not forloop.last %}
     <a href="{{ crumb.url }}">{{ crumb.label }}</a>
