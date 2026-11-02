@@ -37,7 +37,7 @@
 <form method="get" class="card toolbar" style="margin-bottom:16px;">
   <div>
     <label class="text-sm text-muted" style="display:block;margin-bottom:4px;" for="cycle-month">Month to pay</label>
-    <select id="cycle-month" name="month" class="form-input" onchange="this.form.submit()">
+    <select id="cycle-month" name="month" class="form-input" onchange="this.form.requestSubmit()">
       {% for o in cycle_options %}<option value="{{ o.key }}"{% if o.key == cycle_key %} selected{% endif %}>{{ o.month }} ({{ o.range }}) · {{ o.status }}</option>{% endfor %}
     </select>
   </div>

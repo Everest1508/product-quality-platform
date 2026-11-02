@@ -166,6 +166,16 @@
   document.addEventListener('toggle', function (e) {
     var t = e.target;
     if (!t.matches || !t.matches('details.dd-wrap') || !t.open) return;
+    var menu = t.querySelector('.dd-menu');
+    if (menu) {
+      menu.style.left = '0';
+      menu.style.right = 'auto';
+      var rect = menu.getBoundingClientRect();
+      if (rect.right > (window.innerWidth || document.documentElement.clientWidth) - 12) {
+        menu.style.left = 'auto';
+        menu.style.right = '0';
+      }
+    }
     var box = t.querySelector('[data-dd-search]');
     if (box) { box.value = ''; box.dispatchEvent(new Event('input', { bubbles: true })); box.focus({ preventScroll: true }); }
   }, true);

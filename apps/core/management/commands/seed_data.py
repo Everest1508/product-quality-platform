@@ -806,6 +806,7 @@ class Command(BaseCommand):
     def _create_todos(self, company, users):
         from apps.dashboards.models import Todo
 
+        today = timezone.localdate()
         tasks = [
             ("Review and triage incoming support tickets", Todo.Priority.HIGH, 0, False),
             ("Audit error occurrences in checkout-api", Todo.Priority.MEDIUM, 0, False),
@@ -823,7 +824,7 @@ class Command(BaseCommand):
                     company=company,
                     text=text,
                     priority=priority,
-                    due=self.today + timedelta(days=due_offset),
+                    due=today + timedelta(days=due_offset),
                     done=done,
                     completed_at=self.now if done else None,
                 )

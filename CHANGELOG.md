@@ -10,6 +10,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.68.0] "Verdin" — 2026-11-02 · audit log command center, dropdown alignment, and instant to-dos
+
+> In short: complete Audit Log redesign with KPI metrics and category triage, cleanly aligned dropdowns that never truncate or clip, instant server-rendered to-dos, and smooth filter transitions across all tables.
+
+### New
+
+- **Audit Log Command Center.** A redesigned activity and security audit console with 4 high-level KPI cards (Total Volume, Today's Punches, Security & Access Changes, Active Contributors), 1-click domain category tabs (All, Security, Tickets & Errors, Finance, Attendance), quick date presets (Today, 7d, 30d), and an expandable change inspector.
+
+### Better
+
+- **Clean dropdown option alignment.** Dropdown option names are now flush on the left with trailing right-aligned checkmarks, and menus have comfortable widths so member names and labels never truncate with ellipses.
+- **Smart viewport boundary positioning.** Dropdown menus near the right edge of the screen automatically flip to stay fully visible inside the viewport.
+- **Instant to-dos on Home.** Your private to-do list is now embedded server-side on first paint, rendering instantly with zero blank box delay or missing items.
+- **Centered changelog search icon.** The search icon in the What's New changelog dialog is now vertically centered with the search placeholder text.
+- **Smooth filtering across all sections.** Filter dropdowns on Expenses, Costing, Notifications, and Payroll preview now update seamlessly without full page flashes.
+
+### Fixed
+
+- **Sub-container navigation in Team Attendance.** Fixed a bug where switching views inside Team Attendance rendered a duplicate sidebar inside the attendance panel.
+- **Demo workspace reset.** Fixed demo data re-seeding to reliably initialize starter to-do items.
+
 ## [1.67.0] "Uguisu" — 2026-11-01 · resilient boosted navigation and smoother DSR filtering
 
 > In short: moving between pages and tabs never gets stuck on blank states, search and filters update smoothly via AJAX, and hours are clearly labeled.

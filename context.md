@@ -87,24 +87,28 @@ entry here is unfinished.
    - *Why it was wrong*: `HtmxBoostMiddleware` previously stripped `HTTP_HX_REQUEST` for all boosted requests unconditionally. While this fixed shell-level navigations (e.g. sidebar links wanting `<div class="main">`), it broke sub-container boosted requests like `#team-main` (`templates/attendance/partials/_team_main.html`), causing views to render the full outer shell (duplicate nested sidebar and topbar) inside `#team-main`.
    - *How it works now*: Checked `is_shell_target = not target or target in ("main", "body")`. Only shell navigations have `HTTP_HX_REQUEST` removed. Sub-containers with specific targets receive their partial fragment as intended.
 
-3. **Dropdown Option Alignment & Menu Width Fix** (`templates/core/partials/_dropdown.html`, `templates/components/multiselect.html`, `templates/core/css/_app.css`, `_ui.css`):
-   - *Why it was wrong*: In `_dropdown.html`, `<span class="dd-tick">` was placed *before* `<span class="dd-text">`. On unselected options, the invisible tick container created a large blank indentation on the left. In narrow dropdown menus (`min-width: 100%`), this indentation pushed member names (`admin`, `dev1`, `dev2`, etc.) past the center line into the right half of the menu, and caused labels like "Any member" to truncate as "Any mem...".
-   - *How it works now*: Placed `.dd-text` first (flush left with `padding: 7px 10px; text-align: left; flex: 1;`) and `.dd-tick` as a trailing checkmark (`margin-left: auto;`) on the right. Added `min-width: max(100%, 180px); width: max-content; max-width: 320px;` to `.dd-menu` so every name starts cleanly on the left margin, has plenty of room, and never truncates.
+3. **Dropdown Option Alignment, Menu Width & Viewport Flip** (`templates/core/partials/_dropdown.html`, `templates/components/multiselect.html`, `templates/core/css/_app.css`, `_ui.css`, `templates/core/base.html`):
+   - *Why it was wrong*: In `_dropdown.html`, `<span class="dd-tick">` was placed *before* `<span class="dd-text">`. On unselected options, the invisible tick container created a large blank indentation on the left. In narrow dropdown menus (`min-width: 100%`), this indentation pushed member names (`admin`, `dev1`, `dev2`, etc.) past the center line into the right half of the menu, and caused labels like "Any member" to truncate as "Any mem...". Furthermore, dropdowns near the right edge of the viewport with `left: 0` could clip offscreen.
+   - *How it works now*: Placed `.dd-text` first (flush left with `padding: 7px 10px; text-align: left; flex: 1;`) and `.dd-tick` as a trailing checkmark (`margin-left: auto;`) on the right. Added `min-width: max(100%, 180px); width: max-content; max-width: min(320px, calc(100vw - 24px));` to `.dd-menu` so every name starts cleanly on the left margin. In `base.html`, the `toggle` listener dynamically detects if `rect.right > window.innerWidth - 12` and flips the dropdown to `right: 0` so it never overflows offscreen.
 
-4. **To-Do Server-Side Rendering & Seeding** (`apps/dashboards/views.py::DashboardView`, `templates/dashboards/partials/_dashboard_content.html`, `apps/core/management/commands/seed_data.py`):
+4. **To-Do Server-Side Rendering & Seeding Bug Fix** (`apps/dashboards/views.py::DashboardView`, `templates/dashboards/partials/_dashboard_content.html`, `apps/core/management/commands/seed_data.py`):
    - *Why it was wrong*:
      - In `_dashboard_content.html`, `#todo-list` was an empty `<div>` with `hx-trigger="load"` fetching `/dashboards/todos/` via a deferred AJAX call. During boosted SPA navigation or network hiccups, the secondary HTMX request could fail or be missed, leaving the to-do card blank. It also produced an unnecessary network round-trip and a brief blank flash on every dashboard visit.
-     - `seed_data` deleted demo users on reset, which cascaded and deleted all `Todo` items without reseeding them.
+     - `seed_data` deleted demo users on reset, which cascaded and deleted all `Todo` items without reseeding them. A typo referencing `self.today` instead of `timezone.localdate()` in `_create_todos` also caused an `AttributeError` on reset.
    - *How it works now*:
      - `DashboardView.get()` directly queries `todo_service.sorted_todos(request.user)` and populates `todos`, `todo_total`, `todo_done`, and `priority_choices` in the template context.
      - `_dashboard_content.html` renders `{% include "dashboards/partials/_todos.html" %}` directly inside `#todo-list` on first paint (no `hx-trigger="load"`, no blank flash). Subsequent mutations (add, toggle, delete, clear done) continue using HTMX to update `#todo-list`.
-     - `seed_data.py` seeds 4 starter tasks for demo users on `--reset`.
+     - `seed_data.py` seeds 4 starter tasks for demo users on `--reset` using `today = timezone.localdate()`.
+
+5. **Form Dispatch Consistency (`requestSubmit`)** (`templates/notifications/list.html`, `templates/expenses/index.html`, `templates/costing/list.html`, `templates/payroll/preview.html`):
+   - Changed legacy `onchange="this.form.submit()"` to `onchange="this.form.requestSubmit()"` across filter dropdowns to prevent hard reloads that bypass HTMX event listeners.
 
 **How it was verified.**
 - `manage.py test apps.dashboards.tests.test_audit_reports`: 23/23 passed
 - `manage.py test apps.core.tests_dropdowns`: 17/17 passed
 - `manage.py test apps.dashboards.tests.test_todos`: 7/7 passed
 - `manage.py test apps.dashboards`: 75/75 passed
+- `manage.py test apps.payroll`: 153/153 passed
 - `manage.py check`: 0 errors.
 
 ### 2026-11-01 (HTMX boosted navigation & resilience) — fix blank page on navigation, requestSubmit for DSR filters, and unit label on dashboard
