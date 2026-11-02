@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.core.models import TenantScopedModel
 
@@ -97,6 +98,7 @@ class Todo(models.Model):
     due = models.DateField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    hours_spent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
         ordering = ["done", "-created_at"]
@@ -107,3 +109,45 @@ class Todo(models.Model):
     @property
     def dsr_source_id(self):
         return f"todo-{self.pk}"
+
+    @property
+    def elapsed_display(self):
+        """Human-readable time span between created_at and completed_at (or now)."""
+        end = self.completed_at or timezone.now()
+        seconds = max(0, int((end - self.created_at).total_seconds()))
+        days, rem = divmod(seconds, 86400)
+        hours, mins = divmod(rem, 3600)
+        minutes = mins // 60
+        if days > 0:
+            return f"{days}d {hours}h" if hours else f"{days}d"
+        if hours > 0:
+            return f"{hours}h {minutes}m" if minutes else f"{hours}h"
+        if minutes > 0:
+            return f"{minutes}m"
+        return "< 1m"
+
+    @property
+    def suggested_time_input(self):
+        """Suggested prefill for the time input box."""
+        if self.hours_spent is not None and self.hours_spent > 0:
+            from apps.dsr.duration import format_hm
+            return format_hm(self.hours_spent)
+        end = self.completed_at or timezone.now()
+        seconds = max(0, int((end - self.created_at).total_seconds()))
+        if seconds > 28800:
+            return "1h"
+        minutes = max(15, round((seconds / 60) / 15) * 15)
+        hours, mins = divmod(minutes, 60)
+        if hours > 0 and mins > 0:
+            return f"{hours}h {mins}m"
+        if hours > 0:
+            return f"{hours}h"
+        return f"{mins}m"
+
+    @property
+    def hours_display(self):
+        """Formatted string for display badge, e.g. 1h 30m or 45m."""
+        if not self.hours_spent:
+            return ""
+        from apps.dsr.duration import format_hm
+        return format_hm(self.hours_spent)

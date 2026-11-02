@@ -77,6 +77,22 @@ class OpenCountsTest(TestCase):
         self.assertContains(res, "open error")
         self.assertContains(res, "open ticket")
 
+    def test_sidebar_shows_notification_badge_and_no_static_fold_counts(self):
+        from apps.notifications.models import Notification
+
+        self.login(self.owner)
+        Notification.objects.create(
+            user=self.owner,
+            company=self.company,
+            title="Important system alert",
+            body="New update available",
+        )
+        res = self.client.get(reverse("tickets:ticket_list"))
+        self.assertEqual(res.context["nav_unread_notifications"], 1)
+        self.assertContains(res, 'Notifications</span>')
+        self.assertNotContains(res, 'class="fold-count"')
+
+
 
 class HomeAndReportsTest(TestCase):
     def setUp(self):

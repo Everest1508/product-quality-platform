@@ -63,6 +63,31 @@ class TodoTest(TestCase):
         self.assertEqual(rows.count(), 1)  # toggling never duplicates
         self.assertEqual((rows[0].task_name, rows[0].date), ("write report", timezone.localdate()))
 
+    def test_completing_todo_with_time_records_hours_and_syncs_to_dsr(self):
+        from decimal import Decimal
+        from apps.dsr.models import DSREntry
+
+        self.client.post(reverse("dashboards:todos"), {"text": "design landing page"})
+        t = Todo.objects.get(text="design landing page")
+        resp = self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]), {"hours": "1h 30m"})
+        t.refresh_from_db()
+        self.assertTrue(t.done)
+        self.assertEqual(t.hours_spent, Decimal("1.50"))
+        self.assertContains(resp, "1h 30m")
+
+        entry = DSREntry.objects.get(user=self.me, source_id=t.dsr_source_id)
+        self.assertEqual(entry.hours_spent, Decimal("1.50"))
+        self.assertIn("From to-do list", entry.notes)
+        self.assertIn("elapsed", entry.notes)
+
+        # Reopening clears the DSR entry and resets hours_spent
+        self.client.post(reverse("dashboards:todo_toggle", args=[t.pk]))
+        t.refresh_from_db()
+        self.assertFalse(t.done)
+        self.assertIsNone(t.hours_spent)
+        self.assertFalse(DSREntry.objects.filter(user=self.me, source_id=t.dsr_source_id).exists())
+
+
     def test_every_todo_action_toasts_over_htmx(self):
         """The list swaps a fragment (no shell), so each action's feedback must
         ride the HX-Trigger `django-message` header the middleware attaches."""
@@ -105,4 +130,13 @@ class TodoTest(TestCase):
         self.assertContains(resp, "Urgent server task")
         self.assertContains(resp, 'id="todo-list"')
         self.assertNotContains(resp, 'hx-trigger="load"')
+
+    def test_direct_browser_navigation_redirects_to_dashboard(self):
+        """When a user directly navigates to /dashboards/todos/ in a browser, redirect
+        them to the dashboard rather than rendering an unstyled partial fragment."""
+        resp = self.client.get(reverse("dashboards:todos"), headers={"Sec-Fetch-Mode": "navigate"})
+        self.assertRedirects(resp, reverse("dashboards:index"))
+
+
+
 

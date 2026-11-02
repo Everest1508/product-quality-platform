@@ -18,20 +18,28 @@ def sorted_todos(user):
     return sorted(Todo.objects.filter(user=user), key=key)
 
 
-def sync_dsr(todo, company):
-    """A finished to-do becomes today's DSR row (no hours: the person adds the time); undoing it removes the row."""
+def sync_dsr(todo, company, hours=None):
+    """A finished to-do becomes today's DSR row with user-entered hours; undoing it removes the row."""
+    from decimal import Decimal
     from apps.dsr.models import DSREntry
 
     today = timezone.localdate()
     rows = DSREntry.objects.filter(company=company, user=todo.user, source="todo", source_id=todo.dsr_source_id)
     if todo.done:
+        hours_val = hours if hours is not None else (todo.hours_spent or Decimal("0.00"))
+        created_str = timezone.localtime(todo.created_at).strftime("%I:%M %p").lstrip("0") if todo.created_at else ""
+        completed_str = timezone.localtime(todo.completed_at).strftime("%I:%M %p").lstrip("0") if todo.completed_at else ""
+        notes = f"From to-do list (added {created_str}, completed {completed_str}, elapsed {todo.elapsed_display})."
         if not rows.exists():
             DSREntry.objects.create(
                 company=company, user=todo.user, date=today, task_name=todo.text[:255],
                 category=DSREntry.Category.OTHER, status=DSREntry.Status.COMPLETED,
-                notes="From your to-do list. Add the time you spent.",
+                hours_spent=hours_val,
+                notes=notes,
                 is_auto_logged=False, source="todo", source_id=todo.dsr_source_id,
             )
+        else:
+            rows.update(hours_spent=hours_val, notes=notes)
     else:
         rows.filter(date=today).delete()  # a past day is closed, so leave it alone
 

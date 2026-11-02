@@ -20,6 +20,8 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### Better
 
+- **To-do time tracking and DSR sync.** Completing a task now opens an inline time box showing the system check (when the task was added and elapsed time) and lets you enter the exact time taken, syncing it directly into today's DSR sheet with a time badge on the task.
+- **Sidebar notification badges.** Added a dedicated Notifications link in the sidebar with a live unread pill badge matching Tickets and Errors, and removed the confusing static numbers on People, Money, and System folds.
 - **Clean dropdown option alignment.** Dropdown option names are now flush on the left with trailing right-aligned checkmarks, and menus have comfortable widths so member names and labels never truncate with ellipses.
 - **Smart viewport boundary positioning.** Dropdown menus near the right edge of the screen automatically flip to stay fully visible inside the viewport.
 - **Instant to-dos on Home.** Your private to-do list is now embedded server-side on first paint, rendering instantly with zero blank box delay or missing items.
@@ -28,6 +30,8 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### Fixed
 
+- **To-do list in-place updates & URL isolation.** Fixed an issue where adding or completing a task inherited dashboard navigation rules, causing the to-do list to wipe blank or alter the browser address bar.
+- **Direct to-do link auto-redirect.** Visiting `/dashboards/todos/` directly in the browser now automatically redirects to the Dashboard rather than showing an unstyled page or oversized icons.
 - **Sub-container navigation in Team Attendance.** Fixed a bug where switching views inside Team Attendance rendered a duplicate sidebar inside the attendance panel.
 - **Demo workspace reset.** Fixed demo data re-seeding to reliably initialize starter to-do items.
 

@@ -91,23 +91,38 @@ entry here is unfinished.
    - *Why it was wrong*: In `_dropdown.html`, `<span class="dd-tick">` was placed *before* `<span class="dd-text">`. On unselected options, the invisible tick container created a large blank indentation on the left. In narrow dropdown menus (`min-width: 100%`), this indentation pushed member names (`admin`, `dev1`, `dev2`, etc.) past the center line into the right half of the menu, and caused labels like "Any member" to truncate as "Any mem...". Furthermore, dropdowns near the right edge of the viewport with `left: 0` could clip offscreen.
    - *How it works now*: Placed `.dd-text` first (flush left with `padding: 7px 10px; text-align: left; flex: 1;`) and `.dd-tick` as a trailing checkmark (`margin-left: auto;`) on the right. Added `min-width: max(100%, 180px); width: max-content; max-width: min(320px, calc(100vw - 24px));` to `.dd-menu` so every name starts cleanly on the left margin. In `base.html`, the `toggle` listener dynamically detects if `rect.right > window.innerWidth - 12` and flips the dropdown to `right: 0` so it never overflows offscreen.
 
-4. **To-Do Server-Side Rendering & Seeding Bug Fix** (`apps/dashboards/views.py::DashboardView`, `templates/dashboards/partials/_dashboard_content.html`, `apps/core/management/commands/seed_data.py`):
-   - *Why it was wrong*:
-     - In `_dashboard_content.html`, `#todo-list` was an empty `<div>` with `hx-trigger="load"` fetching `/dashboards/todos/` via a deferred AJAX call. During boosted SPA navigation or network hiccups, the secondary HTMX request could fail or be missed, leaving the to-do card blank. It also produced an unnecessary network round-trip and a brief blank flash on every dashboard visit.
-     - `seed_data` deleted demo users on reset, which cascaded and deleted all `Todo` items without reseeding them. A typo referencing `self.today` instead of `timezone.localdate()` in `_create_todos` also caused an `AttributeError` on reset.
+4. **To-Do Time Tracking, System Check & DSR Sync** (`apps/dashboards/models.py::Todo`, `apps/dashboards/views.py::TodoToggleView`, `apps/dashboards/todos.py::sync_dsr`, `templates/dashboards/partials/_todos.html`, `templates/core/css/_ui.css`):
+   - *Why it was wrong*: Checking off a to-do immediately completed it with 0 hours logged in DSR. The user had no way to specify how long they spent on the task, and the system never showed when the to-do was added or how much time elapsed.
    - *How it works now*:
-     - `DashboardView.get()` directly queries `todo_service.sorted_todos(request.user)` and populates `todos`, `todo_total`, `todo_done`, and `priority_choices` in the template context.
-     - `_dashboard_content.html` renders `{% include "dashboards/partials/_todos.html" %}` directly inside `#todo-list` on first paint (no `hx-trigger="load"`, no blank flash). Subsequent mutations (add, toggle, delete, clear done) continue using HTMX to update `#todo-list`.
-     - `seed_data.py` seeds 4 starter tasks for demo users on `--reset` using `today = timezone.localdate()`.
+     - Added `hours_spent` decimal field to `Todo` with migration `0009_todo_hours_spent`.
+     - Added `Todo.elapsed_display` and `Todo.suggested_time_input` properties comparing `completed_at` (or now) against `created_at`.
+     - When clicking the checkbox on an open to-do, an inline box expands showing the system check: `"Added at 10:15 AM · System elapsed: 1h 45m"`, with an input box prefilled with suggested time (`1h 45m`).
+     - Clicking "Done & Log" saves `hours_spent`, sets `done=True`, and creates a `DSREntry` in today's DSR sheet with the exact user hours and informative notes (`"From to-do list (added 10:15 AM, completed 12:00 PM, elapsed 1h 45m)"`).
+     - Completed tasks display a green time chip (`⏱ 1h 45m`). Clicking a completed item reopens it and removes the DSR row as before.
+     - `DashboardView.get()` continues to server-render to-dos on first paint.
 
-5. **Form Dispatch Consistency (`requestSubmit`)** (`templates/notifications/list.html`, `templates/expenses/index.html`, `templates/costing/list.html`, `templates/payroll/preview.html`):
+5. **Sidebar Notification Badges & Static Fold Counts Cleaned** (`templates/core/_sidebar.html`, `apps/core/context_processors.py::workspace_context`):
+   - *Why it was wrong*: The sidebar rendered static counts `<span class="fold-count">6</span>`, `4`, and `3` next to People, Money, and System (indicating menu link counts), which looked confusingly like notification alerts. Meanwhile, unread notifications had no badge in the sidebar.
+   - *How it works now*:
+     - Removed the static `6`, `4`, `3` fold-count elements from `_sidebar.html`.
+     - Added a dedicated Notifications link in the sidebar under Workspace with a real-time `.side-badge` pill matching Tickets (`189`) and Errors (`298`).
+     - Added `nav_unread_notifications` to `workspace_context` and bound Alpine store `$store.notifications.unread` so the badge updates live as notifications are read or arrived.
+
+6. **Form Dispatch Consistency (`requestSubmit`)** (`templates/notifications/list.html`, `templates/expenses/index.html`, `templates/costing/list.html`, `templates/payroll/preview.html`):
    - Changed legacy `onchange="this.form.submit()"` to `onchange="this.form.requestSubmit()"` across filter dropdowns to prevent hard reloads that bypass HTMX event listeners.
+
+7. **To-Do HTMX Disinherit & URL Push Isolation** (`templates/dashboards/partials/_dashboard_content.html`, `templates/dashboards/partials/_todos.html`):
+   - *Why it was wrong*: `.hm-home` carries `hx-select=".main"` and `hx-push-url="true"` for page navigation. Because HTMX attributes inherit down the DOM tree, all actions inside the to-do widget (`<form class="td-add">`, toggle, delete, clear done) inherited `hx-select=".main"` and `hx-push-url="true"`. Upon adding a task, HTMX searched for `.main` inside the partial response `_todos.html`, found 0 matches, and swapped an empty string into `#todo-list` (wiping the whole widget blank), while simultaneously pushing `/dashboards/todos/` into the browser address bar.
+   - *How it works now*: Added `hx-disinherit="*"` to `#todo-list` in `_dashboard_content.html` and explicit `hx-disinherit="*"` and `hx-push-url="false"` to all forms and mutation buttons in `_todos.html`. In-place fragment swaps no longer inherit `.main` selection or URL pushes.
 
 **How it was verified.**
 - `manage.py test apps.dashboards.tests.test_audit_reports`: 23/23 passed
 - `manage.py test apps.core.tests_dropdowns`: 17/17 passed
-- `manage.py test apps.dashboards.tests.test_todos`: 7/7 passed
-- `manage.py test apps.dashboards`: 75/75 passed
+- `manage.py test apps.dashboards.tests.test_todos`: 8/8 passed
+- `manage.py test apps.dashboards`: 76/76 passed
+- `manage.py test apps.core.tests_counts`: 15/15 passed
+- `manage.py test apps.payroll`: 153/153 passed
+- `manage.py check`: 0 errors.
 - `manage.py test apps.payroll`: 153/153 passed
 - `manage.py check`: 0 errors.
 

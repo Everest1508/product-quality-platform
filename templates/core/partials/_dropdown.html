@@ -19,7 +19,7 @@ is already correct on first paint.
     <summary class="dd-btn{% if trigger_class %} {{ trigger_class }}{% endif %}" aria-label="{{ field_label }}" title="{{ field_label }}">
       <span class="dd-val" data-dd-label>{{ closed_label }}</span>
       <span class="dd-caret" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
       </span>
     </summary>
     <div class="dd-menu">
@@ -33,7 +33,7 @@ is already correct on first paint.
         <input type="{{ input_type }}" name="{{ name }}" value="{{ value }}" data-label="{{ text }}"{% if value in selected %} checked{% endif %}>
         <span class="dd-text">{{ text }}</span>
         <span class="dd-tick" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg>
         </span>
       </label>
       {% endfor %}

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from apps.core.pagination import paginate
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
@@ -219,17 +219,21 @@ class ReportsView(CompanyMemberRequiredMixin, View):
 class TodoMixin(CompanyMemberRequiredMixin):
     def render_list(self, request):
         todos = todo_service.sorted_todos(request.user)
-        return render(request, "dashboards/partials/_todos.html", {
+        ctx = {
             "todos": todos,
             "todo_total": len(todos),
             "todo_done": sum(t.done for t in todos),
             "today": timezone.localdate(),
             "priority_choices": [(str(v), label) for v, label in Todo.Priority.choices],
-        })
+        }
+        return render(request, "dashboards/partials/_todos.html", ctx)
 
 
 class TodoListView(TodoMixin, View):
     def get(self, request):
+        if request.headers.get("HX-Request") != "true":
+            if "text/html" in request.headers.get("Accept", "") or request.headers.get("Sec-Fetch-Mode") == "navigate":
+                return redirect("dashboards:index")
         return self.render_list(request)
 
     def post(self, request):
@@ -252,11 +256,22 @@ class TodoToggleView(TodoMixin, View):
         todo = get_object_or_404(Todo, pk=pk, user=request.user)
         todo.done = not todo.done
         todo.completed_at = timezone.now() if todo.done else None
-        todo.save(update_fields=["done", "completed_at"])
-        todo_service.sync_dsr(todo, request.company)
+
+        hours_raw = request.POST.get("hours", "").strip()
+        if todo.done and hours_raw:
+            from apps.dsr.duration import parse_hours
+            parsed = parse_hours(hours_raw)
+            if parsed is not None and parsed >= 0:
+                todo.hours_spent = parsed
+        elif not todo.done:
+            todo.hours_spent = None
+
+        todo.save(update_fields=["done", "completed_at", "hours_spent"])
+        todo_service.sync_dsr(todo, request.company, hours=todo.hours_spent)
+        time_msg = f" ({todo.hours_display} logged to DSR)" if (todo.done and todo.hours_spent) else ""
         messages.success(
             request,
-            f'Marked "{todo.text}" done.' if todo.done else f'Reopened "{todo.text}".',
+            f'Marked "{todo.text}" done{time_msg}.' if todo.done else f'Reopened "{todo.text}".',
         )
         return self.render_list(request)
 

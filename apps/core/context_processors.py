@@ -91,6 +91,11 @@ def workspace_context(request):
                 .exclude(status__in=["resolved", "ignored"])
                 .count()
             )
+            from apps.notifications.models import Notification
+
+            ctx["nav_unread_notifications"] = Notification.objects.filter(
+                user=request.user, company=company, read_at__isnull=True
+            ).count()
             if request.company_role in ("owner", "admin"):
                 from apps.attendance.models import AttendanceCorrection
 

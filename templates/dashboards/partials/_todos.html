@@ -1,6 +1,6 @@
-{% load dropdown_tags %}{% comment %}Swapped into #todo-list. Every control targets #todo-list, so nothing here may rely on an inherited hx-target.{% endcomment %}
+{% load dropdown_tags %}{% comment %}Swapped into #todo-list. Every control targets #todo-list with hx-disinherit="*" to avoid inheriting .hm-home's hx-select and hx-push-url.{% endcomment %}
 <span id="todo-state" data-total="{{ todo_total }}" data-done="{{ todo_done }}" hidden></span>
-<form class="td-add" hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML">
+<form class="td-add" hx-post="{% url 'dashboards:todos' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-disinherit="*" hx-push-url="false">
   {% csrf_token %}
   <input type="text" name="text" maxlength="300" placeholder="Add a task…" required autocomplete="off" class="td-input td-text" aria-label="New task">
   {% dropdown "priority" priority_choices "2" placeholder="Priority" label="Priority" %}
@@ -11,16 +11,38 @@
 <div class="td-progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ todo_total }}" aria-valuenow="{{ todo_done }}">
   <span style="width:{% widthratio todo_done todo_total 100 %}%"></span>
 </div>
-<p class="td-count">{{ todo_done }} of {{ todo_total }} done{% if todo_done %} · <button type="button" class="td-link" hx-post="{% url 'dashboards:todo_clear_done' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>Clear done</button>{% endif %}</p>
+<p class="td-count">{{ todo_done }} of {{ todo_total }} done{% if todo_done %} · <button type="button" class="td-link" hx-post="{% url 'dashboards:todo_clear_done' %}" hx-target="#todo-list" hx-swap="innerHTML" hx-disinherit="*" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>Clear done</button>{% endif %}</p>
 {% endif %}
 <ul class="td-list">
 {% for t in todos %}
-  <li class="td-item{% if t.done %} is-done{% elif t.due and t.due < today %} is-late{% endif %}">
-    <button type="button" class="td-check" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' role="checkbox" aria-checked="{% if t.done %}true{% else %}false{% endif %}" aria-label="{{ t.text }}"></button>
-    <span class="td-label">{{ t.text }}</span>
-    <span class="td-badge p{{ t.priority }}">{{ t.get_priority_display }}</span>
-    {% if t.due %}<span class="td-chip{% if not t.done and t.due < today %} is-late{% elif not t.done and t.due == today %} is-today{% endif %}">{% if not t.done and t.due < today %}Overdue · {{ t.due|date:"M j" }}{% elif t.due == today %}Today{% else %}{{ t.due|date:"M j" }}{% endif %}</span>{% endif %}
-    <button type="button" class="td-del" hx-post="{% url 'dashboards:todo_delete' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' aria-label="Delete task">&times;</button>
+  <li class="td-item{% if t.done %} is-done{% elif t.due and t.due < today %} is-late{% endif %}"
+      {% if not t.done %}x-data="{ logging: false }"{% endif %}>
+    <div class="td-main-row">
+      {% if t.done %}
+        <button type="button" class="td-check is-checked" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-disinherit="*" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' role="checkbox" aria-checked="true" aria-label="Reopen {{ t.text }}"></button>
+      {% else %}
+        <button type="button" class="td-check" :class="{ 'is-active': logging }" @click="logging = !logging" role="checkbox" aria-checked="false" aria-label="Complete {{ t.text }}"></button>
+      {% endif %}
+      <span class="td-label">{{ t.text }}</span>
+      {% if t.hours_spent %}<span class="td-chip-time" title="Logged to DSR">⏱ {{ t.hours_display }}</span>{% endif %}
+      <span class="td-badge p{{ t.priority }}">{{ t.get_priority_display }}</span>
+      {% if t.due %}<span class="td-chip{% if not t.done and t.due < today %} is-late{% elif not t.done and t.due == today %} is-today{% endif %}">{% if not t.done and t.due < today %}Overdue · {{ t.due|date:"M j" }}{% elif t.due == today %}Today{% else %}{{ t.due|date:"M j" }}{% endif %}</span>{% endif %}
+      <button type="button" class="td-del" hx-post="{% url 'dashboards:todo_delete' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-disinherit="*" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' aria-label="Delete task">&times;</button>
+    </div>
+    {% if not t.done %}
+    <div class="td-log-pop" x-show="logging" style="display:none;" x-cloak x-transition>
+      <div class="td-log-meta">
+        <span class="td-log-hint">Added {{ t.created_at|date:"h:i A" }} · System elapsed: <strong>{{ t.elapsed_display }}</strong></span>
+      </div>
+      <form class="td-log-form" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-disinherit="*" hx-push-url="false">
+        {% csrf_token %}
+        <input type="text" name="hours" class="td-input td-log-time" placeholder="Time taken (e.g. {{ t.suggested_time_input }})" value="{{ t.suggested_time_input }}">
+        <button type="submit" class="td-log-btn">Done & Log</button>
+        <button type="button" class="td-log-skip" hx-post="{% url 'dashboards:todo_toggle' pk=t.pk %}" hx-target="#todo-list" hx-swap="innerHTML" hx-disinherit="*" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>Skip</button>
+        <button type="button" class="td-log-close" @click="logging = false" aria-label="Cancel">&times;</button>
+      </form>
+    </div>
+    {% endif %}
   </li>
 {% empty %}
   <li class="td-empty">Nothing here yet. Add the first thing you want to get done today.</li>
