@@ -191,6 +191,7 @@ class Command(BaseCommand):
         self._create_attendance(company, users)
         self._create_leave(company, users)
         self._create_payroll(company, users)
+        self._create_todos(company, users)
 
         usernames = ", ".join(u[0] for u in USERS)
         self.stdout.write(self.style.SUCCESS(
@@ -801,6 +802,33 @@ class Command(BaseCommand):
             f"{PayrollProfile.objects.filter(company=company, is_on_payroll=True).count()} "
             f"on payroll\n"
         )
+
+    def _create_todos(self, company, users):
+        from apps.dashboards.models import Todo
+
+        tasks = [
+            ("Review and triage incoming support tickets", Todo.Priority.HIGH, 0, False),
+            ("Audit error occurrences in checkout-api", Todo.Priority.MEDIUM, 0, False),
+            ("Check team attendance punches & weekly off", Todo.Priority.LOW, 1, False),
+            ("Verify October payroll approval & run", Todo.Priority.HIGH, -1, True),
+        ]
+        created = 0
+        for username in ("admin", "owner"):
+            user = users.get(username)
+            if not user:
+                continue
+            for text, priority, due_offset, done in tasks:
+                Todo.objects.create(
+                    user=user,
+                    company=company,
+                    text=text,
+                    priority=priority,
+                    due=self.today + timedelta(days=due_offset),
+                    done=done,
+                    completed_at=self.now if done else None,
+                )
+                created += 1
+        self.stdout.write(f"  To-dos:  {created} demo items seeded\n")
 
     def _backfill_activity(self, company):
         entries = list(ActivityLog.objects.filter(company=company).order_by("created_at"))

@@ -23,8 +23,8 @@ look is .ms-* in core/css/_ui.css.
     <div class="dd-search"><input type="search" x-ref="search" x-model="search" placeholder="Search…" aria-label="Search {{ label }}" autocomplete="off" @keydown.enter.prevent="pickFirst()"></div>
     <template x-for="opt in filtered" :key="opt.id">
       <label class="dd-opt" :class="{ 'on': isSelected(opt.id) }" @click.prevent="toggle(opt.id)">
-        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg></span>
         <span class="dd-text" x-text="opt.name"></span>
+        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg></span>
       </label>
     </template>
     <div class="dd-none" x-show="filtered.length === 0">Nothing matches</div>

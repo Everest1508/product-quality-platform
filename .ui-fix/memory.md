@@ -29,6 +29,16 @@
   - Changelog Modal: Fixed close button `position: static;` so it sits cleanly alongside `<kbd>Esc</kbd>` without overlapping.
   - Reports page header: Added `.pg-title-row` flex rules so titles, badges, and range pills align horizontally. (approved: "fix the gap~ also impve and redeisgn the tooltip")
 
+- 2026-11-02 (audit-log-redesign):
+  - Audit Log upgraded to a command-center interface:
+    - 4 KPI Bento summary cards (`stats.total`, `stats.today`, `stats.security`, `stats.actors`).
+    - Category quick-filter tabs (All Activity, Security & Access, Tickets & Errors, Finance & Payroll, Attendance & Leave, Projects & System).
+    - Quick date presets (`All`, `Today`, `7d`, `30d`) integrated into the toolbar.
+    - Rich rows with category icon pills, inline transition chips (`from -> to`), amount badges (`₹...`), role & stage badges, accessible title link, right-aligned jump button (`Open ->`), and expandable metadata JSON payload inspector.
+    - Verified strict test requirements: dropdowns and metadata summary tags carry `aria-label`, `<label for="audit-from/to">` on date inputs, zero native `<select>` tags. (approved: "do all")
+- 2026-11-02 (boosted-sub-containers):
+  - `HtmxBoostMiddleware` in `apps/core/middleware.py` checks `is_shell_target = not target or target in ("main", "body")` before stripping `HTTP_HX_REQUEST`. Fixes double nested sidebar in sub-containers like `#team-main` (`templates/attendance/partials/_team_main.html`) while preserving full `<div class="main">` shell for full-page navigations.
+
 ## Rejected (don't propose again unless asked)
 - 2026-10-31: Restyling `.btn` to 44px everywhere to fix phone tap targets — the 40px shared button passes, and a global size change is a visual restyle outside this screen.
 - 2026-10-31: Splitting the Home page into tabs/sections to make it fit — the ask is one glance at your day, not more navigation.
@@ -47,5 +57,5 @@
 | Home | `templates/dashboards/partials/_dashboard_content.html`, `templates/core/css/_pages.css`, `_ui.css` | 2026-10-31 | 58 → 98 | none — gap eliminated, columns balanced (This week in left column, Leave in right column), team rows bounded |
 | Product Dashboard | `templates/dashboards/product_dashboard.html`, `templates/dashboards/partials/_product_dashboard_content.html`, `_ui.css` | 2026-10-31 | 54 → 90 | none — breadcrumbs, project tabs, clickable stat cards, 30d trends, meters, and recent activity feed added |
 | Reports Dashboard | `templates/dashboards/reports.html`, `templates/dashboards/partials/_report_content.html`, `_ui.css` | 2026-10-31 | 52 → 93 | none — breadcrumbs, range pill, tokenized date toolbar, KPI cards, bento charts, collapsible tables, and activity ledger |
-| Audit Log Dashboard | `templates/dashboards/audit_log.html`, `templates/dashboards/partials/_audit_log_rows.html`, `_ui.css` | 2026-10-31 | 50 → 94 | none — breadcrumbs, count badge, tokenized toolbar, accessible label inputs, app-wide dropdowns, card-wrapped table, and actor avatars |
+| Audit Log Dashboard | `templates/dashboards/audit_log.html`, `templates/dashboards/partials/_audit_log_rows.html`, `_ui.css` | 2026-11-02 | 50 → 99 | none — command center redesign with 4 KPI cards, category tabs, date presets, rich metadata chips, payload inspector, and action jump button |
 | Changelog / What's New | `templates/core/_changelog_modal.html`, `templates/core/css/_ui.css`, `_pages.css`, `_app.css` | 2026-10-31 | 55 → 98 | none — complete revamp with card-grouped changes, summary badge, search clear button, keyboard Esc/Arrow navigation, and mobile horizontal tabs |

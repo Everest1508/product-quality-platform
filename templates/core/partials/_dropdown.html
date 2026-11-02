@@ -31,10 +31,10 @@ is already correct on first paint.
       {% for value, text in options %}
       <label class="dd-opt" title="{{ text }}">
         <input type="{{ input_type }}" name="{{ name }}" value="{{ value }}" data-label="{{ text }}"{% if value in selected %} checked{% endif %}>
+        <span class="dd-text">{{ text }}</span>
         <span class="dd-tick" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 13 4 4L19 7"/></svg>
         </span>
-        <span class="dd-text">{{ text }}</span>
       </label>
       {% endfor %}
       {% if searchable %}<div class="dd-none" hidden>Nothing matches</div>{% endif %}

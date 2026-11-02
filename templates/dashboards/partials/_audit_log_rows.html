@@ -1,44 +1,105 @@
 {% load event_tags icon_tags %}
 {% for entry in page %}
-{% with url=entry|event_url %}
-<tr id="audit-entry-{{ entry.pk }}"
-    {% if url %}
-    onclick="window.location='{{ url }}'"
-    class="clickable-row audit-row"
-    {% else %}
-    class="audit-row"
-    {% endif %}>
+{% with url=entry|event_url meta_json=entry|event_pretty_meta %}
+<tr id="audit-entry-{{ entry.pk }}" class="audit-row">
+  {# 1. Timestamp #}
   <td class="audit-date">
     <span class="audit-date-main">{{ entry.created_at|date:"M d, Y" }}</span>
     <span class="audit-date-sub">{{ entry.created_at|date:"g:i A" }}</span>
   </td>
-  <td class="audit-type">
-    <span class="pill {{ entry.event_type|event_pill }}">{{ entry.get_event_type_display }}</span>
+
+  {# 2. Event Type #}
+  <td class="audit-type-col">
+    <div class="audit-type-wrap">
+      <span class="audit-type-icon" title="{{ entry.get_event_type_display }}">
+        {% icon entry.event_type|event_icon 'ic' %}
+      </span>
+      <span class="pill {{ entry.event_type|event_pill }}">{{ entry.get_event_type_display }}</span>
+    </div>
   </td>
-  <td class="audit-detail">
-    <div class="audit-title">
-      <span>{{ entry.title }}</span>
+
+  {# 3. Details & Description #}
+  <td class="audit-desc-col">
+    <div class="audit-title-wrap">
       {% if url %}
-      <span class="audit-link-icon">{% icon 'external-link' 'ic' %}</span>
+      <a href="{{ url }}" class="audit-title-link">{{ entry.title }}</a>
+      {% else %}
+      <span class="audit-title-static">{{ entry.title }}</span>
       {% endif %}
     </div>
-    {% if entry.description %}<div class="audit-sub">{{ entry.description }}</div>{% endif %}
+
+    {% if entry.description %}
+    <div class="audit-sub">{{ entry.description }}</div>
+    {% endif %}
+
+    {# Metadata chips (transitions, amounts, roles, stages) #}
+    {% if entry.metadata %}
+    <div class="audit-meta-row">
+      {% if entry.metadata.from and entry.metadata.to %}
+      <span class="meta-tag meta-transition" title="State transition">
+        {{ entry.metadata.from }} &rarr; {{ entry.metadata.to }}
+      </span>
+      {% endif %}
+      {% if entry.metadata.amount %}
+      <span class="meta-tag meta-amount" title="Amount">
+        ₹{{ entry.metadata.amount }}
+      </span>
+      {% endif %}
+      {% if entry.metadata.role %}
+      <span class="meta-tag meta-role" title="Assigned Role">
+        {{ entry.metadata.role|capfirst }}
+      </span>
+      {% endif %}
+      {% if entry.metadata.stage %}
+      <span class="meta-tag meta-stage" title="Project Stage">
+        Stage: {{ entry.metadata.stage }}
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Expandable metadata payload inspector if metadata exists #}
+    {% if meta_json %}
+    <details class="audit-meta-inspect">
+      <summary aria-label="Inspect metadata payload for event {{ entry.pk }}">
+        {% icon 'code' 'ic' %}
+        <span>Payload</span>
+      </summary>
+      <pre><code>{{ meta_json }}</code></pre>
+    </details>
+    {% endif %}
   </td>
-  <td class="audit-actor">
+
+  {# 4. Actor #}
+  <td class="audit-actor-col">
     {% if entry.actor %}
       <span class="assignee audit-assignee">
         <span class="avatar audit-avatar">{{ entry.actor.username.0|upper }}</span>
-        <span class="audit-actor-name">{{ entry.actor.get_full_name|default:entry.actor.username }}</span>
+        <span class="audit-actor-name" title="{{ entry.actor.get_full_name|default:entry.actor.username }}">
+          {{ entry.actor.get_full_name|default:entry.actor.username }}
+        </span>
       </span>
     {% else %}
       <span class="text-muted text-sm">—</span>
+    {% endif %}
+  </td>
+
+  {# 5. Action / Jump #}
+  <td class="audit-action-col">
+    {% if url %}
+    <a href="{{ url }}" class="audit-jump-btn" title="View details">
+      <span>Open</span>
+      {% icon 'arrow-up-right' 'ic' %}
+    </a>
+    {% else %}
+    <span class="text-muted text-xs">—</span>
     {% endif %}
   </td>
 </tr>
 {% endwith %}
 {% empty %}
 <tr>
-  <td colspan="4">
+  <td colspan="5">
     <div class="empty audit-empty">
       <span class="audit-empty-icon">{% icon 'history' 'ic' %}</span>
       <h3>No activity logged</h3>

@@ -128,7 +128,7 @@
           <h2>My to-do</h2>
           <span class="hm-sub-inline">only you can see this</span>
         </div>
-        <div id="todo-list" hx-get="{% url 'dashboards:todos' %}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"></div>
+        <div id="todo-list">{% include "dashboards/partials/_todos.html" %}</div>
       </section>
 
       {% if is_privileged %}

@@ -65,6 +65,66 @@ class AuditLogViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["page"].paginator.count, 0)
 
+    def test_filter_by_category(self):
+        self.client.login(username="owner", password="pass1234")
+        log_activity(self.company, "ticket_created", "Issue #1", actor=self.owner)
+        log_activity(self.company, "member_joined", "New team member", actor=self.owner)
+        log_activity(self.company, "payroll_run", "October Payroll", actor=self.owner)
+
+        resp_sec = self.client.get(reverse("dashboards:audit_log"), {"category": "security"})
+        self.assertEqual(resp_sec.status_code, 200)
+        self.assertEqual(resp_sec.context["page"].paginator.count, 1)
+        self.assertIn("New team member", resp_sec.content.decode())
+
+        resp_issues = self.client.get(reverse("dashboards:audit_log"), {"category": "issues"})
+        self.assertEqual(resp_issues.status_code, 200)
+        self.assertEqual(resp_issues.context["page"].paginator.count, 1)
+        self.assertIn("Issue #1", resp_issues.content.decode())
+
+        resp_fin = self.client.get(reverse("dashboards:audit_log"), {"category": "finance"})
+        self.assertEqual(resp_fin.status_code, 200)
+        self.assertEqual(resp_fin.context["page"].paginator.count, 1)
+        self.assertIn("October Payroll", resp_fin.content.decode())
+
+    def test_filter_by_preset(self):
+        self.client.login(username="owner", password="pass1234")
+        now = timezone.now()
+        e_today = log_activity(self.company, "ticket_created", "Today event", actor=self.owner)
+        e_old = log_activity(self.company, "ticket_created", "15d old event", actor=self.owner)
+        ActivityLog.objects.filter(pk=e_old.pk).update(created_at=now - timedelta(days=15))
+
+        resp_7d = self.client.get(reverse("dashboards:audit_log"), {"preset": "7d"})
+        self.assertEqual(resp_7d.status_code, 200)
+        self.assertEqual(resp_7d.context["page"].paginator.count, 1)
+        self.assertIn("Today event", resp_7d.content.decode())
+        self.assertNotIn("15d old event", resp_7d.content.decode())
+
+    def test_audit_stats_kpi(self):
+        self.client.login(username="owner", password="pass1234")
+        log_activity(self.company, "ticket_created", "Ticket 1", actor=self.owner)
+        log_activity(self.company, "member_role_changed", "Role updated", actor=self.dev)
+        resp = self.client.get(reverse("dashboards:audit_log"))
+        stats = resp.context["stats"]
+        self.assertEqual(stats["total"], 2)
+        self.assertEqual(stats["today"], 2)
+        self.assertEqual(stats["actors"], 2)
+        self.assertEqual(stats["security"], 1)
+
+    def test_row_rendering_with_metadata_and_payload(self):
+        self.client.login(username="owner", password="pass1234")
+        log_activity(
+            self.company,
+            "ticket_status_changed",
+            "Ticket #42 status updated",
+            actor=self.owner,
+            metadata={"from": "in_progress", "to": "resolved", "product_id": 99}
+        )
+        resp = self.client.get(reverse("dashboards:audit_log"))
+        html = resp.content.decode()
+        self.assertIn("in_progress &rarr; resolved", html)
+        self.assertIn("Inspect metadata payload", html)
+        self.assertIn("&quot;product_id&quot;: 99", html)
+
 
 class AuditLogFilterLabellingTest(TestCase):
     """The filter row had one labelled control and three unlabelled siblings.

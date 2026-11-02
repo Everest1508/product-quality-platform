@@ -95,3 +95,14 @@ class TodoTest(TestCase):
         call_command("notify_todos")
         self.assertEqual(Notification.objects.filter(user=self.me, title="You have overdue to-dos").count(), 1)
         self.assertFalse(Notification.objects.filter(user=self.other).exists())
+
+    def test_dashboard_server_renders_todos_on_first_load(self):
+        """The dashboard must render the to-dos directly into #todo-list on first paint
+        rather than relying on an empty div with hx-trigger='load'."""
+        Todo.objects.create(user=self.me, company=self.company, text="Urgent server task")
+        resp = self.client.get(reverse("dashboards:index"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Urgent server task")
+        self.assertContains(resp, 'id="todo-list"')
+        self.assertNotContains(resp, 'hx-trigger="load"')
+

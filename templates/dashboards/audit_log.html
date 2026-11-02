@@ -4,83 +4,149 @@
 {% block title %}Audit Log — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="pg-head mb-6">
-  <div>
-    <nav class="breadcrumbs" aria-label="Breadcrumbs">
-      <a href="{% url 'dashboards:index' %}">Home</a>
-      <span class="sep">/</span>
-      <span class="current">Audit Log</span>
-    </nav>
-    <div class="pg-title-row">
-      <h1 class="pg-title">Audit Log</h1>
-      <span class="bdg bdg-blue">{{ page.paginator.count }} event{{ page.paginator.count|pluralize }}</span>
+<div class="audit-shell"
+     hx-boost="true"
+     hx-target=".main"
+     hx-select=".main"
+     hx-swap="outerHTML show:none"
+     hx-push-url="true">
+
+  {# ── Page Header ── #}
+  <div class="pg-head mb-5">
+    <div>
+      <nav class="breadcrumbs" aria-label="Breadcrumbs">
+        <a href="{% url 'dashboards:index' %}">Home</a>
+        <span class="sep">/</span>
+        <span class="current">Audit Log</span>
+      </nav>
+      <div class="pg-title-row">
+        <h1 class="pg-title">Audit Log</h1>
+        <span class="bdg bdg-blue">{{ page.paginator.count }} event{{ page.paginator.count|pluralize }}</span>
+      </div>
+      <p class="text-sm text-muted mt-1">Chronological workspace activity feed, security actions, and compliance audit trail.</p>
     </div>
-    <p class="text-sm text-muted mt-1">Chronological system activity feed, security actions, and team audit logs.</p>
-  </div>
-</div>
-
-<div class="audit-toolbar mb-6">
-  <div class="audit-toolbar-main">
-    <form method="get" class="search-wrap audit-search">
-      {% icon 'search' 'ic' %}
-      <input type="text" name="q" value="{{ search }}" aria-label="Search event titles" placeholder="Search event titles...">
-      {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
-      {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
-      {% if current_from %}<input type="hidden" name="from" value="{{ current_from }}">{% endif %}
-      {% if current_to %}<input type="hidden" name="to" value="{{ current_to }}">{% endif %}
-    </form>
-
-    {% dropdown "type" event_types current_type placeholder="All event types" label="Filter by type" navigate=True empty_value="" %}
-
-    {% dropdown "actor" members|obj_pairs:"pk:get_full_name" current_actor placeholder="Any member" label="Filter by member" navigate=True empty_value="" %}
   </div>
 
-  <div class="audit-toolbar-dates">
-    <div class="audit-date-group">
-      <label for="audit-from" class="text-xs text-muted font-medium">From</label>
-      <input type="date" id="audit-from" class="form-input audit-date-input" value="{{ current_from }}" onchange="window.location=buildUrl({from:this.value, page:''})">
+  {# ── KPI Overview Bento Cards ── #}
+  <div class="audit-stats">
+    <div class="audit-stat-card">
+      <span class="audit-stat-icon stat-blue">{% icon 'activity' 'ic' %}</span>
+      <div>
+        <div class="audit-stat-val">{{ stats.total }}</div>
+        <div class="audit-stat-lbl">Total Events Recorded</div>
+      </div>
     </div>
-    <div class="audit-date-group">
-      <label for="audit-to" class="text-xs text-muted font-medium">To</label>
-      <input type="date" id="audit-to" class="form-input audit-date-input" value="{{ current_to }}" onchange="window.location=buildUrl({to:this.value, page:''})">
+    <div class="audit-stat-card">
+      <span class="audit-stat-icon stat-green">{% icon 'clock' 'ic' %}</span>
+      <div>
+        <div class="audit-stat-val">{{ stats.today }}</div>
+        <div class="audit-stat-lbl">Today's Activity</div>
+      </div>
     </div>
-    {% if search or current_type or current_actor or current_from or current_to %}
-    <a href="{% url 'dashboards:audit_log' %}" class="btn btn-sm text-danger">Clear</a>
-    {% endif %}
+    <div class="audit-stat-card">
+      <span class="audit-stat-icon stat-purple">{% icon 'shield' 'ic' %}</span>
+      <div>
+        <div class="audit-stat-val">{{ stats.security }}</div>
+        <div class="audit-stat-lbl">Security & Access Events</div>
+      </div>
+    </div>
+    <div class="audit-stat-card">
+      <span class="audit-stat-icon stat-amber">{% icon 'users' 'ic' %}</span>
+      <div>
+        <div class="audit-stat-val">{{ stats.actors }}</div>
+        <div class="audit-stat-lbl">Active Team Members</div>
+      </div>
+    </div>
   </div>
-</div>
 
-<div class="card p-0 overflow-hidden audit-card">
-  <div class="table-wrap">
-    <table class="audit-table">
-      <thead>
-        <tr>
-          <th class="th-time">Timestamp</th>
-          <th class="th-type">Event Type</th>
-          <th class="th-desc">Details & Description</th>
-          <th class="th-actor">Actor</th>
-        </tr>
-      </thead>
-      <tbody id="audit-log-body">
-        {% include "dashboards/partials/_audit_log_rows.html" with page=page %}
-      </tbody>
-    </table>
+  {# ── Category Quick Filter Tabs ── #}
+  <nav class="audit-tabs" role="tablist" aria-label="Event categories">
+    <a href="{% querystring category='' type='' page='' %}" class="audit-tab {% if not current_category %}active{% endif %}" role="tab" {% if not current_category %}aria-selected="true"{% endif %}>
+      {% icon 'layers' 'ic' %} All Activity
+    </a>
+    <a href="{% querystring category='security' type='' page='' %}" class="audit-tab {% if current_category == 'security' %}active{% endif %}" role="tab" {% if current_category == 'security' %}aria-selected="true"{% endif %}>
+      {% icon 'shield' 'ic' %} Security & Access
+    </a>
+    <a href="{% querystring category='issues' type='' page='' %}" class="audit-tab {% if current_category == 'issues' %}active{% endif %}" role="tab" {% if current_category == 'issues' %}aria-selected="true"{% endif %}>
+      {% icon 'ticket' 'ic' %} Tickets & Errors
+    </a>
+    <a href="{% querystring category='finance' type='' page='' %}" class="audit-tab {% if current_category == 'finance' %}active{% endif %}" role="tab" {% if current_category == 'finance' %}aria-selected="true"{% endif %}>
+      {% icon 'banknote' 'ic' %} Finance & Payroll
+    </a>
+    <a href="{% querystring category='attendance' type='' page='' %}" class="audit-tab {% if current_category == 'attendance' %}active{% endif %}" role="tab" {% if current_category == 'attendance' %}aria-selected="true"{% endif %}>
+      {% icon 'calendar' 'ic' %} Attendance & Leave
+    </a>
+    <a href="{% querystring category='system' type='' page='' %}" class="audit-tab {% if current_category == 'system' %}active{% endif %}" role="tab" {% if current_category == 'system' %}aria-selected="true"{% endif %}>
+      {% icon 'sliders' 'ic' %} Projects & System
+    </a>
+  </nav>
+
+  {# ── Unified Filter Toolbar ── #}
+  <div class="audit-toolbar">
+    <div class="audit-toolbar-main">
+      <form method="get" id="audit-search-form" class="search-wrap audit-search">
+        {% icon 'search' 'ic' %}
+        <input type="search" name="q" value="{{ search }}" aria-label="Search event titles" placeholder="Search event titles..." oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.requestSubmit()},350)">
+        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+        {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+        {% if current_actor %}<input type="hidden" name="actor" value="{{ current_actor }}">{% endif %}
+        <input type="hidden" name="from" value="{{ current_from|default:'' }}">
+        <input type="hidden" name="to" value="{{ current_to|default:'' }}">
+        {% if current_preset %}<input type="hidden" name="preset" value="{{ current_preset }}">{% endif %}
+      </form>
+
+      {% dropdown "type" event_types current_type placeholder="All event types" label="Filter by type" navigate=True empty_value="" %}
+
+      {% dropdown "actor" members|obj_pairs:"pk:get_full_name" current_actor placeholder="Any member" label="Filter by member" navigate=True empty_value="" %}
+    </div>
+
+    <div class="audit-toolbar-dates">
+      <div class="audit-presets">
+        <a href="{% querystring preset='' from='' to='' page='' %}" class="audit-preset-chip {% if not current_preset and not current_from and not current_to %}active{% endif %}">All</a>
+        <a href="{% querystring preset='today' from='' to='' page='' %}" class="audit-preset-chip {% if current_preset == 'today' %}active{% endif %}">Today</a>
+        <a href="{% querystring preset='7d' from='' to='' page='' %}" class="audit-preset-chip {% if current_preset == '7d' %}active{% endif %}">7d</a>
+        <a href="{% querystring preset='30d' from='' to='' page='' %}" class="audit-preset-chip {% if current_preset == '30d' %}active{% endif %}">30d</a>
+      </div>
+
+      <div class="audit-date-group">
+        <label for="audit-from" class="text-xs text-muted font-medium">From</label>
+        <input type="date" id="audit-from" class="form-input audit-date-input" value="{{ current_from }}" onchange="var f=document.getElementById('audit-search-form');f.elements['preset'].value='';f.elements['from'].value=this.value;f.requestSubmit();">
+      </div>
+      <div class="audit-date-group">
+        <label for="audit-to" class="text-xs text-muted font-medium">To</label>
+        <input type="date" id="audit-to" class="form-input audit-date-input" value="{{ current_to }}" onchange="var f=document.getElementById('audit-search-form');f.elements['preset'].value='';f.elements['to'].value=this.value;f.requestSubmit();">
+      </div>
+
+      {% if search or current_type or current_actor or current_from or current_to or current_category or current_preset %}
+      <a href="{% url 'dashboards:audit_log' %}" class="btn btn-sm text-danger" title="Reset all filters">Clear</a>
+      {% endif %}
+    </div>
   </div>
+
+  {# ── Table Card ── #}
+  <div class="card p-0 overflow-hidden audit-card">
+    <div class="table-wrap">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th class="th-time">Timestamp</th>
+            <th class="th-type">Event Type</th>
+            <th class="th-desc">Details & Description</th>
+            <th class="th-actor">Actor</th>
+            <th class="th-action text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="audit-log-body">
+          {% include "dashboards/partials/_audit_log_rows.html" with page=page %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ── Pagination & Note ── #}
+  {% include "core/_pagination.html" with page=page %}
+
+  <footer class="note text-center mt-4">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} audit log events</footer>
+
 </div>
-
-{% include "core/_pagination.html" with page=page %}
-
-<footer class="note text-center mt-4">Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} audit log events</footer>
-
-<script>
-function buildUrl(params) {
-  var url = new URL(window.location.href);
-  url.searchParams.delete('page');
-  for (var key in params) {
-    url.searchParams.delete(key);
-    if (params[key]) url.searchParams.set(key, params[key]);
-  }
-  return url.toString();
-}
-</script>
 {% endblock %}

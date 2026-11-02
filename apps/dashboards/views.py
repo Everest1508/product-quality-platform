@@ -40,6 +40,12 @@ class DashboardView(CompanyMemberRequiredMixin, View):
 
         from apps.dsr.views import _today_work
 
+        todos = todo_service.sorted_todos(request.user)
+        data["todos"] = todos
+        data["todo_total"] = len(todos)
+        data["todo_done"] = sum(t.done for t in todos)
+        data["priority_choices"] = [(str(v), label) for v, label in Todo.Priority.choices]
+
         data["dsr_today"] = _today_work(request.company, request.user, timezone.localdate())
         data["now"] = timezone.localtime()
         data["streak"] = kudos.on_time_streak(request.company, request.user)
@@ -88,7 +94,23 @@ class ProductDashboardView(CompanyMemberRequiredMixin, View):
 
 class AuditLogView(CompanyAdminRequiredMixin, View):
     def get(self, request):
-        qs = ActivityLog.objects.filter(company=request.company).select_related("actor")
+        base_qs = ActivityLog.objects.filter(company=request.company)
+        qs = base_qs.select_related("actor")
+
+        category = request.GET.get("category", "").strip().lower()
+        if category == "security":
+            qs = qs.filter(event_type__in=[
+                "member_joined", "member_removed", "member_role_changed",
+                "api_key_created", "api_key_revoked", "access_granted", "access_revoked",
+            ])
+        elif category == "issues":
+            qs = qs.filter(Q(event_type__startswith="ticket_") | Q(event_type__startswith="error_") | Q(event_type="auto_ticket"))
+        elif category == "finance":
+            qs = qs.filter(Q(event_type__startswith="payroll_") | Q(event_type__startswith="expense_") | Q(event_type__startswith="holiday_"))
+        elif category == "attendance":
+            qs = qs.filter(Q(event_type__startswith="attendance_") | Q(event_type__startswith="leave_") | Q(event_type="weekly_off_changed"))
+        elif category == "system":
+            qs = qs.filter(Q(event_type__startswith="product_") | Q(event_type__startswith="version_") | Q(event_type__startswith="rule_") | Q(event_type__startswith="survey_") | Q(event_type__startswith="project_") | Q(event_type="feedback_received"))
 
         event_type = request.GET.get("type")
         if event_type:
@@ -98,13 +120,26 @@ class AuditLogView(CompanyAdminRequiredMixin, View):
         if actor_id:
             qs = qs.filter(actor_id=actor_id)
 
+        preset = request.GET.get("preset", "").strip().lower()
+        today = timezone.localdate()
         date_from = request.GET.get("from")
+        date_to = request.GET.get("to")
+
+        if preset == "today":
+            date_from = today.isoformat()
+            date_to = today.isoformat()
+        elif preset == "7d":
+            date_from = (today - timedelta(days=7)).isoformat()
+            date_to = today.isoformat()
+        elif preset == "30d":
+            date_from = (today - timedelta(days=30)).isoformat()
+            date_to = today.isoformat()
+
         if date_from:
             d = _parse_date(date_from, None)
             if d:
                 qs = qs.filter(created_at__date__gte=d)
 
-        date_to = request.GET.get("to")
         if date_to:
             d = _parse_date(date_to, None)
             if d:
@@ -114,15 +149,21 @@ class AuditLogView(CompanyAdminRequiredMixin, View):
         if search:
             qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
 
+        # Overall summary metrics for the workspace
+        total_events = base_qs.count()
+        today_events = base_qs.filter(created_at__date=today).count()
+        active_actors = base_qs.exclude(actor=None).values("actor").distinct().count()
+        security_events = base_qs.filter(event_type__in=[
+            "member_joined", "member_removed", "member_role_changed",
+            "api_key_created", "api_key_revoked", "access_granted", "access_revoked",
+        ]).count()
+
         page = paginate(request, qs)
 
         members = User.objects.filter(memberships__company=request.company).order_by("username")
         event_types = ActivityLog.EventType.choices
 
-        if request.headers.get("HX-Request") == "true":
-            return render(request, "dashboards/partials/_audit_log_rows.html", {"page": page})
-
-        return render(request, "dashboards/audit_log.html", {
+        context = {
             "page": page,
             "members": members,
             "event_types": event_types,
@@ -130,8 +171,21 @@ class AuditLogView(CompanyAdminRequiredMixin, View):
             "current_actor": actor_id,
             "current_from": date_from,
             "current_to": date_to,
+            "current_category": category,
+            "current_preset": preset,
             "search": search,
-        })
+            "stats": {
+                "total": total_events,
+                "today": today_events,
+                "actors": active_actors,
+                "security": security_events,
+            },
+        }
+
+        if request.headers.get("HX-Request") == "true":
+            return render(request, "dashboards/partials/_audit_log_rows.html", context)
+
+        return render(request, "dashboards/audit_log.html", context)
 
 
 class ReportsView(CompanyMemberRequiredMixin, View):

@@ -101,17 +101,22 @@ class HtmxMessagesMiddleware:
 
 
 class HtmxBoostMiddleware:
-    """Ensure boosted requests receive the full page template, not a partial fragment.
+    """Ensure boosted navigation targeting the shell receives the full page template.
 
-    When an anchor or form uses `hx-boost="true"`, htmx sends both `HX-Request: true`
-    and `HX-Boosted: true`. Views check `request.headers.get("HX-Request") == "true"`
-    to determine if they should return a small partial fragment (e.g. table rows).
-    Returning a fragment to a boosted navigation breaks htmx swapping because the
-    outer container (`.main`) is missing from the partial response.
+    When an anchor or form uses `hx-boost="true"` to navigate the page shell (targeting
+    `.main`), htmx sends `HX-Request: true`, `HX-Boosted: true`, and either no `HX-Target`
+    (since `.main` is a class selector) or `HX-Target: main`. Views checking
+    `request.headers.get("HX-Request") == "true"` would return small partial fragments
+    (e.g. table rows or inner widgets) without `.main`, breaking htmx swapping.
 
-    By temporarily hiding `HTTP_HX_REQUEST` during view processing when `HTTP_HX_BOOSTED`
-    is true, views render their full template containing `.main`, allowing htmx to
-    extract and swap `.main` smoothly.
+    However, when an element is boosted within an isolated sub-container with an explicit
+    partial target (e.g. `hx-target="#team-main"`), it genuinely expects the partial
+    snippet (`attendance/partials/_team_main.html`). Stripping `HX-Request` in that case
+    causes the view to render the full outer shell (a duplicate sidebar and topbar)
+    inside that sub-container.
+
+    Therefore, we only strip `HTTP_HX_REQUEST` for boosted requests targeting the shell
+    (no `HX-Target` or `HX-Target` in ("main", "body")).
     """
 
     def __init__(self, get_response):
@@ -119,8 +124,10 @@ class HtmxBoostMiddleware:
 
     def __call__(self, request):
         is_boosted = request.META.get("HTTP_HX_BOOSTED") == "true"
+        target = request.META.get("HTTP_HX_TARGET")
         hx_req = request.META.get("HTTP_HX_REQUEST")
-        if is_boosted and hx_req:
+        is_shell_target = not target or target in ("main", "body")
+        if is_boosted and hx_req and is_shell_target:
             del request.META["HTTP_HX_REQUEST"]
             request.__dict__.pop("headers", None)
             try:

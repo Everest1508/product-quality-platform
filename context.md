@@ -70,13 +70,50 @@ entry here is unfinished.
 > file. Do not create another one unless a day's detail genuinely cannot fit;
 > that duplication is what this file replaced.
 
+### 2026-11-02 (Audit Log Command Center & Sub-Container Boost Fix) — complete ui-fix redesign of Audit Log & sub-container boosted navigation
+
+**What changed.**
+
+1. **Audit Log Command Center Redesign** (`templates/dashboards/audit_log.html`, `templates/dashboards/partials/_audit_log_rows.html`, `apps/dashboards/views.py`, `templates/core/css/_ui.css`, `apps/core/templatetags/event_tags.py`):
+   - *Why it was wrong*: The previous audit log was a flat, plain table with only type and member filters. Searching required pressing enter, there were no date presets, metadata changes (status transitions, payroll amounts, role changes) were invisible or hidden in generic titles, and there was no visual categorization or high-level health metrics.
+   - *How it works now*:
+     - **KPI Overview Bento**: 4 summary metric cards (`stats.total`, `stats.today`, `stats.security`, `stats.actors`) providing immediate insight into workspace volume, today's punches/events, security & access changes, and active contributors.
+     - **Category Quick Tabs**: Horizontal category filter bar (`All Activity`, `Security & Access`, `Tickets & Errors`, `Finance & Payroll`, `Attendance & Leave`, `Projects & System`) for 1-click domain triage.
+     - **Toolbar & Date Presets**: Added date quick-preset chips (`All`, `Today`, `7d`, `30d`), live debounced search with icon, accessible date range inputs with `<label for="audit-from/to">`, and app-wide accessible dropdowns (`{% dropdown %}`).
+     - **Rich Row Design**: Date column with primary date and secondary time; category icon pill for every event type; clickable title with hover interaction; inline transition chips (`from -> to`), amount tags (`₹...`), role badges, and stage indicators; actor avatar and name; right-aligned jump action button (`Open ->`); and expandable `<details class="audit-meta-inspect">` payload inspector with valid `<summary aria-label="...">` markup.
+     - **Strict Test Invariants Preserved**: Zero `<select>` tags on the page, every `<summary>` dropdown trigger carries an `aria-label`, date inputs properly associated via `<label for="...">`.
+
+2. **Sub-Container Boosted Target Fix** (`apps/core/middleware.py::HtmxBoostMiddleware`):
+   - *Why it was wrong*: `HtmxBoostMiddleware` previously stripped `HTTP_HX_REQUEST` for all boosted requests unconditionally. While this fixed shell-level navigations (e.g. sidebar links wanting `<div class="main">`), it broke sub-container boosted requests like `#team-main` (`templates/attendance/partials/_team_main.html`), causing views to render the full outer shell (duplicate nested sidebar and topbar) inside `#team-main`.
+   - *How it works now*: Checked `is_shell_target = not target or target in ("main", "body")`. Only shell navigations have `HTTP_HX_REQUEST` removed. Sub-containers with specific targets receive their partial fragment as intended.
+
+3. **Dropdown Option Alignment & Menu Width Fix** (`templates/core/partials/_dropdown.html`, `templates/components/multiselect.html`, `templates/core/css/_app.css`, `_ui.css`):
+   - *Why it was wrong*: In `_dropdown.html`, `<span class="dd-tick">` was placed *before* `<span class="dd-text">`. On unselected options, the invisible tick container created a large blank indentation on the left. In narrow dropdown menus (`min-width: 100%`), this indentation pushed member names (`admin`, `dev1`, `dev2`, etc.) past the center line into the right half of the menu, and caused labels like "Any member" to truncate as "Any mem...".
+   - *How it works now*: Placed `.dd-text` first (flush left with `padding: 7px 10px; text-align: left; flex: 1;`) and `.dd-tick` as a trailing checkmark (`margin-left: auto;`) on the right. Added `min-width: max(100%, 180px); width: max-content; max-width: 320px;` to `.dd-menu` so every name starts cleanly on the left margin, has plenty of room, and never truncates.
+
+4. **To-Do Server-Side Rendering & Seeding** (`apps/dashboards/views.py::DashboardView`, `templates/dashboards/partials/_dashboard_content.html`, `apps/core/management/commands/seed_data.py`):
+   - *Why it was wrong*:
+     - In `_dashboard_content.html`, `#todo-list` was an empty `<div>` with `hx-trigger="load"` fetching `/dashboards/todos/` via a deferred AJAX call. During boosted SPA navigation or network hiccups, the secondary HTMX request could fail or be missed, leaving the to-do card blank. It also produced an unnecessary network round-trip and a brief blank flash on every dashboard visit.
+     - `seed_data` deleted demo users on reset, which cascaded and deleted all `Todo` items without reseeding them.
+   - *How it works now*:
+     - `DashboardView.get()` directly queries `todo_service.sorted_todos(request.user)` and populates `todos`, `todo_total`, `todo_done`, and `priority_choices` in the template context.
+     - `_dashboard_content.html` renders `{% include "dashboards/partials/_todos.html" %}` directly inside `#todo-list` on first paint (no `hx-trigger="load"`, no blank flash). Subsequent mutations (add, toggle, delete, clear done) continue using HTMX to update `#todo-list`.
+     - `seed_data.py` seeds 4 starter tasks for demo users on `--reset`.
+
+**How it was verified.**
+- `manage.py test apps.dashboards.tests.test_audit_reports`: 23/23 passed
+- `manage.py test apps.core.tests_dropdowns`: 17/17 passed
+- `manage.py test apps.dashboards.tests.test_todos`: 7/7 passed
+- `manage.py test apps.dashboards`: 75/75 passed
+- `manage.py check`: 0 errors.
+
 ### 2026-11-01 (HTMX boosted navigation & resilience) — fix blank page on navigation, requestSubmit for DSR filters, and unit label on dashboard
 
 **What changed.**
 
-1. **Root cause of stuck/blank page on boosted navigation** (`apps/core/middleware.py::HtmxBoostMiddleware`, `core/settings.py`):
-   - *Why it was wrong*: Multiple views (`errors/views.py`, `tickets/views.py`, `dashboards/views.py`, `feedback/views.py`, etc.) check `if request.headers.get("HX-Request") == "true":` to return partial HTML snippets (e.g. `_error_list_body.html`, `_dashboard_content.html`). When a sidebar link or tab uses `hx-boost="true"` with `hx-target=".main" hx-select=".main"`, HTMX sends both `HX-Request: "true"` and `HX-Boosted: "true"`. The views returned small partial fragments without `<div class="main">`. HTMX's `hx-select=".main"` matched 0 elements in the snippet, swapping an empty string into `.main` (causing the page to get stuck blank). On browser refresh, a full GET without `HX-Request` rendered the full page.
-   - *How it works now*: Added `HtmxBoostMiddleware` before `HtmxMiddleware` in `core/settings.py`. When `request.META["HTTP_HX_BOOSTED"] == "true"`, the middleware temporarily removes `HTTP_HX_REQUEST` and invalidates any cached `request.headers` (`request.__dict__.pop("headers", None)`). Views render their full page template containing `<div class="main">`, allowing HTMX to select and swap `.main` smoothly with AJAX and push history. Regular unboosted partial requests (e.g. live filter/search) keep `HTTP_HX_REQUEST` and continue returning partial snippets.
+1. **Root cause of stuck/blank page on boosted navigation & nested sidebar fix** (`apps/core/middleware.py::HtmxBoostMiddleware`, `core/settings.py`):
+   - *Why it was wrong*: Multiple views (`errors/views.py`, `tickets/views.py`, `dashboards/views.py`, `feedback/views.py`, etc.) check `if request.headers.get("HX-Request") == "true":` to return partial HTML snippets (e.g. `_error_list_body.html`, `_dashboard_content.html`). When a sidebar link or tab uses `hx-boost="true"` with `hx-target=".main" hx-select=".main"`, HTMX sends both `HX-Request: "true"` and `HX-Boosted: "true"`. The views returned small partial fragments without `<div class="main">`. HTMX's `hx-select=".main"` matched 0 elements in the snippet, swapping an empty string into `.main` (causing the page to get stuck blank). Conversely, sub-containers like `#team-main` (`templates/attendance/partials/_team_main.html`) are boosted with `hx-target="#team-main"` specifically expecting the `_team_main.html` partial; unconditionally stripping `HX-Request` for all boosted requests caused `TeamAttendanceView` to render the full outer shell (a duplicate nested sidebar and topbar) into `#team-main`.
+   - *How it works now*: Added `HtmxBoostMiddleware` before `HtmxMiddleware` in `core/settings.py`. It only removes `HTTP_HX_REQUEST` for boosted requests targeting the shell (`not target or target in ("main", "body")`), ensuring shell navigations receive `<div class="main">` while sub-container boosted navigations (e.g. `HX-Target: team-main`) receive their partial fragment (`_team_main.html`). Invalidates cached `request.headers` (`request.__dict__.pop("headers", None)`). Regular unboosted partial requests (e.g. live filter/search) keep `HTTP_HX_REQUEST` and continue returning partial snippets.
 
 2. **DSR filter and search dispatch** (`templates/dsr/dsr_log.html`):
    - Changed `this.form.submit()` and `f.submit()` to `this.form.requestSubmit()` and `f.requestSubmit()`. Standard `form.submit()` bypasses DOM event listeners, causing full-page reloads on filter changes. `requestSubmit()` dispatches submit events, allowing HTMX `hx-boost` to handle filter changes asynchronously.
