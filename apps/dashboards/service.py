@@ -890,17 +890,15 @@ def get_personal_dashboard_data(user, company):
         "dsr_nudge": _dsr_nudge(company, user, today, attendance),
     }
 
+    from apps.dashboards import home_cards
+
     if is_privileged:
         data["team"] = get_admin_dashboard_data(company)
-        data["leave_approvals"] = LeaveRequest.objects.filter(
-            company=company, status="pending"
-        ).select_related("user", "policy").order_by("start_date")[:5]
-        data["team_today"] = list(
-            AttendanceRecord.objects.filter(company=company, date=today, check_in__isnull=False)
-            .select_related("user").order_by("check_in")
-        )
-        data["leave_approval_count"] = LeaveRequest.objects.filter(
-            company=company, status="pending"
-        ).count()
+        data["approvals"] = home_cards.approvals(user, company)
+        data["team_board"] = home_cards.team_board(company, today)
+        data["activity"] = home_cards.activity_feed(company)
+        data["leave_approval_count"] = data["approvals"]["count"]
+
+    data["error_pulse"] = home_cards.error_pulse(user, company)
 
     return data

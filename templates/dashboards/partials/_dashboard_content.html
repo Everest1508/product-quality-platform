@@ -1,8 +1,8 @@
-{% load dashboard_extras icon_tags %}
+{% load dashboard_extras icon_tags time_tags %}
 
 {% if is_privileged %}
   <div class="hm-attn">
-    {% if leave_approval_count %}<a href="{% url 'leave:approvals' %}"><b>{{ leave_approval_count }}</b> leave to approve</a>{% endif %}
+    {% if leave_approval_count %}<a href="{% url 'leave:approvals' %}"><b>{{ leave_approval_count }}</b> to approve</a>{% endif %}
     {% if team.open_errors %}<a href="{% url 'errors:error_list' %}"><b class="is-bad">{{ team.open_errors }}</b> open errors</a>{% endif %}
     {% if team.open_tickets %}<a href="{% url 'tickets:ticket_board' %}"><b>{{ team.open_tickets }}</b> open tickets</a>{% endif %}
   </div>
@@ -118,7 +118,64 @@
         </div>
       </section>
 
-    </div>
+          <section class="hm-card hm-pulse">
+        <div class="hm-tile-head">
+          <h2>Error pulse</h2>
+          <a class="hm-more" href="{% url 'errors:error_list' %}">All errors →</a>
+        </div>
+        <div class="hm-pulse-top">
+          <div>
+            <p class="hm-figure">{{ error_pulse.week }}<small>occurrences this week</small></p>
+            <p class="hm-sub {% if error_pulse.delta > 0 %}is-up{% elif error_pulse.delta < 0 %}is-down{% endif %}">
+              {% if error_pulse.delta > 0 %}▲ {{ error_pulse.delta }} more than last week{% elif error_pulse.delta < 0 %}▼ {{ error_pulse.delta|cut:"-" }} fewer than last week{% else %}Same as last week{% endif %}
+            </p>
+          </div>
+          <svg class="hm-pulse-spark" viewBox="0 0 {{ error_pulse.spark.width }} {{ error_pulse.spark.height }}" preserveAspectRatio="none" role="img" aria-label="Occurrences per day over the last 14 days">
+            {% if error_pulse.spark.total %}
+            <polygon class="spark-area" points="{{ error_pulse.spark.area }}"/>
+            <polyline class="spark-line" points="{{ error_pulse.spark.line }}" fill="none" vector-effect="non-scaling-stroke"/>
+            {% else %}
+            <line class="spark-flat" x1="0" y1="{{ error_pulse.spark.height }}" x2="{{ error_pulse.spark.width }}" y2="{{ error_pulse.spark.height }}" vector-effect="non-scaling-stroke"/>
+            {% endif %}
+          </svg>
+        </div>
+        <ul class="hm-tally">
+          <li class="is-late"><b>{{ error_pulse.new_week }}</b> new groups{% if error_pulse.new_delta %} ({{ error_pulse.new_delta|stringformat:"+d" }}){% endif %}</li>
+          <li class="is-away"><b>{{ error_pulse.regressed }}</b> came back</li>
+        </ul>
+        {% if error_pulse.noisiest %}
+        <ul class="hm-rows">
+          {% for g in error_pulse.noisiest %}
+          <li><a href="{% url 'errors:error_detail' pk=g.pk %}"><span class="t">{{ g.title }}</span><span class="hm-sub-xs">{{ g.product.name }} · {{ g.week }}×</span></a></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="hm-empty"><span>No errors reported this week.</span></div>
+        {% endif %}
+      </section>
+
+      {% if is_privileged %}
+      <section class="hm-card hm-feed">
+        <div class="hm-tile-head">
+          <h2>Recent activity</h2>
+          <a class="hm-more" href="{% url 'dashboards:audit_log' %}">Audit log →</a>
+        </div>
+        {% if activity %}
+        <ul class="hm-rows">
+          {% for e in activity %}
+          <li class="is-plain hm-feed-row">
+            <span class="hm-feed-text">{% if e.link %}<a href="{{ e.link }}">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}{% if e.actor %}<span class="hm-sub-xs"> · {{ e.actor.get_full_name|default:e.actor.username }}</span>{% endif %}</span>
+            <span class="hm-sub-xs">{{ e.created_at|short_ago }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="hm-empty"><span>Nothing yet.</span></div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+</div>
 
     {# ── Right Column: My To-Do + Team Today + Leave Balances ── #}
     <div class="hm-side">
@@ -132,35 +189,77 @@
       </section>
 
       {% if is_privileged %}
+      <section class="hm-card hm-approve">
+        <div class="hm-tile-head">
+          <h2>Approvals</h2>
+          {% if approvals.count %}<span class="bdg bdg-orange hm-team-count-bdg">{{ approvals.count }} waiting</span>{% endif %}
+        </div>
+        {% if approvals.items %}
+        <ul class="hm-rows">
+          {% for a in approvals.items %}
+          <li class="is-plain hm-ap">
+            <div class="hm-ap-main">
+              <span class="t">{{ a.who.get_full_name|default:a.who.username }}</span>
+              <span class="hm-sub-xs">{% if a.kind == 'leave' %}{{ a.obj.policy.name }} · {{ a.obj.span_label }} · {{ a.obj.days_label }}{% else %}Time fix for {{ a.obj.date|date:"j M" }}{% if a.obj.reason %} · {{ a.obj.reason|truncatechars:36 }}{% endif %}{% endif %}</span>
+            </div>
+            {% if a.can %}
+            <div class="hm-ap-act">
+              {% include "dashboards/partials/_approval_btn.html" with verb="approve" %}
+              {% include "dashboards/partials/_approval_btn.html" with verb="reject" %}
+            </div>
+            {% else %}
+            <span class="hm-sub-xs" title="Someone else has to decide your own request">Yours</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% if approvals.count > approvals.items|length %}
+        <p class="hm-foot"><a class="hm-more" href="{% url 'leave:approvals' %}">Leave queue →</a> <a class="hm-more" href="{% url 'attendance:corrections' %}">Corrections →</a></p>
+        {% endif %}
+        {% else %}
+        <div class="hm-empty"><span>Nothing is waiting for you.</span></div>
+        {% endif %}
+      </section>
+
       <section class="hm-card hm-team">
         <div class="hm-tile-head">
           <h2>Team today</h2>
-          {% if team_today %}<span class="bdg bdg-green hm-team-count-bdg">{{ team_today|length }} in</span>{% endif %}
+          <a class="hm-more" href="{% url 'attendance:team_attendance' %}">Attendance →</a>
         </div>
-        {% if team_today %}
+        <ul class="hm-tally">
+          <li class="is-in"><b>{{ team_board.counts.in }}</b> working</li>
+          <li class="is-out"><b>{{ team_board.counts.out }}</b> done</li>
+          <li class="is-leave"><b>{{ team_board.counts.leave }}</b> on leave</li>
+          <li class="is-away"><b>{{ team_board.counts.not_in }}</b> not in</li>
+          {% if team_board.counts.late %}<li class="is-late"><b>{{ team_board.counts.late }}</b> late</li>{% endif %}
+        </ul>
+        {% if team_board.rows %}
           <ul class="hm-rows hm-team-rows">
-            {% for r in team_today %}
+            {% for r in team_board.rows %}
               <li class="is-plain hm-team-row">
                 <div class="hm-team-user">
                   <span class="hm-team-avatar" aria-hidden="true">{{ r.user.get_full_name|default:r.user.username|slice:":1"|upper }}</span>
                   <div class="hm-team-info">
                     <span class="t">{{ r.user.get_full_name|default:r.user.username }}</span>
-                    <span class="hm-sub-xs">{% if r.check_out %}Checked out{% else %}Active now{% endif %}</span>
+                    <span class="hm-sub-xs">{% if r.state == 'in' %}Active now{% elif r.state == 'out' %}Checked out{% elif r.state == 'leave' %}On leave{% elif r.state == 'off' %}Day off{% else %}Not in yet{% endif %}</span>
                   </div>
                 </div>
                 <div class="hm-team-time">
-                  {% if not r.check_out %}
+                  {% if r.late %}<span class="bdg bdg-red" title="Arrived {{ r.late }} minutes after shift start">{{ r.late }}m late</span>{% endif %}
+                  {% if r.state == 'in' %}
                     <span class="hm-status-dot pulse" title="Working now"></span>
-                    <span class="m">{{ r.check_in|date:"g:i A" }} → working</span>
+                    <span class="m">{{ r.record.check_in|date:"g:i A" }} → working</span>
+                  {% elif r.state == 'out' %}
+                    <span class="m">{{ r.record.check_in|date:"g:i A" }} → {{ r.record.check_out|date:"g:i A" }}</span>
                   {% else %}
-                    <span class="m">{{ r.check_in|date:"g:i A" }} → {{ r.check_out|date:"g:i A" }}</span>
+                    <span class="hm-status-dot is-{{ r.state }}" aria-hidden="true"></span>
                   {% endif %}
                 </div>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <div class="hm-empty"><span>Nobody has punched in yet.</span></div>
+          <div class="hm-empty"><span>No team members yet.</span></div>
         {% endif %}
       </section>
       {% endif %}

@@ -12,6 +12,7 @@ from django.views import View
 
 from apps.accounts.models import Membership
 from apps.attendance.models import weekly_off_for
+from apps.core.redirects import safe_next
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin
 from apps.dashboards.service import log_activity
 from apps.leave import service
@@ -441,15 +442,20 @@ class LeaveDecisionView(LeaveApproverRequiredMixin, View):
         "reject": LeaveRequest.Status.REJECTED,
     }
 
+    @staticmethod
+    def _back(request):
+        # The Home approvals card posts here and wants to land back on Home.
+        return redirect(safe_next(request.POST.get("next")) or "leave:approvals")
+
     def post(self, request, pk, action):
         if action not in self.ACTIONS:
             messages.error(request, "Unknown action.")
-            return redirect("leave:approvals")
+            return self._back(request)
 
         leave = get_object_or_404(LeaveRequest, pk=pk, company=request.company)
         if not leave.is_pending:
             messages.error(request, "That request has already been decided.")
-            return redirect("leave:approvals")
+            return self._back(request)
 
         who = leave.user.get_full_name() or leave.user.username
         if action == "reject":
@@ -462,7 +468,7 @@ class LeaveDecisionView(LeaveApproverRequiredMixin, View):
             if not form.is_valid():
                 for error in form.non_field_errors():
                     messages.error(request, error)
-                return redirect("leave:approvals")
+                return self._back(request)
             leave.status = LeaveRequest.Status.REJECTED
             leave.decision_note = form.cleaned_data.get("note", "").strip()
             leave.decided_by = request.user
@@ -478,7 +484,7 @@ class LeaveDecisionView(LeaveApproverRequiredMixin, View):
             )
             self._log_decision(request, leave, "leave_rejected", "rejected")
             messages.success(request, f"Leave for {who} rejected.")
-            return redirect("leave:approvals")
+            return self._back(request)
 
         form = LeaveDecisionForm(request.POST, company=request.company, leave=leave)
         if not form.is_valid():
@@ -489,7 +495,7 @@ class LeaveDecisionView(LeaveApproverRequiredMixin, View):
                     continue
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
-            return redirect("leave:approvals")
+            return self._back(request)
 
         cleaned = form.cleaned_data
         leave.start_date = cleaned["start_date"]
@@ -522,7 +528,7 @@ class LeaveDecisionView(LeaveApproverRequiredMixin, View):
         self._log_decision(request, leave, "leave_approved", "approved")
         summary = f"{leave.split_label} of {leave.days_label}"
         messages.success(request, f"Leave for {who} approved — {summary}.")
-        return redirect("leave:approvals")
+        return self._back(request)
 
     def _log_decision(self, request, leave, event, verb):
         who = leave.user.get_full_name() or leave.user.username

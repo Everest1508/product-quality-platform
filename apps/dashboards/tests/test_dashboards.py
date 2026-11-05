@@ -352,10 +352,10 @@ class PersonalDashboardTest(TestCase):
             days=2,
             status="pending",
         )
-        self.assertNotContains(self.get(), "leave to approve")
+        self.assertNotContains(self.get(), "to approve")
 
         self.client.login(username="boss", password="pass1234")
-        self.assertContains(self.get(), "leave to approve")
+        self.assertContains(self.get(), "to approve")
 
     def test_attendance_reflects_only_my_own_punches(self):
         from datetime import date, datetime, time, timedelta

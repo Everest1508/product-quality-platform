@@ -1,0 +1,12 @@
+{% comment %}One approve or reject button for the Home approvals card. Needs `a` (the item) and `verb`.{% endcomment %}
+<form method="post" hx-boost="false" action="{% if a.kind == 'leave' %}{% url 'leave:decision' pk=a.obj.pk action=verb %}{% else %}{% url 'attendance:correction_decision' pk=a.obj.pk action=verb %}{% endif %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{% url 'dashboards:index' %}">
+  {% if a.kind == 'leave' %}
+  <input type="hidden" name="start_date" value="{{ a.obj.start_date|date:'Y-m-d' }}">
+  <input type="hidden" name="end_date" value="{{ a.obj.end_date|date:'Y-m-d' }}">
+  {% if a.obj.is_half_day %}<input type="hidden" name="is_half_day" value="on">{% endif %}
+  <input type="hidden" name="split_mode" value="auto">
+  {% endif %}
+  <button type="submit" class="hm-ap-btn is-{{ verb }}"{% if a.kind == 'leave' and verb == 'approve' %} title="Approves as asked; paid and unpaid days are split automatically"{% endif %}>{% if verb == 'approve' %}Approve{% else %}Reject{% endif %}</button>
+</form>

@@ -923,4 +923,4 @@ class CorrectionDecisionView(CompanyAdminRequiredMixin, View):
             messages.success(request, f"{who}'s correction for {done.date:%b %d} {done.get_status_display().lower()}.")
         except corrections.CorrectionError as exc:
             messages.error(request, str(exc))
-        return redirect("attendance:corrections")
+        return redirect(safe_next(request.POST.get("next")) or "attendance:corrections")
