@@ -102,8 +102,8 @@
                   :aria-label="show ? 'Hide password' : 'Show password'"
                   :aria-pressed="show ? 'true' : 'false'"
                   :aria-controls="{{ form.password.id_for_label }}">
-            <template x-if="!show">{% icon 'eye' %}</template>
-            <template x-if="show">{% icon 'eye-off' %}</template>
+            <template x-if="!show">{% include "accounts/_pintu_eye.html" with open=True %}</template>
+            <template x-if="show">{% include "accounts/_pintu_eye.html" %}</template>
           </button>
         </div>
         {% if form.password.errors %}
@@ -128,25 +128,79 @@
   var cv = document.getElementById('login-pintu-cv'), node = document.getElementById('login-pintu');
   if (!cv || !node) return;
   var P = JSON.parse(node.textContent), ctx = cv.getContext('2d'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var hold = null, timers = [];
+  var hold = null, timers = [], covered = false;
+
+  // Extra frames for the password field: the idle pose with two hands painted over it.
+  function paint(ops) {
+    var rows = P.frames.idle.map(function (r) { return r.split(''); });
+    ops.forEach(function (o) { for (var y = o[2]; y <= o[4]; y++) for (var x = o[1]; x <= o[3]; x++) rows[y][x] = o[0]; });
+    return rows.map(function (r) { return r.join(''); });
+  }
+  var L = { low: [3, 10, 5, 11], mid: [3, 8, 7, 9], top: [3, 6, 7, 9] }, R = { low: [12, 10, 14, 11], mid: [10, 8, 14, 9], top: [10, 6, 14, 9] };
+  function hands(l, r) {
+    var ops = [];
+    [[l, L], [r, R]].forEach(function (h) {
+      if (!h[0]) return; var b = h[1][h[0]];
+      ops.push(['D', b[0], b[1], b[2], b[3]], ['K', b[0], b[3], b[2], b[3]]);
+    });
+    return paint(ops);
+  }
+  var X = {
+    lo: hands('low', 'low'), mid: hands('mid', 'mid'), cover: hands('top', 'top'),
+    peek: hands('top', 'mid'), peek2: hands('mid', 'low')
+  };
+
   function draw(name) {
-    var rows = P.frames[name] || P.frames.idle, pal = Object.assign({}, P.palette, P.tints[name] || {});
+    var rows = X[name] || P.frames[name] || P.frames.idle, pal = Object.assign({}, P.palette, P.tints[name] || {});
     ctx.clearRect(0, 0, 18, 16);
     rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var c = pal[row[x]]; if (c) { ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; ctx.fillRect(x, y, 1, 1); } } });
   }
-  function rest() { draw(hold || 'idle'); }
+  function rest() { draw(covered ? 'cover' : (hold || 'idle')); }
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function stop() { timers.forEach(clearTimeout); timers = []; }
+  function hop() {
+    if (calm) return;
+    cv.classList.remove('hop'); void cv.offsetWidth; cv.classList.add('hop');
+  }
+  // Play frames one after another, then carry on with blinking.
+  function play(names, ms, done) {
+    stop();
+    names.forEach(function (n, k) { later(function () { draw(n); }, calm ? 0 : k * ms); });
+    later(function () { if (done) done(); rest(); if (!covered) blinkLoop(); }, calm ? 0 : names.length * ms);
+  }
   function hello() {
     if (calm || hold) return rest();
     P.sequence.forEach(function (f, k) { later(function () { if (!hold) draw(f); }, k * P.delay_ms); });
     later(function () { blinkLoop(); }, P.sequence.length * P.delay_ms);
   }
-  function blinkLoop() { if (!calm && !hold) { draw('blink'); later(rest, 140); } later(blinkLoop, 3200 + Math.random() * 2800); }
+  function blinkLoop() { if (!calm && !hold && !covered) { draw('blink'); later(rest, 140); } later(blinkLoop, 3200 + Math.random() * 2800); }
   function mood(name) { hold = name; rest(); }
+
+  // Hands go up over the eyes: the password is hidden, and so is the page's friend.
+  function hide() { covered = true; hold = null; hop(); play(['lo', 'mid', 'cover'], 90); }
+  // Password shown: peek through the fingers, then drop the hands and wink.
+  function reveal() {
+    covered = true; hold = null; hop();
+    play(['cover', 'peek', 'peek', 'peek2', 'lo', 'wink', 'wink'], 140, function () { covered = false; });
+  }
+  function lower() { if (!covered) return; hold = null; play(['mid', 'lo'], 90, function () { covered = false; }); }
+
   var pw = document.getElementById('{{ form.password.id_for_label }}');
-  if (pw) { pw.addEventListener('focus', function () { mood('cool'); }); pw.addEventListener('blur', function () { mood(null); }); }
+  var wrap = pw && pw.closest('.pw-wrap');
+  var toggle = wrap && wrap.querySelector('.pw-toggle');
+  if (pw) {
+    pw.addEventListener('focus', function () { if (pw.type === 'password' && !covered) hide(); });
+    if (wrap) wrap.addEventListener('focusout', function (e) {
+      if (e.relatedTarget && wrap.contains(e.relatedTarget)) return;
+      if (!covered) return;
+      lower();
+    });
+  }
+  if (toggle) toggle.addEventListener('click', function () {
+    setTimeout(function () { if (pw.type === 'password') hide(); else reveal(); }, 0);
+  });
   var form = document.querySelector('.auth-form form');
-  if (form) form.addEventListener('submit', function () { mood('thinking'); });
+  if (form) form.addEventListener('submit', function () { stop(); covered = false; mood('thinking'); });
   if (document.querySelector('.auth-alert, .auth-err')) mood('error'); else hello();
   rest();
 })();
