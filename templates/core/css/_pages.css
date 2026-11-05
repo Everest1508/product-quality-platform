@@ -2057,7 +2057,8 @@ details.changelog-rel:hover {
   min-width: 780px;
 }
 
-.errors-table td:first-child {
+/* second cell: the first is the row checkbox */
+.errors-table td:nth-child(2) {
   min-width: 260px;
 }
 

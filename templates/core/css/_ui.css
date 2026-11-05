@@ -11,7 +11,8 @@
   .pq-stack tr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
   .pq-stack td{display:block;padding:0;border:0;width:auto !important;min-width:0 !important;font-size:13px;}
   .pq-stack td.empty{flex:1 0 100%;}
-  .pq-stack:not(.tk) td:first-child,.pq-stack.tk td:nth-child(3){flex:1 0 100%;order:-1;}
+  .pq-stack:not(.tk) td:nth-child(2),.pq-stack.tk td:nth-child(3){flex:1 0 100%;order:-1;}
+  .pq-stack:not(.tk) td:first-child{order:-2;}
   .pq-stack.tk td:nth-child(2){order:-2;}
   .pq-stack.tk td:nth-child(7){display:none;}
   .pq-stack td:last-child{margin-left:auto;}
