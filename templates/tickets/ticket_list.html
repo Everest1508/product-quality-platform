@@ -16,6 +16,9 @@
   </div>
   <div class="head-actions" style="display:flex;gap:8px;align-items:center;">
     <button id="select-mode-btn" class="btn" style="padding:6px 14px;font-size:13px;" onclick="toggleSelectMode()">Select</button>
+    <button id="mark-read-btn" class="btn" style="padding:6px 14px;font-size:13px;display:none;">
+      Mark as read (<span id="mark-read-count">0</span>)
+    </button>
     <button id="bulk-delete-btn" class="btn btn-danger" style="padding:6px 14px;font-size:13px;display:none;" onclick="bulkDeleteTickets('{% url "tickets:ticket_bulk_delete" %}')">
       Delete Selected (<span id="bulk-delete-count">0</span>)
     </button>
@@ -37,4 +40,5 @@
 <div id="ticket-results">
   {% include "tickets/partials/_ticket_list_results.html" with page=page %}
 </div>
+{% include "core/_mark_read.html" with kind="ticket" %}
 {% endblock %}

@@ -499,6 +499,8 @@ class ProductErrorListView(CompanyMemberRequiredMixin, View):
         page = paginate(request, qs)
         from apps.errors import trends
         page.object_list = trends.attach_trends(page.object_list)
+        from apps.notifications import reads
+        page.object_list = reads.flag(page.object_list, request.user, "error")
         open_count = qs.exclude(status__in=("resolved", "ignored")).count()
 
         if request.headers.get("HX-Request") == "true":
@@ -518,6 +520,8 @@ class ProductErrorDetailView(CompanyMemberRequiredMixin, View):
         _attach_product_counts(product)
         error_group = get_object_or_404(product.error_groups.select_related("product"), pk=error_pk)
         occurrences = error_group.occurrences.all()[:50]
+        from apps.notifications import reads
+        reads.mark(request.user, "error", error_group)
         from apps.errors import trends
         from apps.errors.views import linked_tickets
         return render(request, "products/product_error_detail.html", {
@@ -569,6 +573,8 @@ class ProductTicketListView(CompanyMemberRequiredMixin, View):
         qs = sort_tickets(request, qs, default=("-created_at",))
 
         page = paginate(request, qs)
+        from apps.notifications import reads
+        page.object_list = reads.flag(page.object_list, request.user, "ticket")
         open_count = qs.exclude(status__in=("resolved", "closed")).count()
 
         if request.headers.get("HX-Request") == "true":

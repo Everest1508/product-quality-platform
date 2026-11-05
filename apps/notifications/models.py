@@ -102,3 +102,20 @@ class NotificationMute(models.Model):
 
     def __str__(self):
         return f"{self.user_id} mutes {self.kind}"
+
+
+class ReadMark(models.Model):
+    """One person has seen one ticket or error group.
+
+    Drives the sidebar "unread" badges. `seen_count` is the error's occurrence count at that
+    moment, so an error that happens again turns unread again; tickets ignore it.
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="read_marks")
+    kind = models.CharField(max_length=10)  # "ticket" or "error"
+    object_id = models.PositiveIntegerField()
+    seen_count = models.PositiveIntegerField(default=0)
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "kind", "object_id"], name="uniq_read_mark")]

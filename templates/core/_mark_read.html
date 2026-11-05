@@ -1,0 +1,84 @@
+{% comment %}
+Mark-as-read for a list page. Include once at the bottom of the page.
+Needs `kind` ("ticket" or "error"). Rows carry a checkbox of class .ticket-select (tickets,
+whose Select mode lives in base.html) or .row-select (errors, toggled here).
+The page also needs a #mark-read-btn button holding a #mark-read-count span.
+{% endcomment %}
+<script>
+(function () {
+  var kind = '{{ kind }}';
+  var btn = document.getElementById('mark-read-btn');
+  var count = document.getElementById('mark-read-count');
+  var all = document.getElementById('select-all-rows');
+  var modeBtn = document.getElementById('read-select-btn');
+  var SEL = '.ticket-select, .row-select';
+  if (!btn) return;
+
+  function checked() { return document.querySelectorAll('.ticket-select:checked, .row-select:checked'); }
+  function refresh() {
+    var n = checked().length;
+    btn.style.display = n ? 'inline-flex' : 'none';
+    count.textContent = n;
+    if (all) all.checked = n > 0 && n === document.querySelectorAll('.row-select').length;
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target.matches(SEL)) refresh();
+  });
+  if (all) all.addEventListener('change', function () {
+    var v = all.checked;
+    document.querySelectorAll('.row-select').forEach(function (c) { c.checked = v; });
+    refresh();
+  });
+  // Tickets: the header checkbox belongs to base.html, so just follow it.
+  var tAll = document.getElementById('select-all-tickets');
+  if (tAll) tAll.addEventListener('change', function () { setTimeout(refresh, 0); });
+
+  window.toggleReadSelect = function () {
+    var on = document.body.classList.toggle('selection-mode');
+    if (modeBtn) modeBtn.textContent = on ? 'Cancel' : 'Select';
+    if (!on) {
+      document.querySelectorAll('.row-select').forEach(function (c) { c.checked = false; });
+      if (all) all.checked = false;
+    }
+    refresh();
+  };
+
+  function toast(text, tags) {
+    window.dispatchEvent(new CustomEvent('django-message', {detail: {text: text, tags: tags}}));
+  }
+
+  btn.addEventListener('click', function () {
+    var boxes = checked();
+    if (!boxes.length) return;
+    var fd = new FormData();
+    fd.append('kind', kind);
+    boxes.forEach(function (c) { fd.append('ids[]', c.value); });
+    var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+    fetch('{% url "notifications:mark_read" %}', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrf ? csrf.value : '{{ csrf_token }}'},
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      boxes.forEach(function (c) {
+        var row = c.closest('tr');
+        if (row) row.querySelectorAll('.unread-dot').forEach(function (x) { x.remove(); });
+        c.checked = false;
+      });
+      refresh();
+      if (document.body.classList.contains('selection-mode')) {
+        (kind === 'ticket' ? window.toggleSelectMode : window.toggleReadSelect)();
+      }
+      toast(d.marked + ' marked as read.', 'success');
+      // Refresh the sidebar badges from a fresh copy of this page.
+      return fetch(location.href, {credentials: 'same-origin'}).then(function (r) { return r.text(); }).then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        ['Tickets', 'Errors'].forEach(function (l) {
+          var a = document.querySelector('a.side-item[data-label="' + l + '"]');
+          var b = doc.querySelector('a.side-item[data-label="' + l + '"]');
+          if (a && b) a.innerHTML = b.innerHTML;
+        });
+      });
+    }).catch(function () { toast('Could not mark as read.', 'error'); });
+  });
+})();
+</script>

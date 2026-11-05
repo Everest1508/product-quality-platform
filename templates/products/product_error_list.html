@@ -16,6 +16,10 @@
     <p class="text-sm text-muted" style="margin-top:4px;">Error groups for {{ product.name }} only.</p>
   </div>
   <div class="head-actions">
+    <button id="read-select-btn" class="btn" style="font-size:13px;" onclick="toggleReadSelect()">Select</button>
+    <button id="mark-read-btn" class="btn" style="padding:6px 14px;font-size:13px;display:none;">
+      Mark as read (<span id="mark-read-count">0</span>)
+    </button>
     <a href="{% url 'products:product_error_create' pk=product.pk %}" class="btn btn-primary" style="font-size:13px;">Report error</a>
   </div>
 </div>
@@ -45,6 +49,7 @@
 <table class="errors-table pq-stack">
   <thead>
     <tr>
+      <th class="ticket-select-th" style="width:30px;text-align:center;"><input type="checkbox" id="select-all-rows" aria-label="Select all errors"></th>
       <th>Error</th>
       <th style="width:90px">Severity</th>
       <th style="width:100px">Status</th>
@@ -63,4 +68,5 @@
 <script>
 function buildUrl(params){var url=new URL(window.location.href);url.searchParams.delete('page');for(var key in params){url.searchParams.delete(key);if(params[key])url.searchParams.set(key,params[key]);}return url.toString();}
 </script>
+{% include "core/_mark_read.html" with kind="error" %}
 {% endblock %}

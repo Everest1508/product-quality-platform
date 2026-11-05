@@ -80,17 +80,18 @@ def workspace_context(request):
             from apps.tickets.models import Ticket
 
             products = accessible_products(request.user, company)
-            ctx["nav_open_tickets"] = (
-                Ticket.objects.filter(company=company)
-                .filter(product__in=products)
-                .exclude(status__in=["resolved", "closed"])
-                .count()
-            )
-            ctx["nav_open_errors"] = (
+            from apps.notifications import reads
+
+            ctx["nav_open_tickets"] = reads.unread(
+                Ticket.objects.filter(company=company, product__in=products)
+                .exclude(status__in=["resolved", "closed"]),
+                request.user, "ticket",
+            ).count()
+            ctx["nav_open_errors"] = reads.unread(
                 ErrorGroup.objects.filter(company=company, product__in=products)
-                .exclude(status__in=["resolved", "ignored"])
-                .count()
-            )
+                .exclude(status__in=["resolved", "ignored"]),
+                request.user, "error",
+            ).count()
             from apps.notifications.models import Notification
 
             ctx["nav_unread_notifications"] = Notification.objects.filter(

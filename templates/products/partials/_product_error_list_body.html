@@ -1,6 +1,7 @@
 {% load time_tags %}
 {% for error in page %}
 <tr>
+  <td class="ticket-select-td" style="width:30px;text-align:center;"><input type="checkbox" class="row-select" value="{{ error.pk }}" aria-label="Select error {{ error.pk }}"></td>
   <td onclick="window.location='{% url 'products:product_error_detail' pk=product.pk error_pk=error.pk %}'">
     <div class="title" style="display:flex;align-items:flex-start;gap:8px;">
       <span style="flex:none;margin-top:6px;display:inline-block;width:8px;height:8px;border-radius:50%;
@@ -8,7 +9,7 @@
         {% elif error.severity == 'medium' %}background:var(--orange);
         {% elif error.severity == 'low' %}background:var(--blue);
         {% else %}background:var(--gray);{% endif %}"></span>
-      <span class="clamp-2">{{ error.title }}</span>
+      {% if error.is_unread %}<span class="unread-dot" title="Unread" style="margin-top:6px;"></span>{% endif %}<span class="clamp-2">{{ error.title }}</span>
     </div>
     <div class="sub">{{ error.fingerprint|truncatechars:16 }}</div>
         <div class="flags">{% include "errors/partials/_error_flags.html" %}</div>
@@ -39,5 +40,5 @@
   </td>
 </tr>
 {% empty %}
-<tr><td colspan="6" class="empty"><h3>No errors found</h3><p>{% if search %}Try a different search term.{% else %}Errors will appear here once your product starts reporting.{% endif %}</p></td></tr>
+<tr><td colspan="7" class="empty"><h3>No errors found</h3><p>{% if search %}Try a different search term.{% else %}Errors will appear here once your product starts reporting.{% endif %}</p></td></tr>
 {% endfor %}

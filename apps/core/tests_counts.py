@@ -156,3 +156,39 @@ class HomeAndReportsTest(TestCase):
         res = self.client.get(reverse("dashboards:reports"))
         self.assertContains(res, "Last 30 days")
         self.assertContains(res, "This month")
+
+
+class UnreadBadgeTest(OpenCountsTest):
+    """The sidebar badge counts open items this person has not read."""
+
+    def test_opening_an_error_drops_the_badge(self):
+        self.login(self.owner)
+        err = ErrorGroup.objects.get(product=self.p1, status="open")
+        self.client.get(reverse("errors:error_detail", args=[err.pk]))
+        res = self.client.get(reverse("errors:error_list"))
+        self.assertEqual(res.context["nav_open_errors"], 1)
+        self.assertContains(res, "4 groups · 2 open")  # the header still counts open
+
+    def test_opening_a_ticket_drops_the_badge(self):
+        self.login(self.owner)
+        t = Ticket.objects.get(product=self.p1, status="open")
+        self.client.get(reverse("tickets:ticket_detail", args=[t.pk]))
+        res = self.client.get(reverse("tickets:ticket_list"))
+        self.assertEqual(res.context["nav_open_tickets"], 2)
+
+    def test_mark_read_in_bulk_and_only_what_is_accessible(self):
+        self.login(self.dev)  # dev cannot open product two
+        ids = list(ErrorGroup.objects.filter(status="open").values_list("pk", flat=True))
+        res = self.client.post(reverse("notifications:mark_read"), {"kind": "error", "ids[]": ids})
+        self.assertEqual(res.json()["marked"], 1)
+        self.assertEqual(self.client.get(reverse("errors:error_list")).context["nav_open_errors"], 0)
+        self.login(self.owner)
+        self.assertEqual(self.client.get(reverse("errors:error_list")).context["nav_open_errors"], 2)
+
+    def test_a_new_occurrence_makes_a_read_error_unread_again(self):
+        self.login(self.owner)
+        err = ErrorGroup.objects.get(product=self.p1, status="open")
+        self.client.get(reverse("errors:error_detail", args=[err.pk]))
+        ErrorGroup.objects.filter(pk=err.pk).update(occurrence_count=err.occurrence_count + 1)
+        res = self.client.get(reverse("errors:error_list"))
+        self.assertEqual(res.context["nav_open_errors"], 2)

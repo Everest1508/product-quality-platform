@@ -67,6 +67,8 @@ class ErrorListView(CompanyMemberRequiredMixin, View):
 
         page = paginate(request, qs)
         page.object_list = trends.attach_trends(page.object_list)
+        from apps.notifications import reads
+        page.object_list = reads.flag(page.object_list, request.user, "error")
         open_count = qs.exclude(status__in=("resolved", "ignored")).count()
 
         products = accessible_products(request.user, request.company)
@@ -112,6 +114,10 @@ class ErrorDetailView(CompanyMemberRequiredMixin, View):
         )
         require_error_group_access(request, error_group)
         occurrences = error_group.occurrences.all()[:50]
+
+        if request.headers.get("HX-Request") != "true":
+            from apps.notifications import reads
+            reads.mark(request.user, "error", error_group)
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "errors/partials/_occurrence_list.html", {

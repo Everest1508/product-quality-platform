@@ -94,3 +94,20 @@ class PushUnsubscribeView(CompanyMemberRequiredMixin, View):
             return HttpResponseBadRequest("Invalid body.")
         PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
         return JsonResponse({"ok": True})
+
+
+class MarkReadView(CompanyMemberRequiredMixin, View):
+    """Mark selected tickets or error groups as read. Only ones the person can open count."""
+
+    def post(self, request):
+        from apps.notifications import reads
+        from apps.products.access import accessible_error_groups, accessible_tickets
+
+        kind = request.POST.get("kind")
+        if kind not in ("ticket", "error"):
+            return HttpResponseBadRequest("kind")
+        ids = [i for i in request.POST.getlist("ids[]") if i.isdigit()]
+        scope = accessible_tickets if kind == "ticket" else accessible_error_groups
+        objs = list(scope(request.user, request.company).filter(pk__in=ids))
+        reads.mark(request.user, kind, objs)
+        return JsonResponse({"marked": len(objs)})

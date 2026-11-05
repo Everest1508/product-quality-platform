@@ -127,6 +127,8 @@ class TicketListView(CompanyMemberRequiredMixin, View):
         qs = sort_tickets(request, qs, default=("-created_at",))
 
         page = paginate(request, qs)
+        from apps.notifications import reads
+        page.object_list = reads.flag(page.object_list, request.user, "ticket")
         open_count = qs.exclude(status__in=OPEN_EXCLUDED).count()
 
         if request.headers.get("HX-Request") == "true":
@@ -283,6 +285,8 @@ class TicketDetailView(CompanyMemberRequiredMixin, View):
             company=request.company,
         )
         require_ticket_access(request, ticket)
+        from apps.notifications import reads
+        reads.mark(request.user, "ticket", ticket)
         comments = ticket.comments.select_related("author").prefetch_related("mentions").all()
         comment_form = TicketCommentForm()
 
