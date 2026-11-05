@@ -161,10 +161,10 @@
           <a class="hm-more" href="{% url 'dashboards:audit_log' %}">Audit log →</a>
         </div>
         {% if activity %}
-        <ul class="hm-rows">
+        <ul class="hm-rows hm-feed-rows">
           {% for e in activity %}
           <li class="is-plain hm-feed-row">
-            <span class="hm-feed-text">{% if e.link %}<a href="{{ e.link }}">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}{% if e.actor %}<span class="hm-sub-xs"> · {{ e.actor.get_full_name|default:e.actor.username }}</span>{% endif %}</span>
+            <span class="hm-feed-text" title="{{ e.title }}">{% if e.link %}<a href="{{ e.link }}">{{ e.title }}</a>{% else %}{{ e.title }}{% endif %}{% if e.actor %}<span class="hm-sub-xs"> · {{ e.actor.get_full_name|default:e.actor.username }}</span>{% endif %}</span>
             <span class="hm-sub-xs">{{ e.created_at|short_ago }}</span>
           </li>
           {% endfor %}
@@ -245,7 +245,7 @@
                   </div>
                 </div>
                 <div class="hm-team-time">
-                  {% if r.late %}<span class="bdg bdg-red" title="Arrived {{ r.late }} minutes after shift start">{{ r.late }}m late</span>{% endif %}
+                  {% if r.late %}<span class="bdg bdg-red" title="Arrived {{ r.late }} minutes after shift start">{{ r.late|span }} late</span>{% endif %}
                   {% if r.state == 'in' %}
                     <span class="hm-status-dot pulse" title="Working now"></span>
                     <span class="m">{{ r.record.check_in|date:"g:i A" }} → working</span>

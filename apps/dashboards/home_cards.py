@@ -99,7 +99,7 @@ FEED_EVENTS = (
 )
 
 
-def activity_feed(company, limit=8):
+def activity_feed(company, limit=30):
     """The latest things worth a glance, newest first, each with a link when it points at a live ticket or error."""
     from django.urls import reverse
 

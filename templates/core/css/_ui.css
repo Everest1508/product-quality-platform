@@ -687,3 +687,8 @@ dialog.cl::backdrop{background:rgba(15,23,42,.6);backdrop-filter:blur(6px);}
 .hm-feed-text a:hover{color:var(--accent);text-decoration:underline;}
 .hm-feed-row>.hm-sub-xs{flex-shrink:0;}
 .hm-feed-text .hm-sub-xs{display:inline;}
+/* Recent activity scrolls inside its card like the to-do list instead of growing the page. */
+.hm-feed-rows{max-height:288px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding-right:4px;}
+.hm-feed-row{padding:var(--space-2) 2px;}
+.hm-feed-text{white-space:nowrap;flex:1 1 auto;}
+.hm-home .hm-feed-text a{display:inline;padding:0;}

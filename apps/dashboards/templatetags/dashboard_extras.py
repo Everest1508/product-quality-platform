@@ -42,6 +42,19 @@ def hours(minutes):
 
 
 @register.filter
+def span(minutes):
+    """Minutes as a short span: 12 -> '12m', 60 -> '1h', 238 -> '3h 58m'."""
+    try:
+        m = int(minutes)
+    except (TypeError, ValueError):
+        return minutes
+    h, m = divmod(m, 60)
+    if not h:
+        return f"{m}m"
+    return f"{h}h" if not m else f"{h}h {m}m"
+
+
+@register.filter
 def days(value):
     """Decimal day count as '3' or '0.5' -- matches leave/payroll wording."""
     if value is None:
