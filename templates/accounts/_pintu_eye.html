@@ -1,16 +1,17 @@
 {% comment %}
-Show/hide-password glyph: Pintu's own face in the mascot's colours, pixel for pixel.
-`open` set = eyes open (password hidden, click to show); unset = eyes shut like his blink frame.
+Show/hide-password glyph, drawn pixel by pixel like Pintu: the outline takes the button's colour,
+the pupil is his teal with the same white glint as his own eyes. `open` set = eye open (click to
+show the password); unset = lid shut with lashes (click to hide it again).
 {% endcomment %}
-<svg class="ic pintu-eye" viewBox="0 0 12 8" aria-hidden="true" focusable="false" shape-rendering="crispEdges">
-  <path fill="#48d6be" d="M2 0h8v1H2zM0 1h12v5H0z"/>
-  <path fill="#28a096" d="M2 6h8v1H2z"/>
-  <path fill="#ff9fb4" d="M1 4h1v1H1zM10 4h1v1h-1z"/>
-  <path fill="#101634" d="M4 4h1v1H4zM7 4h1v1H7zM5 5h2v1H5z"/>
-  {% if open %}
-  <path fill="#fff" d="M2 2h1v1H2zM8 2h1v1H8z"/>
-  <path fill="#101634" d="M3 2h1v2H3zM2 3h1v1H2zM9 2h1v2H9zM8 3h1v1H8z"/>
-  {% else %}
-  <path fill="#101634" d="M2 3h2v1H2zM8 3h2v1H8z"/>
-  {% endif %}
+{% if open %}
+<svg class="ic pintu-eye" viewBox="0 0 13 7" aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+  <path fill="currentColor" d="M4 0h5v1h-5zM2 1h3v1h-3zM8 1h3v1h-3zM1 2h2v1h-2zM10 2h2v1h-2zM0 3h2v1h-2zM11 3h2v1h-2zM1 4h2v1h-2zM10 4h2v1h-2zM2 5h3v1h-3zM8 5h3v1h-3zM4 6h5v1h-5z"/>
+  <path fill="#48d6be" d="M5 2h3v1h-3zM6 3h2v1h-2zM5 4h3v1h-3z"/>
+  <path fill="#fff" d="M5 3h1v1h-1z"/>
 </svg>
+{% else %}
+<svg class="ic pintu-eye" viewBox="0 0 13 4" aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+  <path fill="currentColor" d="M0 0h2v1h-2zM11 0h2v1h-2zM2 1h2v1h-2zM9 1h2v1h-2zM4 2h5v1h-5z"/>
+  <path fill="#48d6be" d="M3 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1z"/>
+</svg>
+{% endif %}

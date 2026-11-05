@@ -651,7 +651,7 @@ dialog.cl::backdrop{background:rgba(15,23,42,.6);backdrop-filter:blur(6px);}
 }
 @media (prefers-reduced-motion: reduce) { .auth-pintu.hop { animation: none; } }
 
-/* Show/hide password button wears Pintu's face; it blinks shut when the password is on show. */
-.pw-toggle .pintu-eye { width: 24px; height: 16px; transition: transform .15s; }
+/* Show/hide password glyph is a pixel eye in Pintu's colours. */
+.pw-toggle .pintu-eye { width: 22px; height: 14px; transition: transform .15s; }
 .pw-toggle:hover .pintu-eye { transform: scale(1.12); }
 .pw-toggle:active .pintu-eye { transform: scale(.9, .8); }

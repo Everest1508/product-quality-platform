@@ -128,7 +128,7 @@
   var cv = document.getElementById('login-pintu-cv'), node = document.getElementById('login-pintu');
   if (!cv || !node) return;
   var P = JSON.parse(node.textContent), ctx = cv.getContext('2d'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var hold = null, timers = [], covered = false;
+  var hold = null, timers = [], mode = 'idle';   // mode: idle | hidden (hands over eyes) | shown (sneaking a peek)
 
   // Extra frames for the password field: the idle pose with two hands painted over it.
   function paint(ops) {
@@ -147,7 +147,7 @@
   }
   var X = {
     lo: hands('low', 'low'), mid: hands('mid', 'mid'), cover: hands('top', 'top'),
-    peek: hands('top', 'mid'), peek2: hands('mid', 'low')
+    peekR: hands('top', 'mid'), peekL: hands('mid', 'top')
   };
 
   function draw(name) {
@@ -155,52 +155,55 @@
     ctx.clearRect(0, 0, 18, 16);
     rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var c = pal[row[x]]; if (c) { ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; ctx.fillRect(x, y, 1, 1); } } });
   }
-  function rest() { draw(covered ? 'cover' : (hold || 'idle')); }
+  function rest() { draw(mode === 'hidden' ? 'cover' : mode === 'shown' ? 'peekR' : (hold || 'idle')); }
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
   function stop() { timers.forEach(clearTimeout); timers = []; }
   function hop() {
     if (calm) return;
     cv.classList.remove('hop'); void cv.offsetWidth; cv.classList.add('hop');
   }
-  // Play frames one after another, then carry on with blinking.
-  function play(names, ms, done) {
+  // While the password is on show he keeps sneaking looks, swapping which eye peeks.
+  function sneak() {
+    if (mode !== 'shown') return;
+    var left = false;
+    (function swap() { if (mode !== 'shown') return; left = !left; draw(left ? 'peekL' : 'peekR'); later(swap, calm ? 4000 : 1400 + Math.random() * 900); })();
+  }
+  function blinkLoop() { if (!calm && !hold && mode === 'idle') { draw('blink'); later(rest, 140); } later(blinkLoop, 3200 + Math.random() * 2800); }
+  function settle() { rest(); if (mode === 'idle') blinkLoop(); else if (mode === 'shown') sneak(); }
+  // Play frames one after another, then settle into whatever the mode calls for.
+  function play(names, ms) {
     stop();
     names.forEach(function (n, k) { later(function () { draw(n); }, calm ? 0 : k * ms); });
-    later(function () { if (done) done(); rest(); if (!covered) blinkLoop(); }, calm ? 0 : names.length * ms);
+    later(settle, calm ? 0 : names.length * ms);
   }
   function hello() {
     if (calm || hold) return rest();
     P.sequence.forEach(function (f, k) { later(function () { if (!hold) draw(f); }, k * P.delay_ms); });
     later(function () { blinkLoop(); }, P.sequence.length * P.delay_ms);
   }
-  function blinkLoop() { if (!calm && !hold && !covered) { draw('blink'); later(rest, 140); } later(blinkLoop, 3200 + Math.random() * 2800); }
   function mood(name) { hold = name; rest(); }
 
-  // Hands go up over the eyes: the password is hidden, and so is the page's friend.
-  function hide() { covered = true; hold = null; hop(); play(['lo', 'mid', 'cover'], 90); }
-  // Password shown: peek through the fingers, then drop the hands and wink.
-  function reveal() {
-    covered = true; hold = null; hop();
-    play(['cover', 'peek', 'peek', 'peek2', 'lo', 'wink', 'wink'], 140, function () { covered = false; });
-  }
-  function lower() { if (!covered) return; hold = null; play(['mid', 'lo'], 90, function () { covered = false; }); }
+  // Hidden: hands go up over his eyes. Shown: they part and he peeks, and keeps peeking.
+  function hide() { mode = 'hidden'; hold = null; hop(); play(['lo', 'mid', 'cover'], 90); }
+  function reveal() { mode = 'shown'; hold = null; hop(); play(['cover', 'peekR', 'peekL'], 130); }
+  function lower() { if (mode === 'idle') return; mode = 'idle'; hold = null; play(['mid', 'lo'], 90); }
+  function react() { if (pw.type === 'password') hide(); else reveal(); }
 
   var pw = document.getElementById('{{ form.password.id_for_label }}');
   var wrap = pw && pw.closest('.pw-wrap');
-  var toggle = wrap && wrap.querySelector('.pw-toggle');
+  var toggle = wrap && wrap.querySelector('.pw-toggle'), pressing = 0;
   if (pw) {
-    pw.addEventListener('focus', function () { if (pw.type === 'password' && !covered) hide(); });
+    pw.addEventListener('focus', function () { if (mode === 'idle') react(); });
     if (wrap) wrap.addEventListener('focusout', function (e) {
       if (e.relatedTarget && wrap.contains(e.relatedTarget)) return;
-      if (!covered) return;
+      if (Date.now() < pressing) return;   // Safari: pressing the toggle blurs the field without focusing the button
       lower();
     });
   }
-  if (toggle) toggle.addEventListener('click', function () {
-    setTimeout(function () { if (pw.type === 'password') hide(); else reveal(); }, 0);
-  });
+  if (toggle) toggle.addEventListener('mousedown', function () { pressing = Date.now() + 500; });
+  if (toggle) toggle.addEventListener('click', function () { setTimeout(react, 0); });
   var form = document.querySelector('.auth-form form');
-  if (form) form.addEventListener('submit', function () { stop(); covered = false; mood('thinking'); });
+  if (form) form.addEventListener('submit', function () { stop(); mode = 'idle'; mood('thinking'); });
   if (document.querySelector('.auth-alert, .auth-err')) mood('error'); else hello();
   rest();
 })();
