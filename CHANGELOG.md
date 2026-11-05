@@ -10,6 +10,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.69.0] "Wrentit" — 2026-11-05 · unread badges, a livelier Home, and a Pintu who reacts to your password
+
+> In short: the sidebar now counts what you have not read yet, ticket and error lists have easy select and mark-as-read, Home gains approvals, a team board, an error pulse and recent activity, and the sign-in mascot reacts when you hide or show your password.
+
+### New
+
+- **Unread badges.** The Tickets and Errors numbers in the sidebar now count open items you have not looked at yet, so opening one brings the number down. An error that happens again turns unread again, and a small dot marks unread rows in the lists.
+- **Select and mark as read.** Ticket and error lists show a checkbox on every row. Tick some rows, or tick the header box for the whole page, and press Mark as read.
+- **Approvals on Home.** Owners and admins see pending leave requests and attendance corrections in one card, and can approve or reject right there. Leave approved from Home splits paid and unpaid days automatically.
+- **A team board on Home.** The Team today card now shows who is working, done, on leave or not in yet, and flags anyone who arrived late.
+- **Error pulse on Home.** See this week's error occurrences against last week, a 14-day trend line, new and returning errors, and the three noisiest open ones. It only counts products you can open.
+- **Recent activity on Home.** Owners and admins get the latest ticket, error, project and member events, with links to open them.
+- **Pintu reacts on the sign-in page.** He covers his eyes while your password is hidden, then peeks through his fingers while it is shown. The show and hide button is now a pixel eye in his colours.
+
+### Better
+
+- **Cleaner error list.** The new checkbox column no longer pushes the error title across the table.
+- **Simpler Projects.** The Journey view is gone, so Projects offer Board and List only. The stage timeline for a single project is still on its own page.
+
+### Fixed
+
+- **Rows per page works again.** Choosing 10, 20, 50 or 100 on any list now actually changes the page size.
+- **Selection survives paging.** Select-all, Mark as read and Delete selected keep working after you move to another page of tickets or errors.
+
 ## [1.68.0] "Verdin" — 2026-11-02 · audit log command center, dropdown alignment, and instant to-dos
 
 > In short: complete Audit Log redesign with KPI metrics and category triage, cleanly aligned dropdowns that never truncate or clip, instant server-rendered to-dos, and smooth filter transitions across all tables.
