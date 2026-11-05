@@ -162,7 +162,7 @@ class ProjectPagesTests(LifecycleBase):
         r = self.client.get(self.url("project_details", self.product.pk))
         self.assertRedirects(r, self.url("product_detail", self.product.pk) + "#plan", fetch_redirect_response=False)
         self.assertContains(self.client.get(self.url("product_detail", self.product.pk)), 'id="plan"')
-        self.assertEqual(self.client.get(self.url("project_board") + "?view=journey").status_code, 200)
+        self.assertNotContains(self.client.get(self.url("project_board")), "Journey")
 
     def test_moving_needs_a_reason_and_works_over_json(self):
         r = self.client.post(self.url("project_move", self.product.pk), {"to": "fe", "reason": ""}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")

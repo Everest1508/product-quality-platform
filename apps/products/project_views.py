@@ -92,13 +92,9 @@ class ProjectsBoardView(CompanyMemberRequiredMixin, View):
             cards = [c for c in cards if c["late_days"]]
         if request.GET.get("crunch"):
             cards = [c for c in cards if c["crunch_open"]]
-        view = "journey" if request.GET.get("view") == "journey" else "board"
         columns = [{"key": k, "label": l, "cards": [c for c in cards if c["stage"] == k]} for k, l in lc.STAGES]
-        rows = []
-        if view == "journey":
-            rows = [{"card": c, "nodes": _journey(c, c["product"])} for c in cards]
         return render(request, "products/projects_board.html", {
-            "view": view, "columns": columns, "rows": rows, "total": len(cards),
+            "view": "board", "columns": columns, "total": len(cards),
             "can_add": request.company_role in ("owner", "admin"), "stages": lc.STAGES,
             "search": q, "current_lead": lead, "current_late": request.GET.get("late"), "current_crunch": request.GET.get("crunch"),
             "leads": get_user_model().objects.filter(pk__in=accessible_products(request.user, request.company).exclude(lead=None).values("lead")),

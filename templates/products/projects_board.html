@@ -26,7 +26,6 @@
 </form>
 
 <div id="pj-results">
-{% if view == 'board' %}
 <div class="pj-board" id="pj-board">
   {% for col in columns %}
   <section class="pj-col" data-stage="{{ col.key }}" data-off-text="Not part of this project">
@@ -59,34 +58,6 @@
   </section>
   {% endfor %}
 </div>
-{% else %}
-<div class="pj-journey">
-  {% for r in rows %}
-  <article class="pj-row">
-    <div class="pj-row-head">
-      <a class="pj-title" href="{% url 'products:project_lifecycle' pk=r.card.product.pk %}">{{ r.card.product.name }}</a>
-      <span class="pj-sub">{% if r.card.product.start_date %}{{ r.card.product.start_date|date:"j M" }} to {{ r.card.product.end_date|date:"j M Y"|default:"?" }}{% else %}No dates yet{% endif %}</span>
-      <span class="pj-pod">{% for u in r.card.pod|slice:":4" %}<span class="kt-av" title="{{ u.get_full_name|default:u.username }}">{{ u.username.0|upper }}</span>{% endfor %}</span>
-      {% if r.card.late_days %}<span class="bdg bdg-red">{{ r.card.late_days }}d late</span>{% endif %}
-      {% if r.card.crunch_open %}<span class="bdg bdg-orange">Crunch {{ r.card.next_crunch.due_date|date:"j M" }}</span>{% endif %}
-    </div>
-    <ol class="pj-track">
-      {% for n in r.nodes %}
-      <li class="is-{{ n.state }}">
-        <button type="button" class="pj-node" {% if n.state == 'off' or n.state == 'now' %}disabled{% endif %}
-          {% if n.state != 'off' and n.state != 'now' %}onclick="pjMove({{ r.card.product.pk }},'{{ n.key }}','{{ n.label }}','{{ r.card.stage_label }}','{{ r.card.product.name|escapejs }}',{{ r.card.days }},{% if n.state == 'done' %}true{% else %}false{% endif %})"{% endif %}
-          title="{% if n.state == 'off' %}Not part of this project{% elif n.state == 'now' %}Here now, {{ r.card.days }} days{% elif n.state == 'done' %}Done. Click to send back{% else %}Click to move here{% endif %}">
-          {% if n.state == 'done' %}{% icon 'check' 'ic' %}{% endif %}
-        </button>
-        <span class="pj-lab">{{ n.label }}</span>
-        <span class="pj-date">{% if n.since %}{{ n.since|date:"j M" }}{% elif n.state == 'off' %}n/a{% elif n.plan and n.plan.end_date %}plan {{ n.plan.end_date|date:"j M" }}{% endif %}</span>
-      </li>
-      {% endfor %}
-    </ol>
-  </article>
-  {% empty %}<p class="pj-empty">No projects yet.</p>{% endfor %}
-</div>
-{% endif %}
 </div>
 
 {% include "products/_move_dialog.html" %}
