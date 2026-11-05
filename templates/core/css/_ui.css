@@ -634,3 +634,8 @@ dialog.cl::backdrop{background:rgba(15,23,42,.6);backdrop-filter:blur(6px);}
   border-radius: 50%;
   background: var(--accent);
 }
+
+/* Row checkboxes on the ticket and error lists are always shown (kanban keeps its Select mode). */
+.tk .ticket-select-th, .tk .ticket-select-td,
+.errors-table .ticket-select-th, .errors-table .ticket-select-td { display: table-cell; }
+.tk .ticket-select, .errors-table .ticket-select { display: inline-block; }

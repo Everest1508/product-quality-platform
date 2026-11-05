@@ -1,7 +1,7 @@
 {% comment %}
 Mark-as-read for a list page. Include once at the bottom of the page.
 Needs `kind` ("ticket" or "error"). Rows carry a checkbox of class .ticket-select (tickets,
-whose Select mode lives in base.html) or .row-select (errors, toggled here).
+whose delete bar lives in base.html) or .row-select (errors); both always visible.
 The page also needs a #mark-read-btn button holding a #mark-read-count span.
 {% endcomment %}
 <script>
@@ -10,7 +10,6 @@ The page also needs a #mark-read-btn button holding a #mark-read-count span.
   var btn = document.getElementById('mark-read-btn');
   var count = document.getElementById('mark-read-count');
   var all = document.getElementById('select-all-rows');
-  var modeBtn = document.getElementById('read-select-btn');
   var SEL = '.ticket-select, .row-select';
   if (!btn) return;
 
@@ -32,16 +31,6 @@ The page also needs a #mark-read-btn button holding a #mark-read-count span.
   // Tickets: the header checkbox belongs to base.html, so just follow it.
   var tAll = document.getElementById('select-all-tickets');
   if (tAll) tAll.addEventListener('change', function () { setTimeout(refresh, 0); });
-
-  window.toggleReadSelect = function () {
-    var on = document.body.classList.toggle('selection-mode');
-    if (modeBtn) modeBtn.textContent = on ? 'Cancel' : 'Select';
-    if (!on) {
-      document.querySelectorAll('.row-select').forEach(function (c) { c.checked = false; });
-      if (all) all.checked = false;
-    }
-    refresh();
-  };
 
   function toast(text, tags) {
     window.dispatchEvent(new CustomEvent('django-message', {detail: {text: text, tags: tags}}));
@@ -65,9 +54,6 @@ The page also needs a #mark-read-btn button holding a #mark-read-count span.
         c.checked = false;
       });
       refresh();
-      if (document.body.classList.contains('selection-mode')) {
-        (kind === 'ticket' ? window.toggleSelectMode : window.toggleReadSelect)();
-      }
       toast(d.marked + ' marked as read.', 'success');
       // Refresh the sidebar badges from a fresh copy of this page.
       return fetch(location.href, {credentials: 'same-origin'}).then(function (r) { return r.text(); }).then(function (html) {
