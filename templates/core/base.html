@@ -583,7 +583,7 @@
           if (total < 0) total = 0;
           countEl.textContent = total + ' ticket' + (total !== 1 ? 's' : '');
         }
-        window.toggleSelectMode();
+        document.body.dispatchEvent(new Event('htmx:afterSwap'));
         toast(data.deleted + ' ticket' + (data.deleted > 1 ? 's' : '') + ' deleted.', 'success');
       } else {
         toast(data.error || 'No tickets were deleted.', 'error');

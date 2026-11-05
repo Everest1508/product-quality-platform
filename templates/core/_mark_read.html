@@ -1,54 +1,61 @@
 {% comment %}
-Mark-as-read for a list page. Include once at the bottom of the page.
-Needs `kind` ("ticket" or "error"). Rows carry a checkbox of class .ticket-select (tickets,
-whose delete bar lives in base.html) or .row-select (errors); both always visible.
-The page also needs a #mark-read-btn button holding a #mark-read-count span.
+Mark-as-read for a list page. Include once at the bottom of the page; needs `kind` ("ticket" or "error").
+Row checkboxes are .ticket-select (tickets) or .row-select (errors), always visible. The page needs a
+#mark-read-btn button holding a #mark-read-count span. Everything is delegated from document and looks
+elements up live, because pagination swaps the rows (and header) without reloading the page.
 {% endcomment %}
 <script>
+window.__readKind = '{{ kind }}';
+window.__readUrl = '{% url "notifications:mark_read" %}';
 (function () {
-  var kind = '{{ kind }}';
-  var btn = document.getElementById('mark-read-btn');
-  var count = document.getElementById('mark-read-count');
-  var all = document.getElementById('select-all-rows');
+  if (window.__readInit) return;
+  window.__readInit = true;
   var SEL = '.ticket-select, .row-select';
-  if (!btn) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var boxes = function () { return document.querySelectorAll(SEL); };
+  var checked = function () { return document.querySelectorAll('.ticket-select:checked, .row-select:checked'); };
 
-  function checked() { return document.querySelectorAll('.ticket-select:checked, .row-select:checked'); }
   function refresh() {
-    var n = checked().length;
-    btn.style.display = n ? 'inline-flex' : 'none';
-    count.textContent = n;
-    if (all) all.checked = n > 0 && n === document.querySelectorAll('.row-select').length;
+    var n = checked().length, total = boxes().length;
+    var mark = $('mark-read-btn'), del = $('bulk-delete-btn');
+    if (mark) { mark.style.display = n ? 'inline-flex' : 'none'; $('mark-read-count').textContent = n; }
+    if (del) { del.style.display = n ? 'inline-flex' : 'none'; var c = $('bulk-delete-count'); if (c) c.textContent = n; }
+    var all = $('select-all-tickets') || $('select-all-rows');
+    if (all) all.checked = total > 0 && n === total;
   }
+
   document.addEventListener('change', function (e) {
-    if (e.target.matches(SEL)) refresh();
+    var t = e.target;
+    if (t.id === 'select-all-tickets' || t.id === 'select-all-rows') {
+      boxes().forEach(function (c) { c.checked = t.checked; });
+      refresh();
+    } else if (t.matches && t.matches(SEL)) {
+      refresh();
+    }
   });
-  if (all) all.addEventListener('change', function () {
-    var v = all.checked;
-    document.querySelectorAll('.row-select').forEach(function (c) { c.checked = v; });
-    refresh();
-  });
-  // Tickets: the header checkbox belongs to base.html, so just follow it.
-  var tAll = document.getElementById('select-all-tickets');
-  if (tAll) tAll.addEventListener('change', function () { setTimeout(refresh, 0); });
+  // Rows were replaced by pagination, sorting or a filter: the old ticks are gone, so reset the bar.
+  document.body.addEventListener('htmx:afterSwap', refresh);
+  window.addEventListener('pageshow', refresh);
 
   function toast(text, tags) {
     window.dispatchEvent(new CustomEvent('django-message', {detail: {text: text, tags: tags}}));
   }
 
-  btn.addEventListener('click', function () {
-    var boxes = checked();
-    if (!boxes.length) return;
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('#mark-read-btn');
+    if (!btn) return;
+    var ticked = Array.prototype.slice.call(checked());
+    if (!ticked.length) return;
     var fd = new FormData();
-    fd.append('kind', kind);
-    boxes.forEach(function (c) { fd.append('ids[]', c.value); });
+    fd.append('kind', window.__readKind);
+    ticked.forEach(function (c) { fd.append('ids[]', c.value); });
     var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
-    fetch('{% url "notifications:mark_read" %}', {
+    fetch(window.__readUrl, {
       method: 'POST',
       headers: {'X-CSRFToken': csrf ? csrf.value : '{{ csrf_token }}'},
       body: fd
     }).then(function (r) { return r.json(); }).then(function (d) {
-      boxes.forEach(function (c) {
+      ticked.forEach(function (c) {
         var row = c.closest('tr');
         if (row) row.querySelectorAll('.unread-dot').forEach(function (x) { x.remove(); });
         c.checked = false;
