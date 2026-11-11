@@ -5,6 +5,7 @@ Every component is a tag here plus a template in `templates/components/`, and it
 """
 from django import template
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 from .dropdown_tags import obj_pairs
 
@@ -54,3 +55,38 @@ def field(content, label="", for_id="", hint="", error=""):
     """Label, control, hint and error message in the house spacing. `{% field "Title" for_id="title" %}…{% endfield %}`."""
     return render_to_string("components/field.html", {
         "content": content, "label": label, "for_id": for_id, "hint": hint, "error": error})
+
+
+@register.inclusion_tag("components/changelog/modal.html", takes_context=True)
+def changelog_modal(context):
+    """The "What's new" dialog. Opened by any `[data-changelog-open]` element, and shown once per
+    release. Markup: components/changelog/modal.html, script: core/js/changelog.js, CSS: css/_changelog.css."""
+    return {"app_version": context.get("app_version", "")}
+
+
+# ── Sidebar ──
+# Every sidebar link is a {% nav_item %} and every group a {% nav_fold %}...{% endnav_fold %}, so the active
+# state is decided in one place (by URL name, never by a substring of the path) and the markup is not
+# repeated twenty times. The sidebar's own files are in templates/components/sidebar/.
+
+@register.inclusion_tag("components/nav_item.html", takes_context=True)
+def nav_item(context, label, icon, url, match="", pk=None, badge="", live_unread=False):
+    """One sidebar link. `url` is a URL name (with `pk` when it needs one). It is active when the page's URL
+    name, or its `namespace:name`, is one of the space-separated names in `match`."""
+    rm = getattr(context.get("request"), "resolver_match", None)
+    names = set(match.split())
+    return {
+        "label": label, "icon": icon, "badge": badge, "live_unread": live_unread,
+        "href": reverse(url, kwargs={"pk": pk}) if pk is not None else reverse(url),
+        "active": bool(rm) and (rm.url_name in names or rm.view_name in names),
+    }
+
+
+@register.simple_block_tag
+def nav_fold(content, label, icon, key, admin=False, aria="", badge=""):
+    """A collapsible group of nav items. It opens by itself when it holds the current page, and remembers
+    being opened in localStorage under `key` (keep the existing keys so saved choices survive)."""
+    return render_to_string("components/nav_fold.html", {
+        "content": content, "label": label, "icon": icon, "admin": admin,
+        "aria": aria or label, "badge": badge, "storage_key": key,
+    })

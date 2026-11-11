@@ -1,0 +1,21 @@
+{% load icon_tags asset_tags %}{% comment %}
+"What's new" dialog. Use it with {% changelog_modal %} (component_tags), once, in the page shell.
+Script: core/js/changelog.js. Style: core/css/_changelog.css. Opened by any [data-changelog-open]
+element (base.html turns the click into a `pq:changelog` event) and shown once per release.
+{% endcomment %}
+<dialog class="dlg cl" id="pq-changelog" aria-labelledby="cl-title" data-version="{{ app_version }}">
+  <header class="cl-head">
+    <div class="cl-head-main">
+      <h2 id="cl-title">What's new in <span class="cl-ver">v{{ app_version }}</span></h2>
+      <p id="cl-sub" class="cl-sub"></p>
+    </div>
+    <button type="button" class="icon-btn cl-x" id="cl-close" aria-label="Close">{% icon 'x' 'ic' %}</button>
+  </header>
+  <div class="cl-split">
+    <nav class="cl-rail" id="cl-rail" role="tablist" aria-label="Releases"></nav>
+    <article class="cl-pane" id="cl-pane" role="tabpanel">
+      <p class="cl-note">Loading…</p>
+    </article>
+  </div>
+</dialog>
+<script defer src="{% component_js 'changelog' %}"></script>

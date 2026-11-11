@@ -1,0 +1,15 @@
+{% load icon_tags %}{% if admin %}<nav class="nav-section nav-fold nav-admin" aria-label="{{ aria }}" x-data="{ open: false }"
+     x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('{{ storage_key }}') === '1'"
+     :class="{ 'is-open': open }">{% else %}<div class="nav-fold" x-data="{ open: false }"
+     x-init="open = !!$el.querySelector('.side-item.active') || localStorage.getItem('{{ storage_key }}') === '1'"
+     :class="{ 'is-open': open }">{% endif %}
+  <button type="button" class="side-item fold-head" @click="open = !open; try { localStorage.setItem('{{ storage_key }}', open ? '1' : '0') } catch (e) {}"
+          :aria-expanded="open.toString()" data-label="{{ label }}">
+    {% icon icon %} <span class="side-label">{{ label }}</span>
+    {% if badge %}<span class="side-badge" x-show="!open">{{ badge }}</span>{% endif %}
+    {% icon 'chevron-down' 'fold-caret' %}
+  </button>
+  <div class="fold-body"><div class="fold-inner">
+    {{ content }}
+  </div></div>
+{% if admin %}</nav>{% else %}</div>{% endif %}

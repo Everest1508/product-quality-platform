@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.70.0] "Yuhina" — 2026-11-11 · a calmer sidebar and a simpler What's new window
+
+> In short: the app is light only, the sidebar is quieter and easier to scan, the What's new window drops its search and filters so it reads like a plain list of releases, and pages settle in a little faster.
+
+### Better
+
+- **Light look only.** Dark mode and its switch in the user menu are gone, so the app always uses the light look, whatever your computer is set to.
+- **A calmer sidebar.** The current page is a soft grey row instead of a blue bar, counts are plain numbers, and open groups like People and Money are a simple indented list instead of a boxed panel.
+- **A simpler What's new window.** The search box and type filters are gone. Pick a release on the left and read it on the right, and use the arrow keys to move between releases.
+- **Pages settle faster.** Cards and progress bars now finish their entrance animation in about half the time, and moving between pages no longer slides the whole page and then each card again.
+- **Easier on a phone.** In What's new, the releases become a row of tabs across the top of the window.
+
 ## [1.69.0] "Wrentit" — 2026-11-05 · unread badges, a livelier Home, and a Pintu who reacts to your password
 
 > In short: the sidebar now counts what you have not read yet, ticket and error lists have easy select and mark-as-read, Home gains approvals, a team board, an error pulse and recent activity, and the sign-in mascot reacts when you hide or show your password.

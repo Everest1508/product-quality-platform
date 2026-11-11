@@ -1,0 +1,18 @@
+{% load component_tags %}{% comment %}The company-wide links, the same for everyone. Included by core/_sidebar.html.{% endcomment %}
+<nav class="nav-section" aria-label="Main">
+  <div class="nav-label">Workspace</div>
+  {% nav_item "Home" "house" "dashboards:index" match="index" %}
+  {% nav_item "Projects" "package" "products:project_board" match="product_list product_create project_board project_new" %}
+  {% nav_item "Tickets" "ticket" "tickets:ticket_board" match="ticket_board ticket_kanban ticket_list ticket_create ticket_detail ticket_edit" badge=nav_open_tickets %}
+  {% nav_item "Errors" "triangle-alert" "errors:error_list" match="error_list error_detail error_create" badge=nav_open_errors %}
+  {% nav_item "Feedback" "headset" "feedback:cs_hub" match="cs_hub survey_list survey_create survey_detail survey_toggle survey_delete" %}
+  {% nav_item "Notifications" "bell" "notifications:list" match="notifications:list" live_unread=True badge=nav_unread_notifications %}
+  {% nav_fold "My work" "briefcase" "pqWorkFold" %}
+    {% nav_item "Attendance" "clock" "attendance:my_attendance" match="my_attendance punch" %}
+    {% nav_item "Leave" "plane" "leave:my_leave" match="my_leave apply" %}
+    {% nav_item "Calendar" "calendar-days" "leave:calendar" match="calendar" %}
+    {% nav_item "DSR" "file-text" "dsr:dsr_sheet" match="dsr_sheet dsr_add dsr_update" %}
+    {% nav_item "Payslips" "banknote" "payroll:my_payslips" match="my_payslips my_payslip" %}
+  {% endnav_fold %}
+  {% nav_item "Reports" "chart-column" "dashboards:reports" match="reports" %}
+</nav>

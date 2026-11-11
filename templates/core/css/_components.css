@@ -502,11 +502,6 @@ tr.kbd-active{background:var(--accent-soft);}
 .tw-cell.is-none .tw-dash.is-pending{color:var(--muted);opacity:1;}
 
 /* Theme switch in the account menu: three icon buttons, the current one raised. */
-.theme-switch{display:flex;gap:2px;margin:4px 6px 6px;padding:3px;background:var(--panel);border-radius:var(--radius);}
-.theme-switch button{flex:1;display:grid;place-items:center;height:28px;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:background .2s,color .2s,box-shadow .2s;}
-.theme-switch button:hover{color:var(--text);}
-.theme-switch button.is-on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);}
-.theme-switch .side-menu-ic{width:15px;height:15px;margin:0;}
 
 /* ───────── Shared building blocks of the new look ───────── */
 .pg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
@@ -580,7 +575,6 @@ dialog.dlg[open]{animation:dlgIn .22s cubic-bezier(.22,1,.36,1);}
 .lrow.t-green{--tone:var(--green)}.lrow.t-orange{--tone:var(--orange)}.lrow.t-red{--tone:var(--red)}.lrow.t-blue{--tone:var(--blue)}.lrow.t-off{--tone:var(--border-strong)}
 .lmark{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--navy-2);color:#fff;font-weight:650;font-size:15px;}
 .lmark-ic{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
-html.dark .lmark{background:var(--panel);color:var(--text);}
 .lmain{min-width:0;}
 .lt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px;font-weight:600;}
 .lt a:hover{text-decoration:underline;}
@@ -606,63 +600,6 @@ html.dark .lmark{background:var(--panel);color:var(--text);}
 }
 .alert-bar.is-warn{border-color:color-mix(in srgb,var(--orange) 40%,transparent);background:var(--orange-bg);}
 
-/* ───────── What's new: release list on the left, the chosen release on the right ───────── */
-dialog.cl{overflow:hidden;width:min(1080px,calc(100vw - 32px));max-width:none;height:min(86vh,780px);display:none;flex-direction:column;}
-dialog.cl[open]{display:flex;animation:clIn .4s cubic-bezier(.22,1,.36,1);}
-dialog.cl.is-closing{animation:clOut .2s ease-in forwards;}
-@keyframes clIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes clOut{from{opacity:1}to{opacity:0;transform:translateY(8px) scale(.98)}}
-.cl-head{position:relative;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 64px 16px 24px;border-bottom:1px solid var(--border);}
-.cl-head h2{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:650;letter-spacing:-.01em;}
-.cl-spark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);}
-.cl-spark .ic{width:18px;height:18px;}
-.cl-ver{color:var(--accent);}
-.cl-head p{flex:1;min-width:0;font-size:14px;color:var(--muted);}
-.icon-btn.cl-x{position:static;}
-.cl-tools{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px 24px;border-bottom:1px solid var(--border);}
-.cl-chips{display:flex;flex-wrap:wrap;gap:6px;}
-.cl-chip{border:1px solid var(--border);background:transparent;border-radius:99px;padding:5px 13px;font-size:13.5px;font-weight:500;color:var(--muted);transition:background .15s,color .15s,border-color .15s;}
-.cl-chip i{font-style:normal;opacity:.7;margin-left:4px;}
-.cl-chip:hover{color:var(--text);border-color:var(--border-strong);}
-.cl-chip.is-on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
-.cl-split{flex:1;min-height:0;display:grid;grid-template-columns:260px minmax(0,1fr);}
-.cl-rail{overflow-y:auto;padding:10px;border-right:1px solid var(--border);background:color-mix(in srgb,var(--panel) 55%,transparent);display:flex;flex-direction:column;gap:2px;}
-.cl-rel{display:grid;gap:1px;text-align:left;padding:9px 12px;border:0;border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;border-left:3px solid transparent;}
-.cl-rel:hover{background:var(--panel);}
-.cl-rel.is-on{background:var(--surface);box-shadow:var(--shadow-sm);border-left-color:var(--accent);}
-.cl-rel b{font-size:14.5px;display:flex;align-items:center;gap:8px;}
-.cl-rel b em{font-style:normal;font-weight:500;font-size:12.5px;color:var(--muted);}
-.cl-rel span{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;}
-.cl-pane{overflow-y:auto;padding:24px 32px 32px;}
-.cl-note{text-align:center;padding:40px 0;font-size:14px;color:var(--muted);}
-.cl-pane-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.cl-pane-head h3{font-size:26px;font-weight:700;letter-spacing:-.02em;}
-.cl-date{font-size:13.5px;color:var(--muted);margin-left:auto;}
-.cl-title{margin-top:4px;font-size:16px;color:var(--text);}
-.cl-summary{margin:16px 0 4px;padding:12px 16px;border-radius:var(--radius);background:var(--accent-soft);border:1px solid var(--accent-line);font-size:14.5px;line-height:1.6;}
-.cl-sec{display:flex;align-items:center;gap:8px;margin:26px 0 6px;font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
-.cl-sec::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--muted-2);}
-.cl-sec i{font-style:normal;font-weight:500;opacity:.7;letter-spacing:0;}
-.cl-sec.cl-k-new::before{background:var(--green)}.cl-sec.cl-k-better::before{background:var(--blue)}.cl-sec.cl-k-fixed::before{background:var(--orange)}.cl-sec.cl-k-sec::before{background:var(--red)}
-.cl-pane ul{list-style:none;display:grid;}
-.cl-pane li{padding:11px 0;border-top:1px solid var(--border);font-size:14.5px;line-height:1.6;color:var(--muted);}
-.cl-pane li:first-child{border-top:0;}
-.cl-pane li strong{display:block;color:var(--text);font-weight:650;font-size:15px;}
-.cl-pane li code{padding:1px 6px;border-radius:4px;background:var(--panel);font-size:13px;}
-.cl-pane li a{color:var(--accent);text-decoration:underline;}
-@media (max-width:760px){
-  dialog.cl{height:min(92dvh,820px);}
-  .cl-head{padding:14px 56px 12px 16px;}.cl-tools{padding:10px 16px;}
-  .cl-split{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);}
-  .cl-rail{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--border);padding:8px 10px;gap:6px;}
-  .cl-rel{flex:0 0 auto;border-left:0;border-bottom:3px solid transparent;padding:7px 12px;}
-  .cl-rel.is-on{border-bottom-color:var(--accent);}
-  .cl-rel span{display:none;}
-  .cl-pane{padding:18px 16px 28px;}
-  .cl-pane-head h3{font-size:22px;}
-}
-
-@media (prefers-reduced-motion:reduce){dialog.cl[open],dialog.cl.is-closing{animation:none}}
 
 /* Late arrivals on a payslip: day, check-in, minutes late, cost. */
 .late-tbl{width:100%;border-collapse:collapse;font-size:13.5px;}
@@ -703,7 +640,8 @@ dialog.calc{width:min(960px,calc(100vw - 32px));max-width:none;}
   .sidebar{view-transition-name:pq-sidebar;}
   .topbar{view-transition-name:pq-topbar;}
   ::view-transition-old(root){animation:pqFadeOut var(--dur-2) ease both;}
-  ::view-transition-new(root){animation:pqRiseIn var(--dur-3) var(--ease-out) both;}
+  ::view-transition-new(root){animation:pqFadeIn var(--dur-2) ease both;}
+  @keyframes pqFadeIn{from{opacity:0}}
   @keyframes pqFadeOut{to{opacity:0}}
   @keyframes pqRiseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   @keyframes pqPop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
@@ -712,14 +650,14 @@ dialog.calc{width:min(960px,calc(100vw - 32px));max-width:none;}
 
   /* Cards and rows rise in one after another (the first twelve), so a page assembles instead of appearing. */
   :is(.hm-home>*,.hm-home .hm-card,.ledger>.lrow,.pj-cards>.pj-card,.pj-journey>.pj-row,.pj-formwrap>*,.pj-sections>*,.pj-feed .pj-entry,.pj-side>*,.dsr-notices,.dsr-today,.acc){
-    animation:pqRiseIn .45s var(--ease-out) both;
+    animation:pqRiseIn .28s var(--ease-out) both;
   }
-  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(2){animation-delay:40ms;}
-  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(3){animation-delay:80ms;}
-  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(4){animation-delay:120ms;}
-  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(5){animation-delay:160ms;}
-  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(6){animation-delay:200ms;}
-  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(n+7){animation-delay:240ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(2){animation-delay:25ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(3){animation-delay:50ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(4){animation-delay:75ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(5){animation-delay:100ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(6){animation-delay:125ms;}
+  :is(.hm-home,.ledger,.pj-cards,.pj-journey,.pj-formwrap,.pj-sections,.pj-feed,.pj-side)>:nth-child(n+7){animation-delay:150ms;}
 
   /* Things you can press respond. */
   .btn,.icon-btn,.seg a,.seg button,.side-item,.switch-btn,.chip{transition:background var(--dur-1) ease,border-color var(--dur-1) ease,color var(--dur-1) ease,box-shadow var(--dur-2) ease,transform var(--dur-1) ease;}
@@ -738,8 +676,8 @@ dialog.calc{width:min(960px,calc(100vw - 32px));max-width:none;}
   .mention-list{transform-origin:bottom;}
 
   /* Bars grow to their value when they appear. */
-  :is(.hm-meter,.dsr-today-bar) i{animation:pqGrowX .9s var(--ease-out) .15s both;}
-  .hm-bar-track i{animation:pqGrowY .8s var(--ease-out) .15s both;}
+  :is(.hm-meter,.dsr-today-bar) i{animation:pqGrowX .5s var(--ease-out) .1s both;}
+  .hm-bar-track i{animation:pqGrowY .5s var(--ease-out) .1s both;}
 
   /* Content swapped in by htmx fades in instead of snapping. */
   .htmx-added{animation:pqRiseIn .3s var(--ease-out) both;}

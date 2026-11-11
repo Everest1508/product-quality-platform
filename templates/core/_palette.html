@@ -60,7 +60,6 @@ const ACTIONS = [
   { title: 'Request leave', subtitle: '', words: 'time off holiday vacation', url: '{% url "leave:apply" %}' },
   { title: 'Ask for an attendance correction', subtitle: '', words: 'forgot punch fix', url: '{% url "attendance:correction_request" %}' },
   { title: 'My profile and settings', subtitle: 'g u', words: 'account notifications', url: '{% url "accounts:profile" %}' },
-  { title: 'Switch light and dark', subtitle: 't', words: 'theme dark mode light', url: '#', run: () => window.pqTheme.toggle() },
   { title: 'Keyboard shortcuts', subtitle: '?', words: 'keys help', url: '#', run: () => document.getElementById('kbd-help').showModal() },
 ];
 function palette() {

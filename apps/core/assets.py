@@ -11,12 +11,14 @@ shows on the next reload.
 import gzip
 import hashlib
 
+from django.http import Http404
+
 from django.conf import settings
 from django.http import HttpResponse
 
 CSS_DIR = settings.BASE_DIR / "templates" / "core" / "css"
 LEGACY_FILES = ("_tokens.css", "_app.css", "_components.css", "_pages.css", "_responsive.css")
-UI_FILES = ("_ui.css",)
+UI_FILES = ("_ui.css", "_sidebar.css", "_changelog.css")
 CSS_FILES = LEGACY_FILES + UI_FILES
 # The older files go into ONE layer, so they cascade exactly as they did before layers existed.
 # (Giving each file its own layer was tried and changed the page: a generic rule in a later file
@@ -50,5 +52,40 @@ def css(request, version):
         resp["Content-Encoding"] = "gzip"
     resp["Vary"] = "Accept-Encoding"
     # A stale URL (an old tab after a deploy) still gets the current CSS, just not cached for a year.
+    resp["Cache-Control"] = "public, max-age=31536000, immutable" if version == b["hash"] else "no-cache"
+    return resp
+
+
+# ── Component scripts ──
+# A component's behaviour lives in its own file, templates/core/js/<name>.js, served from
+# /assets/<name>.<hash>.js with the same cache rules as the stylesheet. Use {% component_js 'name' %}.
+JS_DIR = settings.BASE_DIR / "templates" / "core" / "js"
+_js_cache = {}
+
+
+def _script(name):
+    path = JS_DIR / f"{name}.js"
+    if not path.is_file():
+        raise Http404
+    stamp = path.stat().st_mtime_ns
+    hit = _js_cache.get(name)
+    if not hit or hit["stamp"] != stamp:
+        raw = path.read_bytes()
+        hit = _js_cache[name] = {"stamp": stamp, "raw": raw, "gz": gzip.compress(raw, 9),
+                                 "hash": hashlib.sha1(raw).hexdigest()[:10]}
+    return hit
+
+
+def js_url(name):
+    return f"/assets/{name}.{_script(name)['hash']}.js"
+
+
+def js(request, name, version):
+    b = _script(name)
+    wants_gzip = "gzip" in request.headers.get("Accept-Encoding", "")
+    resp = HttpResponse(b["gz"] if wants_gzip else b["raw"], content_type="text/javascript; charset=utf-8")
+    if wants_gzip:
+        resp["Content-Encoding"] = "gzip"
+    resp["Vary"] = "Accept-Encoding"
     resp["Cache-Control"] = "public, max-age=31536000, immutable" if version == b["hash"] else "no-cache"
     return resp

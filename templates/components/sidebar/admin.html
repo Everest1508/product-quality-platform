@@ -1,0 +1,21 @@
+{% load component_tags %}{% comment %}Owner and admin links, in three folds. Included by core/_sidebar.html.{% endcomment %}
+<div class="nav-label">Admin</div>
+{% nav_fold "People" "users" "pqFoldPeople" admin=True aria="Admin: People" badge=nav_pending_corrections %}
+  {% nav_item "Team attendance" "clock" "attendance:team_attendance" match="team_attendance" %}
+  {% nav_item "Timesheet" "clipboard-list" "attendance:timesheet" match="timesheet timesheet_detail" %}
+  {% nav_item "Corrections" "history" "attendance:corrections" match="corrections" badge=nav_pending_corrections %}
+  {% nav_item "Leave approvals" "circle-check" "leave:approvals" match="approvals approval_detail" %}
+  {% nav_item "Leave Policy" "sliders-horizontal" "leave:policies" match="policies policy_add policy_update" %}
+  {% nav_item "Team" "user" "accounts:team_list" match="team_list team_invite team_edit" %}
+{% endnav_fold %}
+{% nav_fold "Money" "coins" "pqFoldMoney" admin=True aria="Admin: Money" %}
+  {% nav_item "Payroll" "landmark" "payroll:run_list" match="run_list preview run_detail payslip holidays holiday_delete" %}
+  {% nav_item "Payroll setup" "percent" "payroll:profiles" match="profiles profile_edit" %}
+  {% nav_item "Expenses" "wallet" "expenses:expense_list" match="expense_list expense_edit" %}
+  {% nav_item "Project costing" "banknote" "costing:estimate_list" match="estimate_list estimate_new estimate_edit estimate_detail" %}
+{% endnav_fold %}
+{% nav_fold "System" "settings" "pqFoldSystem" admin=True aria="Admin: System" %}
+  {% nav_item "Website leads" "inbox" "leads:lead_list" match="lead_list webhook_rotate lead_detail lead_log lead_status lead_convert" badge=nav_new_leads %}
+  {% nav_item "Audit log" "eye" "dashboards:audit_log" match="audit_log" %}
+  {% nav_item "Automation" "sparkles" "automation:rule_list" match="rule_list rule_create rule_edit rule_delete rule_toggle" %}
+{% endnav_fold %}

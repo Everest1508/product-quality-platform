@@ -7,7 +7,7 @@ from django.urls import include, path
 from apps.core import befui
 from django.views.generic import RedirectView
 
-from apps.core.assets import css as app_css
+from apps.core.assets import css as app_css, js as app_js
 from apps.core.brand import brand_file, favicon_ico
 from apps.core.search import SearchView
 from apps.core.pwa import manifest, offline, service_worker
@@ -20,6 +20,7 @@ urlpatterns = [
     path("offline/", offline),
     path("brand/<str:name>", brand_file),
     path("assets/app.<str:version>.css", app_css),
+    path("assets/<slug:name>.<str:version>.js", app_js),
     path("admin/", admin.site.urls),
     path("befui/<path:name>", befui.asset),
     path("api/v1/leads/<str:token>/", LeadWebhookView.as_view(), name="lead_webhook"),

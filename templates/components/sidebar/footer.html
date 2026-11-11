@@ -1,0 +1,20 @@
+{% load icon_tags %}{% comment %}What's new, install-app and collapse. Included by core/_sidebar.html.{% endcomment %}
+  <div class="side-foot">
+    <button type="button" class="side-item side-version" data-changelog-open data-label="What's new in v{{ app_version }}"
+            aria-haspopup="dialog" aria-label="What's new in v{{ app_version }}">
+      {% icon 'sparkles' %}
+      <span class="side-label">What's new</span>
+      <span class="side-badge">v{{ app_version }}</span>
+    </button>
+
+    <button type="button" class="side-item" data-pwa-install hidden>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      <span class="side-label">Install app</span>
+    </button>
+
+    <button type="button" class="side-collapse" data-sidebar-toggle aria-label="Collapse sidebar" data-label="Expand sidebar">
+      {% icon 'chevron-left' %}
+      <span class="side-label">Collapse</span>
+    </button>
+
+  </div>

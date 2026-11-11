@@ -1,0 +1,44 @@
+/* Sidebar. Markup: templates/core/_sidebar.html and templates/components/sidebar/ ({% nav_item %}, {% nav_fold %}).
+ * Joined into the `ui` layer by apps/core/assets.py, so these rules beat the older sidebar rules in _app.css and
+ * _pages.css. Anything that changes spacing or boxes is limited to the expanded sidebar: the older collapsed-rail
+ * rules turn section labels into divider lines and hide group lists, and must keep doing so. */
+
+/* ── Sidebar, minimal ──
+ * Fewer boxes: no bordered badges, no tinted product panel, no blue active bar. The current page is a
+ * soft grey row with darker text; icons are light until they matter. Group folds indent under a hairline. */
+html:not(.sidebar-collapsed) .sidebar .nav-label{padding:var(--space-5) var(--space-3) var(--space-1);font-size:11px;letter-spacing:.08em;color:var(--muted-2);}
+.sidebar .side-item{min-height:34px;padding:0 var(--space-3);border-radius:var(--radius);color:var(--muted-strong);font-size:var(--fs-base);gap:var(--space-3);}
+.sidebar .side-item .ic{width:18px;height:18px;stroke-width:1.6;color:var(--muted-2);transition:color var(--dur-1);}
+.sidebar .side-item:hover{background:var(--panel);color:var(--text);}
+.sidebar .side-item:hover .ic{color:var(--muted-strong);}
+.sidebar .side-item.active{background:var(--panel);color:var(--text);font-weight:600;}
+.sidebar .side-item.active::before{display:none;}
+.sidebar .side-item.active .ic{color:var(--accent);}
+.sidebar .side-badge{background:none;border:0;padding:0;min-width:0;font-size:var(--fs-xs);font-weight:500;color:var(--muted-2);}
+.sidebar .side-item.active .side-badge{background:none;color:var(--muted);}
+.sidebar .side-item[data-label="Notifications"] .side-badge{color:var(--accent);font-weight:700;}
+.sidebar .fold-caret{width:14px;height:14px;opacity:.6;}
+html:not(.sidebar-collapsed) .sidebar .fold-inner{margin-left:calc(var(--space-3) + 9px);padding-left:var(--space-2);border-left:1px solid var(--border);}
+html:not(.sidebar-collapsed) .sidebar .side-context{background:none;border:0;border-top:1px solid var(--border);border-radius:0;margin:var(--space-3) 0 0;padding:var(--space-3) 0 0;}
+.sidebar .side-context .side-item:hover{background:var(--panel);}
+.sidebar .switch-btn{border:0;background:var(--panel);border-radius:var(--radius);font-weight:600;}
+.sidebar .switch-btn:hover{background:var(--slate-200);}
+.sidebar .side-foot .side-item,.sidebar .side-collapse{color:var(--muted);font-size:var(--fs-sm);}
+.sidebar .side-version .side-badge{color:var(--muted-2);}
+/* Folded groups: the group icon is a plain icon, and an open group is a flat indented list, not a panel. */
+.sidebar .nav-fold .fold-head>.ic:first-child,
+.sidebar .nav-fold.is-open .fold-head>.ic:first-child,
+.sidebar .nav-fold:has(.fold-inner .side-item.active) .fold-head>.ic:first-child{width:18px;height:18px;padding:0;border-radius:0;background:none;color:var(--muted-2);}
+.sidebar .nav-fold:has(.fold-inner .side-item.active) .fold-head>.ic:first-child{color:var(--accent);}
+.sidebar .nav-fold:has(.fold-inner .side-item.active) .fold-head{color:var(--text);font-weight:600;}
+html:not(.sidebar-collapsed) .sidebar .nav-fold.is-open{background:none;border:0;border-radius:0;padding:0;margin:0;}
+html:not(.sidebar-collapsed) .sidebar .nav-fold .fold-inner{margin:0 0 var(--space-1) calc(var(--space-3) + 9px);padding-left:var(--space-2);border-left:1px solid var(--border);}
+html:not(.sidebar-collapsed) .sidebar .nav-fold .fold-inner .side-item{padding:0 var(--space-3);font-size:var(--fs-sm);}
+.sidebar .nav-fold .fold-inner .side-item .ic{width:16px;height:16px;}
+.sidebar .nav-fold .fold-inner .side-item:hover{background:var(--panel);}
+.sidebar .nav-fold.is-open .fold-inner .side-item.active{background:var(--panel);box-shadow:none;color:var(--text);}
+/* Collapsed rail: a waiting count is still a dot on the icon. */
+@media (min-width:861px){
+  html.sidebar-collapsed .sidebar .side-item .side-badge{width:8px;height:8px;padding:0;font-size:0;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-sizing:content-box;}
+  html.sidebar-collapsed .sidebar .side-version .side-badge{display:none;}
+}

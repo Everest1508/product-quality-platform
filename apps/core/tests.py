@@ -434,9 +434,10 @@ class VersionFooterUiTest(TestCase):
     def test_dialog_is_present_and_reads_from_the_api(self):
         self.client.force_login(self.user)
         body = self.client.get("/tickets/").content.decode()
+        from apps.core import assets
+
         self.assertIn('id="pq-changelog"', body)
-        self.assertIn("/api/v1/changelog/", body)
-        self.assertIn('role="dialog"', body)
+        self.assertIn("/api/v1/changelog/", self.client.get(assets.js_url("changelog")).content.decode())
 
     def test_dialog_sits_outside_the_clipped_sidebar(self):
         """.sidebar is overflow-x:hidden; a dialog inside it would be clipped."""
@@ -446,9 +447,13 @@ class VersionFooterUiTest(TestCase):
 
     def test_trigger_dispatches_the_event_the_dialog_listens_for(self):
         self.client.force_login(self.user)
+        from apps.core import assets
+
         body = self.client.get("/tickets/").content.decode()
-        self.assertIn("[data-changelog-open]", body)
-        self.assertIn("pq:changelog", body)
+        self.assertIn("data-changelog-open", body)
+        sidebar = self.client.get(assets.js_url("sidebar")).content.decode()
+        self.assertIn("[data-changelog-open]", sidebar)
+        self.assertIn("pq:changelog", sidebar)
 
     def test_logged_out_pages_have_no_version_footer(self):
         body = self.client.get("/login/").content.decode()
@@ -532,7 +537,11 @@ class PwaTests(TestCase):
         r = self.client.get("/login/")
         self.assertContains(r, 'rel="manifest"')
         self.assertContains(r, "viewport-fit=cover")
-        self.assertContains(r, "serviceWorker.register('/sw.js'")
+        from apps.core import assets
+
+        # The registration lives in its own script file, which the page links.
+        self.assertContains(r, f'src="{assets.js_url("pwa")}"')
+        self.assertIn("serviceWorker.register('/sw.js'", self.client.get(assets.js_url("pwa")).content.decode())
 
 
 class TemplateCommentTest(TestCase):
@@ -680,12 +689,19 @@ class ChangelogDialogTest(TestCase):
         Membership.objects.create(user=self.user, company=company, role="owner")
         self.client.force_login(self.user)
 
-    def test_the_whats_new_window_has_search_type_filters_a_release_list_and_shows_once(self):
+    def test_the_whats_new_window_is_a_release_list_and_a_pane_and_shows_once(self):
+        from apps.core import assets
+
         body = self.client.get("/tickets/").content.decode()
         self.assertIn('id="pq-changelog"', body)
-        for marker in ('id="cl-search"', 'id="cl-chips"', 'id="cl-rail"', 'id="cl-pane"', "pq:seen-version"):
+        for marker in ('id="cl-rail"', 'id="cl-pane"'):
             self.assertIn(marker, body)
+        for gone in ('id="cl-search"', 'id="cl-chips"'):
+            self.assertNotIn(gone, body)
         self.assertIn(f'data-version="{settings.APP_VERSION}"', body)
+        # Its behaviour is its own file, linked from the page, not inline script.
+        self.assertIn(f'src="{assets.js_url("changelog")}"', body)
+        self.assertIn("pq:seen-version", self.client.get(assets.js_url("changelog")).content.decode())
 
 
 class ErrorPagesTest(TestCase):

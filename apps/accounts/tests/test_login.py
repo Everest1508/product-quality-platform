@@ -129,13 +129,14 @@ class LoginPageMarkupTest(TestCase):
         css = self.client.get(assets.css_url()).content.decode()
         self.assertRegex(
             css,
-            r"\.pw-toggle \.ic\{[^}]*\bwidth:",
+            r"\.pw-toggle \.ic\s*\{[^}]*\bwidth:",
             msg="no CSS size for the glyph inside .pw-toggle; it renders 300x150",
         )
 
     def test_every_glyph_comes_from_the_vendored_icon_set(self):
         """No hand-written <svg>; each one is render_icon's `class="ic"`."""
-        self.assertNotIn("<svg", self.html.replace('<svg class="ic"', ""))
+        # `class="ic ..."` covers render_icon and the hand-drawn pixel eye (class="ic pintu-eye").
+        self.assertNotIn("<svg", re.sub(r'<svg class="ic[ "]', "", self.html))
 
     def test_every_auth_class_used_is_actually_styled(self):
         """Every `auth-*` class an auth template uses has a rule in base.html.
@@ -185,7 +186,7 @@ class LoginPageMarkupTest(TestCase):
         from apps.core import assets
 
         css = self.client.get(assets.css_url()).content.decode()
-        self.assertIn(".auth-brand{display:none;}", css)
+        self.assertRegex(css, r"\.auth-brand\s*\{\s*display:\s*none;?\s*\}")
 
 
 class LoginErrorStateTest(TestCase):

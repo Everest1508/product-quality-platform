@@ -1,0 +1,6 @@
+{% load icon_tags %}<a href="{{ href }}" data-label="{{ label }}"{% if active %} aria-current="page"{% endif %}
+   class="side-item{% if active %} active{% endif %}">
+  {% icon icon %} <span class="side-label">{{ label }}</span>
+  {% if live_unread %}<span class="side-badge" x-show="$store.notifications.unread > 0" x-text="$store.notifications.unread"{% if not badge %} style="display:none;"{% endif %}>{{ badge|default:"" }}</span>
+  {% elif badge %}<span class="side-badge">{{ badge }}</span>{% endif %}
+</a>
