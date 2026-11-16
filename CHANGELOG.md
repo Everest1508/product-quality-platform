@@ -10,6 +10,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.72.0] "Ani" — 2026-11-16 · 27 more reports
+
+> In short: the Reports page grows from 26 to 53 reports, adding ticket speed and quality, error quality and release checks, lead follow-up, attendance and leave patterns, pay deductions and quote margins.
+
+### New
+
+- **Ticket speed and quality.** How long tickets take to resolve, where they wait between statuses, how fast new tickets get a first reply, the mix of bugs, features and questions, and which tickets were reopened.
+- **Error quality and releases.** Errors by browser, operating system, device and environment, error hotspots by page, errors that came back, how fast errors are triaged and fixed, errors nobody has a ticket for, and a release quality scorecard.
+- **Lead follow-up.** Leads that have been waiting too long, and what leads ask for and how many convert.
+- **People and time.** Overtime and short days, absence without leave, hours punched against hours logged in the DSR, unpaid leave cost, leave approval speed, where the time goes by type of work, DSR data quality and blocked work.
+- **Money and access.** Pay deductions by person, salary revisions, expense exceptions, quote margins against target, API key hygiene and a who-can-see-which-project grid.
+
+## [1.71.0] "Zosterops" — 2026-11-16 · a Reports page with Excel and CSV downloads
+
+> In short: there is a new Reports page that lists 26 reports on tickets, errors, customers, projects, people and money, each with a period and project filter and a one-click Excel or CSV download named after the report and the dates it covers.
+
+### New
+
+- **A Reports page.** Open Reports in the sidebar to see every report you are allowed to use, search them, and jump straight to one. The old summary is still there as Activity summary.
+- **Download as Excel or CSV.** Every report has both buttons. The file is named after your company, the report and the period, for example `Acme-Corp_Ticket-ageing_as-of-2026-11-16.xlsx`, and the Excel file has a second sheet saying what the report is, who made it and when.
+- **Ticket reports.** A ticket register, ticket ageing, overdue and due-soon tickets, created versus resolved each week, and unassigned or stale tickets.
+- **Error and customer reports.** Error trend by severity, top errors by impact, the untriaged error queue, survey scores by month, in-app feedback ratings, the lead funnel and how fast leads get a first reply.
+- **Project, people and money reports.** A project portfolio, hours by project and person, daily status report compliance, lateness and penalties, days with no check-out, manual attendance edits, a leave balance register, expenses by month, money owed for expenses, payroll cost by cycle, payroll change since last cycle and a payroll completeness check.
+- **Audit reports.** The full audit log and the access and role changes, ready to hand to an auditor.
+
+### Better
+
+- **Owners and admins only.** The Reports page, its downloads and its search shortcut are only for owners and admins, so nobody else can open or download them.
+
 ## [1.70.0] "Yuhina" — 2026-11-11 · a calmer sidebar and a simpler What's new window
 
 > In short: the app is light only, the sidebar is quieter and easier to scan, the What's new window drops its search and filters so it reads like a plain list of releases, and pages settle in a little faster.

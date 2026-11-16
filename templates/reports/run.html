@@ -1,0 +1,86 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}{{ rep.title }} — Reports — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="rp-scope">
+  <div class="pg-head">
+    <div>
+      <nav class="breadcrumbs" aria-label="Breadcrumbs">
+        <a href="{% url 'reports:hub' %}">Reports</a><span class="sep">/</span><span class="current">{{ group_label }}</span>
+      </nav>
+      <h1>{{ rep.title }}</h1>
+      <p class="sub">{{ rep.blurb }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="btn" hx-boost="false" href="?{{ query }}{% if query %}&{% endif %}export=csv">{% icon 'bef:download' 'ic' %}Download CSV</a>
+      <a class="btn btn-primary" hx-boost="false" href="?{{ query }}{% if query %}&{% endif %}export=xlsx">{% icon 'bef:file-spreadsheet' 'ic' %}Download Excel</a>
+    </div>
+  </div>
+
+  {% if rep.filters %}
+  <form method="get" class="card rp-filters" hx-boost="false">
+    {% if not rep.snapshot %}
+    <div class="rp-field">
+      <label for="rp-period">Period</label>
+      <select id="rp-period" name="period" class="form-input" onchange="if(this.value){this.form.start.value='';this.form.end.value='';}">
+        <option value="">Custom dates</option>
+        {% for k, label in periods %}<option value="{{ k }}" {% if preset == k %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rp-field"><label for="rp-start">From</label><input id="rp-start" type=date name="start" class="form-input" value="{{ ctx.start|date:'Y-m-d' }}" onchange="this.form.period.value=''"></div>
+    <div class="rp-field"><label for="rp-end">To</label><input id="rp-end" type=date name="end" class="form-input" value="{{ ctx.end|date:'Y-m-d' }}" onchange="this.form.period.value=''"></div>
+    {% endif %}
+    {% if 'product' in rep.filters %}
+    <div class="rp-field">
+      <label for="rp-product">Project</label>
+      <select id="rp-product" name="product" class="form-input">
+        <option value="">All projects</option>
+        {% for p in products %}<option value="{{ p.pk }}" {% if ctx.product.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% if 'person' in rep.filters and people %}
+    <div class="rp-field">
+      <label for="rp-person">Person</label>
+      <select id="rp-person" name="person" class="form-input">
+        <option value="">Everyone</option>
+        {% for u in people %}<option value="{{ u.pk }}" {% if ctx.person.pk == u.pk %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="rp-field rp-apply"><button type="submit" class="btn btn-primary">{% icon 'filter' 'ic' %}Show report</button></div>
+  </form>
+  {% endif %}
+
+  {% if result.kpis %}
+  <div class="rp-kpis">
+    {% for label, value in result.kpis %}<div class="rp-kpi"><span class="rp-k">{{ label }}</span><span class="rp-v">{{ value }}</span></div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card-flush">
+    {% if rows %}
+    <div class="table-scroll">
+      <table class="tbl rp-tbl">
+        <thead><tr>{% for c in result.columns %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in rows %}<tr>{% for text, num in row %}<td{% if num %} class="r"{% endif %}>{{ text }}</td>{% endfor %}</tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="rp-foot">
+      {% if total > limit %}Showing the first {{ limit }} of {{ total }} rows. Download to get all of them.{% else %}{{ total }} row{{ total|pluralize }}.{% endif %}
+      {% if result.note %}<span class="rp-note">{{ result.note }}</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      {% icon rep.icon 'ex-empty-ic' %}
+      <strong>Nothing to show</strong>
+      <p>No data matches these choices. Try a longer period or another project.</p>{% if result.note %}<p class="rp-note">{{ result.note }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

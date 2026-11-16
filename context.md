@@ -1104,3 +1104,16 @@ decided what and strike the item** rather than deleting it.
 - What's new is `{% changelog_modal %}`: markup `components/changelog/modal.html`, behaviour `js/changelog.js`, style `css/_changelog.css`. The search box and type filters were removed on purpose. The pane must not carry `aria-live` (a test keeps the whole page free of it, for the attendance countdown).
 - `base.html` went from about 1,180 to 180 lines: its pure-JS inline blocks are now `templates/core/js/<name>.js`, served at `/assets/<name>.<hash>.js` and linked with `{% component_js 'name' %}` as plain (not deferred) scripts, so execution order is unchanged. `ui-alpine` must stay sync so `alpine:init` is registered before Alpine starts. The keyboard-shortcuts and toast blocks stay inline because they use template tags.
 - Deliberately not changed: the three login-page tests now accept the hand-drawn pixel eye icons and the pretty-printed CSS; `test_signup_creates_user` still fails (the signup route is gone).
+
+## 2026-11-16 (Reports page, apps/reports)
+
+- New app `apps/reports`: a registry (`registry.py`, one decorated function per report returning `Result(columns, rows, kpis, note)`), exporters (`exports.py`: Excel via openpyxl, CSV via `core/csvx`, file named `Company_Report-name_period`), `/reports/` hub and `/reports/<key>/` page. 26 reports in `work.py`, `people.py`, `money.py`, `audit.py`, each mapped to an `RPT-nnn` id in `REPORTS_GAP_ANALYSIS.md`.
+- Access: ticket/error/project reports go through `accessible_*`; people and money reports are `admin=True` (owner/admin), hidden from the hub and 404 for others.
+- Added `openpyxl` to requirements. Sidebar: "Reports" now opens the hub; the old page is "Activity summary" (same URL `dashboards:reports`, shortcut `g r` unchanged).
+- Deliberately not built: the other ~73 reports in the gap analysis. Ones needing new fields (resolved_at, Estimate.product, Lead.source) wait for that data.
+
+## 2026-11-16 (Reports batch 2)
+
+- 27 more reports (53 in total) in `apps/reports/insights.py` (tickets, errors, leads), `workforce.py` (attendance, leave, DSR), `finance.py` (money, quotes, API keys, access grid). Same rules as batch 1: product data through `accessible_*`, people/money `admin=True`.
+- Duration reports (resolution time, time in status, error triage/fix, reopened) are rebuilt from `ActivityLog` status-change events, so tickets changed without a log row (SDK status endpoint) are missed until `resolved_at` is added (see REPORTS_GAP_ANALYSIS.md section F).
+- Still not built: reports needing new data (profitability, lead source, quote win/loss, statutory, login history, integration health) and the forecast/client-pack ones.

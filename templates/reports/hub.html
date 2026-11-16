@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}Reports — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="rp-scope" x-data="{ q: '', g: 'all' }">
+  <div class="pg-head">
+    <div>
+      <h1>Reports</h1>
+      <p class="sub">{{ total }} report{{ total|pluralize }} you can open. Pick one, choose a period, then download it as Excel or CSV.</p>
+    </div>
+    <div class="head-actions">
+      <a href="{% url 'dashboards:reports' %}" class="btn">{% icon 'chart-column' 'ic' %}Activity summary</a>
+    </div>
+  </div>
+
+  <div class="rp-bar">
+    <label class="co-search">{% icon 'search' 'ic' %}<input type="search" x-model="q" placeholder="Search reports…" aria-label="Search reports"></label>
+    <div class="seg" role="tablist" aria-label="Report groups">
+      <button type="button" :class="{ 'is-on': g === 'all' }" @click="g = 'all'">All</button>
+      {% for grp in groups %}<button type="button" :class="{ 'is-on': g === '{{ grp.key }}' }" @click="g = '{{ grp.key }}'">{{ grp.label }}</button>{% endfor %}
+    </div>
+  </div>
+
+  {% for grp in groups %}
+  <section class="rp-group" x-show="g === 'all' || g === '{{ grp.key }}'">
+    <h2 class="rp-group-title">{% icon grp.icon 'ic' %}{{ grp.label }}</h2>
+    <div class="rp-grid">
+      {% for r in grp.reports %}
+      <a class="rp-card" href="{% url 'reports:run' r.key %}"
+         x-show="!q || '{{ r.title|escapejs }} {{ r.blurb|escapejs }}'.toLowerCase().includes(q.toLowerCase())">
+        <span class="rp-ico">{% icon r.icon 'ic' %}</span>
+        <span class="rp-body">
+          <strong>{{ r.title }}</strong>
+          <span class="rp-blurb">{{ r.blurb }}</span>
+          <span class="rp-tags">
+            <span class="bdg bdg-outline">{% if r.snapshot %}Right now{% else %}Pick a period{% endif %}</span>
+          </span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% empty %}
+  <div class="card-flush"><div class="empty-state">
+    {% icon 'chart-column' 'ex-empty-ic' %}
+    <strong>No reports for your role yet</strong>
+    <p>Ask an owner or admin if you need one opened up.</p>
+  </div></div>
+  {% endfor %}
+</div>
+{% endblock %}
