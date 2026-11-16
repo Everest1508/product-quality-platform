@@ -1117,3 +1117,7 @@ decided what and strike the item** rather than deleting it.
 - 27 more reports (53 in total) in `apps/reports/insights.py` (tickets, errors, leads), `workforce.py` (attendance, leave, DSR), `finance.py` (money, quotes, API keys, access grid). Same rules as batch 1: product data through `accessible_*`, people/money `admin=True`.
 - Duration reports (resolution time, time in status, error triage/fix, reopened) are rebuilt from `ActivityLog` status-change events, so tickets changed without a log row (SDK status endpoint) are missed until `resolved_at` is added (see REPORTS_GAP_ANALYSIS.md section F).
 - Still not built: reports needing new data (profitability, lead source, quote win/loss, statutory, login history, integration health) and the forecast/client-pack ones.
+
+## 2026-11-16 (Reports hub redesign)
+
+- `/reports/` hub is now group list (left) + report rows (right) + one search; the report list is embedded with `json_script` and rendered by Alpine. "Recently opened" is per browser in localStorage (`pqRecentReports`), not stored on the server. Version 1.73.0 "Brolga".

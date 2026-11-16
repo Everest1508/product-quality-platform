@@ -40,14 +40,11 @@ def show(v):
 
 class HubView(CompanyAdminRequiredMixin, View):
     def get(self, request):
-        admin = request.company_role in ("owner", "admin")
-        mine = visible(admin)
-        groups = []
-        for key, label, icon in GROUPS:
-            items = sorted((r for r in mine if r.group == key), key=lambda r: r.title)
-            if items:
-                groups.append({"key": key, "label": label, "icon": icon, "reports": items})
-        return render(request, "reports/hub.html", {"groups": groups, "total": len(mine), "is_admin": admin})
+        labels = {k: l for k, l, _ in GROUPS}
+        mine = sorted(visible(True), key=lambda r: r.title)
+        items = [{"key": r.key, "title": r.title, "blurb": r.blurb, "group": r.group, "glabel": labels[r.group]} for r in mine]
+        groups = [{"key": k, "label": l, "count": sum(i["group"] == k for i in items)} for k, l, _ in GROUPS]
+        return render(request, "reports/hub.html", {"items": items, "groups": [g for g in groups if g["count"]], "total": len(items)})
 
 
 class RunView(CompanyAdminRequiredMixin, View):

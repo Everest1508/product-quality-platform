@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.73.0] "Brolga" — 2026-11-16 · a calmer Reports page
+
+> In short: the Reports page now has a group list on the left and the reports of the chosen group on the right, with one search box across all reports and a Recently opened list.
+
+### Better
+
+- **Pick a group, then a report.** Groups sit in a list on the left with a count each, and the reports of the selected group are listed on the right with what each one answers.
+- **Search every report at once.** Type in the search box to find a report by name or by what it answers, whichever group it is in.
+- **Recently opened.** The reports you opened last appear at the top of the list, and the page opens there when you have any.
+
 ## [1.72.0] "Ani" — 2026-11-16 · 27 more reports
 
 > In short: the Reports page grows from 26 to 53 reports, adding ticket speed and quality, error quality and release checks, lead follow-up, attendance and leave patterns, pay deductions and quote margins.

@@ -4,50 +4,63 @@
 {% block title %}Reports — PQ Platform{% endblock %}
 
 {% block content %}
-<div class="rp-scope" x-data="{ q: '', g: 'all' }">
-  <div class="pg-head">
-    <div>
-      <h1>Reports</h1>
-      <p class="sub">{{ total }} report{{ total|pluralize }} you can open. Pick one, choose a period, then download it as Excel or CSV.</p>
-    </div>
-    <div class="head-actions">
-      <a href="{% url 'dashboards:reports' %}" class="btn">{% icon 'chart-column' 'ic' %}Activity summary</a>
-    </div>
+{{ items|json_script:"rp-items" }}
+<div class="rp-scope" x-data="{
+  q: '', g: '', recent: [], items: JSON.parse(document.getElementById('rp-items').textContent),
+  init() {
+    try { this.recent = JSON.parse(localStorage.getItem('pqRecentReports') || '[]'); } catch (e) {}
+    this.recent = this.recent.filter(k => this.items.some(i => i.key === k));
+    this.g = this.recent.length ? 'recent' : '{{ groups.0.key }}';
+  },
+  open(k) {
+    try { localStorage.setItem('pqRecentReports', JSON.stringify([k].concat(this.recent.filter(x => x !== k)).slice(0, 5))); } catch (e) {}
+  },
+  get shown() {
+    const q = this.q.trim().toLowerCase();
+    if (q) return this.items.filter(i => (i.title + ' ' + i.blurb + ' ' + i.glabel).toLowerCase().includes(q));
+    if (this.g === 'recent') return this.recent.map(k => this.items.find(i => i.key === k));
+    return this.items.filter(i => i.group === this.g);
+  },
+  get heading() { return this.q.trim() ? 'Results' : (this.g === 'recent' ? 'Recently opened' : (document.querySelector('[data-g=' + this.g + ']') || {}).dataset.label); }
+}">
+  <div class="rp-hero">
+    <h1>Reports</h1>
+    <p class="sub">Pick a group, then a report. Every report can be downloaded as Excel or CSV.</p>
+    <a href="{% url 'dashboards:reports' %}" class="rp-hero-link">{% icon 'chart-column' 'ic' %}Activity summary</a>
   </div>
 
-  <div class="rp-bar">
-    <label class="co-search">{% icon 'search' 'ic' %}<input type="search" x-model="q" placeholder="Search reports…" aria-label="Search reports"></label>
-    <div class="seg" role="tablist" aria-label="Report groups">
-      <button type="button" :class="{ 'is-on': g === 'all' }" @click="g = 'all'">All</button>
-      {% for grp in groups %}<button type="button" :class="{ 'is-on': g === '{{ grp.key }}' }" @click="g = '{{ grp.key }}'">{{ grp.label }}</button>{% endfor %}
-    </div>
-  </div>
+  <label class="co-search rp-search">{% icon 'search' 'ic' %}<input type="search" x-model="q" placeholder="Search all {{ total }} reports" aria-label="Search all reports"></label>
 
-  {% for grp in groups %}
-  <section class="rp-group" x-show="g === 'all' || g === '{{ grp.key }}'">
-    <h2 class="rp-group-title">{% icon grp.icon 'ic' %}{{ grp.label }}</h2>
-    <div class="rp-grid">
-      {% for r in grp.reports %}
-      <a class="rp-card" href="{% url 'reports:run' r.key %}"
-         x-show="!q || '{{ r.title|escapejs }} {{ r.blurb|escapejs }}'.toLowerCase().includes(q.toLowerCase())">
-        <span class="rp-ico">{% icon r.icon 'ic' %}</span>
-        <span class="rp-body">
-          <strong>{{ r.title }}</strong>
-          <span class="rp-blurb">{{ r.blurb }}</span>
-          <span class="rp-tags">
-            <span class="bdg bdg-outline">{% if r.snapshot %}Right now{% else %}Pick a period{% endif %}</span>
-          </span>
-        </span>
-      </a>
+  <div class="rp-hub">
+    <nav class="rp-nav" aria-label="Report groups">
+      <button type="button" class="rp-nav-i" x-show="recent.length" :class="{ 'is-on': !q.trim() && g === 'recent' }" @click="q = ''; g = 'recent'">
+        <span>Recently opened</span><span class="rp-n" x-text="recent.length"></span>
+      </button>
+      <div class="rp-nav-sep" x-show="recent.length"></div>
+      {% for grp in groups %}
+      <button type="button" class="rp-nav-i" data-g="{{ grp.key }}" data-label="{{ grp.label }}" :class="{ 'is-on': !q.trim() && g === '{{ grp.key }}' }" @click="q = ''; g = '{{ grp.key }}'">
+        <span>{{ grp.label }}</span><span class="rp-n">{{ grp.count }}</span>
+      </button>
       {% endfor %}
-    </div>
-  </section>
-  {% empty %}
-  <div class="card-flush"><div class="empty-state">
-    {% icon 'chart-column' 'ex-empty-ic' %}
-    <strong>No reports for your role yet</strong>
-    <p>Ask an owner or admin if you need one opened up.</p>
-  </div></div>
-  {% endfor %}
+    </nav>
+
+    <section class="rp-pane" aria-live="polite">
+      <h2 class="rp-pane-title" x-text="heading"></h2>
+      <div class="rp-list" x-show="shown.length">
+        <template x-for="r in shown" :key="r.key">
+          <a class="rp-row" :href="'{% url 'reports:hub' %}' + r.key + '/'" @click="open(r.key)">
+            <span class="rp-row-main"><strong x-text="r.title"></strong><span class="rp-blurb" x-text="r.blurb"></span></span>
+            <span class="rp-row-group" x-text="r.glabel"></span>
+            <span class="rp-chev">{% icon 'chevron-right' 'ic' %}</span>
+          </a>
+        </template>
+      </div>
+      <div class="empty-state" x-show="!shown.length" x-cloak>
+        {% icon 'search' 'ex-empty-ic' %}
+        <strong>No reports found</strong>
+        <p>Try another word, or pick a group on the left.</p>
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}
