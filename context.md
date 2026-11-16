@@ -1121,3 +1121,8 @@ decided what and strike the item** rather than deleting it.
 ## 2026-11-16 (Reports hub redesign)
 
 - `/reports/` hub is now group list (left) + report rows (right) + one search; the report list is embedded with `json_script` and rendered by Alpine. "Recently opened" is per browser in localStorage (`pqRecentReports`), not stored on the server. Version 1.73.0 "Brolga".
+
+## 2026-11-16 (Reports batch 3)
+
+- 30 more reports (83 total): `delivery.py` (projects, planning, capacity), `health.py` (adoption, ingestion, automation, sign-ins, data health), `extras.py` (leads, quotes, attendance patterns, leave, forecasts). Version 1.74.0 "Cassowary". Schedule slippage counts plan changes only; the old/new dates are not stored (`ProjectLogEntry.meta` has just the changed names).
+- Left: RPT-016-style items needing new data, RPT-096 payroll forecast, RPT-098 feedback pack, and the reports blocked on new fields (see REPORTS_GAP_ANALYSIS.md section F).

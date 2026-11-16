@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.74.0] "Cassowary" — 2026-11-16 · 30 more reports
+
+> In short: the Reports page grows from 53 to 83 reports, adding project delivery and planning, capacity, forecasts, system health, adoption and data quality checks.
+
+### New
+
+- **Project delivery.** Milestone delivery, time spent in each project stage, planned against logged hours, schedule slippage, crunch items and blockers, a delivery risk score, who works on which project, hosting inventory and a status page you can share with a client.
+- **Capacity and forecasts.** Hours available against hours planned for the next three months, who is available over the next 30 days, a ticket backlog forecast and error spikes happening right now.
+- **People patterns.** Arrival pattern by weekday, work on weekly offs and holidays, leave taken by month and type, and leave that was split into paid and unpaid.
+- **Customers and quotes.** Repeat leads, what our quotes are made of, survey activity, tickets sent by apps and a support summary per project.
+- **System health.** Who uses which part of the app, whether notifications get read, sign-ins and app tokens, data received from apps, rule effectiveness, rules that never fire, customers affected by errors and a data health check.
+
 ## [1.73.0] "Brolga" — 2026-11-16 · a calmer Reports page
 
 > In short: the Reports page now has a group list on the left and the reports of the chosen group on the right, with one search box across all reports and a Recently opened list.
