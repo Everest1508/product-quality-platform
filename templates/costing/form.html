@@ -107,7 +107,12 @@ Alpine and travel as two JSON fields, so there is only one copy of the maths: th
   <aside class="co-side">
     <section class="card co-card">
       <h2 class="co-h">Margin <span class="bdg bdg-blue">Required</span></h2>
-      <p class="co-help">Say your cost is ₹100 and the margin is 50%. With markup you add 50% of the cost on top, so you charge ₹150. With true margin, half of what the client pays is your profit, so you charge ₹200.</p>
+      <p class="co-help">Both options add profit on top of your cost. They differ in what the percent is counted on. Example: cost ₹100, percent 20%.</p>
+      <ul class="co-help">
+        <li><b>Markup on cost:</b> 20% of your <i>cost</i> is added. Price = 100 + 20 = <b>₹120</b>. Your real margin is only 16.7% (20 ÷ 120). Pick this if you think "add 20% on top of what it costs us".</li>
+        <li><b>True margin on price:</b> 20% of the <i>price the client pays</i> is your profit. Price = 100 ÷ 0.80 = <b>₹125</b>. Pick this if you want to keep exactly 20% of every rupee the client pays.</li>
+      </ul>
+      <p class="co-help">Same percent, different price: true margin always charges a little more than markup.</p>
       <div class="co-grid">
         <div class="field"><label for="c-pct">Margin %</label>
           <input id="c-pct" name="margin_percent" class="form-input" inputmode="decimal" value="{{ d.margin_percent }}"></div>
