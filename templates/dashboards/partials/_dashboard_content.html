@@ -200,7 +200,7 @@
           <li class="is-plain hm-ap">
             <div class="hm-ap-main">
               <span class="t">{{ a.who.get_full_name|default:a.who.username }}</span>
-              <span class="hm-sub-xs">{% if a.kind == 'leave' %}{{ a.obj.policy.name }} · {{ a.obj.span_label }} · {{ a.obj.days_label }}{% else %}Time fix for {{ a.obj.date|date:"j M" }}{% if a.obj.reason %} · {{ a.obj.reason|truncatechars:36 }}{% endif %}{% endif %}</span>
+              <span class="hm-sub-xs">{% if a.kind == 'leave' %}{{ a.obj.policy.name }} · {{ a.obj.span_label }} · {{ a.obj.days_label }}{% else %}{{ a.obj.date|date:"j M" }}{% if a.obj.requested_check_in %} · In {% if a.obj.original_check_in %}{{ a.obj.original_check_in|date:"g:i A" }} → {% endif %}{{ a.obj.requested_check_in|date:"g:i A" }}{% elif a.obj.original_check_in %} · In {{ a.obj.original_check_in|date:"g:i A" }}{% endif %}{% if a.obj.requested_check_out %} · Out {% if a.obj.original_check_out %}{{ a.obj.original_check_out|date:"g:i A" }} → {% endif %}{{ a.obj.requested_check_out|date:"g:i A" }}{% endif %}{% if a.obj.reason %} · {{ a.obj.reason|truncatechars:36 }}{% endif %}{% endif %}</span>
             </div>
             {% if a.can %}
             <div class="hm-ap-act">

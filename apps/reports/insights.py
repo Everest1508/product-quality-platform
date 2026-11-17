@@ -51,45 +51,6 @@ def ticket_resolution_time(ctx):
                   "Resolved time comes from status changes in the activity log; tickets changed some other way are missing.")
 
 
-@report("ticket-time-in-status", "Time spent in each ticket status", "tickets", "Where tickets wait: open, assigned, in progress or testing.",
-        "RPT-005", icon="history", filters=("period", "product"))
-def ticket_time_in_status(ctx):
-    a, b = _bounds(ctx)
-    tq = _tickets(ctx)
-    ids = {t.pk: t for t in tq}
-    line = defaultdict(list)
-    for tid, at, to in _events(ctx, "ticket_status_changed", created_at__lte=b, target_object_id__in=list(ids)).order_by("created_at").values_list("target_object_id", "created_at", "metadata"):
-        line[tid].append((at, (to or {}).get("to")))
-    stays = defaultdict(list)
-    for tid, ev in line.items():
-        t = ids[tid]
-        prev_t, prev_s = t.created_at, "open"
-        for at, to in ev:
-            if a <= at <= b and prev_s:
-                stays[prev_s].append((at - prev_t).total_seconds() / H)
-            prev_t, prev_s = at, to
-    labels = dict(Ticket.Status.choices)
-    rows = [[labels[s], len(stays[s]), round(sum(stays[s]) / len(stays[s]), 1), _med(stays[s]), _p90(stays[s]), round(max(stays[s]), 1)]
-            for s in labels if stays.get(s)]
-    return Result(["Status", "Stays ended", "Average hours", "Median hours", "Slowest 10% took (hours)", "Longest (hours)"], rows,
-                  [("Tickets with changes", f"{len(line):,}")], "A stay counts when the ticket leaves that status inside the period.")
-
-
-@report("ticket-mix", "Ticket mix by project", "tickets", "How much of the load is bugs, features and questions, and how tickets arrive.",
-        "RPT-007", icon="layout-dashboard", filters=("period", "product"))
-def ticket_mix(ctx):
-    a, b = _bounds(ctx)
-    per = defaultdict(lambda: defaultdict(int))
-    for t in _tickets(ctx).filter(created_at__range=(a, b)):
-        d = per[t.product.name if t.product else "No project"]
-        for k in (t.ticket_type, t.source, "p_" + t.priority, "n"):
-            d[k] += 1
-    rows = [[p, d["n"], d["bug"], d["feature"], d["question"], d["manual"], d["auto"], d["customer_portal"], d["p_critical"], d["p_high"]]
-            for p, d in sorted(per.items())]
-    return Result(["Project", "Tickets", "Bugs", "Features", "Questions", "Made by hand", "Made automatically", "From customer portal", "Critical", "High"], rows,
-                  [("Tickets", f"{sum(r[1] for r in rows):,}")])
-
-
 @report("ticket-reopened", "Reopened tickets", "tickets", "Tickets that were resolved or closed and then moved back.",
         "RPT-008", icon="triangle-alert", filters=("period", "product"))
 def ticket_reopened(ctx):
@@ -193,33 +154,6 @@ def error_response_time(ctx):
             for s, d in sorted(per.items(), key=lambda x: SEVERITY[x[0].lower()])]
     return Result(["Severity", "Resolved", "Median hours to first action", "Median hours to resolved", "Slowest 10% took (hours)", "Resolved within a day %"], rows,
                   [("Resolved", f"{sum(r[1] for r in rows):,}")], "Resolved in the period; times come from the activity log.")
-
-
-@report("error-breakdown", "Errors by environment, browser, OS and device", "errors", "Whether errors cluster on one environment, browser, operating system or device.",
-        "RPT-019", icon="sliders-horizontal", filters=("period", "product"))
-def error_breakdown(ctx):
-    a, b = _bounds(ctx)
-    qs = ErrorOccurrence.objects.filter(company=ctx.company, error_group__in=_errors(ctx), created_at__range=(a, b))
-    total = qs.count()
-    rows = []
-    for label, f in (("Environment", "environment"), ("Browser", "browser"), ("Operating system", "os"), ("Device", "device")):
-        agg = qs.values(f).annotate(n=Count("id"), g=Count("error_group", distinct=True)).order_by("-n")[:10]
-        rows += [[label, r[f] or "Not sent", r["n"], round(r["n"] * 100 / total, 1), r["g"]] for r in agg]
-    return Result(["Group", "Value", "Occurrences", "Share of all %", "Error groups"], rows, [("Occurrences", f"{total:,}")],
-                  "Top 10 values per group. 'Not sent' means the app did not report it.")
-
-
-@report("error-pages", "Error hotspots by page", "errors", "Which pages produce the most errors.",
-        "RPT-020", icon="target", filters=("period", "product"))
-def error_pages(ctx):
-    a, b = _bounds(ctx)
-    per = defaultdict(lambda: [0, set()])
-    for page, gid in ErrorOccurrence.objects.filter(company=ctx.company, error_group__in=_errors(ctx), created_at__range=(a, b)).exclude(page="").values_list("page", "error_group"):
-        path = urlsplit(page).path or page
-        per[path][0] += 1
-        per[path][1].add(gid)
-    rows = sorted(([p, n, len(g)] for p, (n, g) in per.items()), key=lambda r: -r[1])[:100]
-    return Result(["Page", "Occurrences", "Error groups"], rows, [("Pages with errors", f"{len(per):,}")], "Query strings are ignored. Top 100.")
 
 
 @report("lead-stale", "Leads waiting too long", "customers", "Open leads and how long since anyone touched them.",

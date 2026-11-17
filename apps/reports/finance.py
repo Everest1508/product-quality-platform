@@ -43,24 +43,6 @@ def expense_exceptions(ctx):
                   [("Expenses checked", f"{len(es):,}"), ("Listed", f"{len(rows):,}")])
 
 
-@report("salary-history", "Salary revisions", "money", "Every salary change per person and the size of each raise.",
-        "RPT-060", icon="coins", admin=True, filters=())
-def salary_history(ctx):
-    per = defaultdict(list)
-    for p in PayrollProfile.objects.filter(company=ctx.company).select_related("user").order_by("effective_from"):
-        per[p.user_id].append(p)
-    rows = []
-    for ps in per.values():
-        prev = None
-        for p in ps:
-            pay = p.monthly_salary or p.daily_rate
-            rows.append([_name(p.user), p.effective_from, float(p.monthly_salary) if p.monthly_salary else None, float(p.daily_rate) if not p.monthly_salary else None,
-                         round(float(pay - prev) * 100 / float(prev), 1) if prev else None, "Yes" if p.is_on_payroll else "No", p.notes])
-            prev = pay or prev
-    rows.sort(key=lambda r: (r[0], r[1]))
-    return Result(["Person", "Effective from", "Monthly salary", "Daily rate", "Change on previous %", "On payroll", "Notes"], rows, [("Revisions", f"{len(rows):,}")])
-
-
 @report("deductions", "Pay deductions by person", "money", "Money withheld for unpaid leave and lateness in each payroll cycle.",
         "RPT-058", icon="percent", admin=True, filters=("period", "person"))
 def deductions(ctx):

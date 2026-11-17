@@ -45,19 +45,6 @@ def lead_duplicates(ctx):
     return Result(["Matched on", "Value", "Times submitted", "Names used", "First", "Latest", "Statuses"], rows, [("Repeat contacts", f"{len(rows):,}")])
 
 
-@report("quote-composition", "What our quotes are made of", "money", "Share of each quote's cost that is people, rent, AI subscriptions and other costs.",
-        "RPT-050", icon="coins", admin=True, filters=("period",))
-def quote_composition(ctx):
-    rows = []
-    for e in Estimate.objects.filter(company=ctx.company, quote_date__range=(ctx.start, ctx.end)).order_by("-quote_date"):
-        r = quote_compute(ctx.company, e.inputs())
-        t = r["total"] or Decimal("1")
-        rows.append([e.quote_date, e.name, e.client_name, float(r["labour"]), float(r["rent"]), float(r["ai"]), float(r["extra"]), float(r["total"]),
-                     round(float(r["labour"] / t * 100), 1), round(float(r["rent"] / t * 100), 1), round(float(r["ai"] / t * 100), 1), round(float(r["extra"] / t * 100), 1)])
-    return Result(["Quoted on", "Project", "Client", "People", "Rent", "AI subscriptions", "Other costs", "Total cost", "People %", "Rent %", "AI %", "Other %"], rows,
-                  [("Quotes", f"{len(rows):,}")])
-
-
 @report("arrival-pattern", "Arrival pattern by weekday", "people", "Average minutes after shift start each person arrives, per weekday.",
         "RPT-065", icon="calendar-days", admin=True, filters=("period", "person"))
 def arrival_pattern(ctx):
