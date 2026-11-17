@@ -10,6 +10,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.75.0] "Dabchick" — 2026-11-17 · add a day nobody punched
+
+> In short: owners and admins can now fill in a day a person never punched, approvals show the actual times, and the Reports page drops 12 reports that added little (71 left).
+
+### New
+
+- **Add a missing day.** On a person's timesheet, a past day with no punch shows a + that opens a short form for the check-in, check-out and a reason. The day is marked as edited and the person is told.
+
+### Better
+
+- **Approvals show the times.** A time fix on the home page now lists the day with the old and new check-in and check-out, so you can decide without opening it.
+- **A leaner Reports page.** Twelve reports that were technical or repeated other reports are gone, leaving 71.
+
 ## [1.74.0] "Cassowary" — 2026-11-16 · 30 more reports
 
 > In short: the Reports page grows from 53 to 83 reports, adding project delivery and planning, capacity, forecasts, system health, adoption and data quality checks.

@@ -2,7 +2,8 @@ from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseForbidden
+from django.http import Http404, HttpResponseForbidden
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dates import WEEKDAYS, WEEKDAYS_ABBR
@@ -828,6 +829,65 @@ class AttendanceEditView(CompanyAdminRequiredMixin, View):
         return redirect(
             _safe_next(request.POST.get("next")) or "attendance:team_attendance"
         )
+
+
+class AttendanceAddView(CompanyAdminRequiredMixin, View):
+    """Admin: fill in a day the person never punched (no record exists yet)."""
+
+    def _target(self, request, user_id, day):
+        user = get_object_or_404(User, pk=user_id, memberships__company=request.company)
+        if day > timezone.localdate():
+            raise Http404
+        return user
+
+    def get(self, request, user_id, day):
+        user = self._target(request, user_id, day)
+        existing = AttendanceRecord.objects.filter(company=request.company, user=user, date=day).first()
+        if existing:
+            return redirect("attendance:attendance_edit", pk=existing.pk)
+        return render(request, "attendance/add_record.html", {
+            "target_user": user, "day": day, "shift": service.shift_for(request.company),
+            "next": _safe_next(request.GET.get("next")),
+        })
+
+    def post(self, request, user_id, day):
+        user = self._target(request, user_id, day)
+        back = _safe_next(request.POST.get("next")) or reverse("attendance:timesheet_detail", args=[user.pk])
+        parsed_in = _parse_dt(request.POST.get("check_in"))
+        parsed_out = _parse_dt(request.POST.get("check_out"))
+        reason = (request.POST.get("notes") or "").strip()[:255]
+        problem = (
+            "Enter a check-in time." if not parsed_in
+            else "Say why you are adding this day." if not reason
+            else "Check-out cannot be before check-in." if parsed_out and parsed_out < parsed_in
+            else service.punch_problem(day, parsed_in, parsed_out)
+        )
+        if problem:
+            messages.error(request, problem)
+            return redirect(request.get_full_path())
+        record, created = AttendanceRecord.objects.get_or_create(
+            company=request.company, user=user, date=day,
+            defaults={"check_in": parsed_in, "check_out": parsed_out, "notes": reason, "is_edited": True},
+        )
+        if not created:
+            messages.error(request, "That day already has a record.")
+            return redirect("attendance:attendance_edit", pk=record.pk)
+        who = user.get_full_name() or user.username
+        log_activity(
+            request.company, "attendance_edited",
+            f"Attendance for {who} on {day:%b %d, %Y} added",
+            description=reason, actor=request.user,
+            target_content_type="attendance_record", target_object_id=record.pk,
+            metadata={"date": day.isoformat(), "added": True},
+        )
+        if user.pk != request.user.pk:
+            notifications.notify(
+                user=user, company=request.company, kind=Notification.Kind.CORRECTION_DECISION,
+                title=f"Your attendance for {day:%b %d} was added",
+                body=reason[:140], url=f"/attendance/?month={day:%Y-%m}", actor=request.user,
+            )
+        messages.success(request, f"Added {who}'s {day:%b %d} attendance.")
+        return redirect(back)
 
 
 def _parse_dt(raw):

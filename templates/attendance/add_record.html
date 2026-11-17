@@ -1,0 +1,46 @@
+{% extends "core/base.html" %}
+
+{% block title %}Add attendance — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'attendance:team_attendance' %}">Attendance</a>
+  <span class="sep">/</span>
+  <a href="{% url 'attendance:timesheet_detail' target_user.pk %}">Timesheet</a>
+  <span class="sep">/</span>
+  <span class="current">{{ day|date:"M d, Y" }}</span>
+</nav>
+
+<div class="head">
+  <div>
+    <h1>Add attendance</h1>
+    <p class="text-sm text-muted" style="margin-top:4px;">
+      {{ target_user.get_full_name|default:target_user.username }} · {{ day|date:"l, F d, Y" }} · no punch recorded
+    </p>
+  </div>
+</div>
+
+<div class="card" style="max-width:760px;">
+  <form method="post" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:6px 0;">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next|default:'' }}">
+    <div>
+      <label class="text-sm text-muted" for="add_in" style="display:block;margin-bottom:4px;">Check in</label>
+      <input id="add_in" type="datetime-local" name="check_in" value="{{ day|date:'Y-m-d' }}T{{ shift.start_time|time:'H:i' }}" class="form-input" required>
+    </div>
+    <div>
+      <label class="text-sm text-muted" for="add_out" style="display:block;margin-bottom:4px;">Check out</label>
+      <input id="add_out" type="datetime-local" name="check_out" value="{{ day|date:'Y-m-d' }}T{{ shift.end_time|time:'H:i' }}" class="form-input">
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <label class="text-sm text-muted" for="add_why" style="display:block;margin-bottom:4px;">Reason</label>
+      <input id="add_why" type="text" name="notes" class="form-input" maxlength="255" required placeholder="Why was this day missing?">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add day</button>
+  </form>
+</div>
+
+<p class="text-sm text-muted" style="margin-top:12px;">
+  <a href="{% if next %}{{ next }}{% else %}{% url 'attendance:timesheet_detail' target_user.pk %}{% endif %}">Cancel</a>
+</p>
+{% endblock %}

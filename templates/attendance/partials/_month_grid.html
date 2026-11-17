@@ -39,6 +39,8 @@
             {% if day.record.is_open %}</a>{% endif %}
           {% elif day.on_leave %}
             <span class="att-hours">leave</span>
+          {% elif not day.is_future %}
+            <a href="{% url 'attendance:attendance_add' target_user.pk day.date %}?next={{ request.get_full_path|urlencode }}" class="att-none" title="No punch — add this day" style="text-decoration:none;display:block;">+</a>
           {% else %}
             <span class="att-none">—</span>
           {% endif %}

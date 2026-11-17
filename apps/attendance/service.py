@@ -204,6 +204,7 @@ def get_month_grid(company, year, month, user):
             "is_weekend": shift.is_weekly_off(cursor) or cursor in holidays,
             "holiday": holidays.get(cursor),
             "is_today": cursor == timezone.localdate(),
+            "is_future": cursor > timezone.localdate(),
             "record": record,
             "on_leave": cursor in on_leave,
             "net_minutes": net_minutes_for(record, shift) if record else 0,
