@@ -15,7 +15,7 @@
   {% nav_item "Project costing" "banknote" "costing:estimate_list" match="estimate_list estimate_new estimate_edit estimate_detail" %}
 {% endnav_fold %}
 {% nav_fold "System" "settings" "pqFoldSystem" admin=True aria="Admin: System" %}
-  {% nav_item "Website leads" "inbox" "leads:lead_list" match="lead_list webhook_rotate lead_detail lead_log lead_status lead_convert" badge=nav_new_leads %}
+  {% nav_item "Leads" "inbox" "leads:lead_board" match="lead_board lead_create lead_list webhook_rotate lead_detail lead_log lead_status lead_convert" badge=nav_new_leads %}
   {% nav_item "Reports" "chart-column" "reports:hub" match="reports:hub reports:run" %}
   {% nav_item "Audit log" "eye" "dashboards:audit_log" match="audit_log" %}
   {% nav_item "Automation" "sparkles" "automation:rule_list" match="rule_list rule_create rule_edit rule_delete rule_toggle" %}

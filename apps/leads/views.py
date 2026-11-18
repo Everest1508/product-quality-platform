@@ -1,4 +1,6 @@
 import json
+import re
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.http import Http404, JsonResponse
@@ -10,9 +12,9 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.accounts.models import User
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.core.pagination import paginate
-from apps.leads.forms import LeadForm
+from apps.leads.forms import LeadForm, NewLeadForm
 from apps.leads import service
-from apps.leads.models import Lead, LeadWebhook, new_token
+from apps.leads.models import Lead, LeadLog, LeadWebhook, new_token
 from apps.notifications.models import Notification
 from apps.notifications.service import mark_read, notify_many
 
@@ -53,16 +55,51 @@ class LeadWebhookView(View):
         return JsonResponse({"ok": True}, status=201)
 
 
+def _clear_bell(request):
+    """Looking at the leads clears this person's "new lead" bell items and sidebar count."""
+    ids = Notification.objects.filter(
+        user=request.user, company=request.company, kind=Notification.Kind.LEAD
+    ).values_list("pk", flat=True)
+    mark_read(request.user, request.company, ids=list(ids))
+
+
+LOGGABLE = [k for k, _ in LeadLog.Kind.choices if k not in ("status", "converted")]
+
+
+class LeadBoardView(CompanyAdminRequiredMixin, View):
+    """The sales pipeline: one column per stage, drag a card to move it."""
+
+    def get(self, request):
+        _clear_bell(request)
+        leads = Lead.objects.filter(company=request.company).order_by("-created_at")
+        cols = {v: {"key": v, "label": t, "leads": [], "total": None} for v, t in Lead.Status.choices}
+        for lead in leads:
+            cols[lead.status]["leads"].append(lead)
+        for key, field in (("quote_sent", "quoted_amount"), ("won", "won_amount")):
+            cols[key]["total"] = sum((getattr(l, field) or 0 for l in cols[key]["leads"]), Decimal(0))
+        return render(request, "leads/lead_board.html", {"columns": list(cols.values()), "total": len(leads)})
+
+
+class LeadCreateView(CompanyAdminRequiredMixin, View):
+    def post(self, request):
+        form = NewLeadForm(request.POST)
+        if form.is_valid():
+            d = form.cleaned_data
+            lead = Lead.objects.create(company=request.company, **d)
+            service.add_log(lead, request.user, "Lead added by hand")
+            messages.success(request, f"Added {lead.full_name}.")
+        else:
+            messages.error(request, "Could not add the lead: " + "; ".join(
+                f"{f.replace('_', ' ')}: {e[0]}" for f, e in form.errors.items()))
+        return redirect("leads:lead_board")
+
+
 class LeadListView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         hook, _ = LeadWebhook.objects.get_or_create(company=request.company)
         leads = Lead.objects.filter(company=request.company)
         page = paginate(request, leads)
-        # Looking at the list clears this person's "new lead" bell items and sidebar count.
-        ids = Notification.objects.filter(
-            user=request.user, company=request.company, kind=Notification.Kind.LEAD
-        ).values_list("pk", flat=True)
-        mark_read(request.user, request.company, ids=list(ids))
+        _clear_bell(request)
         return render(request, "leads/lead_list.html", {
             "page": page,
             "webhook_url": request.build_absolute_uri(f"/api/v1/leads/{hook.token}/"),
@@ -84,46 +121,79 @@ class LeadDetailView(CompanyAdminRequiredMixin, View):
         return render(request, "leads/lead_detail.html", {
             "lead": lead,
             "logs": lead.logs.select_related("author"),
-            "statuses": [(v, t) for v, t in Lead.Status.choices if v != Lead.Status.CONVERTED],
+            "log_kinds": [(k, l) for k, l in LeadLog.Kind.choices if k in LOGGABLE],
+            "statuses": Lead.Status.choices,
         })
 
 
 class LeadLogView(CompanyAdminRequiredMixin, View):
+    """Write down something that happened: a call, an email, a meeting."""
+
     def post(self, request, pk):
         lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        kind = request.POST.get("kind", "")
+        if kind not in LOGGABLE:
+            kind = LeadLog.Kind.NOTE
+        title = request.POST.get("title", "").strip()[:200]
         text = request.POST.get("text", "").strip()[:2000]
-        if text:
-            service.add_log(lead, request.user, text)
-            messages.success(request, "Added to the log.")
+        if title or text:
+            service.add_log(lead, request.user, text, kind, title=title)
+            messages.success(request, "Added to the activity.")
         else:
-            messages.error(request, "Write what you did first.")
+            messages.error(request, "Write a title or some details first.")
         return redirect("leads:lead_detail", pk=lead.pk)
 
 
+def _amount(raw):
+    """A positive money value that fits the column, or None."""
+    try:
+        d = Decimal(re.sub(r"[,\s₹]", "", raw or ""))
+    except InvalidOperation:
+        return None
+    return d.quantize(Decimal("0.01")) if d.is_finite() and 0 < d < Decimal(10) ** 10 else None
+
+
 class LeadStatusView(CompanyAdminRequiredMixin, View):
+    """Move a lead to a stage. Quotation sent and Won must come with the amount."""
+
     def post(self, request, pk):
         lead = get_object_or_404(Lead, pk=pk, company=request.company)
         status = request.POST.get("status", "")
-        if lead.product_id:
-            messages.error(request, "This lead is already a project.")
-        elif status == Lead.Status.CONVERTED:
-            return LeadConvertView.convert(request, lead)
-        elif status in Lead.Status.values:
-            service.set_status(lead, status, request.user)
-            messages.success(request, f"Marked {lead.get_status_display().lower()}.")
+        amount = _amount(request.POST.get("amount"))
+        reason = request.POST.get("reason", "").strip()[:1000]
+        if status not in Lead.Status.values:
+            error = "Unknown stage."
+        elif not reason and status != lead.status:
+            error = "Say why you are moving this lead."
+        elif lead.product_id:
+            error = "This lead is already a project."
+        elif status in (Lead.Status.QUOTE_SENT, Lead.Status.WON) and status != lead.status and amount is None:
+            error = "Enter the amount " + ("quoted." if status == Lead.Status.QUOTE_SENT else "it was won for.")
+        else:
+            error = None
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if error:
+                return JsonResponse({"error": error}, status=400)
+            service.set_status(lead, status, request.user, amount, reason)
+            return JsonResponse({"ok": True})
+        if error:
+            messages.error(request, error)
+        else:
+            service.set_status(lead, status, request.user, amount, reason)
+            messages.success(request, f"Moved to {lead.get_status_display().lower()}.")
         return redirect("leads:lead_detail", pk=lead.pk)
 
 
 class LeadConvertView(CompanyAdminRequiredMixin, View):
-    @staticmethod
-    def convert(request, lead):
-        product = service.convert(lead, request.user)
-        messages.success(request, f"Created the project {product.name}.")
-        return redirect("leads:lead_detail", pk=lead.pk)
+    """Won leads can be turned into a project, once."""
 
     def post(self, request, pk):
         lead = get_object_or_404(Lead, pk=pk, company=request.company)
         if lead.product_id:
             messages.error(request, "This lead is already a project.")
-            return redirect("leads:lead_detail", pk=lead.pk)
-        return self.convert(request, lead)
+        elif lead.status != Lead.Status.WON:
+            messages.error(request, "Only won leads can become a project.")
+        else:
+            product = service.convert(lead, request.user)
+            messages.success(request, f"Created the project {product.name}.")
+        return redirect("leads:lead_detail", pk=lead.pk)

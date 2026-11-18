@@ -14,6 +14,7 @@
     <p class="sub">{{ page.paginator.count }} total · everything your website form sends lands here</p>
   </div>
   <div class="pg-actions">
+    <a href="{% url 'leads:lead_board' %}" class="btn">Pipeline board</a>
     <button type="button" class="btn" @click="copy('lead-url', 'Webhook URL')">{% icon 'copy' 'ic' %}Copy webhook URL</button>
     <button type="button" class="btn btn-primary" @click="copy('lead-prompt', 'Setup prompt')">{% icon 'sparkles' 'ic' %}Copy setup prompt</button>
   </div>
@@ -61,7 +62,7 @@ fetch("{{ webhook_url }}", {
       <tr>
         <td style="white-space:nowrap" title="{{ lead.created_at|date:'d M Y, g:i a' }}">{{ lead.created_at|timesince }} ago</td>
         <td class="task"><a href="{% url 'leads:lead_detail' lead.pk %}">{{ lead.full_name }}</a></td>
-        <td><span class="bdg {% if lead.status == 'converted' %}bdg-green{% elif lead.status == 'lost' %}bdg-outline{% else %}bdg-blue{% endif %}">{{ lead.get_status_display }}</span></td>
+        <td><span class="bdg {% if lead.status == 'won' %}bdg-green{% elif lead.status == 'lost' %}bdg-outline{% else %}bdg-blue{% endif %}">{{ lead.get_status_display }}</span></td>
         <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
         <td style="white-space:nowrap">{% if lead.phone %}<a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>{% else %}—{% endif %}</td>
         <td>{{ lead.company_name|default:"—" }}</td>

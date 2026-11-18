@@ -7,18 +7,27 @@ from apps.leads.models import Lead, LeadLog
 from apps.products.models import Product
 
 
-def add_log(lead, author, text, kind=LeadLog.Kind.NOTE):
-    return LeadLog.objects.create(lead=lead, author=author, kind=kind, text=text)
+def add_log(lead, author, text, kind=LeadLog.Kind.NOTE, title="", **move):
+    return LeadLog.objects.create(lead=lead, author=author, kind=kind, title=title, text=text, **move)
 
 
-def set_status(lead, status, actor):
-    """Move a lead to a status other than Converted (that one is `convert`, which makes the project)."""
+def set_status(lead, status, actor, amount=None, reason=""):
+    """Move a lead. Quotation sent and Won each need an amount; the caller validates it."""
     if status == lead.status:
         return
-    old = lead.get_status_display()
+    old = lead.status
+    fields = ["status"]
     lead.status = status
-    lead.save(update_fields=["status"])
-    add_log(lead, actor, f"Status: {old} to {lead.get_status_display()}", LeadLog.Kind.STATUS)
+    if status == Lead.Status.QUOTE_SENT:
+        lead.quoted_amount = amount
+        fields.append("quoted_amount")
+    elif status == Lead.Status.WON:
+        lead.won_amount = amount
+        fields.append("won_amount")
+    else:
+        amount = None
+    lead.save(update_fields=fields)
+    add_log(lead, actor, reason, LeadLog.Kind.STATUS, from_status=old, to_status=status, amount=amount)
 
 
 def _free_name(company, base):
@@ -44,9 +53,8 @@ def convert(lead, actor):
     product.slug = slugify(product.name)
     product.save()
     lead.product = product
-    lead.status = Lead.Status.CONVERTED
     lead.converted_at = timezone.now()
-    lead.save(update_fields=["product", "status", "converted_at"])
+    lead.save(update_fields=["product", "converted_at"])
     add_log(lead, actor, f"Converted to project {product.name}", LeadLog.Kind.CONVERTED)
     log_activity(
         lead.company, "product_created", f"Project '{product.name}' created from a website lead",

@@ -1,0 +1,197 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}Leads — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>Leads</h1>
+    <p class="sub">{{ total }} lead{{ total|pluralize }} · drag a card to move it to the next stage</p>
+  </div>
+  <div class="pg-actions">
+    <a href="{% url 'leads:lead_list' %}" class="btn">{% icon 'inbox' 'ic' %}Website form leads</a>
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('lead-new').showModal()">{% icon 'plus' 'ic' %}Add lead</button>
+  </div>
+</div>
+
+<style>#lead-board .kanban-col{min-width:190px}#lead-board.is-dragging{scroll-snap-type:none}#lead-board .kanban-card{cursor:pointer}#lead-board .kanban-card.dragging{cursor:grabbing}#lead-board .kanban-card .kanban-move-btn{position:absolute;top:8px;right:8px;opacity:1}</style>
+<div class="kanban-board" id="lead-board" data-url="{% url 'leads:lead_board' %}">
+  {% for col in columns %}
+  <div class="kanban-col" data-status="{{ col.key }}">
+    <div class="kanban-header">
+      <span>{{ col.label }}{% if col.total %} · ₹{{ col.total|floatformat:"-2g" }}{% endif %}</span>
+      <span class="kanban-count">{{ col.leads|length }}</span>
+    </div>
+    <div class="kanban-cards">
+      {% for lead in col.leads %}
+      <div class="kanban-card" draggable="true" data-status="{{ col.key }}" data-name="{{ lead.full_name }}" data-open="{% url 'leads:lead_detail' lead.pk %}"
+           data-url="{% url 'leads:lead_status' lead.pk %}" data-csrf="{{ csrf_token }}">
+        <button type="button" class="kanban-move-btn" title="Move to…" aria-label="Move to another stage" aria-haspopup="menu" draggable="false">{% icon 'arrow-right' 'ic' %}</button>
+        <div class="card-title" style="padding-right:24px"><a href="{% url 'leads:lead_detail' lead.pk %}" draggable="false">{{ lead.full_name }}</a></div>
+        <div class="card-meta">
+          {% if lead.company_name %}<span>{{ lead.company_name }}</span>{% endif %}
+          {% if lead.industry %}<span class="bdg bdg-outline">{{ lead.industry }}</span>{% endif %}
+        </div>
+        <p class="text-sm text-muted" style="margin:6px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ lead.details }}</p>
+        {% if lead.quoted_amount and col.key != 'generated' and col.key != 'req_gathering' and col.key != 'estimation' %}
+        <div class="card-footer"><span class="text-sm">Quoted ₹{{ lead.quoted_amount|floatformat:"-2g" }}</span>{% if lead.won_amount and col.key == 'won' %}<b class="text-sm">Won ₹{{ lead.won_amount|floatformat:"-2g" }}</b>{% endif %}</div>
+        {% elif lead.won_amount and col.key == 'won' %}
+        <div class="card-footer"><b class="text-sm">Won ₹{{ lead.won_amount|floatformat:"-2g" }}</b></div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="kanban-empty">No leads</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<dialog class="dlg" id="lead-new" style="max-width:520px">
+  <form method="post" action="{% url 'leads:lead_create' %}">
+    {% csrf_token %}
+    <div class="dlg-head"><h2>Add lead</h2><p>It starts in Generated.</p></div>
+    <div class="dlg-body" style="padding:16px 22px 4px;display:grid;gap:12px">
+      <div><label class="dd-label" for="ln-name">Client name</label><input id="ln-name" name="full_name" class="form-input" maxlength="200" required style="width:100%"></div>
+      <div><label class="dd-label" for="ln-co">Company</label><input id="ln-co" name="company_name" class="form-input" maxlength="200" style="width:100%"></div>
+      <div><label class="dd-label" for="ln-ind">Industry type</label><input id="ln-ind" name="industry" class="form-input" maxlength="100" placeholder="e.g. Textiles, Retail, Healthcare" style="width:100%"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="dd-label" for="ln-email">Email</label><input id="ln-email" name="email" type="email" class="form-input" style="width:100%"></div>
+        <div><label class="dd-label" for="ln-phone">Phone</label><input id="ln-phone" name="phone" class="form-input" maxlength="40" style="width:100%"></div>
+      </div>
+      <div><label class="dd-label" for="ln-info">Project info</label><textarea id="ln-info" name="details" class="form-input" rows="4" maxlength="10000" required style="width:100%"></textarea></div>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button><button type="submit" class="btn btn-primary">Add lead</button></div>
+  </form>
+</dialog>
+
+<dialog class="dlg" id="lead-amt" style="max-width:440px">
+  <form id="lead-amt-form">
+    <div class="dlg-head"><h2 id="lead-amt-title"></h2><p id="lead-amt-sub"></p></div>
+    <div class="dlg-body" style="padding:16px 22px 4px;display:grid;gap:12px">
+      <div id="lead-amt-row">
+        <label class="dd-label" for="lead-amt-in" id="lead-amt-label"></label>
+        <input id="lead-amt-in" class="form-input" inputmode="decimal" autocomplete="off" placeholder="e.g. 2,50,000" style="width:100%">
+      </div>
+      <div>
+        <label class="dd-label" for="lead-why">Why are you moving this lead?</label>
+        <textarea id="lead-why" class="form-input" rows="3" maxlength="1000" required placeholder="e.g. Client confirmed the scope on a call" style="width:100%"></textarea>
+        <p class="field-hint" style="margin-top:6px">Saved in the lead's activity with your name and the time.</p>
+      </div>
+      <p class="field-error" id="lead-amt-err" style="display:none"></p>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" id="lead-amt-cancel">Cancel</button><button type="submit" class="btn btn-primary">Move</button></div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var board = document.getElementById('lead-board'), dragged = null, pending = null;
+  var dlg = document.getElementById('lead-amt'), inp = document.getElementById('lead-amt-in'), err = document.getElementById('lead-amt-err');
+  var ASK = {
+    quote_sent: 'How much was the quotation for? (₹)',
+    won: 'How much was it won for? (₹)'
+  };
+  var LABELS = {};
+  board.querySelectorAll('.kanban-col').forEach(function (c) { LABELS[c.dataset.status] = c.querySelector('.kanban-header span').textContent.split(' · ')[0].trim(); });
+  var why = document.getElementById('lead-why');
+  // 250000 -> 250,000 as you type; keeps one decimal point.
+  inp.addEventListener('input', function () {
+    var t = inp.value.replace(/[^\d.]/g, ''), i = t.indexOf('.');
+    if (i >= 0) t = t.slice(0, i + 1) + t.slice(i + 1).replace(/\./g, '').slice(0, 2);
+    var p = t.split('.');
+    p[0] = p[0] ? Number(p[0]).toLocaleString('en-US') : '';
+    inp.value = p.join('.');
+  });
+  function send(card, status, amount, reason) {
+    var body = 'status=' + encodeURIComponent(status) + '&reason=' + encodeURIComponent(reason || '') + (amount ? '&amount=' + encodeURIComponent(amount) : '');
+    return fetch(card.dataset.url, {
+      method: 'POST', credentials: 'same-origin', body: body,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': card.dataset.csrf, 'X-Requested-With': 'XMLHttpRequest'}
+    }).then(function (r) { return r.json().then(function (d) { return {ok: r.ok, d: d}; }); });
+  }
+  function move(card, status) {
+    if (status === card.dataset.status) return;
+    pending = {card: card, status: status};
+    document.getElementById('lead-amt-title').textContent = card.dataset.name;
+    document.getElementById('lead-amt-sub').textContent = LABELS[card.dataset.status] + ' → ' + LABELS[status];
+    document.getElementById('lead-amt-row').style.display = ASK[status] ? '' : 'none';
+    inp.required = !!ASK[status];
+    document.getElementById('lead-amt-label').textContent = ASK[status] || '';
+    inp.value = ''; why.value = ''; err.style.display = 'none';
+    dlg.showModal();
+    (ASK[status] ? inp : why).focus();
+  }
+  document.getElementById('lead-amt-cancel').onclick = function () { dlg.close(); pending = null; };
+  document.getElementById('lead-amt-form').onsubmit = function (e) {
+    e.preventDefault();
+    if (!pending) return;
+    send(pending.card, pending.status, inp.value, why.value).then(function (x) {
+      if (x.ok) location.reload();
+      else { err.textContent = x.d.error || 'Could not move it.'; err.style.display = 'block'; }
+    });
+  };
+  var menu = document.createElement('div');
+  menu.className = 'kanban-move-menu'; menu.hidden = true; document.body.appendChild(menu);
+  function closeMenu() { menu.hidden = true; }
+  board.addEventListener('click', function (e) {
+    var btn = e.target.closest('.kanban-move-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    var card = btn.closest('.kanban-card');
+    menu.innerHTML = '';
+    board.querySelectorAll('.kanban-col').forEach(function (c) {
+      var o = document.createElement('button');
+      o.type = 'button';
+      o.className = 'kanban-move-item' + (c.dataset.status === card.dataset.status ? ' is-current' : '');
+      o.textContent = c.querySelector('.kanban-header span').textContent.split(' · ')[0].trim();
+      o.onclick = function () { closeMenu(); move(card, c.dataset.status); };
+      menu.appendChild(o);
+    });
+    menu.hidden = false;
+    var r = btn.getBoundingClientRect();
+    menu.style.top = Math.min(r.bottom + 4, window.innerHeight - menu.offsetHeight - 8) + 'px';
+    menu.style.left = Math.max(8, Math.min(r.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  });
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+  // A plain click opens the lead; press and move to drag it (the browser only starts a drag once you move).
+  board.addEventListener('click', function (e) {
+    var card = e.target.closest('.kanban-card');
+    if (card && !e.target.closest('a, button')) location.href = card.dataset.open;
+  });
+  board.addEventListener('dragstart', function (e) {
+    dragged = e.target.closest('.kanban-card');
+    if (!dragged) return;
+    board.classList.add('is-dragging'); // snap points would pull the board back while it auto-scrolls
+    dragged.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragged.dataset.name);
+  });
+  board.addEventListener('dragend', function () {
+    board.classList.remove('is-dragging');
+    if (dragged) dragged.classList.remove('dragging');
+    board.querySelectorAll('.drag-over').forEach(function (c) { c.classList.remove('drag-over'); });
+    dragged = null;
+  });
+  board.addEventListener('dragover', function (e) {
+    // Near either edge: scroll the board so the far columns can be reached.
+    var r = board.getBoundingClientRect(), edge = 80;
+    if (e.clientX < r.left + edge) board.scrollLeft -= 24;
+    else if (e.clientX > r.right - edge) board.scrollLeft += 24;
+    var col = e.target.closest('.kanban-col');
+    if (!col) return;
+    e.preventDefault();
+    board.querySelectorAll('.drag-over').forEach(function (c) { c.classList.remove('drag-over'); });
+    col.classList.add('drag-over');
+  });
+  board.addEventListener('drop', function (e) {
+    e.preventDefault();
+    var col = e.target.closest('.kanban-col');
+    if (col) col.classList.remove('drag-over');
+    if (col && dragged) move(dragged, col.dataset.status);
+  });
+})();
+</script>
+{% endblock %}

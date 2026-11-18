@@ -10,6 +10,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.79.0] "Hornbill" — 2026-11-18 · a sales pipeline for leads
+
+> In short: leads now have a board you can drag between stages, from Generated to Won, with a reason for every move, the amount when you send a quotation or win, and a clear activity log on each lead.
+
+### New
+
+- **A leads board.** Add a lead with the client name, company, industry and project info, then move it through Generated, Requirement gathering, Timeline and cost estimation, Quotation sent and Won. Lost has its own column.
+- **Move it your way.** Click a card to open the lead. Press and hold to drag it, and the board scrolls by itself when you reach the edge. Each card also has an arrow button that lists every stage.
+- **Every move asks why.** You write a reason when you move a lead, and it is saved with your name and the time.
+- **Amounts are asked for.** Moving a lead to Quotation sent asks how much the quotation was for. Moving it to Won asks how much it was won for. The totals show at the top of those two columns, and commas appear as you type.
+- **A readable activity log.** Each lead shows calls, emails, meetings, messages and notes as cards with a type, a title and details. Every move shows the old and new stage, the amount and the reason.
+- **Admins only.** Owners and admins see the board and the amounts. Nobody else can open them.
+
+### Better
+
+- **Website form leads sit in the same pipeline.** They arrive in Generated, and the old list is one click away from the board.
+- **Only won leads become projects.** The Convert button now appears once a lead is won.
+
 ## [1.78.0] "Gannet" — 2026-11-18 · a ticket page that is easier to follow
 
 > In short: the ticket page is redesigned, with what happened and the comments on the left and the status, priority, assignee, deadline and activity in one panel on the right.

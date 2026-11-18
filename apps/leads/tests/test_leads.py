@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -95,46 +97,89 @@ class LeadFlowTest(TestCase):
 
     def test_log_status_and_convert(self):
         self.client.post(self.url("lead_log"), {"text": "Called, wants a demo"})
-        self.client.post(self.url("lead_status"), {"status": "contacted"})
+        self.client.post(self.url("lead_status"), {"status": "req_gathering", "reason": "Asked for a call"})
         self.lead.refresh_from_db()
-        self.assertEqual(self.lead.status, "contacted")
+        self.assertEqual(self.lead.status, "req_gathering")
         self.assertEqual([l.kind for l in self.lead.logs.all()], ["status", "note"])
 
+        self.client.post(self.url("lead_status"), {"status": "won", "amount": "₹ 1,50,000", "reason": "Signed"})
         self.client.post(self.url("lead_convert"))
         self.lead.refresh_from_db()
-        self.assertEqual(self.lead.status, "converted")
+        self.assertEqual(self.lead.status, "won")
         self.assertEqual(self.lead.product.name, "Rao Textiles")
         self.assertEqual(self.lead.product.company, self.company)
         self.assertEqual(self.lead.logs.filter(kind="converted").count(), 1)
         self.assertContains(self.client.get(self.url("lead_detail")), "Open project")
 
-    def test_converting_twice_makes_one_project(self):
+    def test_quote_and_won_need_an_amount(self):
+        for status in ("quote_sent", "won"):
+            for bad in ("", "abc", "-5", "0", "nan"):
+                r = self.client.post(self.url("lead_status"), {"status": status, "amount": bad, "reason": "x"},
+                                     headers={"X-Requested-With": "XMLHttpRequest"})
+                self.assertEqual(r.status_code, 400, (status, bad))
+        self.lead.refresh_from_db()
+        self.assertEqual(self.lead.status, "generated")
+
+    def test_amounts_are_saved(self):
+        ajax = {"X-Requested-With": "XMLHttpRequest"}
+        self.assertEqual(self.client.post(self.url("lead_status"), {"status": "quote_sent", "amount": "250000", "reason": "Sent PDF"}, headers=ajax).status_code, 200)
+        self.client.post(self.url("lead_status"), {"status": "won", "amount": "240000.50", "reason": "Signed"}, headers=ajax)
+        self.lead.refresh_from_db()
+        self.assertEqual((self.lead.quoted_amount, self.lead.won_amount), (250000, Decimal("240000.50")))
+
+    def test_a_reason_is_required_and_lands_in_the_activity(self):
+        self.assertEqual(self.client.post(self.url("lead_status"), {"status": "req_gathering"},
+                                          headers={"X-Requested-With": "XMLHttpRequest"}).status_code, 400)
+        self.client.post(self.url("lead_status"), {"status": "req_gathering", "reason": "Client replied"})
+        log = self.lead.logs.get()
+        self.assertEqual((log.text, log.from_status, log.to_status), ("Client replied", "generated", "req_gathering"))
+
+    def test_log_an_email_with_title(self):
+        self.client.post(self.url("lead_log"), {"kind": "email", "title": "Shared specs", "text": "Sent the PDF"})
+        self.client.post(self.url("lead_log"), {"kind": "status", "title": "sneaky"})  # not a loggable kind
+        kinds = [(l.kind, l.title) for l in self.lead.logs.order_by("pk")]
+        self.assertEqual(kinds, [("email", "Shared specs"), ("note", "sneaky")])
+        self.assertContains(self.client.get(self.url("lead_detail")), "Shared specs")
+
+    def test_only_won_leads_convert(self):
         from apps.products.models import Product
         self.client.post(self.url("lead_convert"))
+        self.assertEqual(Product.objects.filter(company=self.company).count(), 0)
+
+    def test_converting_twice_makes_one_project(self):
+        from apps.products.models import Product
+        self.client.post(self.url("lead_status"), {"status": "won", "amount": "10", "reason": "ok"})
         self.client.post(self.url("lead_convert"))
-        self.client.post(self.url("lead_status"), {"status": "converted"})
+        self.client.post(self.url("lead_convert"))
         self.assertEqual(Product.objects.filter(company=self.company).count(), 1)
 
     def test_name_clash_gets_a_number(self):
         from apps.products.models import Product
         Product.objects.create(company=self.company, name="Rao Textiles", slug="rao-textiles")
+        self.client.post(self.url("lead_status"), {"status": "won", "amount": "10", "reason": "ok"})
         self.client.post(self.url("lead_convert"))
         self.lead.refresh_from_db()
         self.assertEqual(self.lead.product.name, "Rao Textiles 2")
 
-    def test_status_dropdown_can_convert(self):
-        self.client.post(self.url("lead_status"), {"status": "converted"})
-        self.lead.refresh_from_db()
-        self.assertTrue(self.lead.product_id)
+    def test_add_lead_by_hand_lands_in_generated_on_the_board(self):
+        r = self.client.post(reverse("leads:lead_create"), {
+            "full_name": "Ravi", "industry": "Retail", "details": "Billing app"})
+        self.assertRedirects(r, reverse("leads:lead_board"))
+        lead = Lead.objects.get(full_name="Ravi")
+        self.assertEqual((lead.status, lead.industry, lead.email), ("generated", "Retail", ""))
+        self.assertContains(self.client.get(reverse("leads:lead_board")), "Ravi")
+        self.client.post(reverse("leads:lead_create"), {"full_name": "", "details": ""})
+        self.assertEqual(Lead.objects.filter(company=self.company).count(), 2)
 
     def test_admin_only(self):
         self.client.force_login(self.dev)
-        for name in ("lead_detail",):
-            self.assertEqual(self.client.get(self.url(name)).status_code, 403)
+        self.assertEqual(self.client.get(self.url("lead_detail")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("leads:lead_board")).status_code, 403)
+        self.assertEqual(self.client.post(reverse("leads:lead_create"), {"full_name": "x", "details": "y"}).status_code, 403)
         for name in ("lead_log", "lead_status", "lead_convert"):
             self.assertEqual(self.client.post(self.url(name), {"text": "x", "status": "lost"}).status_code, 403)
         self.lead.refresh_from_db()
-        self.assertEqual(self.lead.status, "new")
+        self.assertEqual(self.lead.status, "generated")
 
     def test_other_companys_lead_is_404(self):
         theirs = Lead.objects.create(company=self.other, full_name="X", email="x@x.com", details="d")

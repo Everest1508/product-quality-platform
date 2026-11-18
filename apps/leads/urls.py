@@ -5,7 +5,9 @@ from apps.leads import views
 app_name = "leads"
 
 urlpatterns = [
-    path("", views.LeadListView.as_view(), name="lead_list"),
+    path("", views.LeadBoardView.as_view(), name="lead_board"),
+    path("new/", views.LeadCreateView.as_view(), name="lead_create"),
+    path("website/", views.LeadListView.as_view(), name="lead_list"),
     path("<int:pk>/", views.LeadDetailView.as_view(), name="lead_detail"),
     path("<int:pk>/log/", views.LeadLogView.as_view(), name="lead_log"),
     path("<int:pk>/status/", views.LeadStatusView.as_view(), name="lead_status"),
