@@ -1126,3 +1126,8 @@ decided what and strike the item** rather than deleting it.
 
 - 30 more reports (83 total): `delivery.py` (projects, planning, capacity), `health.py` (adoption, ingestion, automation, sign-ins, data health), `extras.py` (leads, quotes, attendance patterns, leave, forecasts). Version 1.74.0 "Cassowary". Schedule slippage counts plan changes only; the old/new dates are not stored (`ProjectLogEntry.meta` has just the changed names).
 - Left: RPT-016-style items needing new data, RPT-096 payroll forecast, RPT-098 feedback pack, and the reports blocked on new fields (see REPORTS_GAP_ANALYSIS.md section F).
+
+## 2026-11-18 (member removal wind-down, 1.76.0)
+
+- `TeamRemoveView` now calls `wind_down_member`: removes the person from open tickets only (resolved/closed keep them), records their name in `Ticket.former_assignees` on tickets left with nobody (shown as a "Was X" pill, cleared by `set_assignees` once anyone is assigned), and adds a dated `PayrollProfile` with `is_on_payroll=False`. Old profiles and payslips are untouched; the running cycle still pays them.
+- Deliberately not done: status is not reset when the last assignee goes (an "Assigned" ticket stays in that column, unassigned); comments, attendance, leave and `ProductAccess` rows are untouched.

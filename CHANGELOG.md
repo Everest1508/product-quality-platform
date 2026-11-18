@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.76.0] "Emu" — 2026-11-18 · removing someone no longer leaves loose ends
+
+> In short: when you remove a person from the team, their open tickets show who they were on, and they stop appearing on payroll from the next cycle, while everything they already did stays.
+
+### Better
+
+- **Open tickets show who they were on.** When someone is removed, their unfinished tickets become unassigned and show a "Was Name" label on the board, the list and the ticket page, until someone new is assigned.
+- **Removed people leave payroll.** They are taken off payroll from today, so they are not paid in later cycles. The cycle already running still pays the days they worked.
+- **History is kept.** Finished tickets, earlier payslips and past records still show the person.
+
 ## [1.75.0] "Dabchick" — 2026-11-17 · add a day nobody punched
 
 > In short: owners and admins can now fill in a day a person never punched, approvals show the actual times, and the Reports page drops 12 reports that added little (71 left).

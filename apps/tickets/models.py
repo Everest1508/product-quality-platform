@@ -77,6 +77,10 @@ class Ticket(TenantScopedModel):
         blank=True,
         related_name="assigned_tickets",
     )
+    former_assignees = models.CharField(
+        max_length=255, blank=True, default="",
+        help_text="Names of people removed from the team while on this ticket; cleared when someone is assigned.",
+    )
     assignees = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name="tickets_assigned",
@@ -202,7 +206,9 @@ class Ticket(TenantScopedModel):
         self.assignees.set(users)
         primary = self.assignees.order_by("pk").first()
         self.assigned_to = primary
-        self.save(update_fields=["assigned_to", "updated_at"])
+        if primary:
+            self.former_assignees = ""
+        self.save(update_fields=["assigned_to", "former_assignees", "updated_at"])
 
         added = self.assignees.exclude(pk__in=before)
         if added:

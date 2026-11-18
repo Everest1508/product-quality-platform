@@ -252,6 +252,42 @@ class TeamInviteView(CompanyAdminRequiredMixin, View):
         })
 
 
+def wind_down_member(company, person, actor):
+    """Stop a removed person from lingering in live work; history is left alone.
+
+    Open tickets lose them as an assignee (resolved/closed ones keep it), and a
+    new payroll profile dated today switches them off payroll. Old profiles and
+    finished payslips are untouched, and the cycle already running still pays
+    the days they worked.
+    """
+    from apps.payroll.models import PayrollProfile
+    from apps.tickets.models import Ticket
+
+    done = (Ticket.Status.RESOLVED, Ticket.Status.CLOSED)
+    touched = list(Ticket.objects.filter(company=company).filter(
+        Q(assignees=person) | Q(assigned_to=person)).exclude(status__in=done).values_list("pk", flat=True))
+    for t in Ticket.objects.filter(company=company, assignees=person).exclude(status__in=done):
+        t.set_assignees([u for u in t.assignees.all() if u != person], actor=actor)
+    for t in Ticket.objects.filter(company=company, assigned_to=person).exclude(status__in=done):
+        t.assigned_to = t.assignees.order_by("pk").first()
+        t.save(update_fields=["assigned_to", "updated_at"])
+    # Leave a trail on tickets left with nobody, so the card says who it was.
+    name = person.get_full_name() or person.username
+    for t in Ticket.objects.filter(pk__in=touched, assignees__isnull=True):
+        t.former_assignees = ", ".join(filter(None, [t.former_assignees, name]))[:255]
+        t.save(update_fields=["former_assignees"])
+
+    latest = PayrollProfile.objects.filter(company=company, user=person).order_by("-effective_from").first()
+    if latest and latest.is_on_payroll:
+        PayrollProfile.objects.update_or_create(
+            company=company, user=person, effective_from=timezone.localdate(),
+            defaults={
+                "monthly_salary": latest.monthly_salary, "daily_rate": latest.daily_rate,
+                "currency": latest.currency, "is_on_payroll": False, "notes": "Removed from team",
+            },
+        )
+
+
 class TeamRemoveView(CompanyAdminRequiredMixin, View):
     def post(self, request, pk):
         membership = Membership.objects.filter(pk=pk, company=request.company).first()
@@ -266,7 +302,9 @@ class TeamRemoveView(CompanyAdminRequiredMixin, View):
             return redirect("accounts:team_list")
 
         username = membership.user.username
+        person = membership.user
         membership.delete()
+        wind_down_member(request.company, person, request.user)
         log_activity(
             request.company, "member_removed",
             f"{username} removed from team",

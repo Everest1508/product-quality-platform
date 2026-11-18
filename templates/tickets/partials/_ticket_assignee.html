@@ -8,3 +8,4 @@
   {% include "tickets/partials/_assignee_multiselect.html" %}
   {% endwith %}
 </form>
+{% if ticket.former_assignees and not ticket.assignees.all %}<span class="pill" title="Removed from the team" style="margin-top:var(--space-1);">Was {{ ticket.former_assignees }}</span>{% endif %}

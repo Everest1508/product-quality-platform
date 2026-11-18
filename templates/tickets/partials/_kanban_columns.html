@@ -48,7 +48,7 @@
           {% if ticket.assignees.all|length > 3 %}<span class="avatar avatar-sm" style="margin-left:4px;">+{{ ticket.assignees.all|length|add:"-3" }}</span>{% endif %}
         </div>
         {% else %}
-        <span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>
+        {% if ticket.former_assignees %}<span class="pill" title="Removed from the team">Was {{ ticket.former_assignees }}</span>{% else %}<span class="text-sm text-muted" style="font-size:11px;">Unassigned</span>{% endif %}
         {% endif %}
         <span class="text-sm text-muted" style="font-size:11px;" title="Created {{ ticket.created_at|date:'M j, Y, g:i A' }}">{{ ticket.created_at|date:'M j' }}</span>
         {% if ticket.deadline %}
