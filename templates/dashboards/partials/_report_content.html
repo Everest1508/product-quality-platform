@@ -114,7 +114,7 @@
       {% icon 'chevron-right' 'ic rep-fold-chevron' %}
       <h2>Numbers by product</h2>
     </div>
-    <span class="count-badge">{{ product_rows|length }} Products</span>
+    <span class="count-badge">{{ product_rows|length }} product{{ product_rows|length|pluralize }}</span>
   </summary>
   <div class="rep-table-wrap mt-3">
     <table class="rep-table">
@@ -152,7 +152,7 @@
       {% icon 'chevron-right' 'ic rep-fold-chevron' %}
       <h2>Numbers by day</h2>
     </div>
-    <span class="count-badge">{{ daily|length }} Days</span>
+    <span class="count-badge">{{ daily|length }} day{{ daily|length|pluralize }}</span>
   </summary>
   <div class="rep-table-wrap mt-3">
     <table class="rep-table">
