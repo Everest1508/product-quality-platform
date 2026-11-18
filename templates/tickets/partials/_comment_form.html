@@ -1,4 +1,4 @@
-{% comment %}
+{% load icon_tags %}{% comment %}
 The comment box with @mention autocomplete. `mention_candidates` is the list of
 people who can open this ticket, so only they are offered. Typing "@" and a few
 letters opens the list; arrows and Enter or Tab choose; Escape closes. The box
@@ -52,7 +52,7 @@ still works as a plain textarea without JavaScript.
       </template>
     </ul>
   </div>
-  <div style="text-align:right;margin-top:8px;">
-    <button type="submit" class="btn btn-primary">Comment</button>
+  <div class="tk-send">
+    <button type="submit" class="btn btn-primary">{% icon 'send' 'ic' %}Comment</button>
   </div>
 </form>

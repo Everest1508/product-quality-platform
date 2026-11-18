@@ -4,7 +4,7 @@
       hx-swap="innerHTML"
       >
   {% csrf_token %}
-  <input type="datetime-local" name="deadline" class="form-input" style="font-size:12px;padding:4px 6px;width:100%;"
+  <input type="datetime-local" name="deadline" class="form-input"
          value="{{ ticket.deadline|date:'Y-m-d\TH:i' }}"
          hx-trigger="change"
          hx-post="{% url 'tickets:ticket_deadline' pk=ticket.pk %}"

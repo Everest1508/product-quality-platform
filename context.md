@@ -1136,3 +1136,9 @@ decided what and strike the item** rather than deleting it.
 
 - Ticket detail header: key above the title, status pill and a one-line meta row (`.td-key`, `.td-meta` in `_ui.css`), `ago` filter in `text_tags.py` (largest unit only), quieter Delete, time-first History. `Ticket.removed_assignees` lists assignees with no membership and the assignee box labels them "Removed from team".
 - Not done: `product_ticket_detail.html` still has the older layout. Not viewed in a browser (preview needs a login).
+
+## 2026-11-18 (ticket page redesign, 1.78.0)
+
+- `ticket_detail.html` rebuilt as `.tk-*` (in `_ui.css`): story left (description, comments), Details and Activity right, stacked under 980px. The old `.td-*` page styles in `_pages.css` are now unused except `.td-delete`/`.td-removed`.
+- `_comment_list.html` and `_comment_form.html` changed too, so `product_ticket_detail.html` comments pick up the new look; that page's own layout is unchanged. The deadline input lost its inline font size.
+- Checked in the browser at desktop and phone width on a scratch DB; dark mode not viewed.

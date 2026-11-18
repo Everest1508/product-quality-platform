@@ -11,58 +11,70 @@
   <span class="current">{{ ticket.key }}</span>
 </nav>
 
-<div class="td-page">
-  <div class="pg-head">
-    <div style="min-width:0">
-      <p class="td-key">{{ ticket.key }}</p>
+<div class="tk">
+  <header class="tk-head">
+    <div class="tk-title">
+      <p class="tk-key">{{ ticket.key }}</p>
       <h1>{{ ticket.title }}</h1>
-      <p class="td-meta">
+      <p class="tk-meta">
         <span class="pill {% if ticket.status == 'in_progress' %}progress{% else %}{{ ticket.status }}{% endif %}">{{ ticket.get_status_display }}</span>
         <span class="bdg bdg-outline">{{ ticket.get_ticket_type_display }}</span>
-        <span title="{{ ticket.created_at|date:'M j, Y g:i A' }}">Created {{ ticket.created_at|ago }}{% if ticket.created_by %} by {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}{% endif %}</span>
-        <span title="{{ ticket.updated_at|date:'M j, Y g:i A' }}">Updated {{ ticket.updated_at|ago }}</span>
-        <span>{{ ticket.get_source_display }}</span>
         {% include "tickets/partials/_ticket_viewers.html" %}
       </p>
     </div>
-    <div class="pg-actions">
-      <a href="{% url 'tickets:ticket_edit' pk=ticket.pk %}" data-shortcut="edit" class="btn">{% icon 'edit' 'ic' %}Edit Ticket</a>
+    <div class="tk-actions">
+      {% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}
+      <a href="{% url 'tickets:ticket_edit' pk=ticket.pk %}" data-shortcut="edit" class="btn">{% icon 'edit' 'ic' %}Edit</a>
       {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
-      <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" style="display:inline" data-confirm="Delete ticket {{ ticket.key }}?" data-confirm-text="This cannot be undone." data-confirm-label="Delete">
-        {% csrf_token %}<button type="submit" class="btn btn-ghost td-delete" title="Delete ticket" aria-label="Delete ticket">{% icon 'trash' 'ic' %}Delete</button>
+      <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" data-confirm="Delete ticket {{ ticket.key }}?" data-confirm-text="This cannot be undone." data-confirm-label="Delete">
+        {% csrf_token %}<button type="submit" class="btn btn-ghost td-delete" title="Delete ticket" aria-label="Delete ticket">{% icon 'trash' 'ic' %}</button>
       </form>
       {% endif %}
     </div>
-  </div>
+  </header>
 
-  <section class="td-props">
-    <div class="td-prop"><span class="k">Status</span><div id="detail-status">{% include "tickets/partials/_ticket_status.html" with ticket=ticket %}</div></div>
-    <div class="td-prop"><span class="k">Priority</span><div id="detail-priority">{% include "tickets/partials/_ticket_priority.html" with ticket=ticket priority_choices=priority_choices %}</div></div>
-    <div class="td-prop"><span class="k">Assignee</span><div id="detail-assignee">{% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}</div></div>
-    <div class="td-prop"><span class="k">Deadline</span><div id="detail-deadline">{% include "tickets/partials/_ticket_deadline.html" with ticket=ticket %}</div></div>
-  </section>
+  <div class="tk-body">
+    <main class="tk-main">
+      <section class="card tk-card">
+        <h2>What happened</h2>
+        {% if ticket.description %}<div class="tk-desc">{{ ticket.description|linkify }}</div>{% else %}<p class="tk-empty">No description was added.</p>{% endif %}
+        {% if ticket.linked_error_group %}
+        <p class="tk-link"><span>Linked error</span>
+          {% if ticket.product %}<a href="{% url 'products:product_error_detail' pk=ticket.product.pk error_pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>
+          {% else %}<a href="{% url 'errors:error_detail' pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>{% endif %}</p>
+        {% endif %}
+      </section>
 
-  <div class="td-sec-head"><h2>Description</h2>{% include "tickets/partials/_ticket_follow.html" with ticket=ticket following=following watcher_count=watcher_count %}</div>
-  <div class="card-flush" style="padding:18px 20px">
-    {% if ticket.description %}<div style="overflow-wrap:anywhere;font-size:13.5px">{{ ticket.description|linkify }}</div>{% else %}<p style="color:var(--muted);font-size:13.5px">No description.</p>{% endif %}
-    {% if ticket.linked_error_group %}
-      <p style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px"><span style="color:var(--muted)">Linked error: </span>
-      {% if ticket.product %}<a style="color:var(--accent)" href="{% url 'products:product_error_detail' pk=ticket.product.pk error_pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>
-      {% else %}<a style="color:var(--accent)" href="{% url 'errors:error_detail' pk=ticket.linked_error_group.pk %}">{{ ticket.linked_error_group.title }}</a>{% endif %}</p>
-    {% endif %}
-  </div>
+      <section class="card tk-card">
+        <h2>Comments <span class="tk-count">{{ comments|length }}</span></h2>
+        <div id="comment-list">{% include "tickets/partials/_comment_list.html" with comments=comments %}</div>
+        <div class="tk-compose">{% include "tickets/partials/_comment_form.html" %}</div>
+      </section>
+    </main>
 
-  {% if events %}
-  <div class="td-sec-head"><h2>History <span style="font-weight:400;color:var(--muted)">({{ events|length }})</span></h2></div>
-  <ol class="td-timeline">
-    {% for e in events %}<li><span class="dot" aria-hidden="true"></span><p><time title="{{ e.created_at|date:'M j, Y g:i A' }}">{{ e.created_at|ago }}</time><b>{% firstof e.actor.get_full_name e.actor.username "System" %}</b> {{ e.title|cut:ticket.key|lower|cut:"ticket  "|cut:"ticket " }}{% if e.description %}: <span class="td-desc">{{ e.description }}</span>{% endif %}</p></li>{% endfor %}
-  </ol>
-  {% endif %}
+    <aside class="tk-side">
+      <section class="card tk-card">
+        <h2>Details</h2>
+        <div class="tk-prop"><span class="k">Status</span><div id="detail-status">{% include "tickets/partials/_ticket_status.html" with ticket=ticket %}</div></div>
+        <div class="tk-prop"><span class="k">Priority</span><div id="detail-priority">{% include "tickets/partials/_ticket_priority.html" with ticket=ticket priority_choices=priority_choices %}</div></div>
+        <div class="tk-prop"><span class="k">Assigned to</span><div id="detail-assignee">{% include "tickets/partials/_ticket_assignee.html" with ticket=ticket %}</div></div>
+        <div class="tk-prop"><span class="k">Deadline</span><div id="detail-deadline">{% include "tickets/partials/_ticket_deadline.html" with ticket=ticket %}</div></div>
+        <dl class="tk-facts">
+          <div><dt>Created</dt><dd title="{{ ticket.created_at|date:'j M Y, g:i a' }}">{{ ticket.created_at|ago }}{% if ticket.created_by %} by {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}{% endif %}</dd></div>
+          <div><dt>Updated</dt><dd title="{{ ticket.updated_at|date:'j M Y, g:i a' }}">{{ ticket.updated_at|ago }}</dd></div>
+          <div><dt>Source</dt><dd>{{ ticket.get_source_display }}</dd></div>
+        </dl>
+      </section>
 
-  <div class="td-sec-head"><h2>Comments <span style="font-weight:400;color:var(--muted)">({{ comments|length }})</span></h2></div>
-  <div class="card-flush" style="padding:18px 20px">
-    <div id="comment-list">{% include "tickets/partials/_comment_list.html" with comments=comments %}</div>
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">{% include "tickets/partials/_comment_form.html" %}</div>
+      {% if events %}
+      <section class="card tk-card">
+        <h2>Activity <span class="tk-count">{{ events|length }}</span></h2>
+        <ol class="tk-activity">
+          {% for e in events %}<li><p><b>{% firstof e.actor.get_full_name e.actor.username "System" %}</b> {{ e.title|cut:ticket.key|lower|cut:"ticket  "|cut:"ticket " }}{% if e.description %}: {{ e.description }}{% endif %}</p><time title="{{ e.created_at|date:'j M Y, g:i a' }}">{{ e.created_at|ago }}</time></li>{% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+    </aside>
   </div>
 </div>
 {% endblock %}

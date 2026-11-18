@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.78.0] "Gannet" — 2026-11-18 · a ticket page that is easier to follow
+
+> In short: the ticket page is redesigned, with what happened and the comments on the left and the status, priority, assignee, deadline and activity in one panel on the right.
+
+### Better
+
+- **The story and the facts are apart.** The description and comments sit on the left. Status, priority, who it is assigned to and the deadline sit in a Details panel on the right, each with its own label.
+- **Comments are easier to read.** Each comment shows who wrote it and when, and the empty state tells you to add the first one.
+- **Activity has its own panel.** A short list of what changed and when sits under Details, so it no longer pushes the comments down.
+- **A cleaner header.** The ticket key sits above the title, with the status and type under it, and Follow, Edit and Delete on the right.
+- **Works on a phone.** The two columns stack into one.
+
 ## [1.77.0] "Flamingo" — 2026-11-18 · a clearer ticket page
 
 > In short: the ticket page is easier to read, with the status next to the title, shorter times, a tidier history, and a label for assignees who have left the team.

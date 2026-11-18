@@ -643,32 +643,57 @@
 }
 .td-removed .pill { margin-left: auto; }
 
-/* Ticket page header: key above the title, one quiet meta line, a calm Delete. */
-.td-key {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: .04em;
-  color: var(--muted);
-  margin-bottom: var(--space-1);
-}
-.td-page .pg-head h1 { font-size: var(--fs-xl); line-height: 1.25; overflow-wrap: anywhere; }
-.td-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-3);
-  margin-top: var(--space-2);
-  font-size: var(--fs-sm);
-  color: var(--muted);
-}
-.td-meta > span:not(.pill):not(.bdg) + span:not(.pill):not(.bdg)::before {
-  content: "·";
-  margin-right: var(--space-3);
-}
+/* Ticket page: the story on the left (what happened, comments), the facts on the right. */
+.tk { display: grid; gap: var(--space-6); }
+.tk-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.tk-title { min-width: 0; flex: 1 1 28rem; }
+.tk-key { font-size: var(--fs-sm); font-weight: 600; color: var(--muted); margin-bottom: var(--space-1); }
+.tk-key span { font-weight: 400; }
+.tk-key a { color: var(--muted); }
+.tk-key a:hover { color: var(--accent); }
+.tk-title h1 { font-size: var(--fs-xl); font-weight: 650; line-height: 1.25; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.tk-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-3); }
+.tk-actions { display: flex; align-items: center; gap: var(--space-2); }
 .td-delete { color: var(--muted); }
 .td-delete:hover { color: var(--red); background: var(--red-bg); }
 
-/* History: time first, in a fixed column, so the eye runs down the actions. */
-.td-timeline li p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
-.td-timeline time { order: -1; flex: 0 0 5.5rem; margin: 0; }
-.td-timeline .td-desc { color: var(--text); }
+.tk-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
+.tk-main, .tk-side { display: grid; gap: var(--space-5); min-width: 0; }
+.tk-side { position: sticky; top: var(--space-4); }
+.tk-card h2 { font-size: var(--fs-md); font-weight: 600; margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2); }
+.tk-count { font-size: var(--fs-xs); font-weight: 500; color: var(--muted); background: var(--panel); border-radius: 99px; padding: 0 var(--space-2); }
+.tk-desc { overflow-wrap: anywhere; line-height: 1.6; white-space: pre-wrap; }
+.tk-empty { color: var(--muted); font-size: var(--fs-sm); }
+.tk-link { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); font-size: var(--fs-sm); display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.tk-link span { color: var(--muted); }
+.tk-link a { color: var(--accent); overflow-wrap: anywhere; }
+
+.tk-prop { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); min-width: 0; }
+.tk-prop .k { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
+.tk-prop .dd, .tk-prop .assignee-dd, .tk-prop .form-input { width: 100%; }
+.tk-facts { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--line); display: grid; gap: var(--space-3); font-size: var(--fs-sm); }
+.tk-facts > div { display: flex; justify-content: space-between; gap: var(--space-3); }
+.tk-facts dt { color: var(--muted); }
+.tk-facts dd { text-align: right; }
+
+.tk-comment { display: flex; gap: var(--space-3); padding-bottom: var(--space-4); margin-bottom: var(--space-4); border-bottom: 1px solid var(--line); }
+.tk-comment > div { min-width: 0; flex: 1; }
+.tk-who { display: flex; align-items: baseline; gap: var(--space-2); }
+.tk-who b { font-weight: 600; }
+.tk-who time, .tk-activity time { font-size: var(--fs-xs); color: var(--muted); }
+.tk-text { margin-top: var(--space-1); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.tk-compose { margin-top: var(--space-2); }
+.tk-send { display: flex; justify-content: flex-end; margin-top: var(--space-2); }
+
+.tk-activity { list-style: none; display: grid; gap: var(--space-4); position: relative; padding-left: var(--space-5); }
+.tk-activity::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--border); }
+.tk-activity li { position: relative; font-size: var(--fs-sm); color: var(--muted); }
+.tk-activity li::before { content: ""; position: absolute; left: calc(-1 * var(--space-5)); top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); box-shadow: 0 0 0 3px var(--surface); }
+.tk-activity b { font-weight: 500; color: var(--text); }
+.tk-activity p { overflow-wrap: anywhere; }
+
+
+@media (max-width: 980px) {
+  .tk-body { grid-template-columns: 1fr; }
+  .tk-side { position: static; }
+}

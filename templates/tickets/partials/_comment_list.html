@@ -1,17 +1,13 @@
-{% load ticket_tags %}
+{% load ticket_tags text_tags %}
 {% for comment in comments %}
-<div style="padding-bottom:12px;{% if not forloop.last %}border-bottom:1px solid var(--line);margin-bottom:12px;{% endif %}">
-  <div class="flex-between">
-    <span class="text-sm font-medium">
-      {% if comment.author %}
-      <span class="avatar" style="width:18px;height:18px;font-size:9px;">{{ comment.author.username.0|upper }}</span>
-      {% firstof comment.author.get_full_name comment.author.username "Someone" %}
-      {% else %}System{% endif %}
-    </span>
-    <span class="date">{{ comment.created_at|timesince }} ago</span>
+<article class="tk-comment">
+  <span class="kt-av">{% if comment.author %}{{ comment.author.username.0|upper }}{% else %}S{% endif %}</span>
+  <div>
+    <p class="tk-who"><b>{% if comment.author %}{% firstof comment.author.get_full_name comment.author.username "Someone" %}{% else %}System{% endif %}</b>
+      <time title="{{ comment.created_at|date:'j M Y, g:i a' }}">{{ comment.created_at|ago }}</time></p>
+    <div class="tk-text">{{ comment|comment_html }}</div>
   </div>
-  <div class="text-sm" style="margin-top:6px;white-space:pre-wrap;">{{ comment|comment_html }}</div>
-</div>
+</article>
 {% empty %}
-<p class="text-sm text-muted">No comments yet.</p>
+<p class="tk-empty">No comments yet. Add the first one below.</p>
 {% endfor %}
