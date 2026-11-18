@@ -46,3 +46,15 @@ class RemoveMemberKeepsHistoryTest(TestCase):
         self.assertTrue(old.is_on_payroll)  # history untouched
         newest = PayrollProfile.objects.filter(user=self.dev).order_by("-effective_from").first()
         self.assertFalse(newest.is_on_payroll)
+
+    def test_finished_ticket_marks_removed_assignee(self):
+        done_t = self._ticket("resolved")
+        self.assertEqual(done_t.removed_assignees, [])
+        self.m.delete()
+        self.assertEqual(done_t.removed_assignees, [self.dev])
+        self.client.force_login(self.owner)
+        s = self.client.session
+        s["active_company_id"] = self.co.pk
+        s.save()
+        page = self.client.get(reverse("tickets:ticket_detail", args=[done_t.pk])).content.decode()
+        self.assertIn("Removed from team", page)

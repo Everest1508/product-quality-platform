@@ -197,6 +197,14 @@ class Ticket(TenantScopedModel):
                 # Best-effort: a DSR failure must not block the status change, but it must not vanish either.
                 logger.exception("DSR auto-log failed for ticket %s", self.pk)
 
+    @property
+    def removed_assignees(self):
+        """Assignees who have since left the team (they stay on finished tickets as history)."""
+        from apps.accounts.models import Membership
+
+        members = Membership.objects.filter(company_id=self.company_id).values("user_id")
+        return list(self.assignees.exclude(pk__in=members))
+
     def set_assignees(self, users, actor=None):
         """Replace the assignee set and keep the primary ``assigned_to`` in sync.
 

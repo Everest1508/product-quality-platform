@@ -14,16 +14,22 @@
 <div class="td-page">
   <div class="pg-head">
     <div style="min-width:0">
-      <h1><span style="color:var(--muted)">{{ ticket.key }}</span> {{ ticket.title }}</h1>
-      <p class="sub"><span class="bdg bdg-outline">{{ ticket.get_ticket_type_display }}</span>
-        Created {{ ticket.created_at|timesince }} ago · updated {{ ticket.updated_at|timesince }} ago · {{ ticket.get_source_display }}
-        {% include "tickets/partials/_ticket_viewers.html" %}</p>
+      <p class="td-key">{{ ticket.key }}</p>
+      <h1>{{ ticket.title }}</h1>
+      <p class="td-meta">
+        <span class="pill {% if ticket.status == 'in_progress' %}progress{% else %}{{ ticket.status }}{% endif %}">{{ ticket.get_status_display }}</span>
+        <span class="bdg bdg-outline">{{ ticket.get_ticket_type_display }}</span>
+        <span title="{{ ticket.created_at|date:'M j, Y g:i A' }}">Created {{ ticket.created_at|ago }}{% if ticket.created_by %} by {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}{% endif %}</span>
+        <span title="{{ ticket.updated_at|date:'M j, Y g:i A' }}">Updated {{ ticket.updated_at|ago }}</span>
+        <span>{{ ticket.get_source_display }}</span>
+        {% include "tickets/partials/_ticket_viewers.html" %}
+      </p>
     </div>
     <div class="pg-actions">
       <a href="{% url 'tickets:ticket_edit' pk=ticket.pk %}" data-shortcut="edit" class="btn">{% icon 'edit' 'ic' %}Edit Ticket</a>
       {% if request.company_role == 'owner' or request.company_role == 'admin' or ticket.created_by == request.user %}
       <form method="post" action="{% url 'tickets:ticket_delete' pk=ticket.pk %}" style="display:inline" data-confirm="Delete ticket {{ ticket.key }}?" data-confirm-text="This cannot be undone." data-confirm-label="Delete">
-        {% csrf_token %}<button type="submit" class="btn btn-danger">{% icon 'trash' 'ic' %}Delete</button>
+        {% csrf_token %}<button type="submit" class="btn btn-ghost td-delete" title="Delete ticket" aria-label="Delete ticket">{% icon 'trash' 'ic' %}Delete</button>
       </form>
       {% endif %}
     </div>
@@ -49,7 +55,7 @@
   {% if events %}
   <div class="td-sec-head"><h2>History <span style="font-weight:400;color:var(--muted)">({{ events|length }})</span></h2></div>
   <ol class="td-timeline">
-    {% for e in events %}<li><span class="dot" aria-hidden="true"></span><p><b>{% firstof e.actor.get_full_name e.actor.username "System" %}</b> {{ e.title|cut:ticket.key|lower|cut:"ticket  "|cut:"ticket " }}{% if e.description %}: {{ e.description }}{% endif %}<time title="{{ e.created_at|date:'M j, Y g:i A' }}">{{ e.created_at|timesince }} ago</time></p></li>{% endfor %}
+    {% for e in events %}<li><span class="dot" aria-hidden="true"></span><p><time title="{{ e.created_at|date:'M j, Y g:i A' }}">{{ e.created_at|ago }}</time><b>{% firstof e.actor.get_full_name e.actor.username "System" %}</b> {{ e.title|cut:ticket.key|lower|cut:"ticket  "|cut:"ticket " }}{% if e.description %}: <span class="td-desc">{{ e.description }}</span>{% endif %}</p></li>{% endfor %}
   </ol>
   {% endif %}
 

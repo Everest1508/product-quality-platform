@@ -1131,3 +1131,8 @@ decided what and strike the item** rather than deleting it.
 
 - `TeamRemoveView` now calls `wind_down_member`: removes the person from open tickets only (resolved/closed keep them), records their name in `Ticket.former_assignees` on tickets left with nobody (shown as a "Was X" pill, cleared by `set_assignees` once anyone is assigned), and adds a dated `PayrollProfile` with `is_on_payroll=False`. Old profiles and payslips are untouched; the running cycle still pays them.
 - Deliberately not done: status is not reset when the last assignee goes (an "Assigned" ticket stays in that column, unassigned); comments, attendance, leave and `ProductAccess` rows are untouched.
+
+## 2026-11-18 (ticket page polish, 1.77.0)
+
+- Ticket detail header: key above the title, status pill and a one-line meta row (`.td-key`, `.td-meta` in `_ui.css`), `ago` filter in `text_tags.py` (largest unit only), quieter Delete, time-first History. `Ticket.removed_assignees` lists assignees with no membership and the assignee box labels them "Removed from team".
+- Not done: `product_ticket_detail.html` still has the older layout. Not viewed in a browser (preview needs a login).

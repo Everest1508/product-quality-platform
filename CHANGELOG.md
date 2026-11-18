@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.77.0] "Flamingo" — 2026-11-18 · a clearer ticket page
+
+> In short: the ticket page is easier to read, with the status next to the title, shorter times, a tidier history, and a label for assignees who have left the team.
+
+### Better
+
+- **Status sits next to the title.** The ticket key is a small label above the title, and one line below shows the status, type, who created it, when it was last updated and where it came from.
+- **Shorter times.** Dates read "2 weeks ago" instead of "2 weeks, 4 days ago", and hovering shows the exact date and time.
+- **A tidier history.** Each entry starts with when it happened, in a fixed column, so you can scan down the list of changes.
+- **A quieter Delete button.** It stays grey until you point at it, then turns red.
+- **People who left still show.** If someone who worked on a ticket has been removed from the team, their name stays on the ticket with a "Removed from team" label.
+
 ## [1.76.0] "Emu" — 2026-11-18 · removing someone no longer leaves loose ends
 
 > In short: when you remove a person from the team, their open tickets show who they were on, and they stop appearing on payroll from the next cycle, while everything they already did stays.

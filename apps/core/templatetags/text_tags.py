@@ -22,3 +22,11 @@ def linkify(value):
         pos = m.start() + len(url)
     out.append(conditional_escape(text[pos:]))
     return mark_safe("".join(out).replace("\r\n", "\n").replace("\n", "<br>"))
+
+
+@register.filter
+def ago(value):
+    """`2 weeks, 4 days ago` becomes `2 weeks ago`: the biggest unit is enough in a meta line."""
+    from django.utils.timesince import timesince
+
+    return f"{timesince(value).split(',')[0].replace(chr(160), ' ')} ago"

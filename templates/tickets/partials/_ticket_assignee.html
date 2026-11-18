@@ -9,3 +9,4 @@
   {% endwith %}
 </form>
 {% if ticket.former_assignees and not ticket.assignees.all %}<span class="pill" title="Removed from the team" style="margin-top:var(--space-1);">Was {{ ticket.former_assignees }}</span>{% endif %}
+{% for u in ticket.removed_assignees %}<p class="td-removed"><span class="avatar avatar-sm">{{ u.username|first|upper }}</span><span>{{ u.get_full_name|default:u.username }}</span><span class="pill" title="No longer on the team">Removed from team</span></p>{% endfor %}
