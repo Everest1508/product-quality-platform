@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.80.1] "Jabiru" — 2026-11-19 · hours now match everywhere
+
+> In short: the hours in your check-out notification and in the team attendance table now take the break off, so they match the "This week" chart and your history.
+
+### Fixed
+
+- **Check-out notification showed too many hours.** It counted the break as work, so a day could read 8h 30m there and 7h 30m on the home page. It now shows the same hours as everywhere else, and the "over" or "short of a full day" line is worked out from them too.
+- **Team attendance showed longer days than each person's own page.** Admins now see the same hours the person sees.
+
 ## [1.80.0] "Iora" — 2026-11-19 · log your DSR from the home page
 
 > In short: the home page now has a Log DSR button, so you can add today's work without leaving it.

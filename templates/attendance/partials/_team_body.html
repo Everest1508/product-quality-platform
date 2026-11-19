@@ -110,7 +110,7 @@
             <td>{{ row.record.check_out|date:"g:i A"|default:"—" }}</td>
             <td class="worked">
               {% if row.record and row.record.is_complete %}
-                <span>{{ row.record.worked_formatted }}</span>
+                <span>{{ row.net_formatted|default:row.record.worked_formatted }}</span>
                 <span class="mini-bar"><i style="width:{{ row.progress }}%"></i></span>
               {% elif row.record and row.record.is_open_today %}
                 <span x-data="{

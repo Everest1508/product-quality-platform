@@ -101,9 +101,11 @@ def _punch_notification_body(record, action, company):
         return f"On time for the {t12(shift.start_time)} shift."
 
     # Check-out: the day's tally, and a nudge when earlier days are still open.
-    body = f"{record.worked_formatted} worked today"
+    # Net of the break, the same figure the home chart and the history show.
+    net = service.net_minutes_for(record, shift)
+    body = f"{format_minutes(net)} worked today"
     target = shift.worked_minutes_per_day
-    delta = record.worked_minutes - target
+    delta = net - target
     # No target on a weekly off, so no day to be short of.
     if delta and not off:
         body += (
@@ -392,7 +394,7 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
                 request.company,
                 "attendance_checked_out",
                 f"{request.user.get_full_name() or request.user.username} checked out",
-                description=f"{record.worked_formatted} worked",
+                description=f"{format_minutes(service.net_minutes_for(record, service.shift_for(request.company)))} worked",
                 actor=request.user,
                 target_content_type="attendance_record",
                 target_object_id=record.pk,
@@ -401,7 +403,7 @@ class AttendancePunchView(CompanyMemberRequiredMixin, View):
                     "worked_minutes": record.worked_minutes,
                 },
             )
-            message = f"Checked out. {record.worked_formatted} logged today."
+            message = f"Checked out. {format_minutes(service.net_minutes_for(record, service.shift_for(request.company)))} logged today."
         elif action == "too_soon":
             message = "You just checked in. Give it a minute before checking out."
         else:
@@ -803,7 +805,7 @@ class AttendanceEditView(CompanyAdminRequiredMixin, View):
             "attendance_edited",
             f"Attendance for {record.user.get_full_name() or record.user.username} on "
             f"{record.date.strftime('%b %d, %Y')} edited",
-            description=f"{record.worked_formatted}",
+            description=f"{format_minutes(service.net_minutes_for(record, service.shift_for(request.company)))}",
             actor=request.user,
             target_content_type="attendance_record",
             target_object_id=record.pk,
