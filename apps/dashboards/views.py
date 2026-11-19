@@ -63,6 +63,13 @@ class DashboardView(CompanyMemberRequiredMixin, View):
         from apps.dashboards import greetings
 
         data["greetings"] = greetings.as_json_data()
+        from apps.dsr.forms import DSREntryForm
+        from apps.products.access import accessible_products
+
+        data["dsr_form"] = DSREntryForm(
+            id_prefix="hm-dsr",
+            products=accessible_products(request.user, request.company).order_by("name"),
+        )
         data["quote"] = quotes.pick(seed=timezone.localdate().toordinal() + request.user.pk)
         return render(request, "dashboards/dashboard.html", data)
 

@@ -89,6 +89,7 @@ function homeHero(fallback) {
       {% if milestones %}<ul class="hm-mile">{% for m in milestones %}<li>{% icon 'sparkles' 'ic' %}{{ m }}</li>{% endfor %}</ul>{% endif %}
     </div>
     <div class="hm-hero-actions">
+      <button type="button" class="btn" onclick="document.getElementById('hm-dsr-dlg').showModal()">{% icon 'plus' 'ic' %}Log DSR</button>
       <a href="{% url 'leave:apply' %}" class="btn">{% icon 'send' 'ic' %}Request leave</a>
       <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New ticket</a>
     </div>
@@ -101,6 +102,37 @@ function homeHero(fallback) {
     <div class="hm-note is-warn"><strong>Your DSR is empty for today.</strong> Take a minute to log what you worked on before you go.
       <a href="{% url 'dsr:dsr_sheet' %}">Open DSR sheet →</a></div>
   {% endif %}
+
+  <dialog class="dlg" id="hm-dsr-dlg" style="max-width:460px">
+    <form method="post" action="{% url 'dsr:dsr_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <input type="hidden" name="status" value="completed">
+      <div class="dlg-head"><h2>Log today's work</h2></div>
+      <div class="dlg-body">
+        <div class="field">
+          <label for="{{ dsr_form.task_name.id_for_label }}">What did you work on?</label>
+          {{ dsr_form.task_name }}
+        </div>
+        <div class="field">
+          <label for="{{ dsr_form.product.id_for_label }}">Project</label>
+          {{ dsr_form.product }}
+        </div>
+        <div class="field">
+          <label for="{{ dsr_form.category.id_for_label }}">Category</label>
+          {{ dsr_form.category }}
+        </div>
+        <div class="field">
+          <label for="{{ dsr_form.hours.id_for_label }}">Time</label>
+          <div style="display:flex;gap:var(--space-2)">{{ dsr_form.hours }}{{ dsr_form.minutes }}</div>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">{% icon 'check' 'ic' %}Log it</button>
+      </div>
+    </form>
+  </dialog>
 
   <div id="dashboard-content"
        hx-get="{% url 'dashboards:index' %}"

@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.80.0] "Iora" — 2026-11-19 · log your DSR from the home page
+
+> In short: the home page now has a Log DSR button, so you can add today's work without leaving it.
+
+### New
+
+- **Log your DSR from the home page.** A new Log DSR button sits next to New ticket. It opens a small window where you write what you worked on, pick the project and category, and set the time, and it is added to today's DSR.
+
 ## [1.79.0] "Hornbill" — 2026-11-18 · a sales pipeline for leads
 
 > In short: leads now have a board you can drag between stages, from Generated to Won, with a reason for every move, the amount when you send a quotation or win, and a clear activity log on each lead.
