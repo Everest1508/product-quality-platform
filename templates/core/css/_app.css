@@ -1616,11 +1616,6 @@
     display: none;
   }
 
-  .auth-pintu {
-    display: block;
-    image-rendering: pixelated;
-  }
-
   .auth-foot {
     margin-top: 22px;
     padding-top: 18px;

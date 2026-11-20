@@ -118,20 +118,35 @@ def compute(i):
 
     pitch_raw = str(i.get("pitch_price") or "").strip()
     pitch = pos(pitch_raw) if pitch_raw else None
+    actual_raw = str(i.get("actual_price") or "").strip()
+    actual = pos(actual_raw) if actual_raw else None
+    # The quoted price is the pitch if one was typed, otherwise the calculated price.
+    quoted = pitch if pitch is not None else price
     out = {
         "months": months.quantize(Decimal("0.01")).normalize(),
         "people": rows, "others": extra_rows, "ai_heads": ai_heads,
         "labour": money(labour), "rent": money(rent), "ai": money(ai), "extra": money(extra),
         "total": money(total), "price": money(price), "profit": money(price - total),
         "hpm": hpm.normalize(), "hpd": hpd.normalize(), "mode": mode, "has_pitch": pitch is not None,
+        "quoted": money(quoted), "quoted_profit": money(quoted - total),
+        "quoted_margin": money((quoted - total) / quoted * 100) if quoted else ZERO,
+        "quoted_vs_price": money(quoted - price),
+        "has_actual": actual is not None,
     }
-    shown = money(pitch) if pitch is not None else out["price"]
+    # Once the project is won, the actual price is the number that matters: the
+    # headline figures below follow it, while the quote stays the quote.
+    shown = actual if actual is not None else quoted
     out["shown_profit"] = money(shown - total)
     out["shown_margin"] = money((shown - total) / shown * 100) if shown else ZERO
     if pitch is not None:
         out["pitch"] = money(pitch)
         out["pitch_profit"] = money(pitch - total)
         out["pitch_margin"] = (money((pitch - total) / pitch * 100) if pitch else ZERO)
+    if actual is not None:
+        out["actual"] = money(actual)
+        out["actual_profit"] = money(actual - total)
+        out["actual_margin"] = money((actual - total) / actual * 100) if actual else ZERO
+        out["actual_minus_quoted"] = money(actual - quoted)
     return out
 
 

@@ -222,11 +222,14 @@ def _punch_context(request, record, message="", person=None):
     }
 
 
-def _month_summary(records, shift, first, last, today, holidays=None):
+def _month_summary(records, shift, first, last, today, holidays=None, on_leave=None):
     """Numbers and a day-by-day strip for the month being viewed.
 
     Hours come from `effective_minutes` (set by `annotate_effective`), so an
     unclosed day counts the same capped amount here as on the timesheet.
+    `on_leave` is the owner's approved-leave dates from `approved_leave_map`;
+    without them an approved leave day fell through to "no punch", disagreeing
+    with the week strip and the timesheet month grid.
     """
     scheduled = max(1, shift.worked_minutes_per_day)
     by_day = {r.date: r for r in records}
@@ -240,11 +243,17 @@ def _month_summary(records, shift, first, last, today, holidays=None):
             total += mins
 
     holidays = holidays or {}
+    on_leave = on_leave or set()
     cells = []
     day = first
     while day <= last:
         rec = by_day.get(day)
-        if rec is not None and rec.check_in:
+        # Leave wins over "no punch" (and over a weekend), matching the week
+        # strip's order: a day the company has already paid for is not a day
+        # the employee failed to clock in for.
+        if day in on_leave:
+            state, note, pct = "leave", "on approved leave", 0
+        elif rec is not None and rec.check_in:
             mins = getattr(rec, "effective_minutes", 0)
             if rec.is_stale:
                 state, note = "stale", "no check-out"
@@ -276,7 +285,7 @@ def _month_summary(records, shift, first, last, today, holidays=None):
         "month_cells": cells,
         "month_counts": {
             state: sum(1 for c in cells if c["state"] == state)
-            for state in ("full", "part", "open", "stale", "none")
+            for state in ("full", "part", "open", "stale", "leave", "none")
         },
         "month_leading_blanks": first.weekday(),
     }
@@ -318,6 +327,7 @@ class MyAttendanceView(CompanyMemberRequiredMixin, View):
         month_summary = _month_summary(
             month_records, shift, first, last, today,
             holidays=service.holiday_names(request.company, first, last),
+            on_leave=service.approved_leave_map(request.company, first, last).get(user.pk, set()),
         )
 
         focus_user = user if user.pk != request.user.pk else None

@@ -10,6 +10,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.83.0] "Yaffle" — 2026-11-20 · see what the project actually earned us
+
+> In short: Project costing now compares what you quoted with what the project actually cost, the sign-in page has a fresh white-and-blue look, and approved leave is marked correctly on the attendance calendar.
+
+### New
+
+- **Actual price and quote comparison.** Each estimate now has a Quoted price and an Actual price — what we got the project for. A comparison shows our cost, the system price, the quote and the actual price side by side, with the differences and the margin on the actual price. The saved estimate, the live form and the project list all show the gap. The actual price stays internal; the client quote never shows it.
+
+### Better
+
+- **The quote field has a clear home.** "Quote a different price instead" is now "Quoted price" in a section called The deal, next to the actual price, instead of being tucked away under Margin.
+- **A simpler password eye.** The pixel mascot eye is gone from the sign-in page. The show/hide button now uses a plain eye icon that gives a short blink when it changes.
+- **A sign-in page that says what it is.** The left panel now reads like a plain statement of purpose: a numbered list of what the product keeps track of. The form has one clear heading and a short help line. The two fields and the button are unchanged.
+- **Sign-in, tightened to the design system.** The input borders and focus ring now use the same tokens as the rest of the app, the primary button leads with an arrow icon like every other text button, and the small labels use the documented tracking instead of three local variants. The form side uses the app's page background so the white fields read as cards. A fake console readout that looked like live data is gone, and the help line now names who can invite you.
+- **The sign-in form now sits in a framed access card.** A larger title, a purpose strip and a leading icon in each field make the page read as a designed screen rather than a bare form. The fields, labels and password toggle work exactly as before.
+- **A white-and-blue parallax on the sign-in panel.** Soft white layers now drift across the deep blue in opposite directions, with a glow breathing underneath. Each layer repeats seamlessly, so the motion never ends or gets cut off at an edge, and it settles to a still panel when your device asks for less motion.
+
+### Removed
+
+- **Costing list reports.** The totals strip, the by-client table, the month filter and the CSV export are gone from Project costing. The list still has its search box, and each project still opens its full breakdown.
+- **The sign-in mascot.** The little pixel robot that waved and reacted to the password field is gone. The left panel keeps its colour, the product mark and the short list of what the product does.
+- **The animated signal-flow console on the sign-in page.** It was decoration that looked like a live system but carried no data, and the numbered list already said the same thing. The left panel now states what the workspace is for over the new parallax.
+
+### Fixed
+
+- **Approved leave shows on the attendance month grid.** Those days are now marked as leave instead of "no punch", and are no longer counted as working days you missed.
+
 ## [1.82.1] "Mynah" — 2026-11-20 · a livelier Home sky, and release names up front
 
 > In short: the Home sky now has shooting stars at night and a faint rainbow in the afternoon, the greeting line is easier to read, and the "What's new" window leads with each release's name.

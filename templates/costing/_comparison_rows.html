@@ -1,0 +1,16 @@
+{% load costing_tags %}
+{% comment %}The price comparison rows, shared by the live form and the saved estimate.{% endcomment %}
+<dl class="co-dl">
+  <div><dt>Our cost</dt><dd>{{ r.total|inr }}</dd></div>
+  <div><dt>System price <small>cost + margin</small></dt><dd>{{ r.price|inr }}</dd></div>
+  <div><dt>Quoted price <small>{% if r.has_pitch %}your own price{% else %}same as the system price{% endif %}</small></dt><dd>{{ r.quoted|inr }}</dd></div>
+  <div><dt>Quoted − system price</dt><dd class="{% if r.quoted_vs_price < 0 %}co-neg{% endif %}">{{ r.quoted_vs_price|inr }}</dd></div>
+  {% if r.has_actual %}
+  <div class="co-total"><dt>Actually got the project for</dt><dd>{{ r.actual|inr }}</dd></div>
+  <div><dt>Actual − our cost</dt><dd class="{% if r.actual_profit < 0 %}co-neg{% else %}co-pos{% endif %}">{{ r.actual_profit|inr }}</dd></div>
+  <div><dt>Actual − quoted price</dt><dd class="{% if r.actual_minus_quoted < 0 %}co-neg{% else %}co-pos{% endif %}">{{ r.actual_minus_quoted|inr }}</dd></div>
+  <div><dt>Margin on actual price <small>(actual − cost) ÷ actual</small></dt><dd class="{% if r.actual_margin < 0 %}co-neg{% endif %}">{{ r.actual_margin }}%</dd></div>
+  {% else %}
+  <div><dt>Actually got the project for</dt><dd class="co-mute">Not entered yet</dd></div>
+  {% endif %}
+</dl>

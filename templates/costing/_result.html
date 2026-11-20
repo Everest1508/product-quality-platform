@@ -18,16 +18,7 @@
     <div><dt>Profit</dt><dd class="{% if r.profit < 0 %}co-neg{% endif %}">{{ r.profit|inr }}</dd></div>
   </dl>
 </div>
-{% if r.has_pitch %}
-<div class="co-sum">
-  <h2 class="co-h">If you quote your own price</h2>
-  <dl class="co-dl">
-    <div class="co-total"><dt>Your price</dt><dd>{{ r.pitch|inr }}</dd></div>
-    <div><dt>Profit</dt><dd class="{% if r.pitch_profit < 0 %}co-neg{% endif %}">{{ r.pitch_profit|inr }}</dd></div>
-    <div><dt>Margin on price</dt><dd class="{% if r.pitch_margin < 0 %}co-neg{% endif %}">{{ r.pitch_margin }}%</dd></div>
-  </dl>
-</div>
-{% endif %}
+{% include "costing/_comparison.html" %}
 {% if r.people %}
     <div class="co-sum">
       <h2 class="co-h">Per person</h2>

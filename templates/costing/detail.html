@@ -83,10 +83,16 @@
   <dl class="co-dl">
     <div><dt>Suggested price</dt><dd>{{ r.price|inr }}</dd></div>
     <div><dt>Suggested profit <small>price − cost</small></dt><dd class="{% if r.profit < 0 %}co-neg{% endif %}">{{ r.profit|inr }}</dd></div>
-    {% if r.has_pitch %}<div><dt>Price you are actually quoting</dt><dd>{{ r.pitch|inr }}</dd></div>{% endif %}
+    {% if r.has_pitch %}<div><dt>Quoted price</dt><dd>{{ r.pitch|inr }}</dd></div>{% endif %}
     <div><dt>Profit <small>{% if r.has_pitch %}quoted price{% else %}price{% endif %} − cost</small></dt><dd class="{% if r.shown_profit < 0 %}co-neg{% endif %}">{{ r.shown_profit|inr }}</dd></div>
     <div class="co-total"><dt>Margin <small>profit ÷ {% if r.has_pitch %}quoted price{% else %}price{% endif %} × 100</small></dt><dd class="{% if r.shown_margin < 0 %}co-neg{% endif %}">{{ r.shown_margin }}%</dd></div>
   </dl>
+</section>
+
+<section class="co-sum co-step co-step-wide">
+  <h2 class="co-h"><span class="co-stepno">5</span>Quoted vs actual{% if r.has_actual %}<span class="co-step-total {% if r.actual_minus_quoted < 0 %}co-neg{% endif %}">{{ r.actual_minus_quoted|inr }} vs quote</span>{% endif %}</h2>
+  <p class="co-help">The quoted price is what you told the client. The actual price is what we got the project for. The difference shows how close the quote was.</p>
+  {% include "costing/_comparison_rows.html" %}
 </section>
 </div>
 </div>

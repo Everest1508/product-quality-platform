@@ -10,7 +10,7 @@
 <div class="pg-head">
   <div>
     <h1>{% if e and e.pk %}{{ e.name }}{% else %}New project{% endif %}</h1>
-    <p class="sub">{% if e and e.client_name %}{{ e.client_name }} · {% endif %}Type your numbers. The cost and price update as you type. Only the project name is required.</p>
+    <p class="sub">{% if e and e.client_name %}{{ e.client_name }} · {% endif %}Type your numbers. Our cost, the price to quote and the price you actually got update as you type. Only the project name is required.</p>
   </div>
   {% if e and e.pk %}<div class="head-actions">
     <a href="{% url 'costing:estimate_quote' e.pk %}" target="_blank" rel="noopener" class="btn">{% icon 'file-text' 'ic' %}Client quote</a>
@@ -121,9 +121,19 @@ Alpine and travel as two JSON fields, so there is only one copy of the maths: th
             <option value="markup" {% if d.margin_mode != 'margin' %}selected{% endif %}>Markup on cost</option>
             <option value="margin" {% if d.margin_mode == 'margin' %}selected{% endif %}>True margin on price</option>
           </select></div>
-        <div class="field co-wide"><label for="c-pitch">Quote a different price instead (₹)</label>
-          <input id="c-pitch" name="pitch_price" class="form-input" inputmode="decimal" placeholder="Leave blank to quote the calculated pitch price" value="{{ d.pitch_price }}">
-          <small class="co-help">Only if you want to charge something other than the calculated price. The client quote then shows it, and you see the profit it leaves.</small></div>
+      </div>
+    </section>
+
+    <section class="card co-card">
+      <h2 class="co-h">The deal <span class="bdg bdg-outline">Optional</span></h2>
+      <p class="co-help">Two prices you can fill in: the one you quoted to the client, and the one you actually got the project for. Both are compared with our cost below.</p>
+      <div class="co-grid">
+        <div class="field co-wide"><label for="c-pitch">Quoted price (₹)</label>
+          <input id="c-pitch" name="pitch_price" class="form-input" inputmode="decimal" placeholder="Leave blank to quote the calculated price" value="{{ d.pitch_price }}">
+          <small class="co-help">The price you told the client. The client quote shows this number, and the profit and margin use it too.</small></div>
+        <div class="field co-wide"><label for="c-actual">Actual price we got the project for (₹)</label>
+          <input id="c-actual" name="actual_price" class="form-input" inputmode="decimal" placeholder="Enter it once the project is won" value="{{ d.actual_price }}">
+          <small class="co-help">What we finally got for the project. Filling this in shows the difference from the quoted price and from our cost. It is never shown on the client quote.</small></div>
       </div>
     </section>
 

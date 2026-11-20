@@ -13,6 +13,18 @@
 <div class="auth-wrap">
 
   <aside class="auth-brand">
+    {% comment %}
+      A white-and-blue parallax, not a picture: three soft layers drift at
+      different speeds over the blue panel. Each layer is three tiled copies,
+      so the loop has no seam and nothing stops at an edge. All of it is
+      decorative and aria-hidden; the words below carry the meaning.
+    {% endcomment %}
+    <span class="auth-parallax" aria-hidden="true">
+      <i class="auth-parallax-far"></i>
+      <i class="auth-parallax-near"></i>
+      <i class="auth-parallax-haze"></i>
+    </span>
+
     <div class="brand">
       <span class="mark">{% brand_mark %}</span>
       <span>PQ Platform</span>
@@ -22,190 +34,131 @@
       Plain description, not a slogan. The form's <h1> is the page title; a
       competing headline above it is decoration that has to be maintained.
     {% endcomment %}
-    <p class="brand-line">Errors, tickets, feedback, attendance and payroll — kept
-      per product.</p>
-
-    {% comment %}
-      Pintu, the mascot from Home, keeps the visitor company: he waves once, blinks now and then,
-      looks away while a password is typed, and frowns when sign-in fails. Pure decoration, so
-      it is hidden from assistive technology and the form works the same without it.
-    {% endcomment %}
-    {{ pintu|json_script:"login-pintu" }}
-    <canvas class="auth-pintu" id="login-pintu-cv" width="18" height="16" aria-hidden="true"></canvas>
+    <div class="auth-brand-lead">
+      <p class="auth-eyebrow">One workspace.</p>
+      <p class="brand-line">Errors, tickets, feedback, attendance and payroll — kept
+        per product.</p>
+    </div>
 
     <ul class="auth-points">
       <li>
+        <span class="auth-point-index">01</span>
         {% icon 'chart-column' %}
         <div><b>Errors</b><span>Grouped by fingerprint, ranked by volume.</span></div>
       </li>
       <li>
+        <span class="auth-point-index">02</span>
         {% icon 'ticket' %}
         <div><b>Tickets</b><span>Raised by hand or by rule, tied to the product.</span></div>
       </li>
       <li>
+        <span class="auth-point-index">03</span>
         {% icon 'clock' %}
         <div><b>Time</b><span>Attendance, leave and payroll from the same records.</span></div>
       </li>
     </ul>
+
+    <p class="auth-brand-foot">Every product · One workspace</p>
   </aside>
 
   <div class="auth-form" x-data="{ show: false, busy: false }">
     <div class="auth-mini" aria-hidden="true"><span class="mark">{% brand_mark %}</span><span>PQ Platform</span></div>
-    <h1>Sign in</h1>
-    <p class="auth-sub">Welcome back. Enter your details to continue.</p>
-
-    {% if form.non_field_errors %}
-    {% comment %}
-      role="alert" so a failure is announced rather than only coloured red.
-      This page has no other live region for a visitor who is not logged in.
-    {% endcomment %}
-    <div class="auth-alert" role="alert">
-      {% icon 'triangle-alert' %}
-      <div><ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
-    </div>
-    {% endif %}
 
     {% comment %}
-      No-JS is the baseline: a real <button> in a real form. Alpine only adds the
-      pending state, so a blocked script cannot leave a user pressing a dead
-      button. Note the default label carries no x-cloak -- that is display:none
-      until Alpine boots, which would leave a no-JS button with no text at all.
+      The form sits on its own framed surface, like the cards every other page
+      uses. The strip above the heading says what this screen is for without
+      inventing a security claim the app cannot prove.
     {% endcomment %}
-    <form method="post" novalidate x-on:submit="if (!$event.defaultPrevented) busy = true">
-      {% csrf_token %}
-      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-
-      <div class="auth-field">
-        <label class="auth-label" for="{{ form.username.id_for_label }}">
-          <span>Username or email <span class="req" aria-hidden="true">*</span></span>
-        </label>
-        {{ form.username }}
-        {% if form.username.errors %}
-        <p class="auth-err" id="{{ form.username.id_for_label }}-err">
-          {% icon 'triangle-alert' %}<span>{{ form.username.errors.0 }}</span>
-        </p>
-        {% endif %}
+    <div class="auth-access">
+      <div class="auth-access-top">
+        {% icon 'bef:shield-check' %}
+        <span>Workspace access</span>
       </div>
 
-      <div class="auth-field">
-        <label class="auth-label" for="{{ form.password.id_for_label }}">
-          <span>Password <span class="req" aria-hidden="true">*</span></span>
-        </label>
-        <div class="pw-wrap">
-          {{ form.password }}
-          {% comment %}
-            Reachable by keyboard: this button previously carried tabindex="-1",
-            which hid the control from every keyboard user while leaving it
-            plainly visible on the page.
-          {% endcomment %}
-          <button type="button" class="pw-toggle" @click="show = !show"
-                  :aria-label="show ? 'Hide password' : 'Show password'"
-                  :aria-pressed="show ? 'true' : 'false'"
-                  :aria-controls="{{ form.password.id_for_label }}">
-            <template x-if="!show">{% include "accounts/_pintu_eye.html" with open=True %}</template>
-            <template x-if="show">{% include "accounts/_pintu_eye.html" %}</template>
-          </button>
+      <div class="auth-form-head">
+        <p class="auth-eyebrow">Welcome back</p>
+        <h1>Sign in</h1>
+        <p class="auth-sub">Enter your details to continue to your workspace.</p>
+      </div>
+
+      {% if form.non_field_errors %}
+      {% comment %}
+        role="alert" so a failure is announced rather than only coloured red.
+        This page has no other live region for a visitor who is not logged in.
+      {% endcomment %}
+      <div class="auth-alert" role="alert">
+        {% icon 'triangle-alert' %}
+        <div><ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+      </div>
+      {% endif %}
+
+      {% comment %}
+        No-JS is the baseline: a real <button> in a real form. Alpine only adds the
+        pending state, so a blocked script cannot leave a user pressing a dead
+        button. Note the default label carries no x-cloak -- that is display:none
+        until Alpine boots, which would leave a no-JS button with no text at all.
+      {% endcomment %}
+      <form method="post" novalidate x-on:submit="if (!$event.defaultPrevented) busy = true">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        <div class="auth-field">
+          <label class="auth-label" for="{{ form.username.id_for_label }}">
+            <span>Username or email <span class="req" aria-hidden="true">*</span></span>
+          </label>
+          <div class="auth-input-wrap">
+            {% icon 'user' %}
+            {{ form.username }}
+          </div>
+          {% if form.username.errors %}
+          <p class="auth-err" id="{{ form.username.id_for_label }}-err">
+            {% icon 'triangle-alert' %}<span>{{ form.username.errors.0 }}</span>
+          </p>
+          {% endif %}
         </div>
-        {% if form.password.errors %}
-        <p class="auth-err" id="{{ form.password.id_for_label }}-err">
-          {% icon 'triangle-alert' %}<span>{{ form.password.errors.0 }}</span>
-        </p>
-        {% endif %}
+
+        <div class="auth-field">
+          <label class="auth-label" for="{{ form.password.id_for_label }}">
+            <span>Password <span class="req" aria-hidden="true">*</span></span>
+          </label>
+          <div class="pw-wrap">
+            {% comment %} Leading glyph is decorative; the visible label names the field. {% endcomment %}
+            {% icon 'bef:lock' %}
+            {{ form.password }}
+            {% comment %}
+              Reachable by keyboard: this button previously carried tabindex="-1",
+              which hid the control from every keyboard user while leaving it
+              plainly visible on the page.
+            {% endcomment %}
+            <button type="button" class="pw-toggle" @click="show = !show"
+                    :aria-label="show ? 'Hide password' : 'Show password'"
+                    :aria-pressed="show ? 'true' : 'false'"
+                    :aria-controls="{{ form.password.id_for_label }}">
+              {% comment %} Plain vendored icons; the blink is in CSS. {% endcomment %}
+              <template x-if="!show">{% icon 'eye' %}</template>
+              <template x-if="show">{% icon 'eye-off' %}</template>
+            </button>
+          </div>
+          {% if form.password.errors %}
+          <p class="auth-err" id="{{ form.password.id_for_label }}-err">
+            {% icon 'triangle-alert' %}<span>{{ form.password.errors.0 }}</span>
+          </p>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-submit" x-bind:disabled="busy">
+          <span x-show="!busy">{% icon 'arrow-right' %}</span>
+          <span x-show="!busy">Sign in</span>
+          <span x-show="busy" style="display:none;"><span class="spinner" aria-hidden="true"></span>Signing in…</span>
+        </button>
+      </form>
+
+      <div class="auth-foot">
+        {% icon 'user' %}
+        <span>Need an account? Ask your <b>workspace owner</b> to invite you.</span>
       </div>
-
-      <button type="submit" class="btn btn-primary auth-submit" x-bind:disabled="busy">
-        <span x-show="!busy">Sign in</span>
-        <span x-show="busy" style="display:none;"><span class="spinner" aria-hidden="true"></span>Signing in…</span>
-      </button>
-    </form>
-
-    <div class="auth-foot">Need an account? Ask your workspace owner to invite you.</div>
+    </div>
   </div>
 
 </div>
-<script>
-(function () {
-  var cv = document.getElementById('login-pintu-cv'), node = document.getElementById('login-pintu');
-  if (!cv || !node) return;
-  var P = JSON.parse(node.textContent), ctx = cv.getContext('2d'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var hold = null, timers = [], mode = 'idle';   // mode: idle | hidden (hands over eyes) | shown (sneaking a peek)
-
-  // Extra frames for the password field: the idle pose with two hands painted over it.
-  function paint(ops) {
-    var rows = P.frames.idle.map(function (r) { return r.split(''); });
-    ops.forEach(function (o) { for (var y = o[2]; y <= o[4]; y++) for (var x = o[1]; x <= o[3]; x++) rows[y][x] = o[0]; });
-    return rows.map(function (r) { return r.join(''); });
-  }
-  var L = { low: [3, 10, 5, 11], mid: [3, 8, 7, 9], top: [3, 6, 7, 9] }, R = { low: [12, 10, 14, 11], mid: [10, 8, 14, 9], top: [10, 6, 14, 9] };
-  function hands(l, r) {
-    var ops = [];
-    [[l, L], [r, R]].forEach(function (h) {
-      if (!h[0]) return; var b = h[1][h[0]];
-      ops.push(['D', b[0], b[1], b[2], b[3]], ['K', b[0], b[3], b[2], b[3]]);
-    });
-    return paint(ops);
-  }
-  var X = {
-    lo: hands('low', 'low'), mid: hands('mid', 'mid'), cover: hands('top', 'top'),
-    peekR: hands('top', 'mid'), peekL: hands('mid', 'top')
-  };
-
-  function draw(name) {
-    var rows = X[name] || P.frames[name] || P.frames.idle, pal = Object.assign({}, P.palette, P.tints[name] || {});
-    ctx.clearRect(0, 0, 18, 16);
-    rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var c = pal[row[x]]; if (c) { ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; ctx.fillRect(x, y, 1, 1); } } });
-  }
-  function rest() { draw(mode === 'hidden' ? 'cover' : mode === 'shown' ? 'peekR' : (hold || 'idle')); }
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-  function stop() { timers.forEach(clearTimeout); timers = []; }
-  function hop() {
-    if (calm) return;
-    cv.classList.remove('hop'); void cv.offsetWidth; cv.classList.add('hop');
-  }
-  // While the password is on show he keeps sneaking looks, swapping which eye peeks.
-  function sneak() {
-    if (mode !== 'shown') return;
-    var left = false;
-    (function swap() { if (mode !== 'shown') return; left = !left; draw(left ? 'peekL' : 'peekR'); later(swap, calm ? 4000 : 1400 + Math.random() * 900); })();
-  }
-  function blinkLoop() { if (!calm && !hold && mode === 'idle') { draw('blink'); later(rest, 140); } later(blinkLoop, 3200 + Math.random() * 2800); }
-  function settle() { rest(); if (mode === 'idle') blinkLoop(); else if (mode === 'shown') sneak(); }
-  // Play frames one after another, then settle into whatever the mode calls for.
-  function play(names, ms) {
-    stop();
-    names.forEach(function (n, k) { later(function () { draw(n); }, calm ? 0 : k * ms); });
-    later(settle, calm ? 0 : names.length * ms);
-  }
-  function hello() {
-    if (calm || hold) return rest();
-    P.sequence.forEach(function (f, k) { later(function () { if (!hold) draw(f); }, k * P.delay_ms); });
-    later(function () { blinkLoop(); }, P.sequence.length * P.delay_ms);
-  }
-  function mood(name) { hold = name; rest(); }
-
-  // Hidden: hands go up over his eyes. Shown: they part and he peeks, and keeps peeking.
-  function hide() { mode = 'hidden'; hold = null; hop(); play(['lo', 'mid', 'cover'], 90); }
-  function reveal() { mode = 'shown'; hold = null; hop(); play(['cover', 'peekR', 'peekL'], 130); }
-  function lower() { if (mode === 'idle') return; mode = 'idle'; hold = null; play(['mid', 'lo'], 90); }
-  function react() { if (pw.type === 'password') hide(); else reveal(); }
-
-  var pw = document.getElementById('{{ form.password.id_for_label }}');
-  var wrap = pw && pw.closest('.pw-wrap');
-  var toggle = wrap && wrap.querySelector('.pw-toggle'), pressing = 0;
-  if (pw) {
-    pw.addEventListener('focus', function () { if (mode === 'idle') react(); });
-    if (wrap) wrap.addEventListener('focusout', function (e) {
-      if (e.relatedTarget && wrap.contains(e.relatedTarget)) return;
-      if (Date.now() < pressing) return;   // Safari: pressing the toggle blurs the field without focusing the button
-      lower();
-    });
-  }
-  if (toggle) toggle.addEventListener('mousedown', function () { pressing = Date.now() + 500; });
-  if (toggle) toggle.addEventListener('click', function () { setTimeout(react, 0); });
-  var form = document.querySelector('.auth-form form');
-  if (form) form.addEventListener('submit', function () { stop(); mode = 'idle'; mood('thinking'); });
-  if (document.querySelector('.auth-alert, .auth-err')) mood('error'); else hello();
-  rest();
-})();
-</script>
 {% endblock %}

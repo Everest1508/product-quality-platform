@@ -1,12 +1,9 @@
-import csv
 import json
 from datetime import date
-from decimal import Decimal
 
 from django.contrib import messages
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
-from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
@@ -16,7 +13,7 @@ from apps.costing.models import INPUT_FIELDS, Estimate
 
 SCALARS = [f for f in INPUT_FIELDS if f not in ("people", "others")]
 DEFAULTS = {"name": "", "client_name": "", "quote_date": None, "dedicated_days": "45", "client_days": "60", "rent_monthly": "", "ai_per_person_month": "",
-            "margin_percent": "50", "margin_mode": "markup", "pitch_price": ""}
+            "margin_percent": "50", "margin_mode": "markup", "pitch_price": "", "actual_price": ""}
 
 
 def _rows(raw):
@@ -54,60 +51,27 @@ class CostingAccessMixin(CompanyAdminRequiredMixin):
 
 
 def _figures(company, estimates):
-    """One dict per estimate: the saved quote's cost, the price quoted, and the profit it leaves."""
+    """One row per estimate: our cost, the quoted price, what we actually got and the gap."""
     out = []
     for e in estimates:
         r = compute(company, e.inputs())
-        price = r["pitch"] if r["has_pitch"] else r["price"]
-        profit = price - r["total"]
-        out.append({"e": e, "cost": r["total"], "price": price, "profit": profit,
-                    "margin": (profit / price * 100) if price else Decimal("0"), "search": f"{e.name} {e.client_name}".lower()})
+        out.append({
+            "e": e, "cost": r["total"], "price": r["quoted"], "profit": r["quoted_profit"],
+            "margin": r["quoted_margin"], "has_actual": r["has_actual"],
+            "actual": r.get("actual"), "diff": r.get("actual_minus_quoted"),
+            "search": f"{e.name} {e.client_name}".lower(),
+        })
     return out
 
 
 class EstimateListView(CostingAccessMixin, View):
-    """The saved estimates with a report over them: totals, by client, by month."""
+    """The saved estimates. The report blocks (totals, by client, by month, CSV) were removed."""
 
     def get(self, request):
         every = Estimate.objects.filter(company=request.company)
-        months = [f"{d:%Y-%m}" for d in every.dates("quote_date", "month", order="DESC")]
-        month = request.GET.get("month", "all")
-        qs = every.filter(quote_date__year=month[:4], quote_date__month=month[5:7]) if month in months else every
-        month = month if month in months else "all"
-        rows = _figures(request.company, qs)
-        cost, price = sum((r["cost"] for r in rows), Decimal("0")), sum((r["price"] for r in rows), Decimal("0"))
-        by_client = {}
-        for r in rows:
-            c = by_client.setdefault(r["e"].client_name or "No client", {"n": 0, "cost": Decimal("0"), "price": Decimal("0")})
-            c["n"] += 1
-            c["cost"] += r["cost"]
-            c["price"] += r["price"]
         return render(request, "costing/list.html", {
-            "rows": rows, "has_any": every.exists(), "month": month,
-            "months": [{"value": m, "label": date(int(m[:4]), int(m[5:]), 1).strftime("%b %Y")} for m in months],
-            "stats": {"n": len(rows), "cost": cost, "price": price, "profit": price - cost,
-                      "margin": ((price - cost) / price * 100) if price else Decimal("0")},
-            "by_client": sorted(({"name": k, **v, "profit": v["price"] - v["cost"]} for k, v in by_client.items()),
-                                key=lambda c: -c["price"]),
+            "rows": _figures(request.company, every), "has_any": every.exists(),
         })
-
-
-def _csv_safe(text):
-    """A spreadsheet runs a cell that starts with = + - @ as a formula."""
-    return "'" + text if text[:1] in ("=", "+", "-", "@") else text
-
-
-class EstimateExportView(CostingAccessMixin, View):
-    def get(self, request):
-        resp = HttpResponse(content_type="text/csv; charset=utf-8")
-        resp["Content-Disposition"] = 'attachment; filename="project-costing.csv"'
-        w = csv.writer(resp)
-        w.writerow(["Quote date", "Project", "Client", "Our cost (INR)", "Price (INR)", "Profit (INR)", "Margin on price %"])
-        for r in _figures(request.company, Estimate.objects.filter(company=request.company)):
-            e = r["e"]
-            w.writerow([e.quote_date.isoformat(), _csv_safe(e.name), _csv_safe(e.client_name), r["cost"], r["price"],
-                        r["profit"], f"{r['margin']:.1f}"])
-        return resp
 
 
 class EstimateFormView(CostingAccessMixin, View):

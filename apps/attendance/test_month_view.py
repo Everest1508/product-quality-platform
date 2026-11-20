@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import date, timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -26,6 +27,53 @@ class MonthGlanceTest(TestCase):
         return AttendanceRecord.objects.create(
             company=self.company, user=self.user, date=day, check_in=start, check_out=start + timedelta(hours=hours),
         )
+
+    def grant_leave(self, day, status="approved", user=None):
+        from apps.leave.models import LeavePolicy, LeaveRequest
+
+        policy, _ = LeavePolicy.objects.get_or_create(
+            company=self.company, name="Casual",
+            defaults={"max_days_per_year": Decimal("12")},
+        )
+        return LeaveRequest.objects.create(
+            company=self.company, user=user or self.user, policy=policy,
+            start_date=day, end_date=day, days=Decimal("1"), status=status,
+        )
+
+    def test_approved_leave_is_a_leave_square_not_no_punch(self):
+        day = date(2026, 11, 2)  # a Monday in the month from the bug report
+        self.grant_leave(day)
+        res = self.client.get(reverse("attendance:my_attendance"), {"month": "2026-11"})
+        cell = next(c for c in res.context["month_cells"] if c["day"] == day.day)
+        self.assertEqual(cell["state"], "leave")
+        self.assertIn("leave", cell["title"])
+        self.assertEqual(res.context["month_counts"]["leave"], 1)
+        self.assertContains(res, "mg mg-leave")
+        self.assertContains(res, "Approved leave")
+
+    def test_pending_leave_is_still_a_working_day_with_no_punch(self):
+        day = date(2026, 11, 2)
+        self.grant_leave(day, status="pending")
+        res = self.client.get(reverse("attendance:my_attendance"), {"month": "2026-11"})
+        cell = next(c for c in res.context["month_cells"] if c["day"] == day.day)
+        self.assertEqual(cell["state"], "none")
+        self.assertEqual(res.context["month_counts"]["leave"], 0)
+
+    def test_admin_viewing_a_colleague_sees_that_colleagues_leave(self):
+        from apps.accounts.models import Membership
+
+        admin = User.objects.create_user("boss", "b@t.local", "pass1234")
+        Membership.objects.create(user=admin, company=self.company, role="admin")
+        self.grant_leave(date(2026, 11, 2))                     # the employee
+        self.grant_leave(date(2026, 11, 3), user=admin)          # the viewer
+        self.client.login(username="boss", password="pass1234")
+        res = self.client.get(reverse("attendance:my_attendance"), {
+            "user_id": self.user.pk, "month": "2026-11",
+        })
+        states = {c["day"]: c["state"] for c in res.context["month_cells"]}
+        self.assertEqual(states[2], "leave")
+        self.assertEqual(states[3], "none")   # the viewer's own leave doesn't leak in
+        self.assertEqual(res.context["month_counts"]["leave"], 1)
 
     def test_the_month_view_summarises_hours_and_days(self):
         first = timezone.localdate().replace(day=1)

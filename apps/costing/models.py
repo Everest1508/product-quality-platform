@@ -25,6 +25,7 @@ class Estimate(TenantScopedModel):
     margin_percent = models.CharField(max_length=12, default="50")
     margin_mode = models.CharField(max_length=8, default="markup")
     pitch_price = models.CharField(max_length=20, blank=True)
+    actual_price = models.CharField(max_length=20, blank=True, help_text="The price we actually got the project for.")
     people = models.JSONField(default=list, blank=True)
     others = models.JSONField(default=list, blank=True)
     created_by = models.ForeignKey(
@@ -45,5 +46,5 @@ class Estimate(TenantScopedModel):
 
 INPUT_FIELDS = (
     "name", "client_name", "quote_date", "dedicated_days", "client_days", "rent_monthly", "ai_per_person_month",
-    "margin_percent", "margin_mode", "pitch_price", "people", "others",
+    "margin_percent", "margin_mode", "pitch_price", "actual_price", "people", "others",
 )

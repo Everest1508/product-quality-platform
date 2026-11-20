@@ -89,6 +89,18 @@ class LoginPageMarkupTest(TestCase):
         self.assertNotIn("x-cloak", self.html)
         self.assertIn('<span x-show="!busy">Sign in</span>', self.html)
 
+    def test_the_primary_action_leads_with_an_icon(self):
+        """design-system.md: every text button starts with an icon, then its label.
+
+        The arrow is decorative (render_icon marks it aria-hidden), so the
+        button's accessible name is still just "Sign in" -- but a button with
+        no icon at all reads as a different control from every other page.
+        """
+        button = self.html.split('class="btn btn-primary auth-submit"')[1]
+        button = button.split("</button>", 1)[0]
+        self.assertRegex(button, r'<span x-show="!busy">\s*<svg class="ic"')
+        self.assertIn('<span x-show="!busy">Sign in</span>', button)
+
     def test_fields_advertise_their_autocomplete_role(self):
         """Otherwise browsers offer a sign-up credential on a sign-in form."""
         self.assertIn('autocomplete="username"', self.html)
@@ -135,24 +147,28 @@ class LoginPageMarkupTest(TestCase):
 
     def test_every_glyph_comes_from_the_vendored_icon_set(self):
         """No hand-written <svg>; each one is render_icon's `class="ic"`."""
-        # `class="ic ..."` covers render_icon and the hand-drawn pixel eye (class="ic pintu-eye").
+        # Every glyph is render_icon's `class="ic"`; no hand-drawn SVG.
         self.assertNotIn("<svg", re.sub(r'<svg class="ic[ "]', "", self.html))
 
     def test_every_auth_class_used_is_actually_styled(self):
-        """Every `auth-*` class an auth template uses has a rule in base.html.
+        """Every `auth-*` class an auth template uses has a rule in the stylesheet.
 
         The rewrite of the auth CSS dropped `.auth-card`, which
         `accounts/oauth_authorize.html` (the Serop loopback page) still uses.
         Nothing failed: no test rendered that page, so a whole sign-in screen
         came back as unstyled bare text. The class names are the contract
-        between the templates and the one stylesheet, so check both directions.
+        between the templates and the stylesheet, so check both directions.
+
+        Check the served bundle, not just `_app.css`: new rules live in the
+        `_ui.css` layer, where a class is just as styled as one in the legacy
+        file. Comments are stripped so a mention is not mistaken for a rule.
         """
-        css = self.client.get(self.url).content.decode()
+        from apps.core import assets
+
+        stylesheet = self.client.get(assets.css_url()).content.decode()
+        css = re.sub(r"/\*.*?\*/", "", stylesheet, flags=re.S)
         templates = ["templates/accounts/login.html",
                      "templates/accounts/oauth_authorize.html"]
-        base = os.path.join(settings.BASE_DIR, "templates", "core", "css", "_app.css")
-        with open(base) as fh:
-            stylesheet = fh.read()
 
         for rel in templates:
             with open(os.path.join(settings.BASE_DIR, rel)) as fh:
@@ -187,6 +203,92 @@ class LoginPageMarkupTest(TestCase):
 
         css = self.client.get(assets.css_url()).content.decode()
         self.assertRegex(css, r"\.auth-brand\s*\{\s*display:\s*none;?\s*\}")
+
+    def test_the_brand_panel_has_no_fake_console(self):
+        """The left panel says what the product does; it does not mimic a live feed.
+
+        A previous pass added an animated "signal flow" instrument here. It
+        carried no data and repeated what the numbered list already says in
+        words, so it was decoration pretending to be a working system. Keep it
+        out of the sign-in page.
+        """
+        self.assertNotIn("auth-console", self.html)
+        self.assertNotIn("auth-trace", self.html)
+        self.assertNotIn("auth-pipeline", self.html)
+        self.assertEqual(self.html.count('class="auth-point-index"'), 3)
+        self.assertNotIn("<canvas", self.html)
+
+        from apps.core import assets
+
+        css = self.client.get(assets.css_url()).content.decode()
+        for name in ("authWave", "authPacket", "authScan", "authBreathe",
+                     "authGrid", "authPing", "authBlink", "authNode", "authDivider"):
+            self.assertNotIn("@keyframes " + name, css, msg=name + " is still in the bundle")
+        # The only motion left is a one-off entrance, and it is still gated.
+        guard = "@media (prefers-reduced-motion:no-preference)"
+        self.assertIn(guard, css)
+        before, guarded = css.split(guard, 1)
+        for name in ("authIn", "authRise"):
+            self.assertNotIn("@keyframes " + name, before)
+            self.assertIn("@keyframes " + name, guarded)
+
+    def test_the_brand_parallax_is_white_layers_on_blue(self):
+        """White layers drift across the blue panel without an edge or seam.
+
+        Each moving layer is three copies of one tile: translating by exactly one
+        third lands the pattern on itself, so the loop cannot show a cut. The
+        white is derived from --on-brand rather than a literal, and every
+        animation stays behind the reduced-motion guard.
+        """
+        self.assertIn('<aside class="auth-brand">', self.html)
+        self.assertIn('<span class="auth-parallax" aria-hidden="true">', self.html)
+        for name in ("auth-parallax-far", "auth-parallax-near", "auth-parallax-haze"):
+            self.assertIn('class="' + name + '"', self.html)
+        self.assertNotIn("hm-sky", self.html)
+        self.assertNotIn("hm-orb", self.html)
+        self.assertNotIn("hm-stars", self.html)
+        self.assertNotIn("hm-shoot", self.html)
+
+        from apps.core import assets
+
+        css = self.client.get(assets.css_url()).content.decode()
+        self.assertIn(".auth-parallax{position:absolute", css)
+        self.assertIn("background-size:33.3333% 100%", css)
+        self.assertIn("color-mix(in srgb,var(--on-brand)", css)
+        guard = "@media (prefers-reduced-motion:no-preference)"
+        before, guarded = css.split(guard, 1)
+        for name in ("authDrift", "authHaze"):
+            self.assertNotIn("@keyframes " + name, before)
+            self.assertIn("@keyframes " + name, guarded)
+        for selector in (".auth-parallax-far{animation", ".auth-parallax-near{animation",
+                         ".auth-parallax-haze{animation"):
+            self.assertNotIn(selector, before)
+            self.assertIn(selector, guarded)
+
+    def test_the_form_is_a_card_with_leading_field_icons(self):
+        """The sign-in form is a surface with fields inside it, not a bare column.
+
+        A visual pass that only swaps tokens looks identical to the person who
+        asked for a better page. These are the structural parts of that change:
+        the framed card, its purpose strip, and a decorative glyph leading each
+        input. The glyphs carry no meaning -- the <label> still names the field.
+        """
+        self.assertRegex(
+            self.html,
+            r'<div class="auth-access">\s*<div class="auth-access-top">\s*<svg class="ic"',
+        )
+        self.assertRegex(self.html, r'<div class="auth-input-wrap">\s*<svg class="ic"')
+        self.assertRegex(self.html, r'<div class="pw-wrap">\s*<svg class="ic"')
+
+    def test_the_form_has_one_head_and_the_help_line_carries_an_icon(self):
+        """A title nobody can find is a title nobody reads."""
+        head = re.compile(
+            r'<div class="auth-form-head">\s*<p class="auth-eyebrow">.*?</p>\s*'
+            r'<h1>Sign in</h1>\s*<p class="auth-sub">.*?</p>\s*</div>',
+            re.S,
+        )
+        self.assertRegex(self.html, head)
+        self.assertRegex(self.html, r'<div class="auth-foot">\s*<svg class="ic"')
 
 
 class LoginErrorStateTest(TestCase):

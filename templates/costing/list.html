@@ -11,7 +11,6 @@
     <p class="sub">Work out what a project costs us and what to charge.</p>
   </div>
   <div class="pg-actions">
-    {% if has_any %}<a href="{% url 'costing:estimate_export' %}" class="btn" hx-boost="false">{% icon 'download' 'ic' %}Export CSV</a>{% endif %}
     <a href="{% url 'costing:estimate_new' %}" class="btn btn-primary">{% icon 'plus' 'ic' %}New project</a>
   </div>
 </div>
@@ -26,26 +25,15 @@
   </div>
 </div>
 {% else %}
-<div class="co-stats">
-  <div class="co-stat"><span class="co-k">Projects</span><span class="co-v">{{ stats.n }}</span></div>
-  <div class="co-stat"><span class="co-k">Internal cost</span><span class="co-v">{{ stats.cost|inr }}</span></div>
-  <div class="co-stat"><span class="co-k">Quoted value</span><span class="co-v">{{ stats.price|inr }}</span></div>
-  <div class="co-stat"><span class="co-k">Gross margin</span><span class="co-v {% if stats.profit < 0 %}co-neg{% else %}co-pos{% endif %}">{{ stats.margin|floatformat:1 }}%</span><span class="co-note">{{ stats.profit|inr }} profit</span></div>
-</div>
-
 <div class="co-bar">
   <label class="co-search">{% icon 'search' 'ic' %}<input type="search" x-model="q" placeholder="Search projects or clients…" aria-label="Search projects or clients"></label>
-  <form method="get"><select name="month" class="form-input" aria-label="Month" onchange="this.form.requestSubmit()">
-    <option value="all" {% if month == 'all' %}selected{% endif %}>All time</option>
-    {% for m in months %}<option value="{{ m.value }}" {% if month == m.value %}selected{% endif %}>{{ m.label }}</option>{% endfor %}
-  </select></form>
 </div>
 
 <div class="card-flush">
   <div class="table-scroll">
   <table class="tbl co-tbl">
     <thead><tr>
-      <th>Project</th><th>Quoted</th><th>Duration</th><th class="r">Internal cost</th><th class="r">Client price</th><th class="r">Margin</th><th><span class="sr-only">Actions</span></th>
+      <th>Project</th><th>Quoted</th><th>Duration</th><th class="r">Internal cost</th><th class="r">Quoted price</th><th class="r">Actual price</th><th class="r">Actual − quoted</th><th><span class="sr-only">Actions</span></th>
     </tr></thead>
     <tbody>
       {% for row in rows %}
@@ -55,34 +43,21 @@
         <td>{{ row.e.client_days }} days</td>
         <td class="r co-mute">{{ row.cost|inr }}</td>
         <td class="r"><b>{{ row.price|inr }}</b></td>
-        <td class="r"><span class="bdg {% if row.margin < 0 %}bdg-red{% else %}bdg-green{% endif %}">{{ row.margin|floatformat:1 }}%</span></td>
+        <td class="r">{% if row.has_actual %}{{ row.actual|inr }}{% else %}<span class="co-mute">—</span>{% endif %}</td>
+        <td class="r">{% if row.has_actual %}<span class="{% if row.diff < 0 %}co-neg{% else %}co-pos{% endif %}"><b>{{ row.diff|inr }}</b></span>{% else %}<span class="co-mute">—</span>{% endif %}</td>
         <td class="r co-acts">
           <form method="post" action="{% url 'costing:estimate_duplicate' row.e.pk %}">{% csrf_token %}<button type="submit" class="icon-btn" aria-label="Duplicate {{ row.e.name }}" title="Duplicate">{% icon 'copy' 'ic' %}</button></form>
           <form method="post" action="{% url 'costing:estimate_delete' row.e.pk %}" data-confirm data-confirm-text="Delete {{ row.e.name }}? This cannot be undone." data-confirm-label="Delete">{% csrf_token %}<button type="submit" class="icon-btn" aria-label="Delete {{ row.e.name }}" title="Delete">{% icon 'trash' 'ic' %}</button></form>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="7"><div class="empty-state"><p>No estimates in this month.</p></div></td></tr>
+      <tr><td colspan="8"><div class="empty-state"><p>No estimates to show.</p></div></td></tr>
       {% endfor %}
     </tbody>
   </table>
   </div>
 </div>
 <p class="co-hint">{% icon 'eye-off' 'ic' %}Only owners and admins see this page. The client quote shows prices, never costs.</p>
-
-{% if by_client and stats.n > by_client|length %}
-<h2 class="co-h co-gap">By client</h2>
-<div class="card-flush">
-  <div class="table-scroll">
-  <table class="tbl co-tbl">
-    <thead><tr><th>Client</th><th class="r">Projects</th><th class="r">Internal cost</th><th class="r">Client price</th><th class="r">Profit</th></tr></thead>
-    <tbody>{% for c in by_client %}
-      <tr><td><b>{{ c.name }}</b></td><td class="r">{{ c.n }}</td><td class="r co-mute">{{ c.cost|inr }}</td><td class="r"><b>{{ c.price|inr }}</b></td><td class="r {% if c.profit < 0 %}co-neg{% else %}co-pos{% endif %}">{{ c.profit|inr }}</td></tr>
-    {% endfor %}</tbody>
-  </table>
-  </div>
-</div>
-{% endif %}
 {% endif %}
 </div>
 {% endblock %}

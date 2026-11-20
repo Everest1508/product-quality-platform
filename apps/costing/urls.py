@@ -6,7 +6,6 @@ app_name = "costing"
 
 urlpatterns = [
     path("", views.EstimateListView.as_view(), name="estimate_list"),
-    path("export.csv", views.EstimateExportView.as_view(), name="estimate_export"),
     path("new/", views.EstimateFormView.as_view(), name="estimate_new"),
     path("calc/", views.EstimateCalcView.as_view(), name="estimate_calc"),
     path("<int:pk>/", views.EstimateDetailView.as_view(), name="estimate_detail"),

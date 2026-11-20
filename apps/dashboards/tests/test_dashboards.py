@@ -584,7 +584,7 @@ class UnreadableDecimalTakesDownTheDashboardTest(TestCase):
 
 
 class GreetingActsTest(TestCase):
-    """The Home greeting lines, and Pintu's art that the sign-in page still draws."""
+    """The Home greeting lines."""
 
     def test_every_period_has_distinct_lines(self):
         from apps.dashboards import greetings
@@ -596,16 +596,6 @@ class GreetingActsTest(TestCase):
             self.assertEqual(len(lines), 9, period)
             self.assertTrue(all(isinstance(t, str) and t for t in lines), period)
         self.assertEqual(len(set(texts)), len(texts))
-
-    def test_pintu_art_is_a_full_18_by_16_grid_in_the_palette(self):
-        from apps.dashboards import greetings
-
-        art = greetings.PINTU
-        for name, rows in art["frames"].items():
-            self.assertEqual((len(rows), {len(r) for r in rows}), (16, {18}), name)
-            for ch in "".join(rows):
-                self.assertTrue(ch == "." or ch in art["palette"], f"{name}: {ch}")
-        self.assertTrue(set(art["sequence"]) <= set(art["frames"]))
 
     def test_the_home_page_carries_the_lines_and_no_mascot(self):
         from django.conf import settings

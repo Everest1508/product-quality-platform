@@ -15,8 +15,9 @@ month and the daily average.
 
 **The month grid** shows one square per day. Dark green is a full day (at least 90%
 of the scheduled hours), light green a part day, blue the day you are on the clock,
-orange a day with no check-out, and an outlined square a working day with no punch.
-Hover a square for its hours. The list beside it counts each kind.
+orange a day with no check-out, purple an approved leave day, and an outlined square
+a working day with no punch. Hover a square for its hours. The list beside it counts
+each kind; leave days are not counted as days you missed.
 
 ## Weekly off days
 
