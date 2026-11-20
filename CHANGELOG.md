@@ -10,6 +10,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.82.0] "Limpkin" — 2026-11-20 · tidier pages, and leave on the Team today card
+
+> In short: Apply for Leave, the Daily Status Report, My Attendance, Team, Payroll setup, Expenses and Project costing are all tidier, the Home Team today card shows who is on leave, a new sky behind the Home greeting, and the sidebar now stays open on big screens.
+
+### New
+
+- **A sky behind your greeting.** The Home banner now follows the time of day: a pink sunrise, a blue afternoon, an orange sunset, and a night with a moon and twinkling stars. Soft clouds drift across it by day. Pintu no longer sits on Home, though he still keeps you company on the sign-in page.
+- **Leave on the Team today card.** Someone on approved leave shows their leave type, and how long it lasts. Someone waiting for approval shows the type with "pending".
+
+### Better
+
+- **Apply for Leave.** The form has plain labels, and what is left of each leave type sits beside it with a bar and its limits, so you can see it while you ask.
+- **Daily Status Report.** Today's progress and the period's totals sit side by side above the table, and the filters and search share one row.
+- **My Attendance.** The header matches the other pages, the numbers in the strip line up, and the Recent days card is tidier.
+- **Team.** Role tabs show how many people each role has, the columns line up, Remove is quieter until you point at it, and Add member opens in a standard window.
+- **Payroll setup.** Save buttons are no longer cut off when the sidebar is open. Each person is two short lines, Save turns blue once you change a row, and the long help text folds away.
+- **Expenses.** The total sits at the top of the list, payback status is a clear badge, and the row buttons are small icons.
+- **Project costing.** A project opens on its cost, price, profit and margin, with a bar showing where the cost goes and a table for each person's cost.
+- **The sidebar stays open on big screens.** There is nothing to collapse when there is room, and smaller screens can still collapse it.
+
 ## [1.81.0] "Kea" — 2026-11-20 · a monthly limit on paid leave
 
 > In short: each leave type can now have a limit on paid days per month, so one paid casual leave a month is possible and the rest of that month is unpaid automatically.

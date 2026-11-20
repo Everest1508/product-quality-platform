@@ -252,6 +252,9 @@
                   {% elif r.state == 'out' %}
                     <span class="m">{{ r.record.check_in|date:"g:i A" }} → {{ r.record.check_out|date:"g:i A" }}</span>
                   {% else %}
+                    {% if r.leave %}
+                      <span class="bdg {% if r.leave.status == 'approved' %}bdg-blue{% endif %}" title="{{ r.leave.policy.name }} leave, {{ r.leave.start_date|date:'j M' }}{% if r.leave.end_date != r.leave.start_date %} to {{ r.leave.end_date|date:'j M' }}{% endif %}{% if r.leave.is_half_day %} (half day){% endif %}{% if r.leave.status == 'pending' %}, waiting for approval{% endif %}">{{ r.leave.policy.name }}{% if r.leave.is_half_day %} · half{% endif %}{% if r.leave.end_date != r.leave.start_date %} · till {{ r.leave.end_date|date:'j M' }}{% endif %}{% if r.leave.status == 'pending' %} · pending{% endif %}</span>
+                    {% endif %}
                     <span class="hm-status-dot is-{{ r.state }}" aria-hidden="true"></span>
                   {% endif %}
                 </div>

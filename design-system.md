@@ -103,8 +103,20 @@ Borders are 1px `--border`. Shadows are `--shadow-sm` at rest and `--shadow-md` 
 The shell is a fixed-height grid: a 272px sidebar (collapses to icons; a drawer below 860px), a top bar, and the page scrolling inside `.main`.
 A page is: breadcrumbs (when nested), `.pg-head` (title and one-line subtitle on the left, actions on the right, one primary button), an optional `.toolbar`, then cards.
 Content width: lists and boards use the full width; forms and reading pages cap at about 860px and sit on the left.
-Breakpoints: 1180, 1100, 980, 860 (drawer), 760, 640 (phone), 380.
+Breakpoints: 1280 (sidebar always open above it), 1180, 1100, 980, 860 (drawer), 760, 640 (phone), 380.
 Grid items get `min-width:0`, or long text pushes a column past the screen. Tables scroll sideways on a phone inside `.table-scroll`.
+
+### Page patterns (Apply for leave, Daily Status Report, My attendance)
+
+These three pages were tidied to one recipe. Follow it for the next page in My work.
+
+- **Header.** `.pg-head` with `h1`, a one-line `.sub`, and `.pg-actions` on the right. Every action starts with an icon (`{% icon %}`, `{% load icon_tags %}`); no inline `<svg>`. The My work tabs already say where you are, so a page directly under them has **no breadcrumb**; a nested page (someone else's attendance) keeps one.
+- **Form page.** A `.card` form capped at 620px next to a quiet side card, in `.lv-apply` (two columns above 900px, one below). Labels are plain `.field label`, not `.form-section-label` (that is for section titles and carries an underline). Say "optional" in a small muted `<small>` inside the label. Primary action first on the left, Cancel next to it. The live preview card sits inside the form and takes its width.
+- **Side card of facts.** What the person has left to spend, beside the form that spends it: a name, the figure, a thin `.lv-meter`, and a muted hint for the limits. It stays in view (`position:sticky`) and drops under the form on a phone.
+- **Summary strip.** Put a page's totals above its table as a row of figures (`.dsr-totals`, or the `.stat-strip` on attendance), not as a sentence floating at the right of the filter row. Labels stay on one line, so the figures line up; put the month in the label short ("Worked in Nov"). The day's progress card sits beside the totals (`.dsr-summary`).
+- **Filter row.** Range tabs and dates on the left, search last and pushed right (`margin-left:auto`); it takes its own row on narrow screens. The count and totals do not live in this row.
+- **Cards with a header** (history, tables): a head row with the title left and its controls right, a border under it, and no inline styles; `.att-history-head` is the model.
+- **Leave on the Home "Team today" card.** Approved leave shows the type as a blue badge ("Casual", "till 22 Nov", "half"); pending leave shows the same badge plain with "pending". It only covers today.
 
 ## Components
 

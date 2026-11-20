@@ -48,21 +48,26 @@
       {% for m in members %}{% if m != request.user %}<option value="{{ m.pk }}"{% if who == m.pk|stringformat:"s" %} selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endif %}{% endfor %}
     </select>
   {% endif %}
-  <div class="input-icon" style="width:16rem;max-width:100%">{% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ q }}" placeholder="Search entries…" aria-label="Search entries" oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.requestSubmit()},450)"></div>
-  <p class="grow"><b>{{ total_label }}</b> · {{ count }} {% if count == 1 %}entry{% else %}entries{% endif %} · {{ completed }} completed</p>
+  <div class="input-icon dsr-search">{% icon 'search' 'ic' %}<input class="form-input" type="search" name="q" value="{{ q }}" placeholder="Search entries…" aria-label="Search entries" oninput="clearTimeout(this._t);var f=this.form;this._t=setTimeout(function(){f.requestSubmit()},450)"></div>
 </form>
 
+<div class="dsr-summary">
 {% if today_work %}
 <section class="dsr-today is-{{ today_work.state }}" aria-label="Today's work">
   <div class="dsr-today-text">
-    {% if today_work.no_punch %}<b>{{ today_work.logged }}</b> logged today, out of a <b>{{ today_work.basis }}</b> working day
-    {% else %}<b>{{ today_work.logged }}</b> of the <b>{{ today_work.basis }}</b> {% if target == request.user %}you have{% else %}{{ target.get_full_name|default:target.username }} has{% endif %} worked today {% if target == request.user %}is{% else %}is{% endif %} in the DSR{% endif %}
-    <span class="dsr-today-sub">{% if today_work.left != '0h 00m' %}{{ today_work.left }} not logged yet{% else %}Everything is logged{% endif %}{% if today_work.on_clock %} · still on the clock{% endif %}{% if today_work.no_punch %} · no punch yet today, so this is measured against a full working day{% endif %}</span>
+    {% if target == request.user %}<b>{{ today_work.logged }}</b> of <b>{{ today_work.basis }}</b> logged today{% else %}{{ target.get_full_name|default:target.username }} has logged <b>{{ today_work.logged }}</b> of <b>{{ today_work.basis }}</b> today{% endif %}
+    <span class="dsr-today-sub">{% if today_work.left != '0h 00m' %}{{ today_work.left }} to go{% else %}Everything is logged{% endif %}{% if today_work.on_clock %} · still on the clock{% endif %}{% if today_work.no_punch %} · no punch yet today, counted against a full day{% endif %}</span>
   </div>
-  <div class="dsr-today-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ today_work.percent }}"><i style="width:{{ today_work.percent }}%"></i></div>
   <span class="dsr-today-pct">{{ today_work.percent }}%</span>
+  <div class="dsr-today-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ today_work.percent }}"><i style="width:{{ today_work.percent }}%"></i></div>
 </section>
 {% endif %}
+<dl class="dsr-totals" aria-label="This period">
+  <div><dt>Time logged</dt><dd>{{ total_label }}</dd></div>
+  <div><dt>{% if count == 1 %}Entry{% else %}Entries{% endif %}</dt><dd>{{ count }}</dd></div>
+  <div><dt>Completed</dt><dd>{{ completed }}</dd></div>
+</dl>
+</div>
 
 {% if waiting or work_suggestions or locked_reason and not can_log and rng == 'today' %}
 <section class="dsr-notices" aria-label="Needs your attention">

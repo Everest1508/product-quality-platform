@@ -1,4 +1,5 @@
-<form method="post" class="card" style="max-width:620px;">
+{% load leave_tags icon_tags %}
+<form method="post" class="card lv-form">
   {% csrf_token %}
   {% include "leave/partials/_apply_fields.html" %}
   {% comment %}
@@ -6,28 +7,32 @@
   needs the dates, which only exist once somebody picks them.
   {% endcomment %}
   <div id="leave-split-preview"></div>
-  <div class="form-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
+  <div class="lv-actions">
+    <button type="submit" class="btn btn-primary">{% icon 'send' 'ic' %}Submit request</button>
     <a href="{% url 'leave:my_leave' %}" class="btn">Cancel</a>
-    <button type="submit" class="btn btn-primary">Submit request</button>
   </div>
 </form>
 
 {% if balances %}
-<div class="form-section-label" style="margin-top:26px;">Your remaining allowance</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;">
-  {% for balance in balances %}
-  <div class="card">
-    <strong>{{ balance.policy.name }}</strong>
-    <div style="font-size:19px;font-weight:600;margin-top:6px;">
-      {% if balance.is_unlimited %}No cap{% else %}{{ balance.remaining_label }} left{% endif %}
-    </div>
-    {% comment %} "No cap", not "Unlimited": a cap of 0 is a real setting, so an uncapped
-       type must not read as though 0 were impossible. The same wording the
-       policy editor and the approval rows use. {% endcomment %}
-    {% if balance.policy.max_consecutive_days %}
-    <div class="field-hint">{{ balance.policy.consecutive_limit_label }} per spell</div>
-    {% endif %}
-  </div>
-  {% endfor %}
-</div>
+<aside class="card lv-allow" aria-label="Your remaining allowance">
+  <h2 class="lv-allow-title">Your allowance</h2>
+  <ul>
+    {% for balance in balances %}
+    <li>
+      <div class="lv-allow-row">
+        <span class="lv-allow-name">{{ balance.policy.name }}</span>
+        <span class="lv-allow-left">{% if balance.is_unlimited %}No cap{% else %}{{ balance.remaining_label }} left{% endif %}</span>
+      </div>
+      {% if not balance.is_unlimited %}
+      <span class="lv-meter" aria-hidden="true"><i style="width:{{ balance.remaining_percent }}%"></i></span>
+      {% endif %}
+      {% comment %} "No cap", not "Unlimited": a cap of 0 is a real setting, so an uncapped
+         type must not read as though 0 were impossible. {% endcomment %}
+      {% if balance.policy.max_days_per_month or balance.policy.max_consecutive_days %}
+      <p class="lv-allow-hint">{% if balance.policy.max_days_per_month %}{{ balance.policy.max_days_per_month|leave_days }} paid a month{% endif %}{% if balance.policy.max_days_per_month and balance.policy.max_consecutive_days %} · {% endif %}{% if balance.policy.max_consecutive_days %}{{ balance.policy.max_consecutive_days|leave_days }} in a row{% endif %}</p>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</aside>
 {% endif %}

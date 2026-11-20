@@ -160,4 +160,4 @@
     url.searchParams.set('page', pageNum);
     return url.toString();
   }
-  try { if (localStorage.getItem('pqSidebarCollapsed') === '1') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}
+  try { if (window.innerWidth < 1280 && localStorage.getItem('pqSidebarCollapsed') === '1') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}

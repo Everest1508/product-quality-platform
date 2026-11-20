@@ -5339,28 +5339,6 @@ html.sidebar-collapsed .nav-fold .fold-caret {
   width: 100%;
 }
 
-/* ───────── Pintu, the Home mascot: 18 x 16 pixels, scaled by a whole number (6x) and never smoothed ───────── */
-.pt {
-  flex: none;
-  display: block;
-  width: 108px;
-  height: 96px;
-  image-rendering: pixelated;
-  align-self: flex-end;
-  margin: 0 var(--space-2) calc(-1 * var(--space-4)) 0;
-}
-
-.hm-hero .pt+.hm-hero-main {
-  flex: 1 1 280px;
-}
-
-@media (max-width:640px) {
-  .pt {
-    width: 72px;
-    height: 64px;
-  }
-}
-
 /* ───────── One notices card on the DSR instead of stacked bars ───────── */
 .dsr-notices {
   margin: 0 0 var(--space-5);

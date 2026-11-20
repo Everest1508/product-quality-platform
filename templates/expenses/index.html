@@ -9,7 +9,8 @@
     <h1>Expenses</h1>
     <p class="sub">Note what was spent and who paid.</p>
   </div>
-  <div class="head-actions">
+  <div class="pg-actions">
+    {% if has_any %}<a href="{% url 'expenses:expense_export' %}?{{ f.query }}" class="btn" hx-boost="false">{% icon 'download' 'ic' %}Export CSV</a>{% endif %}
     <button type="button" class="btn btn-primary" onclick="document.getElementById('ex-dlg').showModal()">{% icon 'plus' 'ic' %}Add expense</button>
   </div>
 </div>
@@ -45,27 +46,32 @@
   </select>
   <input type="search" name="q" class="form-input" value="{{ f.q }}" placeholder="Search details" aria-label="Search details">
   {% if f.is_filtered %}<a href="?month={{ f.month }}" class="btn btn-ghost btn-sm">{% icon 'x' 'ic' %}Clear filters</a>{% endif %}
-  <a href="{% url 'expenses:expense_export' %}?{{ f.query }}" class="btn btn-sm" hx-boost="false">{% icon 'download' 'ic' %}Export CSV</a>
 </form>
-
-<div class="ex-stats">
-  <div class="card"><span class="ex-l">Total spent · {{ f.period_label }}</span><span class="ex-v">{{ total }}</span><span class="ex-s">{{ count }} expense{{ count|pluralize }}</span></div>
-</div>
 
 <div class="ex-grid">
   <div class="ledger ex-ledger">
+    <header class="ex-ledger-head">
+      <span class="ex-total">{{ total }}</span>
+      <span class="ex-total-sub">spent · {{ f.period_label }} · {{ count }} expense{{ count|pluralize }}</span>
+    </header>
     {% for e in rows %}
     <article class="lrow lr-nomark">
       <div class="lmain">
         <div class="lt">{{ e.category_label }}</div>
-        <div class="ls">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }}{% if e.note %} · {{ e.note }}{% endif %}{% if e.repaid_on %} · paid back {{ e.repaid_on|date:"j M" }}{% elif e.paid_in_run %} · paid in salary{% elif e.to_salary %} · to be added to salary{% endif %}</div>
+        <div class="ls">{{ e.paid_by.get_full_name|default:e.paid_by.username }} paid · {{ e.date|date:"j M Y" }}{% if e.note %} · {{ e.note }}{% endif %}</div>
+      </div>
+      <div class="ex-status">
+        {% if e.repaid_on %}<span class="bdg bdg-green">Paid back {{ e.repaid_on|date:"j M" }}</span>
+        {% elif e.paid_in_run %}<span class="bdg bdg-green">Paid in salary</span>
+        {% elif e.to_salary %}<span class="bdg bdg-blue">Adding to salary</span>
+        {% else %}<span class="bdg bdg-orange">Not paid back</span>{% endif %}
       </div>
       <div class="ex-amt">{{ e.amount_label }}</div>
       <div class="lactions">
-        <a href="{% url 'expenses:expense_edit' e.pk %}#discussion" class="btn btn-sm" title="{% if e.comment_count %}{{ e.comment_count }} comment{{ e.comment_count|pluralize }}{% else %}Start a discussion{% endif %}">{% icon 'messages-square' 'ic' %}{% if e.comment_count %}{{ e.comment_count }}{% else %}Discuss{% endif %}</a>
-        <a href="{% url 'expenses:expense_edit' e.pk %}" class="btn btn-sm">{% icon 'edit' 'ic' %}Edit</a>
+        <a href="{% url 'expenses:expense_edit' e.pk %}#discussion" class="icon-btn ex-talk" title="{% if e.comment_count %}{{ e.comment_count }} comment{{ e.comment_count|pluralize }}{% else %}Start a discussion{% endif %}">{% icon 'messages-square' 'ic' %}<span class="sr-only">Discuss {{ e.category_label }}</span>{% if e.comment_count %}<b>{{ e.comment_count }}</b>{% endif %}</a>
+        <a href="{% url 'expenses:expense_edit' e.pk %}" class="icon-btn" data-tip="Edit" aria-label="Edit {{ e.category_label }}">{% icon 'edit' 'ic' %}</a>
         <form method="post" action="{% url 'expenses:expense_delete' e.pk %}" data-confirm data-confirm-text="Delete {{ e.category_label }}? This cannot be undone." data-confirm-label="Delete">
-          {% csrf_token %}<button type="submit" class="icon-btn" aria-label="Delete {{ e.category_label }}">{% icon 'trash' 'ic' %}</button>
+          {% csrf_token %}<button type="submit" class="icon-btn danger" data-tip="Delete" aria-label="Delete {{ e.category_label }}">{% icon 'trash' 'ic' %}</button>
         </form>
       </div>
     </article>
@@ -86,7 +92,7 @@
     </div>
     <div class="card">
       <h2 class="ex-h">Paid by</h2>
-      {% for p in by_person %}<div class="ex-pay"><span>{{ p.name }}</span><span class="ex-amt">{{ p.total }}</span></div>{% if p.can_add %}<form method="post" action="{% url 'expenses:expense_salary_all' %}" style="margin:2px 0 8px;">{% csrf_token %}<input type="hidden" name="paid_by" value="{{ p.pk }}"><input type="hidden" name="month" value="{{ f.month }}"><input type="hidden" name="category" value="{{ f.category }}"><input type="hidden" name="q" value="{{ f.q }}"><button type="submit" class="btn btn-sm">Add all to salary</button> <button type="submit" name="mode" value="direct" class="btn btn-sm">All paid back directly</button></form>{% endif %}{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
+      {% for p in by_person %}<div class="ex-pay"><span>{{ p.name }}</span><span class="ex-amt">{{ p.total }}</span></div>{% if p.can_add %}<form method="post" action="{% url 'expenses:expense_salary_all' %}" class="ex-bulk">{% csrf_token %}<input type="hidden" name="paid_by" value="{{ p.pk }}"><input type="hidden" name="month" value="{{ f.month }}"><input type="hidden" name="category" value="{{ f.category }}"><input type="hidden" name="q" value="{{ f.q }}"><button type="submit" class="btn btn-sm">Add all to salary</button> <button type="submit" name="mode" value="direct" class="btn btn-sm">All paid back directly</button></form>{% endif %}{% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
     </div>
   </aside>
 </div>

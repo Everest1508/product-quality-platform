@@ -198,6 +198,7 @@ class TeamListView(CompanyMemberRequiredMixin, View):
         developer_count = all_memberships.filter(role="developer").count()
         support_viewer_count = all_memberships.filter(role__in=["support", "viewer"]).count()
         view_mode = request.GET.get("view", "grid")
+        role_counts = {r: all_memberships.filter(role=r).count() for r in ("owner", "admin", "developer", "support", "viewer")}
 
         if request.headers.get("HX-Request") == "true":
             return render(request, "accounts/partials/_team_list_body.html", {
@@ -218,6 +219,7 @@ class TeamListView(CompanyMemberRequiredMixin, View):
             "owner_admin_count": owner_admin_count,
             "developer_count": developer_count,
             "support_viewer_count": support_viewer_count,
+            "role_counts": role_counts,
         })
 
 

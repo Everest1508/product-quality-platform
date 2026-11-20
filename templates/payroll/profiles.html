@@ -1,17 +1,17 @@
 {% extends "payroll/base.html" %}
+{% load icon_tags %}
 
 {% block pay_name %}Payroll setup{% endblock %}
 
 {% block pay_subtitle %}
-<p class="text-sm text-muted" style="margin-top:4px;">
-  Enter a monthly salary per person. Payroll divides it by every day in the cycle (28 to 31),
-  so weekends and holidays are paid days. Tick only real staff.
+<p class="text-sm text-muted pay-sub">
+  One monthly salary per person. Weekends and holidays are paid days, so tick only real staff.
 </p>
 {% endblock %}
 
 {% block pay_actions %}
 <div class="head-actions">
-  <a href="{% url 'payroll:preview' %}" class="btn btn-primary">Preview cycle</a>
+  <a href="{% url 'payroll:preview' %}" class="btn btn-primary">{% icon 'clipboard-list' 'ic' %}Preview cycle</a>
 </div>
 {% endblock %}
 
@@ -30,12 +30,12 @@
     <div class="label">Working days<br>{{ cycle_start|date:"j M" }}–{{ cycle_end|date:"j M" }}</div>
   </div>
   <div class="card stat">
-    <div class="val sm">{{ cycle_gross|floatformat:0 }}</div>
+    <div class="val sm">{{ cycle_gross|floatformat:"0g" }}</div>
     <div class="label">Projected this cycle</div>
   </div>
 </div>
 
-<div class="card" style="padding:0;overflow:hidden;">
+<div class="card pay-card">
   <div class="pay-grid pay-head">
     <div>Employee</div>
     <div>On payroll</div>
@@ -46,7 +46,7 @@
   </div>
 
   {% for row in rows %}
-  <form method="post" class="pay-grid pay-row{% if not row.profile or not row.profile.is_on_payroll %} off{% endif %}">
+  <form method="post" class="pay-grid pay-row{% if not row.profile or not row.profile.is_on_payroll %} off{% endif %}" x-data="{ dirty: false }" @input="dirty = true" @change="dirty = true">
     {% csrf_token %}
     <input type="hidden" name="membership" value="{{ row.membership.pk }}">
 
@@ -107,7 +107,7 @@
 
     <div class="pay-estimate">
       {% if row.estimate %}
-        <span class="amt">{{ row.estimate.gross }}</span>
+        <span class="amt">{{ row.estimate.gross|floatformat:"2g" }}</span>
         <span class="days">· {{ row.estimate.payable_days|floatformat:"-2" }} days</span>
         {% if row.estimate.unpaid_leave_days %}
           <div class="cut">−{{ row.estimate.unpaid_leave_days }} unpaid</div>
@@ -121,7 +121,7 @@
     </div>
 
     <div class="pay-save">
-      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+      <button type="submit" class="btn btn-sm" :class="{ 'btn-primary': dirty }">Save</button>
     </div>
   </form>
   {% empty %}
@@ -135,16 +135,16 @@
   <div class="pay-total">
     <span>
       <strong>{{ on_payroll_count }} on payroll</strong>
-      <span class="text-muted" style="font-size:12.5px;">&middot; projecting {{ cycle_start|date:"j M" }}–{{ cycle_end|date:"j M" }}</span>
+      <span class="text-muted pay-total-note">&middot; projecting {{ cycle_start|date:"j M" }}–{{ cycle_end|date:"j M" }}</span>
     </span>
-    <span class="amt">{{ cycle_gross|floatformat:0 }}</span>
+    <span class="amt">{{ cycle_gross|floatformat:"0g" }}</span>
   </div>
   {% endif %}
 </div>
 
-<section class="card" style="margin-top:16px;padding:18px 22px;max-width:760px;">
-  <h2 style="font-size:14px;font-weight:600;margin:0 0 10px;">How this page works</h2>
-  <ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.7;">
+<details class="card pay-help">
+  <summary>How this page works</summary>
+  <ul>
     <li><b>On</b> means the person gets a payslip. Off means they are skipped, even if they are an admin.</li>
     <li><b>Monthly salary</b> is what you pay for a full month. The day rate is worked out from it: salary ÷ days in the cycle (30 for 27 Sep to 26 Oct).</li>
     <li><b>Effective from</b> is the day the salary starts to count. For someone new, it is their joining day: their first payslip pays from that day to the 26th. A cycle uses the salary that was active on the cycle's first day (the 27th).</li>
@@ -153,5 +153,5 @@
     <li><b>Old payslips never change.</b> A new salary only affects payslips you create after it.</li>
     <li><b>This cycle</b> shows what the person would get right now. Weekends and <a href="{% url 'payroll:holidays' %}">holidays</a> are paid, and only unpaid leave and late arrivals reduce pay.</li>
   </ul>
-</section>
+</details>
 {% endblock %}

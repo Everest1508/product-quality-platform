@@ -95,13 +95,25 @@ title, a subtitle, its actions and its body.
             margin-top:14px;max-width:900px;}
   .pay-note b{color:var(--text);font-weight:500;}
 
-  /* Narrow screens: each person becomes their own stacked card. */
-  @media (max-width:820px){
+  /* The grid needs about 960px, and the sidebar takes a share of the window, so
+     this keys on the card's own width (a container query), not the window's.
+     Otherwise Save falls off the right edge of the card on a laptop.
+     Medium: two lines per person (name, switch, Save / salary, date, this cycle).
+     Small: one column. */
+  .pay-card{container-type:inline-size;}
+  @container (max-width:980px){
     .pay-head{display:none;}
-    .pay-row{grid-template-columns:1fr 1fr;gap:10px 12px;padding:14px 16px;}
-    .pay-who{grid-column:1 / -1;}
-    .pay-estimate{grid-column:1 / -1;}
-    .pay-save{grid-column:1 / -1;text-align:left;}
+    .pay-row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);gap:10px 14px;padding:14px 16px;}
+    .pay-row>div:nth-of-type(1){grid-column:1;grid-row:1;}
+    .pay-row>div:nth-of-type(2){grid-column:2;grid-row:1;}
+    .pay-row>.pay-save{grid-column:3;grid-row:1;}
+    .pay-save{text-align:right;}
+  }
+  @container (max-width:560px){
+    .pay-row{grid-template-columns:1fr 1fr;}
+    .pay-row>div:nth-of-type(1),.pay-row>.pay-estimate,.pay-row>.pay-save{grid-column:1 / -1;grid-row:auto;}
+    .pay-row>div:nth-of-type(2){grid-column:auto;grid-row:auto;}
+    .pay-save{text-align:left;}
   }
 </style>
 

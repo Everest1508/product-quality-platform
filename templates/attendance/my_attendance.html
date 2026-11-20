@@ -1,40 +1,33 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
 {% block title %}My Attendance — PQ Platform{% endblock %}
 
 {% block content %}
 {% include "core/_mywork_tabs.html" with here="attendance" %}
-<nav class="breadcrumbs">
+{% if focus_user %}<nav class="breadcrumbs">
   <a href="{% url 'attendance:my_attendance' %}">Attendance</a>
   <span class="sep">/</span>
   <span class="current">{% if focus_user %}{{ focus_user.get_full_name|default:focus_user.username }}{% else %}My attendance{% endif %}</span>
 </nav>
-
-{% if focus_user %}
-<div class="card" style="padding:12px 16px;margin-bottom:16px;border-left:3px solid var(--blue);">
+<div class="alert att-viewing">
   <strong>Viewing {{ focus_user.get_full_name|default:focus_user.username }}'s attendance.</strong>
-  <span class="text-sm text-muted">You are an admin viewing another employee's record. Punching is not available here — to correct a day, use the team view.</span>
+  <span>You are an admin viewing another employee's record. Punching is not available here — to correct a day, use the team view.</span>
 </div>
 {% endif %}
 
-<div class="head">
+<div class="pg-head">
   <div>
     <h1>{% if focus_user %}{{ focus_user.get_full_name|default:focus_user.username }}'s Attendance{% else %}My Attendance{% endif %}</h1>
-    <p class="text-sm text-muted" style="margin-top:4px;">{% if focus_user %}Read-only view of this employee's days.{% else %}Check in when you start your day and check out when you leave.{% endif %}</p>
+    <p class="sub">{% if focus_user %}Read-only view of this employee's days.{% else %}Check in when you start your day and check out when you leave.{% endif %}</p>
   </div>
-  <div class="head-actions">
+  <div class="pg-actions">
     {% if not focus_user %}
-    <a href="{% url 'attendance:correction_request' %}" class="btn" style="gap:6px;">Request a correction</a>
+    <a href="{% url 'attendance:correction_request' %}" class="btn">{% icon 'edit' 'ic' %}Request a correction</a>
     {% endif %}
     {% if request.company_role == 'owner' or request.company_role == 'admin' %}
-    <a href="{% url 'attendance:team_attendance' %}" class="btn" style="gap:6px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
-      Team
-    </a>
-    <a href="{% url 'attendance:timesheet' %}" class="btn" style="gap:6px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Timesheet
-    </a>
+    <a href="{% url 'attendance:team_attendance' %}" class="btn">{% icon 'users' 'ic' %}Team</a>
+    <a href="{% url 'attendance:timesheet' %}" class="btn">{% icon 'calendar-days' 'ic' %}Timesheet</a>
     {% endif %}
   </div>
 </div>
@@ -44,7 +37,7 @@ Always rendered, including when an admin reads a colleague's page: the partial
 hides its own button in that case (`punch_readonly`) but still shows the
 forgotten-check-out warning, which is the reason they opened the page.
 {% endcomment %}
-<div style="margin-bottom:18px;">
+<div class="att-punch">
   {% include "attendance/partials/_punch_button.html" %}
 </div>
 
@@ -74,11 +67,11 @@ forgotten-check-out warning, which is the reason they opened the page.
     </span>
   </div>
   <div class="stat-strip-item" role="listitem">
-    <span class="stat-strip-label">Days recorded in {{ month_label }}</span>
+    <span class="stat-strip-label">Days in {{ month_label|slice:":3" }}</span>
     <span class="stat-strip-value">{{ records|length }}</span>
   </div>
   <div class="stat-strip-item" role="listitem">
-    <span class="stat-strip-label">Worked in {{ month_label }}</span>
+    <span class="stat-strip-label">Worked in {{ month_label|slice:":3" }}</span>
     <span class="stat-strip-value">{{ month_total_formatted }}</span>
     <span class="stat-strip-note">{% if month_present_days %}about {{ month_average_formatted }} a day{% else %}nothing yet{% endif %}</span>
   </div>
@@ -86,7 +79,7 @@ forgotten-check-out warning, which is the reason they opened the page.
      today's state, so it is counted over the month being viewed. {% endcomment %}
   <div class="stat-strip-item" role="listitem">
     <span class="stat-strip-label">Missing check-out</span>
-    <span class="stat-strip-value"{% if unclosed_days %} style="color:var(--orange);"{% endif %}>{{ unclosed_days }}</span>
+    <span class="stat-strip-value{% if unclosed_days %} is-warn{% endif %}">{{ unclosed_days }}</span>
     {% if unclosed_days %}<span class="stat-strip-note">day{{ unclosed_days|pluralize }} need one</span>{% endif %}
   </div>
 </div></div>
@@ -112,10 +105,10 @@ forgotten-check-out warning, which is the reason they opened the page.
   </div>
 </section>
 
-<div class="card history-card" style="padding:0;overflow:hidden;">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
-    <h2 style="font-size:15px;font-weight:600;margin:0;">Recent days</h2>
-    <div style="display:flex;gap:6px;align-items:center;"
+<div class="card history-card">
+  <div class="att-history-head">
+    <h2>Recent days</h2>
+    <div class="att-month-nav"
          hx-boost="true"
          hx-target=".main"
          hx-select=".main"

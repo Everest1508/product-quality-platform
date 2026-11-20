@@ -1,10 +1,7 @@
-"""The Home greeting: every line, and the Pintu frames played while it is typed.
+"""The Home greeting: the lines typed under "Good morning", one set per time of day.
 
-Pintu is the pixel mascot from pintumcp. His art and timing live in `pintu.json`, copied
-from that project (`frames`, `palette`, `tints`, `sequence`, `delay_ms`); this module only
-says which of his frames each line plays: a short reaction of two or three beats that ends on the
-face he holds while the line is on screen. No two lines react the same way, and the page draws them
-as pixels, never smoothed.
+Pintu, the pixel mascot, no longer appears on Home; his art (`pintu.json`) is kept because the
+sign-in page still draws him. The frame names kept with each line are unused on Home.
 """
 
 import json
@@ -62,8 +59,5 @@ GREETINGS = {
 
 
 def as_json_data():
-    """What the page needs: the lines with their frames, and Pintu's own art and timing."""
-    return {
-        "lines": {period: [{"t": t, "f": list(f)} for t, f in lines] for period, lines in GREETINGS.items()},
-        "pintu": PINTU,
-    }
+    """What the Home page needs: just the lines for each time of day."""
+    return {"lines": {period: [t for t, _ in lines] for period, lines in GREETINGS.items()}}

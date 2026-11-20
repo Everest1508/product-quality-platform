@@ -1,11 +1,11 @@
 {% if form.non_field_errors %}
   {% for error in form.non_field_errors %}
-  <div class="field-error" style="margin-bottom:14px;">{{ error }}</div>
+  <div class="alert alert-warn">{{ error }}</div>
   {% endfor %}
 {% endif %}
 
-<div class="form-group" style="margin-bottom:16px;">
-  <label class="form-section-label" style="display:block;" for="{{ form.policy_id.id_for_label }}">Leave type</label>
+<div class="field">
+  <label for="{{ form.policy_id.id_for_label }}">Leave type</label>
   <span hx-post="{% url 'leave:split_preview' %}"
         hx-trigger="change"
         hx-target="#leave-split-preview"
@@ -26,9 +26,9 @@ when the browser has a complete date, which is the first moment there is
 anything meaningful to price. Keying on keystrokes would re-price a half-typed
 "2026-1" and flash the panel in and out.
 {% endcomment %}
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-  <div class="form-group">
-    <label class="form-section-label" style="display:block;" for="{{ form.start_date.id_for_label }}">Start date</label>
+<div class="lv-dates">
+  <div class="field">
+    <label for="{{ form.start_date.id_for_label }}">Start date</label>
     <span hx-post="{% url 'leave:split_preview' %}"
           hx-trigger="change"
           hx-target="#leave-split-preview"
@@ -38,8 +38,8 @@ anything meaningful to price. Keying on keystrokes would re-price a half-typed
     </span>
     {% for error in form.start_date.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
   </div>
-  <div class="form-group">
-    <label class="form-section-label" style="display:block;" for="{{ form.end_date.id_for_label }}">End date</label>
+  <div class="field">
+    <label for="{{ form.end_date.id_for_label }}">End date</label>
     <span hx-post="{% url 'leave:split_preview' %}"
           hx-trigger="change"
           hx-target="#leave-split-preview"
@@ -47,26 +47,26 @@ anything meaningful to price. Keying on keystrokes would re-price a half-typed
           hx-include="#apply-policy, #apply-start, #apply-end, #apply-half">
       {{ form.end_date }}
     </span>
-    <div class="field-hint">Leave this blank for a single day.</div>
+    <div class="field-hint">Blank for a single day.</div>
     {% for error in form.end_date.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
   </div>
 </div>
 
-<div class="form-group" style="margin-bottom:16px;">
-  <label class="filter-check" style="font-size:14px;font-weight:500;">
+<div class="field">
+  <label class="lv-check">
     <span hx-post="{% url 'leave:split_preview' %}"
           hx-trigger="change"
           hx-target="#leave-split-preview"
           hx-swap="innerHTML"
           hx-include="#apply-policy, #apply-start, #apply-end, #apply-half">
-      {{ form.is_half_day }} Half day (counts as 0.5 against your balance)
+      {{ form.is_half_day }} Half day <small>counts as 0.5 day</small>
     </span>
   </label>
   {% for error in form.is_half_day.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 </div>
 
-<div class="form-group">
-  <label class="form-section-label" style="display:block;" for="{{ form.reason.id_for_label }}">Reason</label>
+<div class="field">
+  <label for="{{ form.reason.id_for_label }}">Reason <small>optional</small></label>
   {{ form.reason }}
   {% for error in form.reason.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 </div>

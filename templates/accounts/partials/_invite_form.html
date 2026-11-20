@@ -42,7 +42,7 @@
     </div>
   </div>
   <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
-    <a href="{% url 'accounts:team_list' %}" class="btn">Cancel</a>
+    <button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button>
     <button type="submit" class="btn btn-primary">Add Member</button>
   </div>
 </form>

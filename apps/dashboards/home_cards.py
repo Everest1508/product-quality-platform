@@ -37,6 +37,18 @@ def team_board(company, today):
     """Everyone in the company with where they are today: working, done, on leave or not in yet."""
     from apps.attendance import service as att
 
+    from apps.leave.models import LeaveRequest
+
+    # One query: today's approved and pending leave, newest decision wins per person.
+    leave_today = {}
+    for lv in (
+        LeaveRequest.objects.filter(
+            company=company, status__in=["approved", "pending"],
+            start_date__lte=today, end_date__gte=today,
+        ).select_related("policy").order_by("status")  # "approved" sorts before "pending"
+    ):
+        leave_today.setdefault(lv.user_id, lv)
+
     shift = att.shift_for(company)
     weekly_off = shift.is_weekly_off(today)
     rows, counts = [], {"in": 0, "out": 0, "leave": 0, "not_in": 0, "late": 0}
@@ -58,7 +70,10 @@ def team_board(company, today):
             counts[state] += 1
         if late:
             counts["late"] += 1
-        rows.append({"user": r["user"], "record": rec, "state": state, "late": late})
+        rows.append({
+            "user": r["user"], "record": rec, "state": state, "late": late,
+            "leave": leave_today.get(r["user"].pk),
+        })
     rows.sort(key=lambda x: (_STATE_ORDER[x["state"]], x["user"].username))
     return {"rows": rows, "counts": counts, "weekly_off": weekly_off}
 

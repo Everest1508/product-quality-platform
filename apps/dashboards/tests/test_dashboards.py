@@ -584,22 +584,17 @@ class UnreadableDecimalTakesDownTheDashboardTest(TestCase):
 
 
 class GreetingActsTest(TestCase):
-    """Every greeting line gets its own reaction from Pintu, and every frame exists."""
+    """The Home greeting lines, and Pintu's art that the sign-in page still draws."""
 
-    def test_every_line_has_its_own_valid_frames(self):
+    def test_every_period_has_distinct_lines(self):
         from apps.dashboards import greetings
 
-        runs, texts = [], []
-        for period, lines in greetings.GREETINGS.items():
+        data = greetings.as_json_data()["lines"]
+        self.assertEqual(set(data), {"morning", "afternoon", "evening", "night"})
+        texts = [t for lines in data.values() for t in lines]
+        for period, lines in data.items():
             self.assertEqual(len(lines), 9, period)
-            for text, frames in lines:
-                self.assertIn(len(frames), (2, 3), text)
-                for name in frames:
-                    self.assertIn(name, greetings.FRAMES, f"{text}: {name}")
-                runs.append(frames)
-                texts.append(text)
-        self.assertEqual(len(set(runs)), len(runs), "two lines react the same way")
-        self.assertEqual(len({f[-1] for f in runs}) > 5, True, "too few resting faces")
+            self.assertTrue(all(isinstance(t, str) and t for t in lines), period)
         self.assertEqual(len(set(texts)), len(texts))
 
     def test_pintu_art_is_a_full_18_by_16_grid_in_the_palette(self):
@@ -612,13 +607,13 @@ class GreetingActsTest(TestCase):
                 self.assertTrue(ch == "." or ch in art["palette"], f"{name}: {ch}")
         self.assertTrue(set(art["sequence"]) <= set(art["frames"]))
 
-    def test_the_home_page_carries_the_frames_for_the_canvas(self):
+    def test_the_home_page_carries_the_lines_and_no_mascot(self):
         from django.conf import settings
 
         from apps.accounts.models import Company, Membership, User
 
-        company = Company.objects.create(name="Pintu Co", slug="pintu-co")
-        user = User.objects.create_user("pintu-fan", password="x")
+        company = Company.objects.create(name="Lines Co", slug="lines-co")
+        user = User.objects.create_user("lines-fan", password="x")
         Membership.objects.create(user=user, company=company, role="developer")
         self.client.force_login(user)
         session = self.client.session
@@ -626,4 +621,4 @@ class GreetingActsTest(TestCase):
         session.save()
         page = self.client.get(reverse("dashboards:index"))
         self.assertContains(page, 'id="hm-lines"')
-        self.assertContains(page, '<canvas class="pt"')
+        self.assertNotContains(page, '<canvas class="pt"')

@@ -1,8 +1,18 @@
 /* Sidebar: collapse toggle, mobile drawer and the tooltips on the collapsed rail. */
 (function () {
   var root = document.documentElement;
+  // On a big screen the sidebar always stays open: there is room for it, and a
+  // rail of bare icons only hides where things are. Narrower screens can collapse it.
+  var WIDE = window.matchMedia('(min-width: 1280px)');
+  function syncWide() {
+    if (WIDE.matches) { root.classList.remove('sidebar-collapsed'); return; }
+    try { if (localStorage.getItem('pqSidebarCollapsed') === '1') root.classList.add('sidebar-collapsed'); } catch (err) {}
+  }
+  syncWide();
+  if (WIDE.addEventListener) WIDE.addEventListener('change', syncWide);
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-sidebar-toggle]')) {
+      if (WIDE.matches) return;
       var collapsed = root.classList.toggle('sidebar-collapsed');
       try { localStorage.setItem('pqSidebarCollapsed', collapsed ? '1' : '0'); } catch (err) {}
     }
