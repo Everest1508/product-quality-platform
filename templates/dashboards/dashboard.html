@@ -12,7 +12,7 @@ function homeHero(fallback) {
   const DATA = JSON.parse(document.getElementById('hm-lines').textContent);
   const GREET = { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Working late' };
   return {
-    period: 'morning', greeting: fallback, date: '', typed: '', i: 0, n: 0, erasing: false, still: false,
+    period: 'morning', greeting: fallback, date: '', typed: '', i: 0, n: 0, erasing: false, still: false, fade: false,
     init() {
       const d = new Date(), h = d.getHours();
       this.period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : h < 21 ? 'evening' : 'night';
@@ -29,15 +29,14 @@ function homeHero(fallback) {
       this.n = 0; this.erasing = false;
       this.step();
     },
-    // Slow and even: 70 ms a letter, 6.5 s to read, a quick rub-out, then a short pause before the next line.
+    // Typed in at an even pace, held long enough to read, then faded out (not backspaced) before the next line.
     step() {
       const line = this.lines[this.i];
-      if (!this.erasing) {
-        if (this.n < line.length) { this.n++; this.typed = line.slice(0, this.n); return setTimeout(() => this.step(), 70); }
-        this.erasing = true; return setTimeout(() => this.step(), 6500);
-      }
-      if (this.n > 0) { this.n--; this.typed = line.slice(0, this.n); return setTimeout(() => this.step(), 18); }
-      setTimeout(() => this.nextLine(), 900);
+      if (this.n < line.length) { this.n++; this.typed = line.slice(0, this.n); return setTimeout(() => this.step(), 55); }
+      setTimeout(() => {
+        this.fade = true;
+        setTimeout(() => { this.typed = ''; this.fade = false; setTimeout(() => this.nextLine(), 350); }, 600);
+      }, 6500);
     },
   };
 }
@@ -45,7 +44,8 @@ function homeHero(fallback) {
 <div class="hm">
   <section class="hm-hero" :class="'is-' + period" x-data="homeHero('{{ greeting }}')" aria-label="Welcome">
     <span class="hm-sky" aria-hidden="true">
-      <i class="hm-orb"></i><i class="hm-stars"></i>
+      <i class="hm-orb"></i><i class="hm-stars"></i><i class="hm-rainbow"></i>
+      <i class="hm-shoot s1"></i><i class="hm-shoot s2"></i><i class="hm-shoot s3"></i>
       <svg class="hm-cloud c1" viewBox="0 0 220 96" focusable="false"><use href="#hm-cl"/></svg>
       <svg class="hm-cloud c2" viewBox="0 0 220 96" focusable="false"><use href="#hm-cl"/></svg>
       <svg class="hm-cloud c3" viewBox="0 0 220 96" focusable="false"><use href="#hm-cl"/></svg>
@@ -77,7 +77,7 @@ function homeHero(fallback) {
         </span>
         <span><span x-text="greeting">{{ greeting }}</span>{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</span>
       </h1>
-      <p class="hm-hero-line"><span x-text="typed"></span><i class="hm-caret" aria-hidden="true"></i></p>
+      <p class="hm-hero-line" :class="{ 'is-fading': fade }"><span x-text="typed"></span><i class="hm-caret" aria-hidden="true"></i></p>
       {% if milestones %}<ul class="hm-mile">{% for m in milestones %}<li>{% icon 'sparkles' 'ic' %}{{ m }}</li>{% endfor %}</ul>{% endif %}
     </div>
     <div class="hm-hero-actions">

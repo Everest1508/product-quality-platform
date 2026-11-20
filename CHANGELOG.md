@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.82.1] "Mynah" — 2026-11-20 · a livelier Home sky, and release names up front
+
+> In short: the Home sky now has shooting stars at night and a faint rainbow in the afternoon, the greeting line is easier to read, and the "What's new" window leads with each release's name.
+
+### New
+
+- **Shooting stars and a rainbow.** At night a few shooting stars cross the Home sky. In the afternoon a soft rainbow fades in behind the clouds, then away again.
+
+### Better
+
+- **A clearer greeting line.** The line under "Good morning" is larger, easier to read over the sky, and fades out gently instead of being rubbed out letter by letter. The banner no longer jumps when it clears.
+- **Release names stand out.** In "What's new", each release is listed by its name first, like "Limpkin", with the version number small beneath it. The open release shows its name as the big heading.
+- **Smoother clouds.** The clouds are drawn as soft, shaded cumulus and glide across at an even pace.
+
 ## [1.82.0] "Limpkin" — 2026-11-20 · tidier pages, and leave on the Team today card
 
 > In short: Apply for Leave, the Daily Status Report, My Attendance, Team, Payroll setup, Expenses and Project costing are all tidier, the Home Team today card shows who is on leave, a new sky behind the Home greeting, and the sidebar now stays open on big screens.

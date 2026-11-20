@@ -68,3 +68,12 @@ dialog.cl::backdrop{background:rgb(15 23 42 / .32);backdrop-filter:blur(2px);}
   .cl-pane-head h3{font-size:24px;}
 }
 @media (prefers-reduced-motion:reduce){dialog.cl[open],dialog.cl.is-closing{animation:none;}}
+
+/* Release names lead; the version number is the small print. */
+.cl-ver-name{color:var(--accent);}
+.cl-ver-tag{margin-left:var(--space-2);font:500 var(--fs-sm) Inter,system-ui,sans-serif;letter-spacing:0;color:var(--muted);}
+.cl-rel-name{display:flex;align-items:baseline;gap:var(--space-2);font:700 var(--fs-md)/1.25 Manrope,'DM Sans',sans-serif;letter-spacing:-.01em;}
+.cl-rel.is-on .cl-rel-name{color:var(--accent);}
+.cl-rel-ver{font-size:var(--fs-xs);font-weight:400;color:var(--muted);}
+.cl-pane-head h3{font-size:40px;color:var(--accent);}
+.cl-codename{font-size:var(--fs-md);font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;}

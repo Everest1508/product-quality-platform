@@ -866,3 +866,23 @@
 @media(prefers-reduced-motion:reduce){.hm-cloud,.hm-stars::before,.hm-stars::after{animation:none;}.hm-cloud{opacity:.9;transform:translate3d(60cqw,0,0);}}
 .hm-sky::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,14,36,.42) 0%,rgba(8,14,36,.18) 45%,rgba(8,14,36,0) 70%);}
 .hm-hero{flex-direction:column;align-items:flex-start;justify-content:flex-end;min-height:150px;gap:var(--space-3);padding:var(--space-5) var(--space-6);}
+
+/* Shooting stars at night and a faint rainbow in the afternoon. All decorative, all transform/opacity only. */
+.hm-shoot{display:none;position:absolute;width:90px;height:2px;border-radius:2px;opacity:0;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff);transform:rotate(26deg);will-change:transform,opacity;}
+.hm-hero.is-night .hm-shoot{display:block;animation:hmShoot 11s linear infinite;}
+.hm-shoot.s1{left:48%;top:10%;animation-delay:-2s;}
+.hm-shoot.s2{left:70%;top:26%;animation-duration:15s;animation-delay:-9s;}
+.hm-shoot.s3{left:30%;top:36%;animation-duration:19s;animation-delay:-14s;}
+@keyframes hmShoot{0%{opacity:0;transform:translate3d(0,0,0) rotate(26deg);}2%{opacity:1;}7%{opacity:0;transform:translate3d(240px,117px,0) rotate(26deg);}100%{opacity:0;transform:translate3d(240px,117px,0) rotate(26deg);}}
+.hm-rainbow{display:none;position:absolute;right:-14%;top:-52px;width:560px;height:560px;border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(circle closest-side,transparent 0 57%,rgba(255,96,96,.5) 57% 59%,rgba(255,168,64,.5) 59% 61%,rgba(255,230,90,.45) 61% 63%,rgba(110,208,124,.45) 63% 65%,rgba(92,170,255,.5) 65% 67%,rgba(150,112,232,.5) 67% 69%,transparent 69%);
+  animation:hmRainbow 60s ease-in-out infinite;}
+.hm-hero.is-afternoon .hm-rainbow{display:block;}
+@keyframes hmRainbow{0%,12%{opacity:0;}28%,62%{opacity:.7;}80%,100%{opacity:0;}}
+/* The typed line: larger, softer, and it never changes the banner's height. */
+.hm-hero-line{min-height:1.7em;margin-top:var(--space-1);font-size:var(--fs-md);font-weight:500;letter-spacing:.005em;color:rgba(255,255,255,.92);
+  text-shadow:0 1px 10px rgba(8,14,36,.45);transition:opacity .6s ease;}
+.hm-hero-line.is-fading{opacity:0;}
+.hm-caret{width:2px;margin-left:3px;border-radius:1px;background:rgba(255,255,255,.85);}
+@media(prefers-reduced-motion:reduce){.hm-shoot,.hm-rainbow{animation:none;}.hm-rainbow{opacity:.5;}}

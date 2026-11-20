@@ -36,8 +36,8 @@
     var on = r.tag === current;
     return '<button type="button" class="cl-rel' + (on ? ' is-on' : '') + '" data-tag="' + esc(r.tag) +
       '" role="tab" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '">' +
-      '<span class="cl-rel-ver">v' + esc(r.tag) + (r === latest ? '<em class="cl-rel-latest">Latest</em>' : '') + '</span>' +
-      '<span class="cl-rel-date">' + esc(day(r.date)) + '</span>' +
+      '<span class="cl-rel-name">' + esc(r.name || ('v' + r.tag)) + (r === latest ? '<em class="cl-rel-latest">Latest</em>' : '') + '</span>' +
+      '<span class="cl-rel-ver">v' + esc(r.tag) + ' · ' + esc(day(r.date)) + '</span>' +
     '</button>';
   }
 
@@ -50,8 +50,8 @@
 
   function detail(r, latest) {
     var h = '<header class="cl-pane-head">' +
-      '<h3>v' + esc(r.tag) + '</h3>' +
-      (r.name ? '<span class="cl-codename">' + esc(r.name) + '</span>' : '') +
+      '<h3>' + esc(r.name || ('v' + r.tag)) + '</h3>' +
+      (r.name ? '<span class="cl-codename">v' + esc(r.tag) + '</span>' : '') +
       (r === latest ? '<span class="cl-badge-latest">Latest</span>' : '') +
       '<time class="cl-date">' + esc(day(r.date)) + '</time>' +
     '</header>';
@@ -65,7 +65,9 @@
     var latest = releases[0];
     var chosen = releases.filter(function (r) { return r.tag === current; })[0] || latest;
     current = chosen.tag;
-    sub.innerHTML = (latest.name ? '<b>“' + esc(latest.name) + '”</b> — ' : '') + esc(latest.title || '');
+    var ttl = document.getElementById('cl-title');
+    if (ttl && latest.name) ttl.innerHTML = 'What\'s new in <span class="cl-ver cl-ver-name">' + esc(latest.name) + '</span> <span class="cl-ver-tag">v' + esc(latest.tag) + '</span>';
+    sub.innerHTML = esc(latest.title || '');
     rail.innerHTML = releases.map(function (r) { return listItem(r, latest); }).join('');
     pane.innerHTML = detail(chosen, latest);
     pane.scrollTop = 0;
