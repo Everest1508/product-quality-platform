@@ -351,6 +351,24 @@ class BalanceTest(LeaveTestBase):
         self.assertIsNone(balance["remaining"])
 
 
+class MonthlyCapTest(LeaveTestBase):
+    def test_second_paid_day_in_a_month_is_unpaid(self):
+        self.casual.max_days_per_month = Decimal("1.0")
+        self.casual.save()
+        # Mon and Tue of one week can straddle a month end; use the first day
+        # of next month's first Monday + 1 so both fall in the same month.
+        day = self.monday()
+        day = day.replace(day=1) + timedelta(days=32)
+        day = day.replace(day=1)
+        day += timedelta(days=(7 - day.weekday()) % 7)
+        first = service.auto_split(self.company, self.emp, self.casual, day, day, Decimal("1.0"))
+        self.assertEqual(first["paid"], Decimal("1.0"))
+        self.make_request(start=day, days=Decimal("1.0"), paid=Decimal("1.0"), unpaid=Decimal("0.0"))
+        later = day + timedelta(days=1)
+        second = service.auto_split(self.company, self.emp, self.casual, later, later, Decimal("1.0"))
+        self.assertEqual((second["paid"], second["unpaid"]), (Decimal("0.0"), Decimal("1.0")))
+
+
 class ApplyViewTest(LeaveTestBase):
     def post_apply(self, user, **overrides):
         payload = {

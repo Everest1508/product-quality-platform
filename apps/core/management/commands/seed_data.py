@@ -641,6 +641,7 @@ class Command(BaseCommand):
                 icon="coffee",
                 color="green",
                 max_days_per_year=Decimal("12.0"),
+                max_days_per_month=Decimal("1.0"),
                 max_consecutive_days=Decimal("3.0"),
                 is_paid=True,
             ),

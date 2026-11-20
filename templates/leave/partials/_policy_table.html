@@ -36,6 +36,14 @@ question and is answered on /leave/ and the dashboard, not on the admin form.
       </div>
 
       <div class="lp-field">
+        <label for="lp-month-{{ policy.pk }}">Days per month</label>
+        <input type="number" id="lp-month-{{ policy.pk }}" name="max_days_per_month"
+               class="form-input lp-days" step="0.5" min="0.5"
+               value="{{ policy.max_days_per_month|default_if_none:'' }}"
+               placeholder="No cap">
+      </div>
+
+      <div class="lp-field">
         <label for="lp-spell-{{ policy.pk }}">Max per spell</label>
         <input type="number" id="lp-spell-{{ policy.pk }}" name="max_consecutive_days"
                class="form-input lp-days" step="0.5" min="0.5"
@@ -83,6 +91,12 @@ question and is answered on /leave/ and the dashboard, not on the admin form.
     <label for="lp-new-days">Days per year</label>
     <input type="number" id="lp-new-days" name="max_days_per_year"
            class="form-input lp-days" step="0.5" min="0" placeholder="No cap">
+  </div>
+
+  <div class="lp-field">
+    <label for="lp-new-month">Days per month</label>
+    <input type="number" id="lp-new-month" name="max_days_per_month"
+           class="form-input lp-days" step="0.5" min="0.5" placeholder="No cap">
   </div>
 
   <div class="lp-field">

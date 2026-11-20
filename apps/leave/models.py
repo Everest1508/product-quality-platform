@@ -34,6 +34,17 @@ class LeavePolicy(TenantScopedModel):
             "Days beyond this are charged as unpaid leave, not refused."
         ),
     )
+    max_days_per_month = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.5"))],
+        help_text=(
+            "Paid leave days allowed per calendar month. Blank means no monthly "
+            "limit. Days beyond this are charged as unpaid leave, not refused."
+        ),
+    )
     max_consecutive_days = models.DecimalField(
         max_digits=5,
         decimal_places=1,
@@ -91,6 +102,10 @@ class LeavePolicy(TenantScopedModel):
     @property
     def annual_limit_label(self):
         return "No cap" if self.max_days_per_year is None else f"{self.max_days_per_year} paid days / year"
+
+    @property
+    def monthly_limit_label(self):
+        return "No cap" if self.max_days_per_month is None else f"{self.max_days_per_month} paid days / month"
 
     @property
     def consecutive_limit_label(self):

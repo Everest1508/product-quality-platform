@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.81.0] "Kea" — 2026-11-20 · a monthly limit on paid leave
+
+> In short: each leave type can now have a limit on paid days per month, so one paid casual leave a month is possible and the rest of that month is unpaid automatically.
+
+### New
+
+- **Paid days per month.** The leave types screen has a new Days per month box next to Days per year. Set Casual to 1 and the first leave day of a month is paid, while any further days that month are charged as unpaid. Leave it blank for no monthly limit.
+
+### Better
+
+- **The apply screen says why.** A request that comes out part unpaid now mentions the monthly limit when that is the reason.
+
 ## [1.80.1] "Jabiru" — 2026-11-19 · hours now match everywhere
 
 > In short: the hours in your check-out notification and in the team attendance table now take the break off, so they match the "This week" chart and your history.

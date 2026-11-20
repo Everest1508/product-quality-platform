@@ -262,6 +262,15 @@ class LeavePolicyForm(forms.ModelForm):
             attrs={"class": "form-input", "step": "0.5", "placeholder": "No cap"}
         ),
     )
+    max_days_per_month = forms.DecimalField(
+        required=False,
+        label="Paid days per month",
+        decimal_places=1,
+        min_value=Decimal("0.5"),
+        widget=forms.NumberInput(
+            attrs={"class": "form-input", "step": "0.5", "placeholder": "No cap"}
+        ),
+    )
     max_consecutive_days = forms.DecimalField(
         required=False,
         label="Paid days per spell",
@@ -277,6 +286,7 @@ class LeavePolicyForm(forms.ModelForm):
         fields = [
             "name",
             "max_days_per_year",
+            "max_days_per_month",
             "max_consecutive_days",
             "is_paid",
             "color",
@@ -316,6 +326,9 @@ class LeavePolicyForm(forms.ModelForm):
 
     def clean_max_days_per_year(self):
         return self.cleaned_data.get("max_days_per_year") or None
+
+    def clean_max_days_per_month(self):
+        return self.cleaned_data.get("max_days_per_month") or None
 
     def clean_max_consecutive_days(self):
         return self.cleaned_data.get("max_consecutive_days") or None

@@ -240,6 +240,17 @@ def consecutive_run_days(company, user, start_date, end_date, exclude_pk=None):
     return Decimal(working_days(span_start, span_end, weekly_off_for(company)))
 
 
+def _paid_in_month(company, user, policy, day, exclude_pk=None):
+    """Paid days already booked (approved or pending) in `day`'s calendar month."""
+    qs = LeaveRequest.objects.filter(
+        company=company, user=user, policy=policy, status__in=["approved", "pending"],
+        start_date__year=day.year, start_date__month=day.month,
+    ).select_related("policy")
+    if exclude_pk:
+        qs = qs.exclude(pk=exclude_pk)
+    return sum((_paid_charge(r) for r in qs), Decimal("0.0"))
+
+
 def paid_allowance(company, user, policy, start_date, end_date, days, exclude_pk=None):
     """How many of `days` can be paid, and why not more.
 
@@ -283,6 +294,18 @@ def paid_allowance(company, user, policy, start_date, end_date, days, exclude_pk
         reasons.append(
             f"{policy.name} leave is capped at {format_days(cap)} paid days "
             f"at a time"
+        )
+
+    monthly = policy.max_days_per_month
+    if monthly is not None:
+        # ponytail: the whole request is judged against its start month, so a
+        # request crossing into the next month does not get that month's day too.
+        used = _paid_in_month(company, user, policy, start_date, exclude_pk)
+        month_room = max(Decimal("0.0"), monthly - used)
+        headroom = month_room if headroom is None else min(headroom, month_room)
+        reasons.append(
+            f"{policy.name} leave is capped at {format_days(monthly)} paid "
+            f"day(s) a month"
         )
 
     if remaining is None:
