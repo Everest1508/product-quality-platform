@@ -265,6 +265,8 @@ if not APPAUTH_JWT_SECRET:
 
     raise ImproperlyConfigured("JWT_SECRET must be set when DJANGO_DEBUG is off.")
 # Accepted Google OAuth client IDs (the ID token's `aud`): web first, then optional Android / iOS.
+# Django defaults to same-origin, which stops the Google popup from replying (blank gsi/transform window).
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"  # temporary, with Google login
 CRM_GOOGLE_LOGIN = os.environ.get("CRM_GOOGLE_LOGIN") == "1"  # temporary, see apps/accounts/google_login.py
 CRM_GOOGLE_LOGIN_DOMAIN = os.environ.get("CRM_GOOGLE_LOGIN_DOMAIN", "")
 GOOGLE_CLIENT_IDS = [c.strip() for c in (os.environ.get("GOOGLE_WEB_CLIENT_ID", "") + "," + os.environ.get(
