@@ -286,7 +286,27 @@ class LeadPromoteTest(TestCase):
         self.assertContains(listing, 'data-confirm-label="Convert to lead"')
         self.assertContains(listing, 'name="next" value="/leads/website/"')
         self.assertContains(listing, 'aria-label="Delete Asha Rao"')
+        self.assertContains(listing, "Form submission")
         self.assertNotContains(self.client.get(reverse("leads:lead_board")), "Asha Rao")
+
+    def test_website_list_keeps_showing_leads_after_promotion_and_always_shows_hand_added_ones(self):
+        hand_added = Lead.objects.create(company=self.company, full_name="Ravi", email="r@x.com", details="Billing")
+
+        listing = self.client.get(reverse("leads:lead_list"))
+        self.assertContains(listing, "Asha Rao")
+        self.assertContains(listing, "Ravi")
+        self.assertContains(listing, "Form submission")
+        self.assertContains(listing, "Lead · Generated")
+        self.assertNotContains(listing, 'aria-label="Convert Ravi to a lead"')
+        self.assertContains(listing, 'aria-label="Open Ravi"')
+
+        self.client.post(self.url("lead_promote"), {"next": reverse("leads:lead_list")})
+        listing = self.client.get(reverse("leads:lead_list"))
+        self.assertContains(listing, "Asha Rao")
+        self.assertContains(listing, "Lead · Generated")
+        self.assertContains(listing, 'aria-label="Open Asha Rao"')
+        self.assertNotContains(listing, 'aria-label="Convert Asha Rao to a lead"')
+        self.assertContains(listing, 'aria-label="Delete Asha Rao"')
 
     def test_reports_do_not_count_a_submission_as_a_lead(self):
         from datetime import timedelta
@@ -330,7 +350,9 @@ class LeadPromoteTest(TestCase):
         after = self.client.get(reverse("leads:lead_list"))
         self.assertContains(after, 'id="toast-seed"')
         self.assertContains(after, "Asha Rao is now a lead")
-        self.assertNotContains(after, "Asha Rao</a>")
+        self.assertContains(after, "Lead · Generated")
+        self.assertContains(after, 'aria-label="Open Asha Rao"')
+        self.assertNotContains(after, 'aria-label="Convert Asha Rao to a lead"')
         self.assertContains(self.client.get(reverse("leads:lead_board")), "Asha Rao")
 
         log = ActivityLog.objects.get(company=self.company, event_type="lead_created")

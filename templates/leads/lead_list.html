@@ -11,7 +11,7 @@
 <div class="pg-head">
   <div style="min-width:0">
     <h1>Website leads</h1>
-    <p class="sub">{{ page.paginator.count }} form submission{{ page.paginator.count|pluralize }} · promote the ones that are real leads</p>
+    <p class="sub">{{ page.paginator.count }} website lead{{ page.paginator.count|pluralize }} · submissions stay here after they become leads</p>
   </div>
   <div class="pg-actions">
     <a href="{% url 'leads:lead_board' %}" class="btn">Pipeline board</a>
@@ -56,29 +56,34 @@ fetch("{{ webhook_url }}", {
 <div class="card-flush">
   <div class="table-scroll">
   <table class="tbl">
-    <thead><tr><th>Received</th><th>Name</th><th>Email</th><th>Phone</th><th>Company</th><th>Needs</th><th>Project details</th><th><span class="sr-only">Actions</span></th></tr></thead>
+    <thead><tr><th>Received</th><th>Name</th><th>State</th><th>Email</th><th>Phone</th><th>Company</th><th>Needs</th><th>Project details</th><th><span class="sr-only">Actions</span></th></tr></thead>
     <tbody>
     {% for lead in page %}
       <tr>
         <td style="white-space:nowrap" title="{{ lead.created_at|date:'d M Y, g:i a' }}">{{ lead.created_at|timesince }} ago</td>
         <td class="task"><a href="{% url 'leads:lead_detail' lead.pk %}">{{ lead.full_name }}</a></td>
+        <td>{% if lead.is_submission %}<span class="bdg bdg-outline">Form submission</span>{% else %}<span class="bdg {% if lead.product %}bdg-green{% else %}bdg-blue{% endif %}">{% if lead.product %}Project{% else %}Lead{% endif %} · {{ lead.get_status_display }}</span>{% endif %}</td>
         <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
         <td style="white-space:nowrap">{% if lead.phone %}<a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>{% else %}—{% endif %}</td>
         <td>{{ lead.company_name|default:"—" }}</td>
         <td>{% if lead.need %}<span class="bdg bdg-outline">{{ lead.need }}</span>{% else %}—{% endif %}</td>
         <td style="white-space:pre-wrap;min-width:240px;max-width:420px">{{ lead.details }}</td>
         <td class="c">
-          <form method="post" action="{% url 'leads:lead_promote' lead.pk %}" data-confirm="Turn this into a lead?" data-confirm-text="{{ lead.full_name }} will move to the leads board. Submissions you leave here stay in this table." data-confirm-label="Convert to lead">
+          {% if lead.is_submission %}
+          <form method="post" action="{% url 'leads:lead_promote' lead.pk %}" data-confirm="Turn this into a lead?" data-confirm-text="{{ lead.full_name }} will become a lead on the pipeline board. The row stays here so you can still see where the form post ended up." data-confirm-label="Convert to lead">
             {% csrf_token %}<input type="hidden" name="next" value="{% url 'leads:lead_list' %}">
             <button type="submit" class="icon-btn" aria-label="Convert {{ lead.full_name }} to a lead" title="Convert to lead">{% icon 'user' 'ic' %}</button>
           </form>
-          <form method="post" action="{% url 'leads:lead_delete' lead.pk %}" data-confirm="Delete this form submission?" data-confirm-text="{{ lead.full_name }}'s submission will be removed. It has not been turned into a lead." data-confirm-label="Delete">
+          {% else %}
+          <a href="{% url 'leads:lead_detail' lead.pk %}" class="icon-btn" aria-label="Open {{ lead.full_name }}" title="Open lead">{% icon 'arrow-right' 'ic' %}</a>
+          {% endif %}
+          <form method="post" action="{% url 'leads:lead_delete' lead.pk %}" data-confirm="{% if lead.is_submission %}Delete this form submission?{% else %}Delete this lead?{% endif %}" data-confirm-text="{% if lead.is_submission %}{{ lead.full_name }}'s submission will be removed. It has not been turned into a lead.{% else %}{{ lead.full_name }} and their activity will be removed. Any project made from the lead stays.{% endif %}" data-confirm-label="Delete">
             {% csrf_token %}<button type="submit" class="icon-btn danger" aria-label="Delete {{ lead.full_name }}" title="Delete">{% icon 'trash' 'ic' %}</button>
           </form>
         </td>
       </tr>
     {% empty %}
-      <tr><td colspan="8"><div class="empty-state"><strong>No form submissions yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
+      <tr><td colspan="9"><div class="empty-state"><strong>No website leads yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
     {% endfor %}
     </tbody>
   </table>

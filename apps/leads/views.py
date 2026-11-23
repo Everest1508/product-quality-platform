@@ -99,7 +99,7 @@ class LeadCreateView(CompanyAdminRequiredMixin, View):
 class LeadListView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         hook, _ = LeadWebhook.objects.get_or_create(company=request.company)
-        leads = Lead.objects.filter(company=request.company, is_submission=True)
+        leads = Lead.objects.filter(company=request.company).order_by("-created_at")
         page = paginate(request, leads)
         _clear_bell(request)
         return render(request, "leads/lead_list.html", {
