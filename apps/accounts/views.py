@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from apps.accounts.access import NO_WORKSPACE_MESSAGE, has_no_workspace
 from apps.accounts.forms import CompanyCreateForm, LoginForm, ProfileForm, TeamCreateMemberForm, TeamEditForm
-from apps.accounts import google_login, throttle
+from apps.accounts import throttle
 from apps.accounts.models import Company, ExternalAccessToken, ExternalAuthCode, Membership
 from apps.core.mixins import CompanyAdminRequiredMixin, CompanyMemberRequiredMixin, LoginRequiredMixin
 from apps.core.redirects import safe_next
@@ -97,7 +97,6 @@ class LoginView(View):
         """
         return render(request, "accounts/login.html", {
             "form": form,
-            "google_client_id": google_login.client_id(),  # temporary
             "next": safe_next(next_url) or "",
         })
 

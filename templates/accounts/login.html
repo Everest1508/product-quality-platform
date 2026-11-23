@@ -153,16 +153,6 @@
         </button>
       </form>
 
-      {% if google_client_id %}{# temporary Google sign-in, see apps/accounts/google_login.py #}
-      <div style="margin-top:var(--space-4);display:grid;gap:var(--space-2);justify-items:center" x-data="{ err: '' }"
-           x-init="window.pqGoogle = async (r) => { const res = await fetch('{% url 'accounts:google_login' %}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'}, body: JSON.stringify({credential: r.credential, next: '{{ next|escapejs }}'})}); const d = await res.json(); if (res.ok) location.href = d.next; else err = d.error; }">
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
-        <div id="g_id_onload" data-client_id="{{ google_client_id }}" data-callback="pqGoogle" data-auto_prompt="false"></div>
-        <div class="g_id_signin" data-type="standard" data-size="large" data-text="continue_with" data-width="320"></div>
-        <p class="auth-err" x-show="err" x-text="err" style="display:none" role="alert"></p>
-      </div>
-      {% endif %}
-
       <div class="auth-foot">
         {% icon 'user' %}
         <span>Need an account? Ask your <b>workspace owner</b> to invite you.</span>
