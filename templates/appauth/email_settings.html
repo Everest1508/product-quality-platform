@@ -34,7 +34,7 @@
 </div>
 
 {% if broken %}<div class="card" style="margin-bottom:var(--space-4);border-color:var(--red)"><span class="text-sm">{{ broken }}</span></div>{% endif %}
-{% if mismatch %}<div class="card" style="margin-bottom:var(--space-4);border-color:var(--orange)"><span class="text-sm">Mail is sent from <b>{{ default_from }}</b>, but Mailflare only allows <b>{{ cfg.from_address }}</b>. Set <code>DEFAULT_FROM_EMAIL</code> in the server's settings to that address, or every email will be refused.</span></div>{% endif %}
+{% if mismatch %}<div class="card" style="margin-bottom:var(--space-4);border-color:var(--orange)"><span class="text-sm">Mail is sent from <b>{{ default_from }}</b>, but Mailflare only allows <b>{{ cfg.from_address }}</b>. Set <code>DEFAULT_FROM_EMAIL</code> in the server's settings to that address, or save the key here so the CRM sends from it automatically.</span></div>{% endif %}
 
 <div class="stat-strip" role="list">
   <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Sent today</span><span class="stat-strip-value">{{ mail_stats.today }}</span></div>

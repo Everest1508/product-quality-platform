@@ -180,7 +180,7 @@ class EmailSettingsView(CompanyAdminRequiredMixin, View):
         return {
             "mail_stats": mail_stats, "recent": MailLog.objects.all()[:25],
             "row": row, "cfg": cfg, "broken": broken, "default_from": settings.DEFAULT_FROM_EMAIL,
-            "mismatch": bool(cfg and cfg.from_address and default_from.lower() != cfg.from_address.lower()),
+            "mismatch": bool(cfg and cfg.source == "env" and cfg.from_address and default_from.lower() != cfg.from_address.lower()),
             "values": values or {"api_url": row.api_url if row else mailflare_backend.DEFAULT_URL,
                                  "mailbox_id": row.mailbox_id if row else "", "from_address": row.from_address if row else ""},
         }

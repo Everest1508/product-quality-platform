@@ -34,6 +34,15 @@ class BackendTest(TestCase):
             "mailboxId": "box-1", "from": "CardSnap <no-reply@acme.test>", "to": ["a@x.com"],
             "cc": ["c@x.com"], "bcc": ["b@x.com"], "subject": "Hi", "text": "Body"})
 
+    def test_saved_ui_mailbox_is_used_as_sender_without_env(self):
+        ui = mb.Config(CFG.url, CFG.key, CFG.mailbox_id, "hello@acme.test", "ui")  # DEFAULT_FROM_EMAIL is no-reply@
+        with mock.patch.object(mb, "load_config", return_value=ui), mock.patch.object(mb._opener, "open") as op:
+            self.send()
+        self.assertEqual(json.loads(op.call_args[0][0].data)["from"], "CardSnap <hello@acme.test>")
+        with mock.patch.object(mb, "load_config", return_value=ui), mock.patch.object(mb._opener, "open"):
+            with self.assertRaises(mb.MailflareError):  # an explicit other sender is still refused
+                send_mail("Hi", "Body", "other@evil.test", ["a@x.com"])
+
     def test_wrong_from_address_fails_clearly_without_calling_the_api(self):
         with mock.patch.object(mb, "load_config", return_value=CFG), mock.patch.object(mb._opener, "open") as op:
             with self.assertRaisesMessage(mb.MailflareError, "not the allowed Mailflare mailbox"):

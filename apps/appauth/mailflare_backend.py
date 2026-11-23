@@ -8,7 +8,7 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from email.utils import parseaddr
+from email.utils import formataddr, parseaddr
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
@@ -98,6 +98,10 @@ class MailflareEmailBackend(BaseEmailBackend):
 
     def _send(self, cfg, msg):
         from_email = msg.from_email or settings.DEFAULT_FROM_EMAIL
+        if cfg.source == "ui" and from_email == settings.DEFAULT_FROM_EMAIL and cfg.from_address:
+            # The admin saved the mailbox in the UI: send as that mailbox, keeping the display name, so no
+            # DEFAULT_FROM_EMAIL env setting is needed. An explicit different sender is still refused below.
+            from_email = formataddr((parseaddr(from_email)[0], cfg.from_address))
         if not cfg.from_address or not cfg.mailbox_id:
             raise MailflareError("Mailflare needs a mailbox ID and the mailbox's sending address.")
         if parseaddr(from_email)[1].lower() != cfg.from_address.lower():
