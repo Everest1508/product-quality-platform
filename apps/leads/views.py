@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.accounts.models import User
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.core.pagination import paginate
+from apps.dashboards.service import log_activity
 from apps.leads.forms import LeadForm, NewLeadForm
 from apps.leads import service
 from apps.leads.models import Lead, LeadLog, LeadWebhook, new_token
@@ -197,3 +198,18 @@ class LeadConvertView(CompanyAdminRequiredMixin, View):
             product = service.convert(lead, request.user)
             messages.success(request, f"Created the project {product.name}.")
         return redirect("leads:lead_detail", pk=lead.pk)
+
+
+class LeadDeleteView(CompanyAdminRequiredMixin, View):
+    """Admins can remove a website lead. Its activity goes with it; any project made from it stays."""
+
+    def post(self, request, pk):
+        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        lead_pk, name = lead.pk, lead.full_name
+        lead.delete()
+        log_activity(
+            request.company, "lead_deleted", f"Lead deleted: {name}",
+            actor=request.user, target_content_type="lead", target_object_id=lead_pk,
+        )
+        messages.success(request, f"Deleted {name}.")
+        return redirect("leads:lead_list")

@@ -184,3 +184,72 @@ class LeadFlowTest(TestCase):
     def test_other_companys_lead_is_404(self):
         theirs = Lead.objects.create(company=self.other, full_name="X", email="x@x.com", details="d")
         self.assertEqual(self.client.get(reverse("leads:lead_detail", args=[theirs.pk])).status_code, 404)
+
+
+class LeadDeleteTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.other = Company.objects.create(name="Other", slug="other")
+        self.owner = User.objects.create_user(username="o", email="o@x.com", password="p")
+        self.dev = User.objects.create_user(username="d", email="d@x.com", password="p")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
+        self.lead = Lead.objects.create(company=self.company, full_name="Asha Rao", email="a@x.com", details="Need an ERP")
+        self.client.force_login(self.owner)
+        s = self.client.session
+        s["active_company_id"] = self.company.pk
+        s.save()
+
+    def url(self, name):
+        return reverse(f"leads:{name}", args=[self.lead.pk])
+
+    def test_owner_can_delete_and_sees_a_confirmation_and_toast(self):
+        from apps.dashboards.models import ActivityLog
+
+        detail = self.client.get(self.url("lead_detail"))
+        self.assertContains(detail, self.url("lead_delete"))
+        self.assertContains(detail, 'data-confirm-label="Delete"')
+
+        listing = self.client.get(reverse("leads:lead_list"))
+        self.assertContains(listing, self.url("lead_delete"))
+        self.assertContains(listing, 'aria-label="Delete Asha Rao"')
+
+        r = self.client.post(self.url("lead_delete"))
+        # Do not follow here: that request would consume the message the toast needs.
+        self.assertRedirects(r, reverse("leads:lead_list"), fetch_redirect_response=False)
+        self.assertFalse(Lead.objects.filter(pk=self.lead.pk).exists())
+        after = self.client.get(reverse("leads:lead_list"))
+        self.assertEqual(after.status_code, 200)
+        self.assertContains(after, 'id="toast-seed"')
+        self.assertContains(after, "Deleted Asha Rao")
+        log = ActivityLog.objects.get(company=self.company, event_type="lead_deleted")
+        self.assertEqual((log.actor, log.target_content_type, log.target_object_id),
+                         (self.owner, "lead", self.lead.pk))
+        self.assertIn(("lead_deleted", "Lead Deleted"), ActivityLog.EventType.choices)
+        audit = self.client.get(reverse("dashboards:audit_log"), {"category": "system"})
+        self.assertContains(audit, "Lead deleted: Asha Rao")
+
+    def test_developer_cannot_delete(self):
+        self.client.force_login(self.dev)
+        self.assertEqual(self.client.post(self.url("lead_delete")).status_code, 403)
+        self.assertTrue(Lead.objects.filter(pk=self.lead.pk).exists())
+
+    def test_other_companys_lead_cannot_be_deleted(self):
+        theirs = Lead.objects.create(company=self.other, full_name="X", email="x@x.com", details="d")
+        url = reverse("leads:lead_delete", args=[theirs.pk])
+        self.assertEqual(self.client.post(url).status_code, 404)
+        self.assertTrue(Lead.objects.filter(pk=theirs.pk).exists())
+
+    def test_deleting_a_converted_lead_keeps_the_project_and_removes_its_activity(self):
+        from apps.leads.models import LeadLog
+        from apps.products.models import Product
+
+        self.client.post(self.url("lead_status"), {"status": "won", "amount": "10", "reason": "ok"})
+        self.client.post(self.url("lead_convert"))
+        self.lead.refresh_from_db()
+        project_pk = self.lead.product_id
+        self.assertEqual(self.lead.logs.count(), 2)
+
+        self.client.post(self.url("lead_delete"))
+        self.assertTrue(Product.objects.filter(pk=project_pk, company=self.company).exists())
+        self.assertEqual(LeadLog.objects.count(), 0)

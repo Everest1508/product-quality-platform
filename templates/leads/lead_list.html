@@ -56,7 +56,7 @@ fetch("{{ webhook_url }}", {
 <div class="card-flush">
   <div class="table-scroll">
   <table class="tbl">
-    <thead><tr><th>Received</th><th>Name</th><th>Status</th><th>Email</th><th>Phone</th><th>Company</th><th>Needs</th><th>Project details</th></tr></thead>
+    <thead><tr><th>Received</th><th>Name</th><th>Status</th><th>Email</th><th>Phone</th><th>Company</th><th>Needs</th><th>Project details</th><th><span class="sr-only">Delete</span></th></tr></thead>
     <tbody>
     {% for lead in page %}
       <tr>
@@ -68,9 +68,14 @@ fetch("{{ webhook_url }}", {
         <td>{{ lead.company_name|default:"—" }}</td>
         <td>{% if lead.need %}<span class="bdg bdg-outline">{{ lead.need }}</span>{% else %}—{% endif %}</td>
         <td style="white-space:pre-wrap;min-width:240px;max-width:420px">{{ lead.details }}</td>
+        <td class="c">
+          <form method="post" action="{% url 'leads:lead_delete' lead.pk %}" data-confirm="Delete this lead?" data-confirm-text="{{ lead.full_name }} and their activity will be removed. Any project made from the lead stays." data-confirm-label="Delete">
+            {% csrf_token %}<button type="submit" class="icon-btn danger" aria-label="Delete {{ lead.full_name }}" title="Delete">{% icon 'trash' 'ic' %}</button>
+          </form>
+        </td>
       </tr>
     {% empty %}
-      <tr><td colspan="8"><div class="empty-state"><strong>No leads yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
+      <tr><td colspan="9"><div class="empty-state"><strong>No leads yet</strong>Copy the setup prompt and give it to whoever builds your website.</div></td></tr>
     {% endfor %}
     </tbody>
   </table>

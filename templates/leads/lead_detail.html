@@ -23,6 +23,9 @@
       {% csrf_token %}<button type="submit" class="btn btn-primary">Convert to project</button>
     </form>
     {% endif %}
+    <form method="post" action="{% url 'leads:lead_delete' lead.pk %}" data-confirm="Delete this lead?" data-confirm-text="{{ lead.full_name }} and their activity will be removed. Any project made from the lead stays." data-confirm-label="Delete">
+      {% csrf_token %}<button type="submit" class="btn btn-danger">{% icon 'trash' 'ic' %}Delete lead</button>
+    </form>
   </div>
 </div>
 

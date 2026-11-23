@@ -117,7 +117,7 @@ class AuditLogView(CompanyAdminRequiredMixin, View):
         elif category == "attendance":
             qs = qs.filter(Q(event_type__startswith="attendance_") | Q(event_type__startswith="leave_") | Q(event_type="weekly_off_changed"))
         elif category == "system":
-            qs = qs.filter(Q(event_type__startswith="product_") | Q(event_type__startswith="version_") | Q(event_type__startswith="rule_") | Q(event_type__startswith="survey_") | Q(event_type__startswith="project_") | Q(event_type="feedback_received"))
+            qs = qs.filter(Q(event_type__startswith="product_") | Q(event_type__startswith="version_") | Q(event_type__startswith="rule_") | Q(event_type__startswith="survey_") | Q(event_type__startswith="project_") | Q(event_type__startswith="lead_") | Q(event_type="feedback_received"))
 
         event_type = request.GET.get("type")
         if event_type:

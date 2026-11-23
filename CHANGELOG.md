@@ -16,6 +16,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### New
 
+- **Delete website leads.** Workspace admins can remove a lead from the website leads list or from the lead itself, with a confirmation first. The lead's activity goes with it, and any project already made from the lead stays.
 - **Actual price and quote comparison.** Each estimate now has a Quoted price and an Actual price — what we got the project for. A comparison shows our cost, the system price, the quote and the actual price side by side, with the differences and the margin on the actual price. The saved estimate, the live form and the project list all show the gap. The actual price stays internal; the client quote never shows it.
 
 ### Better
