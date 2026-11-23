@@ -26,6 +26,10 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **Emails are sent through Mailflare.** Sign-up confirmations and password resets no longer need a mail server login. If the sending address is not the one Mailflare allows, the CRM stops and says so clearly.
 
+### Fixed
+
+- **Emails now send from the mailbox you saved.** The Email settings page no longer asks for a separate server setting for the sending address: the mailbox you save there is used for every email, so the warning about a mismatched address is gone.
+
 ### Security
 
 - **A blocked CardSnap user is cut off straight away.** The block applies on the very next request, not only when their sign-in expires, and a stolen sign-in token that is used twice signs that device out everywhere.
