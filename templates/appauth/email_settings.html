@@ -1,0 +1,107 @@
+{% extends "core/base.html" %}
+
+{% block title %}Email settings — PQ Platform
+<div class="card-flush"><div class="table-scroll">
+<table class="tbl">
+  <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Result</th></tr></thead>
+  <tbody>
+  {% for m in recent %}
+    <tr>
+      <td style="white-space:nowrap" title="{{ m.created_at|date:'d M Y, g:i a' }}">{{ m.created_at|timesince }} ago</td>
+      <td>{{ m.to_addrs }}</td>
+      <td>{{ m.subject }}</td>
+      <td>{% if m.status == "sent" %}<span class="bdg bdg-green">Sent</span>{% else %}<span class="bdg bdg-red" title="{{ m.error }}">Failed</span>{% if m.error %} <span class="text-sm text-muted">{{ m.error|truncatechars:90 }}</span>{% endif %}{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4"><div class="empty-state"><strong>No emails yet</strong>Send yourself a test email to see it here.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}
+
+{% block content %}
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>Email settings</h1>
+    <p class="sub">How the CRM sends email (sign-up confirmations and password resets) through Mailflare. Only admins can see this page.</p>
+  </div>
+  <div class="pg-actions">
+    {% if cfg %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="test"><button class="btn" type="submit">Send me a test email</button></form>
+    {% endif %}
+  </div>
+</div>
+
+{% if broken %}<div class="card" style="margin-bottom:var(--space-4);border-color:var(--red)"><span class="text-sm">{{ broken }}</span></div>{% endif %}
+{% if mismatch %}<div class="card" style="margin-bottom:var(--space-4);border-color:var(--orange)"><span class="text-sm">Mail is sent from <b>{{ default_from }}</b>, but Mailflare only allows <b>{{ cfg.from_address }}</b>. Set <code>DEFAULT_FROM_EMAIL</code> in the server's settings to that address, or every email will be refused.</span></div>{% endif %}
+
+<div class="stat-strip" role="list">
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Sent today</span><span class="stat-strip-value">{{ mail_stats.today }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Last 7 days</span><span class="stat-strip-value">{{ mail_stats.week }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Last 30 days</span><span class="stat-strip-value">{{ mail_stats.month }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">All time</span><span class="stat-strip-value">{{ mail_stats.total }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Failed, 30 days</span><span class="stat-strip-value">{{ mail_stats.failed }}</span></div>
+</div>
+
+<div class="card" style="margin-bottom:var(--space-6)">
+  <div class="text-sm font-medium" style="margin-bottom:var(--space-3)">Emails sent, last 30 days</div>
+  <div class="au-chart" role="img" aria-label="Emails sent per day for the last 30 days">
+    {% for s in mail_stats.series %}<i class="{% if not s.n %}z{% endif %}" style="height:{% if s.n %}{{ s.pct }}{% else %}3{% endif %}%" title="{{ s.day|date:'d M' }}: {{ s.n }}"></i>{% endfor %}
+  </div>
+  <div class="au-axis"><span>{{ mail_stats.series.0.day|date:"d M" }}</span><span>Today</span></div>
+</div>
+
+<div class="card form-card" style="margin-bottom:var(--space-6)">
+  <div class="form-card-head">
+    <div>
+      <h2>Mailflare</h2>
+      <p>
+        {% if cfg.source == "ui" %}<span class="bdg bdg-green">Key saved</span> It is encrypted and cannot be read back. Leave the key box empty to keep it.
+        {% elif cfg.source == "env" %}<span class="bdg bdg-blue">Using server settings</span> Saving here replaces them.
+        {% else %}<span class="bdg bdg-outline">Not set up</span> Until then emails are not sent.{% endif %}
+      </p>
+    </div>
+  </div>
+  <form method="post" autocomplete="off">
+    {% csrf_token %}<input type="hidden" name="action" value="save">
+    <div class="form-row">
+      <div class="form-group"><label for="mf-url">API URL</label>
+        <input id="mf-url" name="api_url" type="url" class="form-input" value="{{ values.api_url }}" required></div>
+      <div class="form-group"><label for="mf-box">Mailbox ID</label>
+        <input id="mf-box" name="mailbox_id" type="text" class="form-input" value="{{ values.mailbox_id }}" required></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label for="mf-from">Mailbox email address</label>
+        <input id="mf-from" name="from_address" type="email" class="form-input" value="{{ values.from_address }}" placeholder="no-reply@yourdomain.com" required></div>
+      <div class="form-group"><label for="mf-key">API key</label>
+        <input id="mf-key" name="api_key" type="password" class="form-input" autocomplete="new-password" placeholder="{% if cfg.source == 'ui' %}•••••••• saved{% else %}Paste the key{% endif %}"></div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+  {% if row %}
+  <form method="post" style="margin-top:var(--space-4)" data-confirm="Remove the Mailflare key?" data-confirm-text="Emails stop sending until a key is added again." data-confirm-label="Remove">
+    {% csrf_token %}<input type="hidden" name="action" value="clear"><button type="submit" class="btn btn-danger btn-sm">Remove key</button>
+  </form>
+  <p class="text-sm text-muted" style="margin-top:var(--space-3)">Last changed {{ row.updated_at|date:"d M Y, g:i a" }}{% if row.updated_by %} by {{ row.updated_by.get_full_name|default:row.updated_by.username }}{% endif %}.</p>
+  {% endif %}
+</div>
+
+<div class="card-flush"><div class="table-scroll">
+<table class="tbl">
+  <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Result</th></tr></thead>
+  <tbody>
+  {% for m in recent %}
+    <tr>
+      <td style="white-space:nowrap" title="{{ m.created_at|date:'d M Y, g:i a' }}">{{ m.created_at|timesince }} ago</td>
+      <td>{{ m.to_addrs }}</td>
+      <td>{{ m.subject }}</td>
+      <td>{% if m.status == "sent" %}<span class="bdg bdg-green">Sent</span>{% else %}<span class="bdg bdg-red" title="{{ m.error }}">Failed</span>{% if m.error %} <span class="text-sm text-muted">{{ m.error|truncatechars:90 }}</span>{% endif %}{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4"><div class="empty-state"><strong>No emails yet</strong>Send yourself a test email to see it here.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

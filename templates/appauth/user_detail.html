@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}{{ u.email }} — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'appauth_web:users' %}">App users</a><span class="sep">/</span><span class="current">{{ u.email }}</span>
+</nav>
+
+<div class="pg-head">
+  <div class="au-who" style="min-width:0">
+    <span class="kt-av lg">{{ u.email.0|upper }}</span>
+    <span style="min-width:0"><h1 style="margin:0">{{ u.name|default:u.email }}</h1>
+    <p class="sub"><span class="bdg {% if u.status == 'active' %}bdg-green{% else %}bdg-red{% endif %}">{{ u.get_status_display }}</span>
+      {{ u.email }}</p></span>
+  </div>
+  <div class="pg-actions au-actions">
+    {% if u.status != 'deleted' %}
+    <form method="post" action="{% url 'appauth_web:action' u.pk 'logout' %}" data-confirm="Sign {{ u.email }} out everywhere?" data-confirm-text="Every phone they are signed in on is logged out." data-confirm-label="Force logout">{% csrf_token %}<button class="btn" type="submit">Force logout</button></form>
+    {% if u.status == 'revoked' %}
+    <form method="post" action="{% url 'appauth_web:action' u.pk 'restore' %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Restore access</button></form>
+    {% else %}
+    <form method="post" action="{% url 'appauth_web:action' u.pk 'revoke' %}" data-confirm="Revoke {{ u.email }}?" data-confirm-text="They are signed out at once and cannot sign in until restored." data-confirm-label="Revoke">
+      {% csrf_token %}<input type="text" name="reason" class="form-input" placeholder="Reason (optional)" maxlength="255" aria-label="Reason"><button class="btn btn-danger" type="submit">Revoke</button></form>
+    {% endif %}
+    <form method="post" action="{% url 'appauth_web:action' u.pk 'delete' %}" data-confirm="Delete {{ u.email }}?" data-confirm-text="The account is closed and hidden from the list. This cannot be undone here." data-confirm-label="Delete">{% csrf_token %}<button class="icon-btn danger" type="submit" aria-label="Delete user" title="Delete user">{% icon 'trash' 'ic' %}</button></form>
+    {% endif %}
+  </div>
+</div>
+
+{% if u.status == 'revoked' %}
+<div class="card" style="margin-bottom:var(--space-4);border-color:var(--red)"><span class="text-sm">Revoked {{ u.revoked_at|date:"d M Y, g:i a" }}{% if u.revoked_reason %} — {{ u.revoked_reason }}{% endif %}. They cannot sign in.</span></div>
+{% endif %}
+
+<div class="au-detail">
+  <div style="display:grid;gap:var(--space-4)">
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Profile</div>
+      <div class="au-row"><span>Sign-in method</span><b>{{ u.get_auth_provider_display }}</b></div>
+      <div class="au-row"><span>Email</span><b>{% if u.email_verified %}Verified{% else %}Not verified{% endif %}</b></div>
+      <div class="au-row"><span>Signed up</span><b>{{ u.created_at|date:"d M Y, g:i a" }}</b></div>
+      <div class="au-row"><span>Last login</span><b>{% if u.last_login_at %}{{ u.last_login_at|date:"d M Y, g:i a" }}{% else %}Never{% endif %}</b></div>
+    </div>
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Active sessions · {{ sessions|length }}</div>
+      {% for s in sessions %}
+      <div class="au-row"><span>{{ s.device_info|default:"Unknown device"|truncatechars:48 }}</span><b>{{ s.created_at|date:"d M, g:i a" }}</b></div>
+      {% empty %}<p class="text-sm text-muted">Not signed in anywhere.</p>{% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Recent activity</div>
+    {% for e in events %}
+    <div class="au-row"><span>{{ e.created_at|date:"d M, g:i a" }}{% if e.ip %} · {{ e.ip }}{% endif %}</span><b>{{ e.event }}</b></div>
+    {% empty %}<p class="text-sm text-muted">Nothing yet.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -7,6 +7,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add apps/ to Python path so we can import apps.core, apps.accounts, etc.
 sys.path.insert(0, str(BASE_DIR / "apps"))
 
+# Read KEY=value lines from a `.env` file next to manage.py (git-ignored). Real environment variables win.
+_env = BASE_DIR / ".env"
+if _env.is_file():
+    for _line in _env.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            os.environ.setdefault(_k.strip(), _v.strip().strip("\"'"))
+
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
     "django-insecure-!n(6jx1*y%1%3p+lz^jcw3)%m2$v-st6rrry@ipec8pc)i)@p7",
@@ -65,6 +74,7 @@ INSTALLED_APPS = [
     "apps.presence",
     "apps.notifications",
     "apps.reports",
+    "apps.appauth",
 ]
 
 MIDDLEWARE = [
@@ -154,7 +164,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.83.0")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.84.0")
 CHANGELOG_PATH = BASE_DIR / "CHANGELOG.md"
 
 # Auth
@@ -246,3 +256,23 @@ SHARED_SERVER_ENCRYPTION_KEY = os.environ.get(
     "SHARED_SERVER_ENCRYPTION_KEY",
     "Wj9_TxFEXHDzzcaYIxY3dfCjyK2_9pZDesWRfpFIcWA=",
 )
+
+# CardSnap mobile-app auth (apps.appauth). The JWT secret signs 15-minute access tokens; share it with the
+# Marketing API (or any verifier) so it can accept them. Outside DEBUG it must be set explicitly.
+APPAUTH_JWT_SECRET = os.environ.get("JWT_SECRET") or ("" if not DEBUG else "dev-only-appauth-jwt-secret-change-me-0123456789")
+if not APPAUTH_JWT_SECRET:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("JWT_SECRET must be set when DJANGO_DEBUG is off.")
+# Accepted Google OAuth client IDs (the ID token's `aud`): web first, then optional Android / iOS.
+GOOGLE_CLIENT_IDS = [c.strip() for c in (os.environ.get("GOOGLE_WEB_CLIENT_ID", "") + "," + os.environ.get(
+    "GOOGLE_ANDROID_CLIENT_ID", "") + "," + os.environ.get("GOOGLE_IOS_CLIENT_ID", "")).split(",") if c.strip()]
+# Sign in with Apple: the app bundle ID(s) (the identity token's `aud`), comma separated.
+APPLE_CLIENT_IDS = [c.strip() for c in os.environ.get("APPLE_CLIENT_ID", "").split(",") if c.strip()]
+# Optional deep link the reset email appends ?token=... to, e.g. cardsnap://reset-password
+APPAUTH_RESET_URL = os.environ.get("APPAUTH_RESET_URL", "")
+
+# Outgoing mail goes through the Mailflare API (apps/appauth/mailflare_backend.py), never SMTP. An admin enters the
+# key under Email settings (stored encrypted); MAILFLARE_API_URL / _API_KEY / _MAILBOX_ID / _FROM_ADDRESS are the fallback.
+EMAIL_BACKEND = "apps.appauth.mailflare_backend.MailflareEmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "CardSnap <no-reply@localhost>")

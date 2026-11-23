@@ -1,0 +1,95 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}App users — PQ Platform{% endblock %}
+
+{% block content %}
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>App users</h1>
+    <p class="sub">People who signed up in the CardSnap mobile app. They are separate from your team.</p>
+  </div>
+  <div class="pg-actions">
+    <a href="{% url 'appauth_web:export' %}?{{ qs }}" class="btn">{% icon 'download' 'ic' %}Export CSV</a>
+  </div>
+</div>
+
+<div class="stat-strip" role="list">
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Total users</span><span class="stat-strip-value">{{ stats.total }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Active in 7 days</span><span class="stat-strip-value">{{ stats.active_7 }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Active in 30 days</span><span class="stat-strip-value">{{ stats.active_30 }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">New today</span><span class="stat-strip-value">{{ stats.new_today }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">New this week</span><span class="stat-strip-value">{{ stats.new_week }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">New this month</span><span class="stat-strip-value">{{ stats.new_month }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Revoked</span><span class="stat-strip-value">{{ stats.revoked }}</span></div>
+</div>
+
+<div class="au-grid">
+  <div class="card">
+    <div class="text-sm font-medium" style="margin-bottom:var(--space-3)">Signups, last 30 days</div>
+    <div class="au-chart" role="img" aria-label="Signups per day for the last 30 days">
+      {% for s in stats.series %}<i class="{% if not s.n %}z{% endif %}" style="height:{% if s.n %}{{ s.pct }}{% else %}3{% endif %}%" title="{{ s.day|date:'d M' }}: {{ s.n }}"></i>{% endfor %}
+    </div>
+    <div class="au-axis"><span>{{ stats.series.0.day|date:"d M" }}</span><span>Today</span></div>
+  </div>
+  <div class="card">
+    <div class="text-sm font-medium">Sign-in method</div>
+    <div class="au-split" role="img" aria-label="Google {{ stats.google }}, password {{ stats.password }}"><i style="width:{{ stats.google_pct }}%"></i></div>
+    <div class="au-axis"><span>Google · {{ stats.google }}</span><span>Password · {{ stats.password }}</span></div>
+  </div>
+</div>
+
+<form method="get" class="toolbar">
+  <span class="seg">
+    <a href="{% querystring status=None page=None %}" class="{% if not f.status %}is-on{% endif %}">All</a>
+    <a href="{% querystring status='active' page=None %}" class="{% if f.status == 'active' %}is-on{% endif %}">Active</a>
+    <a href="{% querystring status='revoked' page=None %}" class="{% if f.status == 'revoked' %}is-on{% endif %}">Revoked</a>
+    <a href="{% querystring status='deleted' page=None %}" class="{% if f.status == 'deleted' %}is-on{% endif %}">Deleted</a>
+  </span>
+  <span class="seg">
+    <a href="{% querystring provider=None page=None %}" class="{% if not f.provider %}is-on{% endif %}">Any method</a>
+    <a href="{% querystring provider='google' page=None %}" class="{% if f.provider == 'google' %}is-on{% endif %}">Google</a>
+    <a href="{% querystring provider='apple' page=None %}" class="{% if f.provider == 'apple' %}is-on{% endif %}">Apple</a>
+    <a href="{% querystring provider='password' page=None %}" class="{% if f.provider == 'password' %}is-on{% endif %}">Password</a>
+  </span>
+  <input type="date" name="from" value="{{ f.from|default:'' }}" class="form-input" aria-label="Signed up from">
+  <input type="date" name="to" value="{{ f.to|default:'' }}" class="form-input" aria-label="Signed up to">
+  {% if f.status %}<input type="hidden" name="status" value="{{ f.status }}">{% endif %}
+  {% if f.provider %}<input type="hidden" name="provider" value="{{ f.provider }}">{% endif %}
+  {% if f.sort %}<input type="hidden" name="sort" value="{{ f.sort }}">{% endif %}
+  <span class="input-icon" style="margin-left:auto">{% icon 'search' 'ic' %}<input type="search" name="q" value="{{ f.q|default:'' }}" class="form-input" placeholder="Search email or name" aria-label="Search"></span>
+  <button class="btn" type="submit">Apply</button>
+</form>
+
+<div class="card-flush"><div class="table-scroll">
+<table class="tbl">
+  <thead><tr>
+    <th>User</th><th>Method</th><th>Status</th>
+    <th><a href="{% querystring sort=next_created page=None %}">Signed up</a></th>
+    <th><a href="{% querystring sort=next_login page=None %}">Last login</a></th><th><span class="sr-only">Actions</span></th>
+  </tr></thead>
+  <tbody>
+  {% for u in page %}
+    <tr>
+      <td class="task"><a href="{% url 'appauth_web:detail' u.pk %}" class="au-who"><span class="kt-av">{{ u.email.0|upper }}</span><span style="min-width:0"><b>{{ u.name|default:u.email }}</b>{% if u.name %}<small>{{ u.email }}</small>{% endif %}</span></a></td>
+      <td><span class="bdg bdg-outline">{{ u.get_auth_provider_display }}</span></td>
+      <td><span class="bdg {% if u.status == 'active' %}bdg-green{% else %}bdg-red{% endif %}">{{ u.get_status_display }}</span></td>
+      <td title="{{ u.created_at|date:'d M Y, g:i a' }}">{{ u.created_at|date:"d M Y" }}</td>
+      <td>{% if u.last_login_at %}<span title="{{ u.last_login_at|date:'d M Y, g:i a' }}">{{ u.last_login_at|timesince }} ago</span>{% else %}—{% endif %}</td>
+      <td class="c">
+        {% if u.status == 'active' %}
+        <form method="post" action="{% url 'appauth_web:action' u.pk 'revoke' %}" data-confirm="Revoke {{ u.email }}?" data-confirm-text="They are signed out at once and cannot sign in until restored." data-confirm-label="Revoke">{% csrf_token %}<input type="hidden" name="next" value="list"><button class="btn btn-sm btn-danger" type="submit">Revoke</button></form>
+        {% elif u.status == 'revoked' %}
+        <form method="post" action="{% url 'appauth_web:action' u.pk 'restore' %}">{% csrf_token %}<input type="hidden" name="next" value="list"><button class="btn btn-sm" type="submit">Restore</button></form>
+        {% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6"><div class="empty-state"><strong>No app users match</strong>Clear a filter or search for something else.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+
+{% include "core/_pagination.html" with page=page %}
+{% endblock %}
