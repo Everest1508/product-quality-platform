@@ -1,12 +1,13 @@
 from django.urls import path
 
-from apps.accounts import views
+from apps.accounts import google_login, views
 
 app_name = "accounts"
 
 urlpatterns = [
     path("", views.DashboardView.as_view(), name="dashboard"),
     path("login/", views.LoginView.as_view(), name="login"),
+    path("login/google/", google_login.GoogleLoginView.as_view(), name="google_login"),  # temporary
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("company/setup/", views.CompanySetupView.as_view(), name="company_setup"),
     path("company/switch/", views.CompanySwitchView.as_view(), name="company_switch"),
