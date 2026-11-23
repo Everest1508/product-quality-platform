@@ -10,6 +10,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.84.0] "Ortolan" — 2026-11-23 · people who use CardSnap, and how we email them
+
+> In short: The CRM now looks after the people who use the CardSnap mobile app, so they can sign up and sign in and you can see and block them, and all email goes out through Mailflare with the key kept safely in the CRM.
+
+### New
+
+- **App users page for admins.** A new App users page lists everyone who signed up in the CardSnap app, with search, filters by sign-in method, status and sign-up date, sorting, totals, a chart of sign-ups over the last 30 days, and a CSV download. Open a person to see their sessions and recent activity.
+- **Block or restore a CardSnap user in one click.** Admins can revoke someone from the list or from their page, with an optional reason, force them to sign out everywhere, restore them later, or close their account. Every action is recorded.
+- **Sign-up and sign-in for the CardSnap app.** People can register with an email and password, sign in with Google or Apple, reset a forgotten password by email, change their password, sign out of every device, and delete their own account. The app developer guide is in API.md.
+- **Email settings for admins.** Admins can paste the Mailflare key on a new Email settings page. It is stored encrypted, is never shown again, and can be removed at any time. A button sends a test email to yourself.
+- **See how many emails were sent.** The Email settings page shows emails sent today, this week, this month and all time, how many failed, a 30-day chart, and the latest emails with the reason for any failure.
+
+### Better
+
+- **Emails are sent through Mailflare.** Sign-up confirmations and password resets no longer need a mail server login. If the sending address is not the one Mailflare allows, the CRM stops and says so clearly.
+
+### Security
+
+- **A blocked CardSnap user is cut off straight away.** The block applies on the very next request, not only when their sign-in expires, and a stolen sign-in token that is used twice signs that device out everywhere.
+- **Only admins can reach app users and email settings.** Everyone else gets a permission error, and the Mailflare key never appears in the page, the activity log or the email log.
+
 ## [1.83.0] "Yaffle" — 2026-11-20 · see what the project actually earned us
 
 > In short: Project costing now compares what you quoted with what the project actually cost, the sign-in page has a fresh white-and-blue look, and approved leave is marked correctly on the attendance calendar.

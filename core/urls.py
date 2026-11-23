@@ -4,6 +4,7 @@ from django.contrib import admin
 from apps.leads.views import LeadWebhookView
 from django.urls import include, path
 
+from apps.appauth.web import EmailSettingsView
 from apps.core import befui
 from django.views.generic import RedirectView
 
@@ -27,7 +28,10 @@ urlpatterns = [
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),
+    path("api/app-auth/", include("apps.appauth.urls")),
     path("api/serop/", include("apps.serop.urls")),
+    path("app-users/", include("apps.appauth.web_urls")),
+    path("settings/email/", EmailSettingsView.as_view(), name="email_settings"),
     path("servers/", include("apps.serop.web_urls")),
     path("products/", include("apps.products.urls")),
     path("errors/", include("apps.errors.urls")),
