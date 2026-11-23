@@ -32,6 +32,9 @@ class Lead(TenantScopedModel):
     industry = models.CharField(max_length=100, blank=True, default="")
     need = models.CharField(max_length=100, blank=True, default="")  # free text: the website owns the options
     details = models.TextField()
+    # True until an admin clicks "convert to lead". Website form posts land here as
+    # submissions; they only appear on the pipeline board once this is cleared.
+    is_submission = models.BooleanField(default=False, db_index=True)
     status = models.CharField(max_length=14, choices=Status.choices, default=Status.GENERATED)
     # Asked for when the lead moves to Quotation sent / Won. Admin-only pages are the only place they show.
     quoted_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)

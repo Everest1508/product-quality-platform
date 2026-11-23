@@ -44,7 +44,7 @@ class LeadWebhookView(View):
         d = form.cleaned_data
         lead = Lead.objects.create(
             company=hook.company, full_name=d["full_name"], email=d["email"], phone=d["phone"],
-            company_name=d["company"], need=d["need"], details=d["details"],
+            company_name=d["company"], need=d["need"], details=d["details"], is_submission=True,
         )
         admins = User.objects.filter(
             memberships__company=hook.company, memberships__role__in=("owner", "admin")
@@ -52,7 +52,7 @@ class LeadWebhookView(View):
         notify_many(
             admins, company=hook.company, kind=Notification.Kind.LEAD,
             title=f"New website lead: {lead.full_name}",
-            body=lead.company_name or lead.need or lead.email, url="/leads/",
+            body=lead.company_name or lead.need or lead.email, url="/leads/website/",
         )
         return JsonResponse({"ok": True}, status=201)
 
@@ -73,7 +73,7 @@ class LeadBoardView(CompanyAdminRequiredMixin, View):
 
     def get(self, request):
         _clear_bell(request)
-        leads = Lead.objects.filter(company=request.company).order_by("-created_at")
+        leads = Lead.objects.filter(company=request.company, is_submission=False).order_by("-created_at")
         cols = {v: {"key": v, "label": t, "leads": [], "total": None} for v, t in Lead.Status.choices}
         for lead in leads:
             cols[lead.status]["leads"].append(lead)
@@ -99,7 +99,7 @@ class LeadCreateView(CompanyAdminRequiredMixin, View):
 class LeadListView(CompanyAdminRequiredMixin, View):
     def get(self, request):
         hook, _ = LeadWebhook.objects.get_or_create(company=request.company)
-        leads = Lead.objects.filter(company=request.company)
+        leads = Lead.objects.filter(company=request.company, is_submission=True)
         page = paginate(request, leads)
         _clear_bell(request)
         return render(request, "leads/lead_list.html", {
@@ -132,7 +132,7 @@ class LeadLogView(CompanyAdminRequiredMixin, View):
     """Write down something that happened: a call, an email, a meeting."""
 
     def post(self, request, pk):
-        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        lead = get_object_or_404(Lead, pk=pk, company=request.company, is_submission=False)
         kind = request.POST.get("kind", "")
         if kind not in LOGGABLE:
             kind = LeadLog.Kind.NOTE
@@ -159,7 +159,7 @@ class LeadStatusView(CompanyAdminRequiredMixin, View):
     """Move a lead to a stage. Quotation sent and Won must come with the amount."""
 
     def post(self, request, pk):
-        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        lead = get_object_or_404(Lead, pk=pk, company=request.company, is_submission=False)
         status = request.POST.get("status", "")
         amount = _amount(request.POST.get("amount"))
         reason = request.POST.get("reason", "").strip()[:1000]
@@ -190,7 +190,7 @@ class LeadConvertView(CompanyAdminRequiredMixin, View):
     """Won leads can be turned into a project, once."""
 
     def post(self, request, pk):
-        lead = get_object_or_404(Lead, pk=pk, company=request.company)
+        lead = get_object_or_404(Lead, pk=pk, company=request.company, is_submission=False)
         if lead.product_id:
             messages.error(request, "This lead is already a project.")
         elif lead.status != Lead.Status.WON:
@@ -198,14 +198,33 @@ class LeadConvertView(CompanyAdminRequiredMixin, View):
         else:
             product = service.convert(lead, request.user)
             messages.success(request, f"Created the project {product.name}.")
-        back = safe_next(request.POST.get("next"))
-        if back:
-            return redirect(back)
         return redirect("leads:lead_detail", pk=lead.pk)
 
 
+class LeadPromoteView(CompanyAdminRequiredMixin, View):
+    """A website form submission becomes a lead in the pipeline, once an admin says so."""
+
+    def post(self, request, pk):
+        submission = get_object_or_404(Lead, pk=pk, company=request.company)
+        if not submission.is_submission:
+            messages.error(request, "This is already a lead.")
+            return redirect("leads:lead_detail", pk=submission.pk)
+        submission.is_submission = False
+        submission.save(update_fields=["is_submission"])
+        service.add_log(submission, request.user, "Promoted from a website form submission")
+        log_activity(
+            request.company, "lead_created", f"Lead created: {submission.full_name}",
+            actor=request.user, target_content_type="lead", target_object_id=submission.pk,
+        )
+        messages.success(request, f"{submission.full_name} is now a lead.")
+        back = safe_next(request.POST.get("next"))
+        if back:
+            return redirect(back)
+        return redirect("leads:lead_detail", pk=submission.pk)
+
+
 class LeadDeleteView(CompanyAdminRequiredMixin, View):
-    """Admins can remove a website lead. Its activity goes with it; any project made from it stays."""
+    """Admins can remove a submission or a lead. Its activity goes with it; a project made from it stays."""
 
     def post(self, request, pk):
         lead = get_object_or_404(Lead, pk=pk, company=request.company)

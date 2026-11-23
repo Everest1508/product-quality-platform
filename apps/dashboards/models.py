@@ -20,6 +20,7 @@ class ActivityLog(TenantScopedModel):
         TICKET_RESOLVED = "ticket_resolved", "Ticket Resolved"
         TICKET_DELETED = "ticket_deleted", "Ticket Deleted"
         FEEDBACK_RECEIVED = "feedback_received", "Feedback Received"
+        LEAD_CREATED = "lead_created", "Lead Created"
         LEAD_DELETED = "lead_deleted", "Lead Deleted"
         SURVEY_RESPONSE = "survey_response", "Survey Response"
         SURVEY_CREATED = "survey_created", "Survey Created"

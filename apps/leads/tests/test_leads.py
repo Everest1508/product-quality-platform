@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.contrib.messages import get_messages
 from django.test import TestCase
 from django.urls import reverse
 
@@ -19,6 +20,7 @@ class LeadWebhookTest(TestCase):
         r = self.client.post(self.url, GOOD, content_type="application/json")
         self.assertEqual(r.status_code, 201)
         self.assertEqual(Lead.objects.get().company, self.company)
+        self.assertTrue(Lead.objects.get().is_submission)
 
     def test_phone_is_stored_as_typed(self):
         r = self.client.post(self.url, {**GOOD, "phone": "+91 98765 43210"}, content_type="application/json")
@@ -194,7 +196,8 @@ class LeadDeleteTest(TestCase):
         self.dev = User.objects.create_user(username="d", email="d@x.com", password="p")
         Membership.objects.create(user=self.owner, company=self.company, role="owner")
         Membership.objects.create(user=self.dev, company=self.company, role="developer")
-        self.lead = Lead.objects.create(company=self.company, full_name="Asha Rao", email="a@x.com", details="Need an ERP")
+        self.lead = Lead.objects.create(company=self.company, full_name="Asha Rao", email="a@x.com",
+                                        details="Need an ERP", is_submission=True)
         self.client.force_login(self.owner)
         s = self.client.session
         s["active_company_id"] = self.company.pk
@@ -244,24 +247,30 @@ class LeadDeleteTest(TestCase):
         from apps.leads.models import LeadLog
         from apps.products.models import Product
 
+        self.client.post(self.url("lead_promote"))
         self.client.post(self.url("lead_status"), {"status": "won", "amount": "10", "reason": "ok"})
         self.client.post(self.url("lead_convert"))
         self.lead.refresh_from_db()
         project_pk = self.lead.product_id
-        self.assertEqual(self.lead.logs.count(), 2)
+        self.assertEqual(self.lead.logs.count(), 3)  # promoted, moved, converted
 
         self.client.post(self.url("lead_delete"))
         self.assertTrue(Product.objects.filter(pk=project_pk, company=self.company).exists())
         self.assertEqual(LeadLog.objects.count(), 0)
 
 
-class LeadListConvertTest(TestCase):
+class LeadPromoteTest(TestCase):
+    """A website form post stays a submission until an admin promotes it into the pipeline."""
+
     def setUp(self):
         self.company = Company.objects.create(name="Acme", slug="acme")
+        self.other = Company.objects.create(name="Other", slug="other")
         self.owner = User.objects.create_user(username="o", email="o@x.com", password="p")
+        self.dev = User.objects.create_user(username="d", email="d@x.com", password="p")
         Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        Membership.objects.create(user=self.dev, company=self.company, role="developer")
         self.lead = Lead.objects.create(company=self.company, full_name="Asha Rao", email="a@x.com",
-                                        company_name="Rao Textiles", details="Need an ERP")
+                                        company_name="Rao Textiles", details="Need an ERP", is_submission=True)
         self.client.force_login(self.owner)
         s = self.client.session
         s["active_company_id"] = self.company.pk
@@ -270,47 +279,87 @@ class LeadListConvertTest(TestCase):
     def url(self, name):
         return reverse(f"leads:{name}", args=[self.lead.pk])
 
-    def make_won(self):
-        self.client.post(self.url("lead_status"), {"status": "won", "amount": "10", "reason": "Signed"})
-
-    def test_convert_icon_shows_only_for_won_leads_and_is_confirmed(self):
+    def test_submission_stays_on_the_website_list_and_out_of_the_pipeline(self):
         listing = self.client.get(reverse("leads:lead_list"))
-        self.assertNotContains(listing, self.url("lead_convert"))
-
-        self.make_won()
-        listing = self.client.get(reverse("leads:lead_list"))
-        self.assertContains(listing, self.url("lead_convert"))
-        self.assertContains(listing, 'aria-label="Convert Asha Rao to a project"')
-        self.assertContains(listing, 'data-confirm-label="Convert"')
+        self.assertContains(listing, self.url("lead_promote"))
+        self.assertContains(listing, 'aria-label="Convert Asha Rao to a lead"')
+        self.assertContains(listing, 'data-confirm-label="Convert to lead"')
         self.assertContains(listing, 'name="next" value="/leads/website/"')
         self.assertContains(listing, 'aria-label="Delete Asha Rao"')
+        self.assertNotContains(self.client.get(reverse("leads:lead_board")), "Asha Rao")
 
-    def test_icon_converts_and_returns_to_the_list(self):
-        from apps.products.models import Product
+    def test_reports_do_not_count_a_submission_as_a_lead(self):
+        from datetime import timedelta
 
-        self.make_won()
-        r = self.client.post(self.url("lead_convert"), {"next": reverse("leads:lead_list")})
+        from django.utils import timezone
+
+        from apps.reports.registry import Ctx, REPORTS
+
+        today = timezone.localdate()
+        ctx = Ctx(self.owner, self.company, today - timedelta(days=7), today, is_admin=True)
+        self.assertEqual(REPORTS["lead-funnel"].run(ctx).kpis[0][1], "0")
+        self.assertEqual(REPORTS["lead-response"].run(ctx).kpis[0][1], "0")
+        self.assertEqual(REPORTS["lead-stale"].run(ctx).kpis[0][1], "0")
+        self.assertEqual(REPORTS["lead-demand"].run(ctx).kpis[0][1], "0")
+        self.assertEqual(REPORTS["lead-duplicates"].run(ctx).kpis[0][1], "0")
+
+        self.client.post(self.url("lead_promote"), {"next": reverse("leads:lead_list")})
+        self.assertEqual(REPORTS["lead-response"].run(ctx).kpis[0][1], "1")
+        self.assertEqual(REPORTS["lead-stale"].run(ctx).kpis[0][1], "1")
+        self.assertEqual(REPORTS["lead-demand"].run(ctx).kpis[0][1], "1")
+
+    def test_detail_holds_the_stage_and_log_forms_until_it_is_a_lead(self):
+        detail = self.client.get(self.url("lead_detail"))
+        self.assertContains(detail, "Form submission")
+        self.assertContains(detail, self.url("lead_promote"))
+        self.assertContains(detail, "Not a lead yet")
+        self.assertNotContains(detail, self.url("lead_status"))
+        self.assertNotContains(detail, self.url("lead_log"))
+        self.assertContains(detail, "/leads/website/")
+
+    def test_promoting_moves_it_to_the_board_with_a_toast_and_an_audit_row(self):
+        from apps.dashboards.models import ActivityLog
+
+        r = self.client.post(self.url("lead_promote"), {"next": reverse("leads:lead_list")})
+        # Do not follow here: that request would consume the message the toast needs.
         self.assertRedirects(r, reverse("leads:lead_list"), fetch_redirect_response=False)
         self.lead.refresh_from_db()
-        self.assertTrue(self.lead.product_id)
-        self.assertEqual(Product.objects.get(pk=self.lead.product_id).name, "Rao Textiles")
+        self.assertFalse(self.lead.is_submission)
+        self.assertEqual(self.lead.logs.get().text, "Promoted from a website form submission")
+
         after = self.client.get(reverse("leads:lead_list"))
-        self.assertEqual(after.status_code, 200)
         self.assertContains(after, 'id="toast-seed"')
-        self.assertContains(after, "Created the project Rao Textiles")
-        self.assertNotContains(after, self.url("lead_convert"))
+        self.assertContains(after, "Asha Rao is now a lead")
+        self.assertNotContains(after, "Asha Rao</a>")
+        self.assertContains(self.client.get(reverse("leads:lead_board")), "Asha Rao")
+
+        log = ActivityLog.objects.get(company=self.company, event_type="lead_created")
+        self.assertEqual((log.actor, log.target_content_type, log.target_object_id),
+                         (self.owner, "lead", self.lead.pk))
+        audit = self.client.get(reverse("dashboards:audit_log"), {"category": "system"})
+        self.assertContains(audit, "Lead created: Asha Rao")
 
     def test_a_hostile_next_falls_back_to_the_detail_page(self):
-        self.make_won()
-        r = self.client.post(self.url("lead_convert"), {"next": "//evil.example/phish"})
+        r = self.client.post(self.url("lead_promote"), {"next": "//evil.example/phish"})
         self.assertRedirects(r, self.url("lead_detail"), fetch_redirect_response=False)
         self.lead.refresh_from_db()
-        self.assertTrue(self.lead.product_id)
+        self.assertFalse(self.lead.is_submission)
 
-    def test_an_already_converted_lead_is_not_converted_twice(self):
-        from apps.products.models import Product
+    def test_a_second_promotion_is_refused_without_a_second_log(self):
+        self.client.post(self.url("lead_promote"))
+        r = self.client.post(self.url("lead_promote"))
+        self.assertRedirects(r, self.url("lead_detail"), fetch_redirect_response=False)
+        self.assertEqual(self.lead.logs.count(), 1)
+        messages = list(get_messages(r.wsgi_request))
+        self.assertTrue(any("already a lead" in str(m) for m in messages))
 
-        self.make_won()
-        self.client.post(self.url("lead_convert"), {"next": reverse("leads:lead_list")})
-        self.client.post(self.url("lead_convert"), {"next": reverse("leads:lead_list")})
-        self.assertEqual(Product.objects.filter(company=self.company).count(), 1)
+    def test_only_admins_can_promote_and_only_their_companys_submissions(self):
+        self.client.force_login(self.dev)
+        self.assertEqual(self.client.post(self.url("lead_promote")).status_code, 403)
+        self.lead.refresh_from_db()
+        self.assertTrue(self.lead.is_submission)
+
+        self.client.force_login(self.owner)
+        theirs = Lead.objects.create(company=self.other, full_name="X", email="x@x.com",
+                                     details="d", is_submission=True)
+        self.assertEqual(self.client.post(reverse("leads:lead_promote", args=[theirs.pk])).status_code, 404)

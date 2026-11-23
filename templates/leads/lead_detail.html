@@ -5,7 +5,7 @@
 
 {% block content %}
 <nav class="breadcrumbs">
-  <a href="{% url 'leads:lead_board' %}">Leads</a>
+  {% if lead.is_submission %}<a href="{% url 'leads:lead_list' %}">Website leads</a>{% else %}<a href="{% url 'leads:lead_board' %}">Leads</a>{% endif %}
   <span class="sep">/</span>
   <span class="current">{{ lead.full_name }}</span>
 </nav>
@@ -13,18 +13,24 @@
 <div class="pg-head">
   <div style="min-width:0">
     <h1>{{ lead.full_name }}</h1>
-    <p class="sub">{% if lead.company_name %}{{ lead.company_name }} · {% endif %}added {{ lead.created_at|date:"j M Y, g:i a" }}</p>
+    <p class="sub">{% if lead.is_submission %}Form submission{% else %}Lead{% endif %}{% if lead.company_name %} · {{ lead.company_name }}{% endif %} · added {{ lead.created_at|date:"j M Y, g:i a" }}</p>
   </div>
   <div class="pg-actions">
-    {% if lead.product %}
-    <a href="{% url 'products:product_detail' lead.product.pk %}" class="btn btn-primary">{% icon 'package' 'ic' %}Open project</a>
-    {% elif lead.status == 'won' %}
-    <form method="post" action="{% url 'leads:lead_convert' lead.pk %}" data-confirm="Convert this lead to a project?" data-confirm-text="A project named {{ lead.company_name|default:lead.full_name }} is created from it." data-confirm-label="Convert">
-      {% csrf_token %}<button type="submit" class="btn btn-primary">Convert to project</button>
+    {% if lead.is_submission %}
+    <form method="post" action="{% url 'leads:lead_promote' lead.pk %}" data-confirm="Turn this into a lead?" data-confirm-text="{{ lead.full_name }} will move to the leads board. Submissions you leave here stay in the website leads table." data-confirm-label="Convert to lead">
+      {% csrf_token %}<button type="submit" class="btn btn-primary">{% icon 'user' 'ic' %}Convert to lead</button>
     </form>
+    {% else %}
+      {% if lead.product %}
+      <a href="{% url 'products:product_detail' lead.product.pk %}" class="btn btn-primary">{% icon 'package' 'ic' %}Open project</a>
+      {% elif lead.status == 'won' %}
+      <form method="post" action="{% url 'leads:lead_convert' lead.pk %}" data-confirm="Convert this lead to a project?" data-confirm-text="A project named {{ lead.company_name|default:lead.full_name }} is created from it." data-confirm-label="Convert">
+        {% csrf_token %}<button type="submit" class="btn btn-primary">Convert to project</button>
+      </form>
+      {% endif %}
     {% endif %}
-    <form method="post" action="{% url 'leads:lead_delete' lead.pk %}" data-confirm="Delete this lead?" data-confirm-text="{{ lead.full_name }} and their activity will be removed. Any project made from the lead stays." data-confirm-label="Delete">
-      {% csrf_token %}<button type="submit" class="btn btn-danger">{% icon 'trash' 'ic' %}Delete lead</button>
+    <form method="post" action="{% url 'leads:lead_delete' lead.pk %}" data-confirm="{% if lead.is_submission %}Delete this submission?{% else %}Delete this lead?{% endif %}" data-confirm-text="{% if lead.is_submission %}{{ lead.full_name }}'s form submission will be removed. It has not been turned into a lead.{% else %}{{ lead.full_name }} and their activity will be removed. Any project made from the lead stays.{% endif %}" data-confirm-label="Delete">
+      {% csrf_token %}<button type="submit" class="btn btn-danger">{% icon 'trash' 'ic' %}Delete {% if lead.is_submission %}submission{% else %}lead{% endif %}</button>
     </form>
   </div>
 </div>
@@ -46,6 +52,9 @@
 
     <div class="card lead-card">
       <h2 class="lead-h">Activity</h2>
+      {% if lead.is_submission %}
+      <p class="text-sm text-muted" style="margin:0 0 12px">This is a form submission. Convert it to a lead to log calls and move it through the pipeline.</p>
+      {% else %}
       <form method="post" action="{% url 'leads:lead_log' lead.pk %}" class="lead-log-form">
         {% csrf_token %}
         <div class="lead-log-row">
@@ -55,6 +64,7 @@
         <textarea name="text" class="form-input" rows="2" maxlength="2000" placeholder="Details: what was said, what was agreed, what happens next…"></textarea>
         <button type="submit" class="btn btn-primary">Add to activity</button>
       </form>
+      {% endif %}
       <ol class="lead-log">
         {% for log in logs %}
         <li class="lead-act {{ log.kind }}">
@@ -75,7 +85,9 @@
   <aside>
     <div class="card lead-card">
       <h2 class="lead-h">Status</h2>
-      {% if lead.product %}
+      {% if lead.is_submission %}
+      <p class="text-sm text-muted" style="margin:0">Not a lead yet. Convert it with the button at the top to move it to the pipeline board.</p>
+      {% elif lead.product %}
       <p style="margin:0"><span class="bdg bdg-green">Won</span> converted {{ lead.converted_at|date:"j M Y" }}</p>
       <p class="text-sm text-muted" style="margin:8px 0 0">The project <a href="{% url 'products:product_detail' lead.product.pk %}">{{ lead.product.name }}</a> was made from this lead.</p>
       {% else %}

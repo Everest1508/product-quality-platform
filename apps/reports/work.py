@@ -235,7 +235,7 @@ def app_feedback(ctx):
         "RPT-043", icon="target", admin=True, filters=("period",))
 def lead_funnel(ctx):
     a, b = _bounds(ctx)
-    leads = list(Lead.objects.filter(company=ctx.company, created_at__range=(a, b)))
+    leads = list(Lead.objects.filter(company=ctx.company, is_submission=False, created_at__range=(a, b)))
     per = defaultdict(lambda: dict.fromkeys(("new", "contacted", "qualified", "converted", "lost"), 0))
     days = []
     for l in leads:
@@ -255,7 +255,7 @@ def lead_funnel(ctx):
         "RPT-044", icon="clock", admin=True, filters=("period",))
 def lead_response(ctx):
     a, b = _bounds(ctx)
-    qs = Lead.objects.filter(company=ctx.company, created_at__range=(a, b)).annotate(first=Min("logs__created_at")).order_by("-created_at")
+    qs = Lead.objects.filter(company=ctx.company, is_submission=False, created_at__range=(a, b)).annotate(first=Min("logs__created_at")).order_by("-created_at")
     rows, waits = [], []
     for l in qs:
         h = round((l.first - l.created_at).total_seconds() / 3600, 1) if l.first else None

@@ -34,7 +34,7 @@ H = 3600
 def lead_duplicates(ctx):
     a, b = _bounds(ctx)
     groups = defaultdict(list)
-    for l in Lead.objects.filter(company=ctx.company, created_at__range=(a, b)).order_by("created_at"):
+    for l in Lead.objects.filter(company=ctx.company, is_submission=False, created_at__range=(a, b)).order_by("created_at"):
         groups[("Email", l.email.strip().lower())].append(l)
         phone = re.sub(r"\D", "", l.phone)[-10:]
         if len(phone) >= 7:

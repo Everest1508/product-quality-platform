@@ -161,7 +161,7 @@ def error_response_time(ctx):
 def lead_stale(ctx):
     now = timezone.now()
     rows = []
-    for l in Lead.objects.filter(company=ctx.company).exclude(status__in=("converted", "lost")).annotate(last=Max("logs__created_at")):
+    for l in Lead.objects.filter(company=ctx.company, is_submission=False).exclude(status__in=("converted", "lost")).annotate(last=Max("logs__created_at")):
         t = l.last or l.created_at
         rows.append([l.full_name, l.company_name, l.need, l.get_status_display(), l.created_at, l.last, (now - t).days])
     rows.sort(key=lambda r: -r[6])
@@ -174,7 +174,7 @@ def lead_stale(ctx):
 def lead_demand(ctx):
     a, b = _bounds(ctx)
     per = defaultdict(lambda: {"n": 0, "c": 0, "d": []})
-    for l in Lead.objects.filter(company=ctx.company, created_at__range=(a, b)):
+    for l in Lead.objects.filter(company=ctx.company, is_submission=False, created_at__range=(a, b)):
         d = per[l.need or "Not said"]
         d["n"] += 1
         if l.status == "converted":

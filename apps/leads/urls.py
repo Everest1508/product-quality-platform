@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/log/", views.LeadLogView.as_view(), name="lead_log"),
     path("<int:pk>/status/", views.LeadStatusView.as_view(), name="lead_status"),
     path("<int:pk>/convert/", views.LeadConvertView.as_view(), name="lead_convert"),
+    path("<int:pk>/promote/", views.LeadPromoteView.as_view(), name="lead_promote"),
     path("<int:pk>/delete/", views.LeadDeleteView.as_view(), name="lead_delete"),
     path("rotate/", views.LeadWebhookRotateView.as_view(), name="webhook_rotate"),
 ]

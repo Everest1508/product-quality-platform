@@ -16,6 +16,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### New
 
+- **Promote website form submissions into leads.** Everything the website form sends first lands in Website leads as a submission, so enquiries that are not real leads can simply be deleted. Beside Delete there is a **Convert to lead** icon: with a confirmation, it moves the submission to the pipeline board and records a Lead created entry in the audit log. A won lead becomes a project from its own page.
 - **Delete website leads.** Workspace admins can remove a lead from the website leads list or from the lead itself, with a confirmation first. The lead's activity goes with it, and any project already made from the lead stays.
 - **Actual price and quote comparison.** Each estimate now has a Quoted price and an Actual price — what we got the project for. A comparison shows our cost, the system price, the quote and the actual price side by side, with the differences and the margin on the actual price. The saved estimate, the live form and the project list all show the gap. The actual price stays internal; the client quote never shows it.
 
