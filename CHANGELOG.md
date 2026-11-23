@@ -21,6 +21,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### Better
 
+- **Convert a won lead from the list.** The website leads table now has a project icon beside Delete for leads that have been won. Click it to create the project, with a confirmation, and you land back on the list with a message saying what was created.
 - **The quote field has a clear home.** "Quote a different price instead" is now "Quoted price" in a section called The deal, next to the actual price, instead of being tucked away under Margin.
 - **A simpler password eye.** The pixel mascot eye is gone from the sign-in page. The show/hide button now uses a plain eye icon that gives a short blink when it changes.
 - **A sign-in page that says what it is.** The left panel now reads like a plain statement of purpose: a numbered list of what the product keeps track of. The form has one clear heading and a short help line. The two fields and the button are unchanged.

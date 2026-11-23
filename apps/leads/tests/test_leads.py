@@ -253,3 +253,64 @@ class LeadDeleteTest(TestCase):
         self.client.post(self.url("lead_delete"))
         self.assertTrue(Product.objects.filter(pk=project_pk, company=self.company).exists())
         self.assertEqual(LeadLog.objects.count(), 0)
+
+
+class LeadListConvertTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", slug="acme")
+        self.owner = User.objects.create_user(username="o", email="o@x.com", password="p")
+        Membership.objects.create(user=self.owner, company=self.company, role="owner")
+        self.lead = Lead.objects.create(company=self.company, full_name="Asha Rao", email="a@x.com",
+                                        company_name="Rao Textiles", details="Need an ERP")
+        self.client.force_login(self.owner)
+        s = self.client.session
+        s["active_company_id"] = self.company.pk
+        s.save()
+
+    def url(self, name):
+        return reverse(f"leads:{name}", args=[self.lead.pk])
+
+    def make_won(self):
+        self.client.post(self.url("lead_status"), {"status": "won", "amount": "10", "reason": "Signed"})
+
+    def test_convert_icon_shows_only_for_won_leads_and_is_confirmed(self):
+        listing = self.client.get(reverse("leads:lead_list"))
+        self.assertNotContains(listing, self.url("lead_convert"))
+
+        self.make_won()
+        listing = self.client.get(reverse("leads:lead_list"))
+        self.assertContains(listing, self.url("lead_convert"))
+        self.assertContains(listing, 'aria-label="Convert Asha Rao to a project"')
+        self.assertContains(listing, 'data-confirm-label="Convert"')
+        self.assertContains(listing, 'name="next" value="/leads/website/"')
+        self.assertContains(listing, 'aria-label="Delete Asha Rao"')
+
+    def test_icon_converts_and_returns_to_the_list(self):
+        from apps.products.models import Product
+
+        self.make_won()
+        r = self.client.post(self.url("lead_convert"), {"next": reverse("leads:lead_list")})
+        self.assertRedirects(r, reverse("leads:lead_list"), fetch_redirect_response=False)
+        self.lead.refresh_from_db()
+        self.assertTrue(self.lead.product_id)
+        self.assertEqual(Product.objects.get(pk=self.lead.product_id).name, "Rao Textiles")
+        after = self.client.get(reverse("leads:lead_list"))
+        self.assertEqual(after.status_code, 200)
+        self.assertContains(after, 'id="toast-seed"')
+        self.assertContains(after, "Created the project Rao Textiles")
+        self.assertNotContains(after, self.url("lead_convert"))
+
+    def test_a_hostile_next_falls_back_to_the_detail_page(self):
+        self.make_won()
+        r = self.client.post(self.url("lead_convert"), {"next": "//evil.example/phish"})
+        self.assertRedirects(r, self.url("lead_detail"), fetch_redirect_response=False)
+        self.lead.refresh_from_db()
+        self.assertTrue(self.lead.product_id)
+
+    def test_an_already_converted_lead_is_not_converted_twice(self):
+        from apps.products.models import Product
+
+        self.make_won()
+        self.client.post(self.url("lead_convert"), {"next": reverse("leads:lead_list")})
+        self.client.post(self.url("lead_convert"), {"next": reverse("leads:lead_list")})
+        self.assertEqual(Product.objects.filter(company=self.company).count(), 1)

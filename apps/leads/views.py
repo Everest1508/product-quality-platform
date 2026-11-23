@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.accounts.models import User
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.core.pagination import paginate
+from apps.core.redirects import safe_next
 from apps.dashboards.service import log_activity
 from apps.leads.forms import LeadForm, NewLeadForm
 from apps.leads import service
@@ -197,6 +198,9 @@ class LeadConvertView(CompanyAdminRequiredMixin, View):
         else:
             product = service.convert(lead, request.user)
             messages.success(request, f"Created the project {product.name}.")
+        back = safe_next(request.POST.get("next"))
+        if back:
+            return redirect(back)
         return redirect("leads:lead_detail", pk=lead.pk)
 
 
