@@ -214,6 +214,6 @@ class MeView(Base):
 
     def delete(self, request):
         reauthenticate(request.user, request.data)
+        service.log_event(request.user, "delete_account", request)  # unlinked when the row goes
         service.delete_account(request.user)
-        service.log_event(request.user, "delete_account", request)
         return Response({"ok": True})

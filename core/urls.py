@@ -4,6 +4,7 @@ from django.contrib import admin
 from apps.leads.views import LeadWebhookView
 from django.urls import include, path
 
+from apps.appauth import public as appauth_public
 from apps.appauth.web import EmailSettingsView
 from apps.core import befui
 from django.views.generic import RedirectView
@@ -28,6 +29,8 @@ urlpatterns = [
     path("api/", include("apps.ingestion.urls")),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.dsr.api_urls")),
+    path("cardsnap/privacy", appauth_public.privacy),
+    path("cardsnap/delete-account", appauth_public.delete_account_page),
     path("api/app-auth/", include("apps.appauth.urls")),
     path("api/serop/", include("apps.serop.urls")),
     path("app-users/", include("apps.appauth.web_urls")),

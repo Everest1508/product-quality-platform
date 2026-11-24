@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.86.0] "Quelea" — 2026-11-24 · CardSnap people can delete their own account, with public privacy pages
+
+> In short: A CardSnap user can now delete their account from inside the app and it is removed for good, and the CRM serves the privacy policy and account-deletion pages the Google Play Store asks for.
+
+### New
+
+- **Delete your own account from the app.** The Delete account button in CardSnap removes the person's account straight away, and the same email can be used to sign up again.
+- **A public privacy policy page.** It explains what CardSnap keeps on the phone and what is stored here, and needs no sign-in.
+- **A public page on how to delete an account.** It lists the steps in the app and by email, as the Play Store requires.
+
+### Better
+
+- **Deleting your own account is permanent.** Name, email, password and sign-in details are erased instead of being only marked as deleted. The activity history stays but no longer points to a person.
+
 ## [1.85.1] "Pochard" — 2026-11-24 · faster CardSnap sign-up, simpler code email
 
 > In short: Creating a CardSnap account no longer waits for the email to be sent, so it finishes right away, and the code email is now plain and easy to read.

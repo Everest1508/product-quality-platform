@@ -364,7 +364,7 @@ class AccountSelfServiceTest(TestCase):
         self.assertEqual(self.auth.delete(BASE + "me").status_code, 400)
         self.assertEqual(self.auth.delete(BASE + "me", {"current_password": "nope-nope"}, format="json").status_code, 403)
         self.assertEqual(self.auth.delete(BASE + "me", {"current_password": "correct-horse"}, format="json").data, {"ok": True})
-        self.assertEqual(AppUser.objects.get().status, "deleted")
+        self.assertFalse(AppUser.objects.exists())  # gone for good, not just flagged
         self.assertEqual(self.auth.get(BASE + "me").status_code, 401)
         self.assertEqual(self.c.post(BASE + "login", {"email": "ann@example.com", "password": "correct-horse"}, format="json").status_code, 401)
 
@@ -394,3 +394,11 @@ class AppleTest(TestCase):
         AppUser.objects.create(email="zed@example.com", email_verified=True, password_hash=service.hash_password("whatever-1"))
         self.apple({"sub": "a-4", "email": "Zed@Example.com"})
         self.assertEqual((AppUser.objects.count(), AppUser.objects.get().apple_sub), (1, "a-4"))
+
+
+class PublicPagesTest(TestCase):
+    def test_privacy_and_delete_pages_need_no_login(self):
+        for path in ("/cardsnap/privacy", "/cardsnap/delete-account"):
+            r = self.client.get(path)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "CardSnap")

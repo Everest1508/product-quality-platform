@@ -223,9 +223,8 @@ def login_with_identity(provider, claims, client_name=""):
 
 
 def delete_account(user):
-    user.status, user.deleted_at = "deleted", timezone.now()
-    user.save(update_fields=["status", "deleted_at"])
-    force_logout(user)
+    """Self-service deletion is permanent (store policy): the row, its sessions and its email go; audit events stay, unlinked."""
+    user.delete()
 
 
 # --- signed one-shot tokens (no table needed) --------------------------------
