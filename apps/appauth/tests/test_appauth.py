@@ -402,3 +402,14 @@ class PublicPagesTest(TestCase):
             r = self.client.get(path)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, "CardSnap")
+
+
+class GoogleOnlyDeleteTest(TestCase):
+    def test_account_without_password_deletes_with_confirm(self):
+        user = AppUser.objects.create(email="g@example.com", name="G", google_sub="sub-1", email_verified=True)
+        token = service.issue_tokens(user)["access_token"]
+        c = APIClient()
+        c.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(c.delete(BASE + "me").status_code, 400)  # nothing sent: still refused
+        self.assertEqual(c.delete(BASE + "me", {"confirm": "DELETE"}, format="json").status_code, 200)
+        self.assertFalse(AppUser.objects.exists())

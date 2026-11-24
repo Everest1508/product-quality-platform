@@ -17,6 +17,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 ### New
 
 - **Delete your own account from the app.** The Delete account button in CardSnap removes the person's account straight away, and the same email can be used to sign up again.
+- **Google sign-in accounts delete without signing in again.** A person who joined with Google confirms the deletion in the app and it is done, with no second Google prompt.
 - **A public privacy policy page.** It explains what CardSnap keeps on the phone and what is stored here, and needs no sign-in.
 - **A public page on how to delete an account.** It lists the steps in the app and by email, as the Play Store requires.
 

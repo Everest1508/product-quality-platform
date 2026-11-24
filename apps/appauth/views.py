@@ -213,7 +213,9 @@ class MeView(Base):
         return Response(_profile(request.user))
 
     def delete(self, request):
-        reauthenticate(request.user, request.data)
+        # An account with no password (Google or Apple only) has nothing to retype: a plain confirmation is enough.
+        if request.user.password_hash or request.data.get("confirm") != "DELETE":
+            reauthenticate(request.user, request.data)
         service.log_event(request.user, "delete_account", request)  # unlinked when the row goes
         service.delete_account(request.user)
         return Response({"ok": True})
