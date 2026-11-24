@@ -18,7 +18,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 - **A 6-digit code instead of a link.** When someone signs up for CardSnap or forgets their password, the email now carries a short code to type into the app. No link points back to the CRM any more.
 - **A neater email.** The code arrives in a clean, branded email with the code in a large box, easy to read and copy.
-- **Admins can delete a CardSnap user permanently.** A new Delete permanently button on a user's page erases the account and its sign-ins, and that email address can sign up again. It asks you to confirm first.
+- **Admins can delete a CardSnap user permanently.** A trash button on every row of the App users list, and a Delete permanently button on a user's page, erase the account and its sign-ins, and that email address can sign up again. It asks you to confirm first.
 
 ### Better
 

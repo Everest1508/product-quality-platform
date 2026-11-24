@@ -82,6 +82,7 @@
         {% elif u.status == 'revoked' %}
         <form method="post" action="{% url 'appauth_web:action' u.pk 'restore' %}">{% csrf_token %}<input type="hidden" name="next" value="list"><button class="btn btn-sm" type="submit">Restore</button></form>
         {% endif %}
+        <form method="post" action="{% url 'appauth_web:action' u.pk 'purge' %}" style="display:inline" data-confirm="Permanently delete {{ u.email }}?" data-confirm-text="The account and its sessions are erased for good and the email can sign up again. This cannot be undone." data-confirm-label="Delete permanently">{% csrf_token %}<button class="icon-btn danger" type="submit" aria-label="Delete {{ u.email }} permanently" title="Delete permanently">{% icon 'trash' 'ic' %}</button></form>
       </td>
     </tr>
   {% empty %}
