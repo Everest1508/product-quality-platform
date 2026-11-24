@@ -10,6 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.85.0] "Pintail" — 2026-11-24 · confirm your email with a code, and delete CardSnap users for good
+
+> In short: CardSnap sign-up and password reset now use a 6-digit code sent by email instead of a link, a new account only signs in after the code is confirmed, and admins can permanently delete a CardSnap user so their email can be used again.
+
+### New
+
+- **A 6-digit code instead of a link.** When someone signs up for CardSnap or forgets their password, the email now carries a short code to type into the app. No link points back to the CRM any more.
+- **A neater email.** The code arrives in a clean, branded email with the code in a large box, easy to read and copy.
+- **Admins can delete a CardSnap user permanently.** A new Delete permanently button on a user's page erases the account and its sign-ins, and that email address can sign up again. It asks you to confirm first.
+
+### Better
+
+- **Password reset checks the code first.** Choosing a new password is only possible after the right code has been entered. Wrong guesses are limited, and a used code stops working.
+- **Signing up again is easier.** If someone registered but never confirmed their email, they can sign up again with a new password instead of being told the account exists.
+
+### Security
+
+- **New accounts must confirm their email.** Signing up no longer signs the person in. They get in only after entering the code, and trying to sign in before confirming asks for a code instead.
+
 ## [1.84.0] "Ortolan" — 2026-11-23 · people who use CardSnap, and how we email them
 
 > In short: The CRM now looks after the people who use the CardSnap mobile app, so they can sign up and sign in and you can see and block them, and all email goes out through Mailflare with the key kept safely in the CRM.

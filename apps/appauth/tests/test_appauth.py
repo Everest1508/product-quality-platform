@@ -293,6 +293,16 @@ class AdminTest(TestCase):
         self.assertEqual(r.status_code, 401)
 
 
+    def test_purge_erases_the_account_and_frees_the_email(self):
+        self.client.force_login(self.plain)
+        self.assertEqual(self.client.post(reverse("appauth_web:action", args=[self.user.pk, "purge"])).status_code, 403)
+        self.client.force_login(self.staff)
+        self.client.post(reverse("appauth_web:action", args=[self.user.pk, "purge"]))
+        self.assertFalse(AppUser.objects.filter(email="ann@example.com").exists())
+        r = self.api.post(BASE + "register", GOOD, format="json")  # the email can be used again
+        self.assertEqual(r.status_code, 201)
+
+
 class CompanyAdminAccessTest(TestCase):
     def test_company_admin_can_revoke_from_list(self):
         from apps.accounts.models import Company, Membership

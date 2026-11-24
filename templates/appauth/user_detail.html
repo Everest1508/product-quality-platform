@@ -26,6 +26,7 @@
     {% endif %}
     <form method="post" action="{% url 'appauth_web:action' u.pk 'delete' %}" data-confirm="Delete {{ u.email }}?" data-confirm-text="The account is closed and hidden from the list. This cannot be undone here." data-confirm-label="Delete">{% csrf_token %}<button class="icon-btn danger" type="submit" aria-label="Delete user" title="Delete user">{% icon 'trash' 'ic' %}</button></form>
     {% endif %}
+    <form method="post" action="{% url 'appauth_web:action' u.pk 'purge' %}" data-confirm="Permanently delete {{ u.email }}?" data-confirm-text="The account and its sessions are erased for good and the email can sign up again. This cannot be undone." data-confirm-label="Delete permanently">{% csrf_token %}<button class="btn btn-danger" type="submit" title="Erase this account for good. The email can sign up again.">Delete permanently</button></form>
   </div>
 </div>
 

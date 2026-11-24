@@ -135,6 +135,12 @@ class UserActionView(CompanyAdminRequiredMixin, View):
         elif action == "logout":
             service.force_logout(user)
             msg = f"{user.email} signed out everywhere."
+        elif action == "purge":
+            # Permanent: the row (and its sessions) is gone, so the email can sign up again. Events stay, unlinked.
+            email = user.email
+            user.delete()
+            messages.success(request, f"{email} permanently deleted. That email can sign up again.")
+            return redirect("appauth_web:users")
         elif action == "delete":
             user.status, user.deleted_at = "deleted", now
             user.save(update_fields=["status", "deleted_at"])
