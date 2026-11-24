@@ -35,6 +35,23 @@ class AppUser(models.Model):
         return self.email
 
 
+class DeletedAppUser(models.Model):
+    """What we keep for analysis when a person deletes their account: the AppUser row itself is erased."""
+
+    email = models.EmailField(db_index=True)
+    name = models.CharField(max_length=255, blank=True, default="")
+    auth_provider = models.CharField(max_length=10, blank=True, default="")
+    email_verified = models.BooleanField(default=False)
+    signed_up_at = models.DateTimeField()
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    login_count = models.PositiveIntegerField(default=0)
+    deleted_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "app_deleted_users"
+        ordering = ["-deleted_at"]
+
+
 class AppRefreshToken(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="refresh_tokens")

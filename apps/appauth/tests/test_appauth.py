@@ -10,7 +10,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.appauth import service
-from apps.appauth.models import AppAuthEvent, AppRefreshToken, AppUser
+from apps.appauth.models import AppAuthEvent, AppRefreshToken, AppUser, DeletedAppUser
 from apps.appauth.service import AuthError
 
 BASE = "/api/app-auth/"
@@ -364,7 +364,8 @@ class AccountSelfServiceTest(TestCase):
         self.assertEqual(self.auth.delete(BASE + "me").status_code, 400)
         self.assertEqual(self.auth.delete(BASE + "me", {"current_password": "nope-nope"}, format="json").status_code, 403)
         self.assertEqual(self.auth.delete(BASE + "me", {"current_password": "correct-horse"}, format="json").data, {"ok": True})
-        self.assertFalse(AppUser.objects.exists())  # gone for good, not just flagged
+        self.assertFalse(AppUser.objects.exists())  # account gone
+        self.assertEqual(DeletedAppUser.objects.get().email, "ann@example.com")  # snapshot kept
         self.assertEqual(self.auth.get(BASE + "me").status_code, 401)
         self.assertEqual(self.c.post(BASE + "login", {"email": "ann@example.com", "password": "correct-horse"}, format="json").status_code, 401)
 
@@ -413,3 +414,4 @@ class GoogleOnlyDeleteTest(TestCase):
         self.assertEqual(c.delete(BASE + "me").status_code, 400)  # nothing sent: still refused
         self.assertEqual(c.delete(BASE + "me", {"confirm": "DELETE"}, format="json").status_code, 200)
         self.assertFalse(AppUser.objects.exists())
+        self.assertEqual(DeletedAppUser.objects.get().email, "g@example.com")

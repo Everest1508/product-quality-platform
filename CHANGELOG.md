@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.86.1] "Skua" — 2026-11-24 · deleted CardSnap accounts leave a record for the numbers
+
+> In short: When a CardSnap user deletes their account it is still erased, but a small record of when they joined and last signed in is kept so sign-ups and deletions can be counted.
+
+### Better
+
+- **Deleted accounts leave a record for the numbers.** Email, sign-up date, last sign-in and sign-in count are kept apart from the account, which stays fully deleted.
+
 ## [1.86.0] "Quelea" — 2026-11-24 · CardSnap people can delete their own account, with public privacy pages
 
 > In short: A CardSnap user can now delete their account from inside the app and it is removed for good, and the CRM serves the privacy policy and account-deletion pages the Google Play Store asks for.

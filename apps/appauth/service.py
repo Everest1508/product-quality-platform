@@ -16,7 +16,7 @@ from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
-from apps.appauth.models import AppAuthEvent, AppRefreshToken, AppUser
+from apps.appauth.models import AppAuthEvent, AppRefreshToken, AppUser, DeletedAppUser
 
 ACCESS_TTL = timedelta(minutes=15)
 REFRESH_TTL = timedelta(days=30)
@@ -223,8 +223,13 @@ def login_with_identity(provider, claims, client_name=""):
 
 
 def delete_account(user):
-    """Self-service deletion is permanent (store policy): the row, its sessions and its email go; audit events stay, unlinked."""
-    user.delete()
+    """The account is erased (store policy; the email can sign up again) but a snapshot stays for analytics."""
+    DeletedAppUser.objects.create(
+        email=user.email, name=user.name, auth_provider=user.auth_provider, email_verified=user.email_verified,
+        signed_up_at=user.created_at, last_login_at=user.last_login_at,
+        login_count=user.events.filter(event__endswith="login").count(),
+    )
+    user.delete()  # sessions go with it; audit events stay, unlinked
 
 
 # --- signed one-shot tokens (no table needed) --------------------------------

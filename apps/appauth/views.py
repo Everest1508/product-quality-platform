@@ -216,6 +216,6 @@ class MeView(Base):
         # An account with no password (Google or Apple only) has nothing to retype: a plain confirmation is enough.
         if request.user.password_hash or request.data.get("confirm") != "DELETE":
             reauthenticate(request.user, request.data)
-        service.log_event(request.user, "delete_account", request)  # unlinked when the row goes
+        service.log_event(request.user, "delete_account", request)
         service.delete_account(request.user)
         return Response({"ok": True})
