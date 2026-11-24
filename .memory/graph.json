@@ -1,0 +1,530 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "session:2026-11-23",
+      "kind": "session",
+      "title": "Session 2026-11-23",
+      "at": 1795414828830
+    },
+    {
+      "id": "file:scripts/verify-build.mjs",
+      "kind": "file",
+      "title": "scripts/verify-build.mjs",
+      "at": 1795414828830
+    },
+    {
+      "id": "file:package-lock.json",
+      "kind": "file",
+      "title": "package-lock.json",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:README.md",
+      "kind": "file",
+      "title": "README.md",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:index.html",
+      "kind": "file",
+      "title": "index.html",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/llms.txt",
+      "kind": "file",
+      "title": "public/llms.txt",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo-mark-white.avif",
+      "kind": "file",
+      "title": "public/logo-mark-white.avif",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo-mark-white.webp",
+      "kind": "file",
+      "title": "public/logo-mark-white.webp",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo-mark.avif",
+      "kind": "file",
+      "title": "public/logo-mark.avif",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo-mark.webp",
+      "kind": "file",
+      "title": "public/logo-mark.webp",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo-white.avif",
+      "kind": "file",
+      "title": "public/logo-white.avif",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo-white.webp",
+      "kind": "file",
+      "title": "public/logo-white.webp",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo.avif",
+      "kind": "file",
+      "title": "public/logo.avif",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/logo.webp",
+      "kind": "file",
+      "title": "public/logo.webp",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/robots.txt",
+      "kind": "file",
+      "title": "public/robots.txt",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:public/sitemap.xml",
+      "kind": "file",
+      "title": "public/sitemap.xml",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:scripts/prerender.mjs",
+      "kind": "file",
+      "title": "scripts/prerender.mjs",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/App.tsx",
+      "kind": "file",
+      "title": "src/App.tsx",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/lib/schema.ts",
+      "kind": "file",
+      "title": "src/lib/schema.ts",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:vercel.json",
+      "kind": "file",
+      "title": "vercel.json",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:scripts/generate-og-images.mjs",
+      "kind": "file",
+      "title": "scripts/generate-og-images.mjs",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:designV2.md",
+      "kind": "file",
+      "title": "designV2.md",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/components/platforms/catalog.tsx",
+      "kind": "file",
+      "title": "src/components/platforms/catalog.tsx",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/pages/About.tsx",
+      "kind": "file",
+      "title": "src/pages/About.tsx",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:scripts/locations.mjs",
+      "kind": "file",
+      "title": "scripts/locations.mjs",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/data/locations.json",
+      "kind": "file",
+      "title": "src/data/locations.json",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/data/locations.ts",
+      "kind": "file",
+      "title": "src/data/locations.ts",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/pages/LocationPage.tsx",
+      "kind": "file",
+      "title": "src/pages/LocationPage.tsx",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:src/pages/LocationsHub.tsx",
+      "kind": "file",
+      "title": "src/pages/LocationsHub.tsx",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:.memory/graph.json",
+      "kind": "file",
+      "title": ".memory/graph.json",
+      "at": 1795415096191
+    },
+    {
+      "id": "file:apps/leads/views.py",
+      "kind": "file",
+      "title": "apps/leads/views.py",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:apps/leads/urls.py",
+      "kind": "file",
+      "title": "apps/leads/urls.py",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:templates/leads/lead_list.html",
+      "kind": "file",
+      "title": "templates/leads/lead_list.html",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:templates/leads/lead_detail.html",
+      "kind": "file",
+      "title": "templates/leads/lead_detail.html",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:apps/leads/tests/test_leads.py",
+      "kind": "file",
+      "title": "apps/leads/tests/test_leads.py",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:CHANGELOG.md",
+      "kind": "file",
+      "title": "CHANGELOG.md",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:context.md",
+      "kind": "file",
+      "title": "context.md",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:apps/dashboards/models.py",
+      "kind": "file",
+      "title": "apps/dashboards/models.py",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:apps/dashboards/views.py",
+      "kind": "file",
+      "title": "apps/dashboards/views.py",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:apps/dashboards/migrations/0010_alter_activitylog_event_type.py",
+      "kind": "file",
+      "title": "apps/dashboards/migrations/0010_alter_activitylog_event_type.py",
+      "at": 1795415118531
+    },
+    {
+      "id": "file:apps/leads/models.py",
+      "kind": "file",
+      "title": "apps/leads/models.py",
+      "at": 1795417573954
+    },
+    {
+      "id": "file:apps/reports/work.py",
+      "kind": "file",
+      "title": "apps/reports/work.py",
+      "at": 1795417573954
+    },
+    {
+      "id": "file:apps/reports/insights.py",
+      "kind": "file",
+      "title": "apps/reports/insights.py",
+      "at": 1795417573954
+    },
+    {
+      "id": "file:apps/reports/extras.py",
+      "kind": "file",
+      "title": "apps/reports/extras.py",
+      "at": 1795417573954
+    },
+    {
+      "id": "file:apps/dashboards/migrations/0011_alter_activitylog_event_type.py",
+      "kind": "file",
+      "title": "apps/dashboards/migrations/0011_alter_activitylog_event_type.py",
+      "at": 1795417573954
+    },
+    {
+      "id": "file:apps/leads/migrations/0007_lead_is_submission.py",
+      "kind": "file",
+      "title": "apps/leads/migrations/0007_lead_is_submission.py",
+      "at": 1795417573954
+    },
+    {
+      "id": "file:apps/dsr/api.py",
+      "kind": "file",
+      "title": "apps/dsr/api.py",
+      "at": 1795421735704
+    },
+    {
+      "id": "file:apps/dsr/tests_api.py",
+      "kind": "file",
+      "title": "apps/dsr/tests_api.py",
+      "at": 1795421735704
+    }
+  ],
+  "edges": [
+    {
+      "from": "session:2026-11-23",
+      "to": "file:scripts/verify-build.mjs",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:package-lock.json",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:README.md",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:index.html",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/llms.txt",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo-mark-white.avif",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo-mark-white.webp",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo-mark.avif",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo-mark.webp",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo-white.avif",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo-white.webp",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo.avif",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/logo.webp",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/robots.txt",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:public/sitemap.xml",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:scripts/prerender.mjs",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/App.tsx",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/lib/schema.ts",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:vercel.json",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:scripts/generate-og-images.mjs",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:designV2.md",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/components/platforms/catalog.tsx",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/pages/About.tsx",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:scripts/locations.mjs",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/data/locations.json",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/data/locations.ts",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/pages/LocationPage.tsx",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:src/pages/LocationsHub.tsx",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:.memory/graph.json",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/leads/views.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/leads/urls.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:templates/leads/lead_list.html",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:templates/leads/lead_detail.html",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/leads/tests/test_leads.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:CHANGELOG.md",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:context.md",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/dashboards/models.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/dashboards/views.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/dashboards/migrations/0010_alter_activitylog_event_type.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/leads/models.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/reports/work.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/reports/insights.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/reports/extras.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/dashboards/migrations/0011_alter_activitylog_event_type.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/leads/migrations/0007_lead_is_submission.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/dsr/api.py",
+      "type": "touched"
+    },
+    {
+      "from": "session:2026-11-23",
+      "to": "file:apps/dsr/tests_api.py",
+      "type": "touched"
+    }
+  ]
+}

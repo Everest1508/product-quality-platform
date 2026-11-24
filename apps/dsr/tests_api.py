@@ -72,6 +72,35 @@ class DSRApiTest(TestCase):
         DSREntry.objects.create(company=self.company, user=self.dev, ticket=t, task_name="auto", hours_spent=1)
         self.assertEqual(self.post(task_name="Other words", ticket=t.pk).status_code, 409)
 
+    def test_as_new_creates_a_second_entry_for_the_same_work(self):
+        first = self.post(source="github", source_id="c1").json()
+        second = self.post(source="github", source_id="c1", task_name="FIXED LOGIN BUG", as_new=True)
+        self.assertEqual(second.status_code, 201)
+        self.assertNotEqual(second.json()["id"], first["id"])
+        self.assertEqual(second.json()["source_id"], "c1")
+        self.assertEqual(DSREntry.objects.count(), 2)
+
+    def test_as_new_skips_every_duplicate_key_but_false_keeps_the_guard(self):
+        self.post(source="github", source_id="c1")
+        self.assertEqual(self.post(source="github", source_id="c1", as_new=False).status_code, 409)
+        self.assertEqual(self.post(source="github", source_id="c1", as_new="false").status_code, 409)
+        self.assertEqual(self.post(task_name="FIXED LOGIN BUG", as_new="true").status_code, 201)
+        self.assertEqual(DSREntry.objects.count(), 2)
+
+    def test_as_new_logs_a_ticket_that_is_already_in_the_sheet(self):
+        t = Ticket.objects.create(company=self.company, product=self.mine, title="T", created_by=self.dev)
+        DSREntry.objects.create(company=self.company, user=self.dev, ticket=t, task_name="auto", hours_spent=1)
+        res = self.post(task_name="Second slice of the same ticket", ticket=t.pk, as_new=True)
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(DSREntry.objects.filter(ticket=t).count(), 2)
+
+    def test_as_new_does_not_bypass_the_window_or_validation(self):
+        past = (self.today - timedelta(days=1)).isoformat()
+        self.assertEqual(self.post(as_new=True, date=past).status_code, 403)
+        self.assertEqual(self.post(as_new=True, hours_spent="25").status_code, 400)
+        self.assertEqual(self.post(as_new=True, task_name="").status_code, 400)
+        self.assertFalse(DSREntry.objects.exists())
+
     def test_cannot_use_a_product_or_ticket_outside_access(self):
         self.assertEqual(self.post(product=self.secret.pk).status_code, 400)
         t = Ticket.objects.create(company=self.company, product=self.secret, title="T", created_by=self.other)

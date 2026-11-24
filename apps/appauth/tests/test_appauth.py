@@ -17,6 +17,13 @@ BASE = "/api/app-auth/"
 GOOD = {"email": "Ann@Example.com", "password": "correct-horse", "name": "Ann"}
 
 
+def signup_with(c):
+    """Register and confirm the emailed code on client `c`. Returns the sign-in response (tokens + user)."""
+    c.post(BASE + "register", GOOD, format="json")
+    u = AppUser.objects.get(email=GOOD["email"].lower())
+    return c.post(BASE + "verify-email-otp", {"email": u.email, "code": service.make_otp("verify", u)}, format="json")
+
+
 class ApiTest(TestCase):
     def setUp(self):
         cache.clear()
@@ -25,30 +32,80 @@ class ApiTest(TestCase):
     def register(self, **over):
         return self.c.post(BASE + "register", {**GOOD, **over}, format="json")
 
+    def signup(self, **over):
+        """Register, then confirm the emailed code: the same shape register used to return (tokens + user)."""
+        email = {**GOOD, **over}["email"].lower()
+        self.register(**over)
+        code = service.make_otp("verify", AppUser.objects.get(email=email))
+        return self.c.post(BASE + "verify-email-otp", {"email": email, "code": code}, format="json")
+
     def bearer(self, token):
         c = APIClient()
         c.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         return c
 
-    def test_register_lowercases_hashes_and_returns_tokens(self):
+    def test_register_sends_a_code_not_a_link_and_signs_nobody_in(self):
         r = self.register()
         self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.data, {"email_verification_required": True, "email": "ann@example.com"})
         u = AppUser.objects.get(email="ann@example.com")
         self.assertTrue(u.password_hash.startswith("argon2"))
+        self.assertFalse(u.email_verified)
         self.assertEqual(len(mail.outbox), 1)
+        m = mail.outbox[0]
+        code = service.make_otp("verify", u)
+        self.assertIn(code, m.body)
+        self.assertNotIn("http", m.body)
+        html = m.alternatives[0][0]
+        self.assertIn(code, html)
+        self.assertNotIn("href", html)  # nothing that points at the CRM
+        # cannot sign in until the code is confirmed
+        r = self.c.post(BASE + "login", {"email": "ann@example.com", "password": "correct-horse"}, format="json")
+        self.assertEqual((r.status_code, r.data["code"]), (403, "email_not_verified"))
+
+    def test_verify_email_otp_signs_in_and_wrong_codes_do_not(self):
+        self.register()
+        bad = self.c.post(BASE + "verify-email-otp", {"email": "ann@example.com", "code": "000000"}, format="json")
+        self.assertEqual((bad.status_code, bad.data["code"]), (400, "invalid_code"))
+        r = signup_with(self.c)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(AppUser.objects.get().email_verified)
         self.assertEqual(self.bearer(r.data["access_token"]).get(BASE + "me").data["email"], "ann@example.com")
         # only a hash of the refresh token is stored
         self.assertFalse(AppRefreshToken.objects.filter(token_hash=r.data["refresh_token"]).exists())
 
+    def test_otp_expires_and_is_rate_limited(self):
+        self.register()
+        u = AppUser.objects.get()
+        code = service.make_otp("verify", u)
+        with mock.patch("apps.appauth.service.time.time", return_value=timezone.now().timestamp() + 21 * 60):
+            r = self.c.post(BASE + "verify-email-otp", {"email": u.email, "code": code}, format="json")
+        self.assertEqual(r.status_code, 400)
+        for _ in range(8):
+            r = self.c.post(BASE + "verify-email-otp", {"email": u.email, "code": "111111"}, format="json")
+        self.assertEqual(r.status_code, 429)
+
+    def test_resend_is_uniform(self):
+        self.register()
+        mail.outbox.clear()
+        a = self.c.post(BASE + "resend-verification", {"email": "ann@example.com"}, format="json")
+        b = self.c.post(BASE + "resend-verification", {"email": "nobody@example.com"}, format="json")
+        self.assertEqual((a.status_code, a.data), (b.status_code, b.data))
+        self.assertEqual(len(mail.outbox), 1)
+
     def test_register_validation_and_duplicates(self):
         self.assertEqual(self.register(password="short").data["code"], "weak_password")
         self.register()
-        r = self.register(email="ann@example.com", password="another-pass")
-        self.assertEqual((r.status_code, r.data["code"]), (409, "email_exists"))
+        # never confirmed: the sign-up can be retried (new password), still one account
+        r = self.register(password="another-pass")
+        self.assertEqual(r.status_code, 201)
         self.assertEqual(AppUser.objects.count(), 1)
+        signup_with(self.c)
+        r = self.register(email="ann@example.com", password="third-pass-1")
+        self.assertEqual((r.status_code, r.data["code"]), (409, "email_exists"))
 
     def test_login_generic_error_for_unknown_and_bad_password(self):
-        self.register()
+        self.signup()
         bad = self.c.post(BASE + "login", {"email": "ann@example.com", "password": "nope-nope"}, format="json")
         unknown = self.c.post(BASE + "login", {"email": "who@example.com", "password": "nope-nope"}, format="json")
         self.assertEqual((bad.status_code, unknown.status_code), (401, 401))
@@ -59,7 +116,7 @@ class ApiTest(TestCase):
         self.assertIsNotNone(AppUser.objects.get().last_login_at)
 
     def test_revoked_user_blocked_on_login_and_on_existing_token(self):
-        tokens = self.register().data
+        tokens = self.signup().data
         user = AppUser.objects.get()
         user.status = "revoked"
         user.save()
@@ -73,13 +130,13 @@ class ApiTest(TestCase):
     def test_me_rejects_bad_and_expired_tokens(self):
         self.assertEqual(self.bearer("garbage").get(BASE + "me").status_code, 401)
         self.assertEqual(self.c.get(BASE + "me").status_code, 401)
-        self.register()
+        self.signup()
         with mock.patch.object(service, "ACCESS_TTL", timedelta(seconds=-5)):
             tok = service.make_access_token(AppUser.objects.get())
         self.assertEqual(self.bearer(tok).get(BASE + "me").status_code, 401)
 
     def test_refresh_rotates_and_reuse_kills_the_family(self):
-        first = self.register().data["refresh_token"]
+        first = self.signup().data["refresh_token"]
         second = self.c.post(BASE + "refresh", {"refresh_token": first}, format="json")
         self.assertEqual(second.status_code, 200)
         self.assertNotEqual(second.data["refresh_token"], first)
@@ -89,41 +146,43 @@ class ApiTest(TestCase):
         self.assertTrue(AppAuthEvent.objects.filter(event="refresh_reuse").exists())
 
     def test_expired_refresh_and_logout(self):
-        tokens = self.register().data
+        tokens = self.signup().data
         self.c.post(BASE + "logout", {"refresh_token": tokens["refresh_token"]}, format="json")
         self.assertEqual(self.c.post(BASE + "refresh", {"refresh_token": tokens["refresh_token"]}, format="json").status_code, 401)
         t2 = self.c.post(BASE + "login", {"email": "ann@example.com", "password": "correct-horse"}, format="json").data
         AppRefreshToken.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
         self.assertEqual(self.c.post(BASE + "refresh", {"refresh_token": t2["refresh_token"]}, format="json").status_code, 401)
 
-    def test_forgot_is_uniform_and_reset_is_single_use(self):
-        self.register()
+    def test_forgot_is_uniform_and_reset_needs_the_emailed_code(self):
+        self.signup()
         mail.outbox.clear()
         a = self.c.post(BASE + "forgot-password", {"email": "ann@example.com"}, format="json")
         b = self.c.post(BASE + "forgot-password", {"email": "nobody@example.com"}, format="json")
         self.assertEqual((a.status_code, a.data), (b.status_code, b.data))
         self.assertEqual(len(mail.outbox), 1)
-        token = mail.outbox[0].body.split("\n\n")[1]
+        self.assertNotIn("http", mail.outbox[0].body)
+        code = service.make_otp("reset", AppUser.objects.get())
+        self.assertIn(code, mail.outbox[0].body)
+        # a wrong code earns nothing, so there is no token to reset with
+        bad = self.c.post(BASE + "verify-reset-otp", {"email": "ann@example.com", "code": "000000"}, format="json")
+        self.assertEqual((bad.status_code, bad.data["code"]), (400, "invalid_code"))
+        self.assertEqual(self.c.post(BASE + "reset-password", {"token": "junk", "new_password": "brand-new-pass"}, format="json").status_code, 400)
+        token = self.c.post(BASE + "verify-reset-otp", {"email": "ann@example.com", "code": code}, format="json").data["reset_token"]
         old = self.c.post(BASE + "login", {"email": "ann@example.com", "password": "correct-horse"}, format="json").data
         r = self.c.post(BASE + "reset-password", {"token": token, "new_password": "brand-new-pass"}, format="json")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(self.c.post(BASE + "reset-password", {"token": token, "new_password": "third-pass-1"}, format="json").status_code, 400)
+        # the used code stops working too
+        self.assertEqual(self.c.post(BASE + "verify-reset-otp", {"email": "ann@example.com", "code": code}, format="json").status_code, 400)
         self.assertEqual(self.bearer(old["access_token"]).get(BASE + "me").status_code, 401)  # sessions ended
         self.assertEqual(self.c.post(BASE + "login", {"email": "ann@example.com", "password": "brand-new-pass"}, format="json").status_code, 200)
 
     def test_reset_token_expires_after_30_minutes(self):
-        self.register()
+        self.signup()
         token = service.make_reset_token(AppUser.objects.get())
         with mock.patch("django.core.signing.time.time", return_value=timezone.now().timestamp() + 31 * 60):
             with self.assertRaises(AuthError):
                 service.reset_password(token, "brand-new-pass")
-
-    def test_verify_email(self):
-        self.register()
-        link = mail.outbox[0].body.split("\n\n")[1].strip()
-        self.assertEqual(self.c.get(link).status_code, 200)
-        self.assertTrue(AppUser.objects.get().email_verified)
-        self.assertEqual(self.c.get(BASE + "verify-email?token=junk").status_code, 400)
 
     def test_login_is_rate_limited(self):
         codes = [self.c.post(BASE + "login", {"email": "x@example.com", "password": "wrong-pass"}, format="json").status_code for _ in range(12)]
@@ -193,7 +252,7 @@ class AdminTest(TestCase):
         self.plain = U.objects.create_user("plain", "p@example.com", "pw-plain-1")
         Membership.objects.create(user=self.plain, company=co, role="viewer")
         self.api = APIClient()
-        self.tokens = self.api.post(BASE + "register", GOOD, format="json").data
+        self.tokens = signup_with(self.api).data
         self.user = AppUser.objects.get()
 
     def test_only_staff_can_open_pages(self):
@@ -256,7 +315,7 @@ class AccountSelfServiceTest(TestCase):
     def setUp(self):
         cache.clear()
         self.c = APIClient()
-        self.tokens = self.c.post(BASE + "register", GOOD, format="json").data
+        self.tokens = signup_with(self.c).data
         self.auth = APIClient()
         self.auth.credentials(HTTP_AUTHORIZATION=f"Bearer {self.tokens['access_token']}")
 

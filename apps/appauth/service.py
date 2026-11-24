@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import secrets
+import time
 import uuid
 from datetime import timedelta
 
@@ -10,7 +11,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core import signing
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
 from apps.appauth.models import AppAuthEvent, AppRefreshToken, AppUser
@@ -19,6 +20,7 @@ ACCESS_TTL = timedelta(minutes=15)
 REFRESH_TTL = timedelta(days=30)
 RESET_TTL = 30 * 60
 VERIFY_TTL = 3 * 24 * 3600
+OTP_WINDOW = 600  # a code is good for at least 10 minutes (this window and the one before it)
 MIN_PASSWORD = 8
 
 
@@ -175,6 +177,13 @@ def touch_login(user):
 def register(email, password, name):
     check_new_password(password)
     existing = AppUser.objects.filter(email=email).first()
+    if existing and not existing.email_verified and existing.auth_provider == "password" and existing.status == "active":
+        # Signed up before but never confirmed the email: nobody has proved ownership, so let the sign-up be
+        # retried (new password and name). The code still goes only to the mailbox owner.
+        existing.password_hash = hash_password(password)
+        existing.name = (name or existing.name or "")[:255]
+        existing.save(update_fields=["password_hash", "name"])
+        return existing
     if existing:
         # Never set a password on an account just because someone typed its email: that would let anyone
         # pre-claim a Google user's account. Linking a password to it goes through reset-password.
@@ -260,21 +269,79 @@ def reset_password(token, new_password):
     return user
 
 
-def send_verification(request, user):
-    url = request.build_absolute_uri("/api/app-auth/verify-email") + "?token=" + make_verify_token(user)
-    _mail(user, "Verify your CardSnap email", f"Confirm your email address:\n\n{url}\n")
+# --- one-time email codes (stateless: nothing stored, nothing to clean up) ----
+def _otp(purpose, user, window):
+    msg = f"{purpose}:{user.id}:{window}:{_fingerprint(user)}"  # the fingerprint kills a reset code once the password changes
+    digest = hmac.new(jwt_secret().encode(), msg.encode(), hashlib.sha256).digest()
+    return f"{int.from_bytes(digest[:4], 'big') % 1_000_000:06d}"
+
+
+def make_otp(purpose, user):
+    return _otp(purpose, user, int(time.time() // OTP_WINDOW))
+
+
+def check_otp(purpose, user, code):
+    if not isinstance(code, str):
+        return False
+    code, w = code.strip(), int(time.time() // OTP_WINDOW)
+    return any(hmac.compare_digest(_otp(purpose, user, x), code) for x in (w, w - 1))
+
+
+def _user_by_email(email):
+    return AppUser.objects.filter(email=normalize_email(email)).exclude(status="deleted").first()
+
+
+def verify_email_otp(email, code):
+    user = _user_by_email(email)
+    if not user or not check_otp("verify", user, code):
+        raise AuthError("invalid_code", "That code is wrong or has expired.", 400)
+    if not user.email_verified:
+        user.email_verified = True
+        user.save(update_fields=["email_verified"])
+    return user
+
+
+def reset_token_from_otp(email, code):
+    """Trade a correct emailed code for the short-lived token reset_password() needs."""
+    user = _user_by_email(email)
+    if not user or user.status != "active" or not check_otp("reset", user, code):
+        raise AuthError("invalid_code", "That code is wrong or has expired.", 400)
+    return make_reset_token(user)
+
+
+def send_verification(user):
+    _mail_code(user, "Your CardSnap verification code", "Verify your email",
+               "Enter this code in the CardSnap app to finish creating your account.", make_otp("verify", user))
 
 
 def send_reset(user):
-    token = make_reset_token(user)
-    link = f"{settings.APPAUTH_RESET_URL}?token={token}" if settings.APPAUTH_RESET_URL else ""
-    _mail(user, "Reset your CardSnap password",
-          f"Use this code in the app (valid 30 minutes, single use):\n\n{token}\n\n{link}\n"
-          "If you did not ask for this, ignore this email.")
+    _mail_code(user, "Your CardSnap password reset code", "Reset your password",
+               "Enter this code in the CardSnap app to choose a new password.", make_otp("reset", user))
 
 
-def _mail(user, subject, body):
+def _email_html(heading, intro, code):
+    spaced = code  # spacing is CSS only, so a copied code is plain digits
+    return f"""<!doctype html><html><body style="margin:0;padding:0;background:#F8FAFC;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:20px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<tr><td style="background:#2563EB;padding:24px 28px;color:#FFFFFF;font-size:18px;font-weight:700;letter-spacing:-0.2px;">CardSnap</td></tr>
+<tr><td style="padding:32px 28px 8px;color:#0F172A;">
+<div style="font-size:22px;font-weight:800;letter-spacing:-0.4px;">{heading}</div>
+<div style="font-size:15px;line-height:1.55;color:#5B6B80;margin-top:8px;">{intro}</div></td></tr>
+<tr><td align="center" style="padding:20px 28px;">
+<div style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:14px;padding:18px 8px;font-size:34px;font-weight:800;letter-spacing:6px;color:#1D4ED8;font-family:'SF Mono',Menlo,Consolas,monospace;">{spaced}</div></td></tr>
+<tr><td style="padding:0 28px 30px;font-size:13px;line-height:1.55;color:#5B6B80;">This code expires in 10 minutes and works once. Never share it with anyone.<br><br>If you didn&rsquo;t ask for this, you can safely ignore this email.</td></tr>
+</table>
+<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#94A3B8;margin-top:16px;">Sent by CardSnap</div>
+</td></tr></table></body></html>"""
+
+
+def _mail_code(user, subject, heading, intro, code):
+    text = f"{heading}\n\n{intro}\n\nYour code: {code}\n\nIt expires in 10 minutes. Never share it.\nIf you didn't ask for this, ignore this email."
     try:
-        send_mail(subject, body, None, [user.email])
+        msg = EmailMultiAlternatives(subject, text, None, [user.email])
+        msg.attach_alternative(_email_html(heading, intro, code), "text/html")
+        msg.send()
     except Exception:  # best effort: a mail outage must not change the API response (or leak existence)
         pass

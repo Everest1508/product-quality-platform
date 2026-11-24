@@ -56,9 +56,9 @@ class RegisterView(Base):
         except IntegrityError:  # two simultaneous signups
             raise AuthError("email_exists", "An account with this email already exists.", 409)
         service.log_event(user, "register", request)
-        service.send_verification(request, user)
-        # Tokens are returned straight away; email_verified stays false until the link is opened.
-        return Response({**service.issue_tokens(user, request), "user": _profile(user), "email_verified": False}, status=201)
+        service.send_verification(user)
+        # No tokens yet: the app signs in only after the emailed code is confirmed (verify-email-otp).
+        return Response({"email_verification_required": True, "email": user.email}, status=201)
 
 
 class LoginView(Base):
@@ -70,6 +70,10 @@ class LoginView(Base):
         ok = service.verify_password(user, password if isinstance(password, str) else "")
         if not ok:
             raise AuthError("invalid_credentials", "Invalid email or password", 401)
+        service.ensure_active(user)
+        if not user.email_verified:
+            service.send_verification(user)  # throttled above; the app opens its code screen on this error
+            raise AuthError("email_not_verified", "Confirm your email to continue. We sent you a new code.", 403)
         return _session(request, user, "login")
 
 
@@ -158,12 +162,39 @@ class ForgotPasswordView(Base):
         return Response({"ok": True, "message": "If that email has an account, a reset code is on its way."})
 
 
+class VerifyResetOtpView(Base):
+    """Step 2 of a reset: only a correct emailed code earns the token that reset-password needs."""
+
+    def post(self, request):
+        email = normalize_email(request.data.get("email"))
+        service.throttle_request(request, "reset_code", email, email_limit=6)
+        return Response({"reset_token": service.reset_token_from_otp(email, request.data.get("code"))})
+
+
 class ResetPasswordView(Base):
     def post(self, request):
         service.throttle_request(request, "reset")
         user = service.reset_password(request.data.get("token") or "", request.data.get("new_password"))
         service.log_event(user, "password_reset", request)
         return Response({"ok": True})
+
+
+class VerifyEmailOtpView(Base):
+    def post(self, request):
+        email = normalize_email(request.data.get("email"))
+        service.throttle_request(request, "verify_code", email, email_limit=6)
+        user = service.verify_email_otp(email, request.data.get("code"))
+        return _session(request, user, "verify_email")
+
+
+class ResendVerificationView(Base):
+    def post(self, request):
+        email = normalize_email(request.data.get("email"))
+        service.throttle_request(request, "resend", email, email_limit=3)
+        user = service._user_by_email(email)
+        if user and user.status == "active" and not user.email_verified:
+            service.send_verification(user)
+        return Response({"ok": True, "message": "If that email needs confirming, a new code is on its way."})
 
 
 class VerifyEmailView(Base):

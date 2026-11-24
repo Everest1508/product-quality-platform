@@ -41,6 +41,7 @@ New, Better, Fixed and Security lists. Older releases are below the newest.
 
 ### New
 
+- **Log a repeat piece of work as a new DSR entry.** The `/dsr` tool normally stops a second entry for the same task, ticket or source on the same day, so a retry cannot log it twice by mistake. When two rows are genuinely right — two slices of one ticket, or hours you are re-entering — ask the tool to submit it as new and it lands as its own entry. The usual time checks still apply.
 - **Website leads keeps the whole story.** Every form post stays listed in Website leads after it becomes a lead. A badge shows whether an entry is still a form submission or which stage it has reached, and the Convert to lead icon only appears while it is still a submission. Entries added by hand show there too.
 - **Promote website form submissions into leads.** Everything the website form sends first lands in Website leads as a submission, so enquiries that are not real leads can simply be deleted. Beside Delete there is a **Convert to lead** icon: with a confirmation, it moves the submission to the pipeline board and records a Lead created entry in the audit log. A won lead becomes a project from its own page.
 - **Delete website leads.** Workspace admins can remove a lead from the website leads list or from the lead itself, with a confirmation first. The lead's activity goes with it, and any project already made from the lead stays.

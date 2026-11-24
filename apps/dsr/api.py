@@ -200,6 +200,13 @@ def _check_hours(user, company, day, hours, source, exclude_pk=None):
     return None
 
 
+def _truthy(value):
+    """Read a JSON boolean or a form-style true string from a request body."""
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "1", "yes", "on")
+    return bool(value)
+
+
 def _form_data(body, entry=None):
     """The posted fields, falling back to the stored entry so a PUT can send only what changed."""
     keep = {
@@ -229,18 +236,24 @@ class DSRCreateView(DSRAPIView):
         # Every entry records where it came from; one that does not say is hand-typed.
         source, source_id = (str(body.get("source") or "manual").strip() or "manual")[:32], str(body.get("source_id", ""))[:128]
 
-        mine = DSREntry.objects.filter(company=self.company, user=request.user, date=day)
-        task = str(body.get("task_name", "")).strip()
-        existing = (
-            (ticket and mine.filter(ticket=ticket).first())
-            or (source_id and mine.filter(source=source, source_id=source_id).first())
-            or (task and mine.filter(task_name__iexact=task).first())
-        )
-        if existing:
-            return Response(
-                {"error": "This is already in today's DSR. Use PUT to change it.", "existing": _entry(existing)},
-                status=status.HTTP_409_CONFLICT,
+        # `as_new` is an explicit opt out of the duplicate guard, for the times a
+        # second row is the truth (two slices of one ticket, corrected hours
+        # logged afresh). It only skips the dedup: the window, form validation and
+        # hours checks below still apply. A normal POST still dedups, so a retry
+        # cannot silently double-log.
+        if not _truthy(body.get("as_new")):
+            mine = DSREntry.objects.filter(company=self.company, user=request.user, date=day)
+            task = str(body.get("task_name", "")).strip()
+            existing = (
+                (ticket and mine.filter(ticket=ticket).first())
+                or (source_id and mine.filter(source=source, source_id=source_id).first())
+                or (task and mine.filter(task_name__iexact=task).first())
             )
+            if existing:
+                return Response(
+                    {"error": "This is already in today's DSR. Use PUT to change it.", "existing": _entry(existing)},
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         products = accessible_products(request.user, self.company)
         data = _form_data(body)

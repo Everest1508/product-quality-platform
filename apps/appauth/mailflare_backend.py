@@ -108,11 +108,22 @@ class MailflareEmailBackend(BaseEmailBackend):
             raise MailflareError(
                 f"From address '{parseaddr(from_email)[1]}' is not the allowed Mailflare mailbox '{cfg.from_address}'. "
                 f"Set DEFAULT_FROM_EMAIL to it.")
-        body = json.dumps({
+        payload = {
             "mailboxId": cfg.mailbox_id, "from": from_email, "to": list(msg.to), "cc": list(msg.cc),
             "bcc": list(msg.bcc), "subject": msg.subject, "text": msg.body,
-        }).encode()
-        req = urllib.request.Request(cfg.url, data=body, method="POST", headers={
+        }
+        html = next((c for c, mime in getattr(msg, "alternatives", []) if mime == "text/html"), None)
+        if html:
+            try:
+                return self._post(cfg, {**payload, "html": html})
+            except MailflareError as exc:
+                # An API that does not take an html field answers 400/422: still deliver the plain-text version.
+                if not str(exc).startswith(("Mailflare answered 400", "Mailflare answered 422")):
+                    raise
+        self._post(cfg, payload)
+
+    def _post(self, cfg, payload):
+        req = urllib.request.Request(cfg.url, data=json.dumps(payload).encode(), method="POST", headers={
             "Authorization": f"Bearer {cfg.key}", "Content-Type": "application/json",
             "Accept": "application/json", "User-Agent": "pq-crm-mailflare/1.0",
         })
