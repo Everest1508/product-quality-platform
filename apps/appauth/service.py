@@ -2,11 +2,13 @@
 import hashlib
 import hmac
 import secrets
+import threading
 import time
 import uuid
 from datetime import timedelta
 
 import jwt
+from django import db
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core import signing
@@ -319,29 +321,58 @@ def send_reset(user):
                "Enter this code in the CardSnap app to choose a new password.", make_otp("reset", user))
 
 
-def _email_html(heading, intro, code):
-    spaced = code  # spacing is CSS only, so a copied code is plain digits
-    return f"""<!doctype html><html><body style="margin:0;padding:0;background:#F8FAFC;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:32px 16px;">
-<tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:20px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-<tr><td style="background:#2563EB;padding:24px 28px;color:#FFFFFF;font-size:18px;font-weight:700;letter-spacing:-0.2px;">CardSnap</td></tr>
-<tr><td style="padding:32px 28px 8px;color:#0F172A;">
-<div style="font-size:22px;font-weight:800;letter-spacing:-0.4px;">{heading}</div>
-<div style="font-size:15px;line-height:1.55;color:#5B6B80;margin-top:8px;">{intro}</div></td></tr>
-<tr><td align="center" style="padding:20px 28px;">
-<div style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:14px;padding:18px 8px;font-size:34px;font-weight:800;letter-spacing:6px;color:#1D4ED8;font-family:'SF Mono',Menlo,Consolas,monospace;">{spaced}</div></td></tr>
-<tr><td style="padding:0 28px 30px;font-size:13px;line-height:1.55;color:#5B6B80;">This code expires in 10 minutes and works once. Never share it with anyone.<br><br>If you didn&rsquo;t ask for this, you can safely ignore this email.</td></tr>
+_EMAIL_TEMPLATE = """<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{heading}}</title>
+<style>
+  @media (prefers-color-scheme:dark){
+    .bg{background:#0B0D12!important}
+    .ink{color:#F1F5F9!important}
+    .mute{color:#94A3B8!important}
+    .code{background:#161B26!important;color:#F1F5F9!important}
+    .rule{border-color:#232A38!important}
+  }
+</style></head>
+<body class="bg" style="margin:0;padding:0;background:#FFFFFF;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Your CardSnap code is {{code}}.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background:#FFFFFF;">
+<tr><td align="center" style="padding:40px 20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<tr><td class="ink" style="font-size:18px;font-weight:800;letter-spacing:-.3px;color:#0F172A;padding-bottom:28px;">CardSnap</td></tr>
+<tr><td class="ink" style="font-size:22px;line-height:1.3;font-weight:700;color:#0F172A;">{{heading}}</td></tr>
+<tr><td class="mute" style="font-size:15px;line-height:1.6;color:#475569;padding:8px 0 24px;">{{intro}}</td></tr>
+<tr><td class="code" style="background:#F1F5F9;border-radius:12px;padding:18px 12px;text-align:center;font-size:34px;line-height:1;font-weight:700;letter-spacing:8px;color:#0F172A;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;">{{code}}</td></tr>
+<tr><td class="mute" style="font-size:14px;line-height:1.6;color:#475569;padding:16px 0 24px;">This code expires in {{minutes}} minutes.</td></tr>
+<tr><td class="rule" style="border-top:1px solid #E2E8F0;padding-top:20px;font-size:13px;line-height:1.6;color:#64748B;"><div class="mute" style="padding-top:4px;">Didn&rsquo;t ask for this? You can ignore this email. Never share the code with anyone.</div></td></tr>
 </table>
-<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#94A3B8;margin-top:16px;">Sent by CardSnap</div>
-</td></tr></table></body></html>"""
+</td></tr></table>
+</body></html>"""
+
+
+def _email_html(heading, intro, code):
+    return (_EMAIL_TEMPLATE.replace("{{heading}}", heading).replace("{{intro}}", intro)
+            .replace("{{code}}", code).replace("{{minutes}}", "10"))
+
+
+def _deliver(msg):
+    try:
+        msg.send()
+    except Exception:  # best effort: a mail outage must not change the API response (or leak existence)
+        pass
+    finally:
+        db.connections.close_all()  # a worker thread owns its own database connection
 
 
 def _mail_code(user, subject, heading, intro, code):
     text = f"{heading}\n\n{intro}\n\nYour code: {code}\n\nIt expires in 10 minutes. Never share it.\nIf you didn't ask for this, ignore this email."
-    try:
-        msg = EmailMultiAlternatives(subject, text, None, [user.email])
-        msg.attach_alternative(_email_html(heading, intro, code), "text/html")
-        msg.send()
-    except Exception:  # best effort: a mail outage must not change the API response (or leak existence)
-        pass
+    msg = EmailMultiAlternatives(subject, text, None, [user.email])
+    msg.attach_alternative(_email_html(heading, intro, code), "text/html")
+    if settings.EMAIL_BACKEND.endswith("locmem.EmailBackend"):
+        _deliver(msg)  # tests read mail.outbox straight away
+    else:
+        # The request must not wait for Mailflare (seconds, and a retry on a slow day): send in the background.
+        threading.Thread(target=_deliver, args=(msg,), daemon=True).start()

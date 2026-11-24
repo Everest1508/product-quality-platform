@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.85.1] "Pochard" — 2026-11-24 · faster CardSnap sign-up, simpler code email
+
+> In short: Creating a CardSnap account no longer waits for the email to be sent, so it finishes right away, and the code email is now plain and easy to read.
+
+### Better
+
+- **CardSnap sign-up finishes straight away.** The code email is sent in the background instead of making the person wait for it, so the app moves on to the code screen immediately.
+- **A simpler code email.** The email is now a short, plain message with the code in a clear box and the expiry time, and it follows the reader's light or dark setting.
+
 ## [1.85.0] "Pintail" — 2026-11-24 · confirm your email with a code, and delete CardSnap users for good
 
 > In short: CardSnap sign-up and password reset now use a 6-digit code sent by email instead of a link, a new account only signs in after the code is confirmed, and admins can permanently delete a CardSnap user so their email can be used again.
