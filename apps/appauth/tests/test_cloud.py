@@ -219,13 +219,17 @@ class CloudAdminTest(TestCase):
         self.assertEqual(self.client.get(reverse("appauth_web:card", args=[self.row.pk])).status_code, 403)
         self.assertEqual(AppCardAccessLog.objects.count(), 0)
         self.client.force_login(self.staff)
-        r = self.client.get(reverse("appauth_web:cards"))
-        self.assertContains(r, "Asha Rao")
+        r = self.client.get(reverse("appauth_web:cards"))  # by user: one row per person, with a count
         self.assertContains(r, "ann@example.com")
+        self.assertContains(r, "1 card")
+        self.assertNotContains(r, "Asha Rao")
+        r = self.client.get(reverse("appauth_web:cards"), {"user": str(self.u.pk)})
+        self.assertContains(r, "Asha Rao")
         self.assertNotContains(r, "Hidden Person")
         self.assertContains(self.client.get(reverse("appauth_web:card", args=[self.row.pk])), "asha@zeta.com")
         log = list(AppCardAccessLog.objects.order_by("id").values_list("staff_email", "action", "app_user_email"))
-        self.assertEqual(log, [("s@example.com", "list", ""), ("s@example.com", "detail", "ann@example.com")])
+        self.assertEqual(log, [("s@example.com", "list", ""), ("s@example.com", "list", "ann@example.com"),
+                        ("s@example.com", "detail", "ann@example.com")])
 
     def test_pending_deletion_card_has_no_detail_page(self):
         hidden = AppCard.objects.get(name="Hidden Person")
@@ -234,13 +238,15 @@ class CloudAdminTest(TestCase):
 
     def test_search_filter_and_log(self):
         self.client.force_login(self.staff)
-        url = reverse("appauth_web:cards")
+        url = reverse("appauth_web:cards") + "?view=cards"
         for q in ("asha", "zeta", "asha@zeta", "98765"):
-            self.assertContains(self.client.get(url, {"q": q}), "Asha Rao", msg_prefix=q)
-        self.assertNotContains(self.client.get(url, {"q": "nobody"}), "Asha Rao")
+            self.assertContains(self.client.get(url, {"q": q, "view": "cards"}), "Asha Rao", msg_prefix=q)
+        self.assertNotContains(self.client.get(url, {"q": "nobody", "view": "cards"}), "Asha Rao")
         self.assertContains(self.client.get(url, {"user": str(self.u.pk)}), "Asha Rao")
         self.assertNotContains(self.client.get(url, {"user": str(uuid.uuid4())}), "Asha Rao")
         self.assertEqual(self.client.get(url, {"user": "garbage"}).status_code, 200)
+        self.assertContains(self.client.get(reverse("appauth_web:cards"), {"q": "ann"}), "ann@example.com")  # user search
+        self.assertNotContains(self.client.get(reverse("appauth_web:cards"), {"q": "zzz"}), "ann@example.com")
         self.assertTrue(AppCardAccessLog.objects.filter(action="search", detail="q=asha").exists())
         self.assertTrue(AppCardAccessLog.objects.filter(app_user=self.u).exists())
 
@@ -256,7 +262,7 @@ class CloudAdminTest(TestCase):
         self.assertEqual(AppCard.objects.live().count(), 0)
         self.client.post(reverse("appauth_web:action", args=[self.u.pk, "purge"]))
         self.assertEqual(AppCard.objects.live().count(), 0)
-        self.assertNotContains(self.client.get(reverse("appauth_web:cards")), "Asha Rao")
+        self.assertEqual(len(self.client.get(reverse("appauth_web:cards")).context["page"]), 0)  # gone from the user list too
 
     def test_public_pages_mention_backup_and_never_the_crm(self):
         for path in ("/cardsnap/privacy", "/cardsnap/delete-account"):
@@ -265,3 +271,118 @@ class CloudAdminTest(TestCase):
             self.assertIn("support@beforth.in", body)
             self.assertNotIn("CRM", body)
             self.assertNotIn("pq platform", body.lower())
+
+
+class CardsPageTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        U = get_user_model()
+        from apps.accounts.models import Company, Membership
+        co = Company.objects.create(name="Acme", slug="acme")
+        self.staff = U.objects.create_user("staff", "s@example.com", "pw-staff-1")
+        Membership.objects.create(user=self.staff, company=co, role="owner")
+        self.ann, ann = make_client("ann@example.com")
+        self.bob, bob = make_client("bob@example.com")
+        for c in (ann, bob):
+            c.post(CLOUD + "consent", {"enabled": True, "consent_version": 1}, format="json")
+        now = timezone.now()
+        ann.put(CLOUD + "cards", {"cards": [
+            card(name="Amit", designation="Managing Director", company="Zeta Ltd", phones=["111", "222"], emails=["amit@zeta.com", "a2@zeta.com"],
+                 exhibition_name="Gulfood", is_favorite=True),
+            card(name="Chitra", company="Alpha Co", emails=["chitra@alpha.com"])]}, format="json")
+        bob.put(CLOUD + "cards", {"cards": [card(name="Bela", company="Mid Co", exhibition_name="Gitex")]}, format="json")
+        AppCard.objects.filter(name="Amit").update(updated_at=now - timedelta(days=10), created_at=now - timedelta(days=10))
+        self.pending = AppCard.objects.create(user=self.ann, client_id=uuid.uuid4(), name="Gone", created_at_client=now,
+                                              updated_at_client=now, deletion_requested_at=now)
+        self.client.force_login(self.staff)
+        self.url = reverse("appauth_web:cards")
+
+    def names(self, **params):
+        r = self.client.get(self.url, {"view": "cards", **params})
+        return [c.name for c in r.context["page"]]
+
+    def test_name_and_title_are_on_separate_lines(self):
+        body = self.client.get(self.url, {"view": "cards"}).content.decode()
+        self.assertNotIn("</b>Managing Director", body)  # never glued to the name
+        self.assertIn('<span class="cd-sub">Managing Director</span>', body)
+        self.assertContains(self.client.get(self.url, {"view": "cards"}), "+2")  # 2 phones + 2 emails: first of each shown
+
+    def test_stat_tiles(self):
+        s = self.client.get(self.url).context["stats"]
+        self.assertEqual((s["total"], s["users_on"], s["week"]), (3, 2, 2))  # pending card is not counted
+
+    def test_pending_cards_never_appear_anywhere(self):
+        self.assertNotIn("Gone", self.names())
+        self.assertNotIn("Gone", self.names(user=str(self.ann.pk)))
+        self.assertNotIn("Gone", self.client.get(self.url, {"view": "cards", "q": "gone"}).content.decode())
+        self.assertNotIn("Gone", self.client.get(reverse("appauth_web:cards_export")).content.decode())
+        self.assertEqual(self.client.get(reverse("appauth_web:card", args=[self.pending.pk])).status_code, 404)
+
+    def test_filters(self):
+        self.assertEqual(sorted(self.names()), ["Amit", "Bela", "Chitra"])
+        self.assertEqual(sorted(self.names(user=str(self.ann.pk))), ["Amit", "Chitra"])
+        self.assertEqual(self.names(exhibition="Gitex"), ["Bela"])
+        today = timezone.localdate().isoformat()
+        self.assertEqual(sorted(self.names(**{"from": today})), ["Bela", "Chitra"])
+        self.assertEqual(self.names(to=(timezone.localdate() - timedelta(days=5)).isoformat()), ["Amit"])
+        self.assertEqual(self.names(user=str(self.ann.pk), exhibition="Gitex"), [])
+        self.assertEqual(self.names(**{"from": "nonsense"}), self.names())  # a bad date is ignored, not a crash
+
+    def test_active_filters_show_as_removable_chips(self):
+        r = self.client.get(self.url, {"view": "cards", "exhibition": "Gitex", "q": "be"})
+        labels = [c["label"] for c in r.context["chips"]]
+        self.assertEqual(labels, ["Exhibition: Gitex", "Search: be"])
+        self.assertNotIn("exhibition", r.context["chips"][0]["url"])
+        self.assertIn("q=be", r.context["chips"][0]["url"])
+
+    def test_sorting(self):
+        self.assertEqual(self.names(), ["Bela", "Chitra", "Amit"])  # last changed, newest first, is the default
+        self.assertEqual(self.names(sort="updated"), ["Amit", "Chitra", "Bela"])
+        self.assertEqual(self.names(sort="name"), ["Amit", "Bela", "Chitra"])
+        self.assertEqual(self.names(sort="-name"), ["Chitra", "Bela", "Amit"])
+        self.assertEqual(self.names(sort="company"), ["Chitra", "Bela", "Amit"])  # Alpha, Mid, Zeta
+        self.assertEqual(self.names(sort="owner")[2], "Bela")  # ann's two cards, then bob's
+        self.assertEqual(self.names(sort="; drop table"), self.names())
+
+    def test_rows_per_page_is_remembered(self):
+        self.client.get(self.url, {"view": "cards", "per_page": "10"})
+        self.assertEqual(self.client.get(self.url, {"view": "cards"}).context["page"].paginator.per_page, 10)
+
+    def test_export_follows_the_filters_and_is_logged(self):
+        r = self.client.get(reverse("appauth_web:cards_export"), {"user": str(self.ann.pk), "sort": "name"})
+        self.assertEqual(r["Content-Type"], "text/csv")
+        lines = r.content.decode().strip().splitlines()
+        self.assertEqual(lines[0], "name,company,title,phones,emails,owner_email")
+        self.assertEqual(len(lines), 3)
+        self.assertIn("Amit,Zeta Ltd,Managing Director,111; 222,amit@zeta.com; a2@zeta.com,ann@example.com", lines[1])
+        self.assertNotIn("bob@example.com", r.content.decode())
+        log = AppCardAccessLog.objects.get(action="export")
+        self.assertEqual((log.staff_email, log.app_user_email), ("s@example.com", "ann@example.com"))
+        self.assertIn("2 rows", log.detail)
+
+    def test_export_is_staff_only_and_safe_from_formulas(self):
+        AppCard.objects.filter(name="Bela").update(name="=HYPERLINK(1)")
+        self.assertIn("'=HYPERLINK(1)", self.client.get(reverse("appauth_web:cards_export")).content.decode())
+        from apps.accounts.models import Membership
+        viewer = get_user_model().objects.create_user("v", "v@example.com", "pw-v-123")
+        Membership.objects.create(user=viewer, company=self.staff.memberships.first().company, role="viewer")
+        self.client.force_login(viewer)
+        self.assertEqual(self.client.get(reverse("appauth_web:cards_export")).status_code, 403)
+
+    def test_empty_states_and_detail_extras(self):
+        AppCard.objects.all().delete()
+        self.assertContains(self.client.get(self.url, {"view": "cards"}), "Cards appear when app users turn on cloud backup.")
+        self.assertContains(self.client.get(self.url), "Cards appear when app users turn on cloud backup.")
+        ann_card = AppCard.objects.create(user=self.ann, client_id=uuid.uuid4(), name="Solo", phones=["999"], created_at_client=timezone.now(),
+                                          updated_at_client=timezone.now())
+        AppCard.objects.create(user=self.ann, client_id=uuid.uuid4(), name="Twin", created_at_client=timezone.now(), updated_at_client=timezone.now())
+        r = self.client.get(reverse("appauth_web:card", args=[ann_card.pk]))
+        self.assertEqual(r.context["others"], 1)
+        self.assertContains(r, 'data-copy="999"')
+
+    def test_page_text_has_no_internal_product_names(self):
+        for r in (self.client.get(self.url), self.client.get(self.url, {"view": "cards"})):
+            main = r.content.decode().split('class="breadcrumbs"')[1].split("</main>")[0]
+            self.assertNotIn("CRM", main)
+            self.assertNotIn("PQ", main)
+            self.assertNotIn("PQ", r.content.decode().split("<title>")[1].split("</title>")[0])

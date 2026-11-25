@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
-{% load icon_tags %}
+{% load icon_tags dropdown_tags %}
 
-{% block title %}Backed-up cards — PQ Platform{% endblock %}
+{% block title %}Backed-up cards{% endblock %}
 
 {% block content %}
 <nav class="breadcrumbs">
@@ -9,33 +9,89 @@
 </nav>
 <div class="pg-head">
   <div style="min-width:0">
-    <h1>Backed-up cards{% if owner %} · {{ owner.email }}{% endif %}</h1>
+    <h1>Backed-up cards{% if owner %} · {{ owner.name|default:owner.email }}{% endif %}</h1>
     <p class="sub">Text details people chose to back up from CardSnap. Read-only, and every visit is logged.</p>
   </div>
+  {% if not by_user %}
+  <div class="pg-actions">
+    <a href="{% url 'appauth_web:cards_export' %}?{{ export_qs }}" class="btn">{% icon 'download' 'ic' %}Export CSV</a>
+  </div>
+  {% endif %}
 </div>
 
-<form method="get" class="toolbar">
-  {% if owner %}<input type="hidden" name="user" value="{{ owner.pk }}"><a class="btn" href="{% url 'appauth_web:cards' %}">All users</a>{% endif %}
-  <span class="input-icon" style="margin-left:auto">{% icon 'search' 'ic' %}<input type="search" name="q" value="{{ f.q|default:'' }}" class="form-input" placeholder="Name, company, email or phone" aria-label="Search"></span>
-  <button class="btn" type="submit">Search</button>
+<div class="stat-strip" role="list">
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Backed-up cards</span><span class="stat-strip-value">{{ stats.total }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Users with backup on</span><span class="stat-strip-value">{{ stats.users_on }}</span></div>
+  <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Added in the last 7 days</span><span class="stat-strip-value">{{ stats.week }}</span></div>
+</div>
+
+<form method="get" class="toolbar" id="cd-filters">
+  <span class="seg">
+    <a href="{% url 'appauth_web:cards' %}" class="{% if by_user %}is-on{% endif %}">By user</a>
+    <a href="{% url 'appauth_web:cards' %}?view=cards" class="{% if not by_user %}is-on{% endif %}">All cards</a>
+  </span>
+  {% if not by_user %}
+  <input type="hidden" name="view" value="cards">
+  {% if f.sort %}<input type="hidden" name="sort" value="{{ f.sort }}">{% endif %}
+  {% dropdown "user" owner_choices|default:"" owner.pk|default:"" placeholder="Any owner" label="Owner" empty_value="" searchable=True submit=True %}
+  {% dropdown "exhibition" exhibition_choices f.exhibition|default:"" placeholder="Any exhibition" label="Exhibition" empty_value="" searchable=True submit=True %}
+  <input type="date" name="from" value="{{ f.from|default:'' }}" class="form-input" aria-label="Changed from">
+  <input type="date" name="to" value="{{ f.to|default:'' }}" class="form-input" aria-label="Changed to">
+  {% endif %}
+  <span class="input-icon" style="margin-left:auto">{% icon 'search' 'ic' %}<input type="search" name="q" value="{{ f.q|default:'' }}" class="form-input" placeholder="{% if by_user %}Search email or name{% else %}Name, company, email or phone{% endif %}" aria-label="Search"></span>
+  <button class="btn" type="submit">Apply</button>
 </form>
 
+{% if chips %}
+<div class="cd-chips" aria-label="Active filters">
+  {% for ch in chips %}<a class="ms-chip" href="{{ ch.url }}" title="Remove this filter">{{ ch.label }}<span aria-hidden="true">&times;</span><span class="sr-only">Remove filter</span></a>{% endfor %}
+  <a class="text-sm text-muted" href="{% url 'appauth_web:cards' %}?view=cards">Clear all</a>
+</div>
+{% endif %}
+
 <div class="card-flush"><div class="table-scroll">
-<table class="tbl">
-  <thead><tr><th>Card</th><th>Company</th><th>Owner</th><th>Last changed</th></tr></thead>
+{% if by_user %}
+<table class="tbl cd-tbl">
+  <thead><tr><th>User</th><th>Backup</th><th>Cards</th><th>Last backup</th></tr></thead>
   <tbody>
-  {% for c in page %}
-    <tr>
-      <td class="task"><a href="{% url 'appauth_web:card' c.pk %}"><b>{{ c.name|default:"(no name)" }}</b>{% if c.designation %}<small>{{ c.designation }}</small>{% endif %}</a></td>
-      <td>{{ c.company|default:"—" }}</td>
-      <td>{% if c.user %}<a href="{% url 'appauth_web:cards' %}?user={{ c.user.pk }}">{{ c.user.email }}</a>{% else %}—{% endif %}</td>
-      <td title="{{ c.updated_at|date:'d M Y, g:i a' }}">{{ c.updated_at|timesince }} ago</td>
+  {% for u in page %}
+    <tr class="clickable-row" onclick="if(!event.target.closest('a'))window.location='{% url 'appauth_web:cards' %}?user={{ u.pk }}'" style="cursor:pointer">
+      <td class="task"><a href="{% url 'appauth_web:cards' %}?user={{ u.pk }}" class="au-who"><span class="kt-av">{{ u.email.0|upper }}</span><span style="min-width:0"><b>{{ u.name|default:u.email }}</b>{% if u.name %}<small>{{ u.email }}</small>{% endif %}</span></a></td>
+      <td data-label="Backup"><span class="bdg {% if u.cloud_backup_enabled %}bdg-green{% else %}bdg-outline{% endif %}">{% if u.cloud_backup_enabled %}On{% else %}Off{% endif %}</span></td>
+      <td data-label="Cards">{{ u.n }} card{{ u.n|pluralize }}</td>
+      <td data-label="Last backup" title="{{ u.last|date:'d M Y, g:i a' }}">{{ u.last|timesince }} ago</td>
     </tr>
   {% empty %}
-    <tr><td colspan="4"><div class="empty-state"><strong>No backed-up cards</strong>Nothing matches, or nobody has turned backup on yet.</div></td></tr>
+    <tr><td colspan="4"><div class="empty-state"><strong>No cards yet</strong>{% if f.q %}Nobody matches that search.{% else %}Cards appear when app users turn on cloud backup.{% endif %}</div></td></tr>
   {% endfor %}
   </tbody>
 </table>
+{% else %}
+<table class="tbl cd-tbl">
+  <thead><tr>
+    <th><a href="?{{ qs }}&sort={{ next.name }}">Card</a></th>
+    <th><a href="?{{ qs }}&sort={{ next.company }}">Company</a></th>
+    <th>Contact</th>
+    <th><a href="?{{ qs }}&sort={{ next.owner }}">Owner</a></th>
+    <th>Exhibition</th>
+    <th><a href="?{{ qs }}&sort={{ next.updated }}">Last changed</a></th>
+  </tr></thead>
+  <tbody>
+  {% for c in page %}
+    <tr class="clickable-row" onclick="if(!event.target.closest('a'))window.location='{% url 'appauth_web:card' c.pk %}'" style="cursor:pointer">
+      <td class="task"><a href="{% url 'appauth_web:card' c.pk %}" class="cd-who"><span class="kt-av">{{ c.initials }}</span><span style="min-width:0"><b>{{ c.name|default:"(no name)" }}</b>{% if c.designation %}<span class="cd-sub">{{ c.designation }}</span>{% endif %}</span></a></td>
+      <td data-label="Company">{% if c.company %}{{ c.company }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+      <td data-label="Contact">{% if c.phones or c.emails %}<span class="cd-sub cd-text">{{ c.phones.0|default:"—" }}</span><span class="cd-sub cd-text">{{ c.emails.0|default:"—" }}</span>{% if c.more_contacts %}<span class="bdg bdg-outline">+{{ c.more_contacts }}</span>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+      <td data-label="Owner">{% if c.user %}<a href="{% url 'appauth_web:detail' c.user.pk %}" class="cd-who"><span style="min-width:0"><b>{{ c.user.name|default:c.user.email }}</b>{% if c.user.name %}<span class="cd-sub">{{ c.user.email }}</span>{% endif %}</span></a>{% else %}<span class="text-muted">Deleted user</span>{% endif %}</td>
+      <td data-label="Exhibition">{% if c.exhibition_name %}<span class="bdg bdg-blue">{{ c.exhibition_name|truncatechars:24 }}</span>{% endif %}{% if c.is_favorite %} <span class="cd-star" title="Favourite" aria-label="Favourite">★</span>{% endif %}</td>
+      <td data-label="Last changed" title="{{ c.updated_at|date:'d M Y, g:i a' }}">{{ c.updated_at|timesince }} ago</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6"><div class="empty-state"><strong>{% if chips %}No cards match{% else %}No cards yet{% endif %}</strong>{% if chips %}Clear a filter or search for something else.{% else %}Cards appear when app users turn on cloud backup.{% endif %}</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 </div></div>
 
 {% include "core/_pagination.html" with page=page %}

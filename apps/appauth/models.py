@@ -149,6 +149,15 @@ class AppCard(models.Model):
 
     objects = AppCardQuerySet.as_manager()
 
+    @property
+    def more_contacts(self):
+        """Phones and emails beyond the first of each: the list shows one of each and a "+n" badge."""
+        return max(len(self.phones) - 1, 0) + max(len(self.emails) - 1, 0)
+
+    @property
+    def initials(self):
+        return "".join(w[0] for w in self.name.split()[:2]).upper() or "?"
+
     class Meta:
         db_table = "app_cards"
         constraints = [models.UniqueConstraint(fields=["user", "client_id"], name="app_card_user_client_uniq")]

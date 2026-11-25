@@ -1,28 +1,65 @@
 {% extends "core/base.html" %}
+{% load icon_tags %}
 
-{% block title %}{{ c.name|default:"Card" }} — PQ Platform{% endblock %}
+{% block title %}{{ c.name|default:"Card" }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumbs">
-  <a href="{% url 'appauth_web:users' %}">App users</a><span class="sep">/</span><a href="{% url 'appauth_web:cards' %}">Backed-up cards</a><span class="sep">/</span><span class="current">{{ c.name|default:"Card" }}</span>
+  <a href="{% url 'appauth_web:users' %}">App users</a><span class="sep">/</span><a href="{% url 'appauth_web:cards' %}?view=cards">Backed-up cards</a><span class="sep">/</span><span class="current">{{ c.name|default:"Card" }}</span>
 </nav>
-<div class="pg-head"><div style="min-width:0"><h1>{{ c.name|default:"(no name)" }}</h1>
-  <p class="sub">{{ c.designation }}{% if c.designation and c.company %} · {% endif %}{{ c.company }}</p></div></div>
+<div class="pg-head">
+  <div class="cd-who" style="min-width:0">
+    <span class="kt-av lg">{{ c.initials }}</span>
+    <span style="min-width:0"><h1 style="margin:0">{{ c.name|default:"(no name)" }}{% if c.is_favorite %} <span class="cd-star" title="Favourite" aria-label="Favourite">★</span>{% endif %}</h1>
+    <p class="sub">{{ c.designation }}{% if c.designation and c.company %} · {% endif %}{{ c.company }}</p></span>
+  </div>
+</div>
 
-<div class="card" style="max-width:720px">
-  <div class="au-row"><span>Owner</span><b>{% if c.user %}<a href="{% url 'appauth_web:detail' c.user.pk %}">{{ c.user.email }}</a>{% else %}—{% endif %}</b></div>
-  <div class="au-row"><span>Phones</span><b>{{ c.phones|join:", "|default:"—" }}</b></div>
-  <div class="au-row"><span>Emails</span><b>{{ c.emails|join:", "|default:"—" }}</b></div>
-  <div class="au-row"><span>Website</span><b>{{ c.website|default:"—" }}</b></div>
-  <div class="au-row"><span>Address</span><b>{{ c.address|default:"—" }}</b></div>
-  <div class="au-row"><span>LinkedIn</span><b>{{ c.linkedin_url|default:"—" }}</b></div>
-  <div class="au-row"><span>Twitter</span><b>{{ c.twitter_handle|default:"—" }}</b></div>
-  <div class="au-row"><span>Exhibition</span><b>{{ c.exhibition_name|default:"—" }}</b></div>
-  <div class="au-row"><span>Tags</span><b>{{ c.tags|join:", "|default:"—" }}</b></div>
-  <div class="au-row"><span>Favourite</span><b>{{ c.is_favorite|yesno:"Yes,No" }}</b></div>
-  <div class="au-row"><span>Created in app</span><b>{{ c.created_at_client|date:"d M Y, g:i a" }}</b></div>
-  <div class="au-row"><span>Last changed in app</span><b>{{ c.updated_at_client|date:"d M Y, g:i a" }}</b></div>
-  <div class="text-sm font-medium" style="margin:var(--space-3) 0 var(--space-1)">Notes</div>
-  <p class="text-sm" style="white-space:pre-wrap">{{ c.notes|default:"—" }}</p>
+<div class="au-detail">
+  <div style="display:grid;gap:var(--space-4)">
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Contact</div>
+      {% for p in c.phones %}<div class="au-row"><span>Phone</span><button type="button" class="cd-copy" data-copy="{{ p }}" onclick="navigator.clipboard.writeText(this.dataset.copy);window.pqToast&&window.pqToast('Copied','success')" title="Tap to copy">{{ p }} {% icon 'copy' 'ic' %}</button></div>{% endfor %}
+      {% for e in c.emails %}<div class="au-row"><span>Email</span><button type="button" class="cd-copy" data-copy="{{ e }}" onclick="navigator.clipboard.writeText(this.dataset.copy);window.pqToast&&window.pqToast('Copied','success')" title="Tap to copy">{{ e }} {% icon 'copy' 'ic' %}</button></div>{% endfor %}
+      {% if not c.phones and not c.emails %}<p class="text-sm text-muted">No phone or email.</p>{% endif %}
+    </div>
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Company</div>
+      <div class="au-row"><span>Company</span><b>{{ c.company|default:"—" }}</b></div>
+      <div class="au-row"><span>Job title</span><b>{{ c.designation|default:"—" }}</b></div>
+      <div class="au-row"><span>Website</span><b>{{ c.website|default:"—" }}</b></div>
+      <div class="au-row"><span>Address</span><b>{{ c.address|default:"—" }}</b></div>
+    </div>
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Social</div>
+      <div class="au-row"><span>LinkedIn</span><b>{{ c.linkedin_url|default:"—" }}</b></div>
+      <div class="au-row"><span>Twitter</span><b>{{ c.twitter_handle|default:"—" }}</b></div>
+    </div>
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Notes</div>
+      <p class="text-sm" style="white-space:pre-wrap;margin:0">{{ c.notes|default:"No notes." }}</p>
+    </div>
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Tags</div>
+      {% for t in c.tags %}<span class="bdg bdg-outline">{{ t }}</span> {% empty %}<p class="text-sm text-muted" style="margin:0">No tags.</p>{% endfor %}
+    </div>
+  </div>
+  <div style="display:grid;gap:var(--space-4);align-content:start">
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Owner</div>
+      {% if c.user %}
+      <a href="{% url 'appauth_web:detail' c.user.pk %}" class="cd-who"><span class="kt-av">{{ c.user.email.0|upper }}</span><span style="min-width:0"><b>{{ c.user.name|default:c.user.email }}</b>{% if c.user.name %}<span class="cd-sub">{{ c.user.email }}</span>{% endif %}</span></a>
+      <div class="au-row" style="margin-top:var(--space-3)"><span>Their other cards</span><b><a href="{% url 'appauth_web:cards' %}?user={{ c.user.pk }}">{{ others }}</a></b></div>
+      {% else %}<p class="text-sm text-muted" style="margin:0">Deleted user.</p>{% endif %}
+    </div>
+    <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Dates</div>
+      <div class="au-row"><span>Backed up on</span><b>{{ c.created_at|date:"d M Y, g:i a" }}</b></div>
+      <div class="au-row"><span>Last changed</span><b>{{ c.updated_at|date:"d M Y, g:i a" }}</b></div>
+      <div class="au-row"><span>Created in the app</span><b>{{ c.created_at_client|date:"d M Y, g:i a" }}</b></div>
+      <div class="au-row"><span>Edited in the app</span><b>{{ c.updated_at_client|date:"d M Y, g:i a" }}</b></div>
+      <div class="au-row"><span>Exhibition</span><b>{{ c.exhibition_name|default:"—" }}</b></div>
+    </div>
+  </div>
 </div>
 {% endblock %}

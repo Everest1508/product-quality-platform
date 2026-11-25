@@ -10,6 +10,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.87.1] "Upupa" — 2026-11-25 · backed-up cards, person by person, with filters and export
+
+> In short: The Backed-up cards page now opens with one row per person, and the card list is easier to read, filter, sort and download.
+
+### New
+
+- **Backed-up cards are listed by person.** Each row shows the person, whether backup is on, how many cards they have and when they last backed up. Click a row to see their cards.
+- **Filter, sort and download the card list.** Narrow it by owner, exhibition or date, sort by last changed, name, company or owner, and export what you see to a spreadsheet. Active filters show as chips you can remove.
+- **Three quick numbers above the list.** Total backed-up cards, people with backup on, and cards added in the last 7 days.
+
+### Better
+
+- **Name and job title no longer run together.** The name is on one line with the title underneath, and each row shows the company, first phone and email, owner and exhibition.
+- **A fuller card page.** Details are grouped, phone and email copy with one tap, and a side panel shows the owner, dates and their other cards.
+- **Works on a phone.** The list turns into stacked cards on small screens, and your rows-per-page choice is remembered.
+- **Exports are logged too.** Downloading the card list is recorded in the access log like any other look at the cards.
+
 ## [1.87.0] "Tinamou" — 2026-11-25 · CardSnap people can back up their cards, and you can see them
 
 > In short: CardSnap users can now choose to back up the text of their cards to the cloud and restore them on a new phone, with consent they can withdraw, erasure after 30 days, and a logged read-only view for the team.
