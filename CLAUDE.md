@@ -13,6 +13,7 @@ venv/bin/python manage.py runserver 8010          # dev server
 venv/bin/python manage.py seed_data               # wipe + reseed the "Acme Corp" demo workspace
                                                   #   logins: owner|admin|dev1|dev2|support|viewer / testpass123
 venv/bin/python manage.py evaluate_rules [--dry-run]   # run the auto-ticket rule engine (see Automation below)
+venv/bin/python manage.py purge_cardsnap_cards          # erase CardSnap backups past retention; SCHEDULE DAILY
 venv/bin/python manage.py audit_decimals [--model payroll.Payslip] [--fix --backup f.json]
                                                   # find DecimalField cells SQLite can't convert (one bad row 500s every page reading that table)
 ./bootstrap.sh                                    # migrate + superuser + demo data in one go

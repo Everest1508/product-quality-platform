@@ -50,8 +50,10 @@ logic does not loop). Limit: 10 attempts per 10 minutes.
 
 ### Delete account: `DELETE me`
 Body: the re-auth field above, e.g. `{"current_password": "..."}` or `{"id_token": "..."}`.
-Returns `200 {"ok": true}`. The account is closed (soft delete) and every session ends at once. The same email can never
-sign in again with that account. Clear all local data and tokens in the app. Apple users: Apple also asks apps to revoke
+Accounts with no password (Google or Apple only) can send `{"confirm": "DELETE"}` instead of re-auth.
+Returns `200 {"ok": true}`. The account is erased for good, every session ends at once, and the same email can sign up
+again. Any cloud-backed-up cards are hidden at once and permanently erased within 30 days. Only a small record (name,
+email, sign-in method, sign-up and last-login dates, login count) is kept for analytics. Clear all local data and tokens in the app. Apple users: Apple also asks apps to revoke
 the Sign-in-with-Apple token on deletion; this server does not do that yet.
 
 ### Change / set password: `POST change-password`
@@ -82,6 +84,37 @@ Body: `{"identity_token": "<from Apple>", "name": "<optional>"}`. Returns the no
   token. Send it as `name` on that first call. It is display-only, cut to 255 characters, and ignored once the account exists.
 - Flutter: `sign_in_with_apple`, send `credential.identityToken` and, on first sign-in, `givenName + familyName`.
 
+## Cloud backup (optional, text only, never photos)
+
+All need `Authorization: Bearer <access_token>`. Success is always `200` JSON; errors are `{code, message}`. Limit: 120
+requests per minute per user (`429 rate_limited`). The app must show its consent screen first and send the current
+`consent_version` (currently **1**).
+
+| Method + path | Body / query | Success | Errors |
+|---|---|---|---|
+| `POST cloud/consent` | `{enabled: bool, consent_version: int}` | `{"enabled": bool}`. Stores consent (time + version) and writes an audit event. `enabled:false` withdraws consent; it does not erase anything | 400 `invalid_request`, `consent_outdated` |
+| `PUT cloud/cards` | `{cards: [...]}` up to 200 per call, body up to 2 MB | `{"saved": n}` (rows created or changed; stale copies are not counted) | 403 `backup_off`, `consent_required`; 400 `invalid_card`, `invalid_request`; 409 `limit_reached` (5000 cards per user); 413 `too_large` |
+| `GET cloud/cards` | `?limit=` (1 to 1000, default 500), `?after=<cursor>`, `?since=<server_time>` | `{cards: [...], next: cursor or null, server_time}` | 400 `invalid_request` |
+| `DELETE cloud/cards/<client_id>` | | `{"ok": true}`: that card is erased now. Safe to repeat | |
+| `DELETE cloud/data` | | `{"purge_on": "YYYY-MM-DD"}`: every card is hidden now and erased for good on that date; backup is turned off | |
+
+**Card fields** (same names in and out; `client_id` is the app's own card UUID): `client_id`, `name` (255), `company` (255),
+`designation` (255), `phones` (list), `emails` (list), `website` (500), `address` (1000), `notes` (5000), `linkedin_url`
+(500), `twitter_handle` (100), `tags` (list), `is_favorite` (bool), `exhibition_name` (255), `created_at_client`,
+`updated_at_client` (ISO date-times **with a time zone**; `updated_at_client` is required). Lists hold at most 20 items of
+at most 100 characters. Any other field (photos included) is ignored and never stored.
+
+**Behaviour**
+- **Last write wins.** Cards are matched on `client_id`. An upload with an `updated_at_client` that is not newer than the stored one is
+  ignored. A time more than 5 minutes in the future is treated as 5 minutes ahead.
+- **All or nothing.** One invalid card (`invalid_card`, message names its position) rejects the whole call; fix it and resend.
+- **Uploading a card again** that was hidden by `DELETE cloud/data` brings it back.
+- **Sync cheaply.** First restore: page with `next` until it is `null`. Afterwards keep the last `server_time` and send it as
+  `since` to get only what changed. Upload only cards edited since the last sync, in batches of up to 200.
+- **A card deleted on one phone can return** if another phone edits it afterwards; the server keeps no delete marker.
+- On 403 `backup_off` stop uploading and show the backup switch as off. On 403 `consent_required` show the consent screen
+  again, then call `cloud/consent`.
+
 ## Google Sign-In
 Flutter (`google_sign_in`): create the sign-in with `serverClientId: <GOOGLE_WEB_CLIENT_ID>`, read
 `(await account.authentication).idToken`, and POST it as `id_token`. The server verifies signature (Google JWKS), `iss`,
@@ -90,4 +123,11 @@ token, never from the client. A Google email that matches an existing account li
 
 ## Admin
 Staff only (Django `is_staff`): `/app-users/` list, stats, signups chart, filters, CSV export; `/app-users/<id>/` detail with
-Revoke (with reason), Restore, Force logout, Delete (soft). Every action writes an `app_auth_events` row.
+Revoke (with reason), Restore, Force logout, Delete (soft), Delete permanently. Every action writes an `app_auth_events` row.
+`/app-users/cards/` is a read-only list of backed-up cards (search name, company, email, phone; filter by user; detail at
+`/app-users/cards/<id>/`). Cards waiting for erasure never show. Every visit writes an `app_card_access_log` row (who, whose
+cards, when). Each app user's page shows backup on/off and "Backed-up cards (N)".
+
+**Scheduled job:** run `manage.py purge_cardsnap_cards` daily (cron or systemd timer). It erases cards whose erasure was
+requested more than `CARDSNAP_RETENTION_DAYS` (default 30) ago, and access-log rows older than
+`CARDSNAP_AUDIT_RETENTION_DAYS` (default 365).

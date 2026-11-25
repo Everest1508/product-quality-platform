@@ -44,6 +44,11 @@
       <div class="au-row"><span>Last login</span><b>{% if u.last_login_at %}{{ u.last_login_at|date:"d M Y, g:i a" }}{% else %}Never{% endif %}</b></div>
     </div>
     <div class="card">
+      <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Cloud backup</div>
+      <div class="au-row"><span>Backup</span><b>{% if u.cloud_backup_enabled %}On since {{ u.cloud_consent_at|date:"d M Y, g:i a" }}{% elif u.cloud_consent_off_at %}Off since {{ u.cloud_consent_off_at|date:"d M Y, g:i a" }}{% else %}Never turned on{% endif %}</b></div>
+      <div class="au-row"><span>Backed-up cards</span><b>{% if card_count %}<a href="{% url 'appauth_web:cards' %}?user={{ u.pk }}">Backed-up cards ({{ card_count }})</a>{% else %}Backed-up cards (0){% endif %}</b></div>
+    </div>
+    <div class="card">
       <div class="text-sm font-medium" style="margin-bottom:var(--space-2)">Active sessions · {{ sessions|length }}</div>
       {% for s in sessions %}
       <div class="au-row"><span>{{ s.device_info|default:"Unknown device"|truncatechars:48 }}</span><b>{{ s.created_at|date:"d M, g:i a" }}</b></div>

@@ -1236,3 +1236,10 @@ decided what and strike the item** rather than deleting it.
 - `register` never sets a password on an existing (e.g. Google) account: it answers 409. Linking a password goes through reset-password. Google linking drops a password set by someone who never verified the email.
 - Scanned cards are not stored in this CRM or in the Marketing CRM, so there is no contacts count and no Marketing token validation here.
 - Outgoing email is Mailflare (CRM -> Mailflare API -> Resend), no SMTP: `apps/appauth/mailflare_backend.py`. An admin enters the key at `/settings/email/` (Fernet-encrypted with SHARED_SERVER_ENCRYPTION_KEY, never shown again, admin-only); `MAILFLARE_*` env vars are the fallback. The From address must equal the mailbox address or the send is refused. Backend lives in appauth, not a `common/` package, because the repo has none.
+
+## 2026-11-25 (CardSnap cloud backup, 1.87.0 "Tinamou")
+- `apps/appauth`: `AppCard` (text only, never photos), `AppCardAccessLog`, consent fields on `AppUser`. API under `/api/app-auth/cloud/` (consent, cards PUT/GET, cards/<client_id> DELETE, data DELETE); logic in `cloud.py`.
+- Low load by design: an upload of up to 200 cards is 6 queries (select, count, bulk insert, bulk update); restore is keyset-paged (`after`, `limit`, `since`) and reads raw rows; per-user cache throttle.
+- A `pre_delete` signal on `AppUser` hides the person's cards (`deletion_requested_at`) however the account is erased. Read cards only through `AppCard.objects.live()`.
+- **`manage.py purge_cardsnap_cards` must be scheduled daily** (cron/systemd). Until it runs, erasures are hidden but not gone. It also trims the staff access log (`CARDSNAP_AUDIT_RETENTION_DAYS`, 365).
+- Deliberately not done: a tombstone for single-card deletes, so an edit on a second phone after a delete on the first brings the card back.

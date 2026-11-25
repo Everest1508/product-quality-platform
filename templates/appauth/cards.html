@@ -1,0 +1,42 @@
+{% extends "core/base.html" %}
+{% load icon_tags %}
+
+{% block title %}Backed-up cards — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'appauth_web:users' %}">App users</a><span class="sep">/</span><span class="current">Backed-up cards</span>
+</nav>
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>Backed-up cards{% if owner %} · {{ owner.email }}{% endif %}</h1>
+    <p class="sub">Text details people chose to back up from CardSnap. Read-only, and every visit is logged.</p>
+  </div>
+</div>
+
+<form method="get" class="toolbar">
+  {% if owner %}<input type="hidden" name="user" value="{{ owner.pk }}"><a class="btn" href="{% url 'appauth_web:cards' %}">All users</a>{% endif %}
+  <span class="input-icon" style="margin-left:auto">{% icon 'search' 'ic' %}<input type="search" name="q" value="{{ f.q|default:'' }}" class="form-input" placeholder="Name, company, email or phone" aria-label="Search"></span>
+  <button class="btn" type="submit">Search</button>
+</form>
+
+<div class="card-flush"><div class="table-scroll">
+<table class="tbl">
+  <thead><tr><th>Card</th><th>Company</th><th>Owner</th><th>Last changed</th></tr></thead>
+  <tbody>
+  {% for c in page %}
+    <tr>
+      <td class="task"><a href="{% url 'appauth_web:card' c.pk %}"><b>{{ c.name|default:"(no name)" }}</b>{% if c.designation %}<small>{{ c.designation }}</small>{% endif %}</a></td>
+      <td>{{ c.company|default:"—" }}</td>
+      <td>{% if c.user %}<a href="{% url 'appauth_web:cards' %}?user={{ c.user.pk }}">{{ c.user.email }}</a>{% else %}—{% endif %}</td>
+      <td title="{{ c.updated_at|date:'d M Y, g:i a' }}">{{ c.updated_at|timesince }} ago</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4"><div class="empty-state"><strong>No backed-up cards</strong>Nothing matches, or nobody has turned backup on yet.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+
+{% include "core/_pagination.html" with page=page %}
+{% endblock %}

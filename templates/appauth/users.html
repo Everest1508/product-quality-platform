@@ -10,6 +10,7 @@
     <p class="sub">People who signed up in the CardSnap mobile app. They are separate from your team.</p>
   </div>
   <div class="pg-actions">
+    <a href="{% url 'appauth_web:cards' %}" class="btn">Backed-up cards</a>
     <a href="{% url 'appauth_web:export' %}?{{ qs }}" class="btn">{% icon 'download' 'ic' %}Export CSV</a>
   </div>
 </div>

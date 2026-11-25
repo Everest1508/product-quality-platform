@@ -10,6 +10,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.87.0] "Tinamou" — 2026-11-25 · CardSnap people can back up their cards, and you can see them
+
+> In short: CardSnap users can now choose to back up the text of their cards to the cloud and restore them on a new phone, with consent they can withdraw, erasure after 30 days, and a logged read-only view for the team.
+
+### New
+
+- **Cloud backup of cards, only if the person turns it on.** The app saves the text details of each card, never the photos, and brings them back on a new phone.
+- **Delete one card, or all cloud data, from the app.** A single card goes at once. Deleting all cloud data hides every card straight away and erases them for good after 30 days.
+- **A Backed-up cards page for the team.** Under App users, you can search by name, company, email or phone, filter by person, and open a card. It is read-only.
+- **Backup status on each app user.** Their page shows whether backup is on, since when, and how many cards they have.
+- **A log of who looked.** Every time someone on the team opens backed-up cards, the visit is recorded with who, whose cards and when.
+
+### Better
+
+- **Deleting an account hides its cards at once.** They stop showing anywhere and are erased with the 30-day clean-up.
+- **The privacy and delete-account pages explain backup.** They say what is uploaded, who can see it, how to withdraw, what is kept after deletion and how to ask for that to go too.
+
+### Security
+
+- **Backups follow the latest agreement.** Uploads are refused until the person has accepted the current backup terms.
+
 ## [1.86.1] "Skua" — 2026-11-24 · deleted CardSnap accounts leave a record for the numbers
 
 > In short: When a CardSnap user deletes their account it is still erased, but a small record of when they joined and last signed in is kept so sign-ups and deletions can be counted.

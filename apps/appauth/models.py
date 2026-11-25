@@ -1,6 +1,9 @@
 import uuid
 
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+from django.utils import timezone
 
 
 class AppUser(models.Model):
@@ -27,6 +30,11 @@ class AppUser(models.Model):
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_reason = models.CharField(max_length=255, blank=True, default="")
     deleted_at = models.DateTimeField(null=True, blank=True)
+    # Optional cloud backup of cards (text only). Consent is explicit, versioned and withdrawable.
+    cloud_backup_enabled = models.BooleanField(default=False)
+    cloud_consent_at = models.DateTimeField(null=True, blank=True)
+    cloud_consent_version = models.PositiveIntegerField(null=True, blank=True)
+    cloud_consent_off_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "app_users"
@@ -105,3 +113,64 @@ class MailLog(models.Model):
     class Meta:
         db_table = "app_mail_log"
         ordering = ["-created_at", "-id"]
+
+
+class AppCardQuerySet(models.QuerySet):
+    def live(self):
+        """The only way admin pages and the API read cards: a card waiting to be erased never shows."""
+        return self.filter(deletion_requested_at__isnull=True)
+
+
+class AppCard(models.Model):
+    """One backed-up business card: text only, never a photo. `client_id` is the app's own id for the card."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(AppUser, null=True, on_delete=models.SET_NULL, related_name="cards")
+    client_id = models.UUIDField()
+    name = models.CharField(max_length=255, blank=True, default="")
+    company = models.CharField(max_length=255, blank=True, default="")
+    designation = models.CharField(max_length=255, blank=True, default="")
+    phones = models.JSONField(default=list)
+    emails = models.JSONField(default=list)
+    website = models.CharField(max_length=500, blank=True, default="")
+    address = models.CharField(max_length=1000, blank=True, default="")
+    notes = models.CharField(max_length=5000, blank=True, default="")
+    linkedin_url = models.CharField(max_length=500, blank=True, default="")
+    twitter_handle = models.CharField(max_length=100, blank=True, default="")
+    tags = models.JSONField(default=list)
+    is_favorite = models.BooleanField(default=False)
+    exhibition_name = models.CharField(max_length=255, blank=True, default="")
+    created_at_client = models.DateTimeField()
+    updated_at_client = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+    # Set when the person asked for erasure (or deleted their account): hidden at once, purged later.
+    deletion_requested_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects = AppCardQuerySet.as_manager()
+
+    class Meta:
+        db_table = "app_cards"
+        constraints = [models.UniqueConstraint(fields=["user", "client_id"], name="app_card_user_client_uniq")]
+
+
+class AppCardAccessLog(models.Model):
+    """Who on the team looked at backed-up cards, of whom, and when. Emails are copied so the row outlives both."""
+
+    staff = models.ForeignKey("accounts.User", null=True, on_delete=models.SET_NULL, related_name="+")
+    staff_email = models.CharField(max_length=254, blank=True, default="")
+    app_user = models.ForeignKey(AppUser, null=True, on_delete=models.SET_NULL, related_name="+")
+    app_user_email = models.CharField(max_length=254, blank=True, default="")
+    action = models.CharField(max_length=10)  # list | search | detail
+    detail = models.CharField(max_length=200, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "app_card_access_log"
+        ordering = ["-created_at", "-id"]
+
+
+@receiver(pre_delete, sender=AppUser)
+def _hide_cards_of_erased_user(sender, instance, **kwargs):
+    """However an account is erased (self-delete, admin purge), its cards are hidden before the FK goes NULL."""
+    AppCard.objects.live().filter(user=instance).update(deletion_requested_at=timezone.now())

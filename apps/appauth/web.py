@@ -4,8 +4,10 @@ from email.utils import parseaddr
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db.models import Count, Q
+from django.db.models import Count, Q, TextField
+from django.db.models.functions import Cast
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,7 +15,7 @@ from django.utils import timezone
 from django.views import View
 
 from apps.appauth import mailflare_backend, service
-from apps.appauth.models import AppAuthEvent, AppRefreshToken, AppUser, MailLog, MailflareConfig
+from apps.appauth.models import AppAuthEvent, AppCard, AppCardAccessLog, AppRefreshToken, AppUser, MailLog, MailflareConfig
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.core.pagination import paginate
 from apps.dashboards.service import log_activity
@@ -112,6 +114,7 @@ class UserDetailView(CompanyAdminRequiredMixin, View):
         sessions = user.refresh_tokens.filter(revoked_at__isnull=True, expires_at__gt=timezone.now()).order_by("-created_at")
         return render(request, "appauth/user_detail.html", {
             "u": user, "events": AppAuthEvent.objects.filter(user=user)[:25], "sessions": sessions,
+            "card_count": AppCard.objects.live().filter(user=user).count(),
         })
 
 
@@ -144,6 +147,7 @@ class UserActionView(CompanyAdminRequiredMixin, View):
         elif action == "delete":
             user.status, user.deleted_at = "deleted", now
             user.save(update_fields=["status", "deleted_at"])
+            AppCard.objects.live().filter(user=user).update(deletion_requested_at=now)  # hidden now, purged later
             service.force_logout(user)
             msg = f"{user.email} deleted."
         else:
@@ -240,3 +244,40 @@ class EmailSettingsView(CompanyAdminRequiredMixin, View):
         else:
             messages.success(request, f"Test email sent to {to}.")
         return redirect("email_settings")
+
+
+def _audit(request, action, app_user=None, detail=""):
+    AppCardAccessLog.objects.create(
+        staff=request.user, staff_email=request.user.email, app_user=app_user,
+        app_user_email=app_user.email if app_user else "", action=action, detail=detail[:200])
+
+
+class CardsView(CompanyAdminRequiredMixin, View):
+    """Read-only list of backed-up cards. Every visit is written to the access log."""
+
+    def get(self, request):
+        g = request.GET
+        qs = AppCard.objects.live().select_related("user").only(
+            "id", "name", "company", "designation", "updated_at", "user__email").order_by("-updated_at", "id")
+        owner = None
+        if g.get("user"):
+            try:
+                owner = AppUser.objects.filter(pk=g["user"]).first()
+            except ValidationError:  # not a UUID
+                owner = None
+            qs = qs.filter(user=owner) if owner else qs.none()
+        q = (g.get("q") or "").strip()[:100]
+        if q:
+            qs = qs.annotate(_p=Cast("phones", TextField()), _e=Cast("emails", TextField())).filter(
+                Q(name__icontains=q) | Q(company__icontains=q) | Q(_e__icontains=q) | Q(_p__icontains=q))
+        _audit(request, "search" if q else "list", owner, f"q={q}" if q else "")
+        keep = g.copy()
+        keep.pop("page", None)
+        return render(request, "appauth/cards.html", {"page": paginate(request, qs), "f": g, "owner": owner, "qs": keep.urlencode()})
+
+
+class CardDetailView(CompanyAdminRequiredMixin, View):
+    def get(self, request, pk):
+        card = get_object_or_404(AppCard.objects.live().select_related("user"), pk=pk)
+        _audit(request, "detail", card.user, f"card={card.pk}")
+        return render(request, "appauth/card_detail.html", {"c": card})

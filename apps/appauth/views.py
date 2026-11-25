@@ -1,10 +1,16 @@
+from django.conf import settings
 from django.db import IntegrityError
 from django.http import HttpResponse
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.appauth import apple, google, service
+import uuid
+
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+
+from apps.appauth import apple, cloud, google, service
 from apps.appauth.models import AppUser
 from apps.appauth.service import AuthError, normalize_email
 
@@ -219,3 +225,69 @@ class MeView(Base):
         service.log_event(request.user, "delete_account", request)
         service.delete_account(request.user)
         return Response({"ok": True})
+
+
+class CloudBase(Base):
+    authentication_classes = [AppBearerAuthentication]
+
+    def initial(self, request, *a, **kw):
+        super().initial(request, *a, **kw)
+        # Cheap cache counter, per person: a stuck app in a retry loop cannot hammer the database.
+        service.throttle("cloud", str(request.user.id), 120, window=60)
+
+
+class CloudConsentView(CloudBase):
+    def post(self, request):
+        enabled, version = request.data.get("enabled"), request.data.get("consent_version")
+        if not isinstance(enabled, bool):
+            raise AuthError("invalid_request", "enabled must be true or false.", 400)
+        user, now = request.user, timezone.now()
+        if enabled:
+            if not isinstance(version, int) or isinstance(version, bool) or version < settings.CARDSNAP_CONSENT_VERSION:
+                raise AuthError("consent_outdated", "Please review and accept the updated backup terms.", 400)
+            user.cloud_backup_enabled, user.cloud_consent_at, user.cloud_consent_version = True, now, version
+            fields = ["cloud_backup_enabled", "cloud_consent_at", "cloud_consent_version"]
+        else:
+            user.cloud_backup_enabled, user.cloud_consent_off_at = False, now
+            fields = ["cloud_backup_enabled", "cloud_consent_off_at"]
+        user.save(update_fields=fields)
+        service.log_event(user, "cloud_consent_on" if enabled else "cloud_consent_off", request)
+        return Response({"enabled": enabled})
+
+
+class CloudCardsView(CloudBase):
+    def put(self, request):
+        if int(request.META.get("CONTENT_LENGTH") or 0) > cloud.MAX_BODY:
+            raise AuthError("too_large", "That upload is too large. Send fewer cards at a time.", 413)
+        cloud.require_backup(request.user)
+        return Response({"saved": cloud.upsert(request.user, request.data.get("cards"))})
+
+    def get(self, request):
+        q = request.query_params
+        try:
+            limit = min(max(int(q.get("limit", 500)), 1), 1000)
+            after = uuid.UUID(q["after"]) if q.get("after") else None
+        except ValueError:
+            raise AuthError("invalid_request", "Bad limit or cursor.", 400)
+        since = parse_datetime(q["since"]) if q.get("since") else None
+        if q.get("since") and (since is None or timezone.is_naive(since)):
+            raise AuthError("invalid_request", "since must be an ISO date-time with a time zone.", 400)
+        server_time = timezone.now().isoformat()  # taken first, so the next `since` never skips a write
+        cards, cursor = cloud.page(request.user, after, since, limit)
+        return Response({"cards": cards, "next": cursor, "server_time": server_time})
+
+
+class CloudCardView(CloudBase):
+    def delete(self, request, client_id):
+        request.user.cards.filter(client_id=client_id).delete()  # idempotent: a missing card is fine
+        return Response({"ok": True})
+
+
+class CloudDataView(CloudBase):
+    def delete(self, request):
+        user = request.user
+        purge_on = cloud.request_erasure(user)
+        user.cloud_backup_enabled, user.cloud_consent_off_at = False, timezone.now()
+        user.save(update_fields=["cloud_backup_enabled", "cloud_consent_off_at"])
+        service.log_event(user, "cloud_delete_data", request)
+        return Response({"purge_on": purge_on})

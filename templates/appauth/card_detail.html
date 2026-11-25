@@ -1,0 +1,28 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ c.name|default:"Card" }} — PQ Platform{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'appauth_web:users' %}">App users</a><span class="sep">/</span><a href="{% url 'appauth_web:cards' %}">Backed-up cards</a><span class="sep">/</span><span class="current">{{ c.name|default:"Card" }}</span>
+</nav>
+<div class="pg-head"><div style="min-width:0"><h1>{{ c.name|default:"(no name)" }}</h1>
+  <p class="sub">{{ c.designation }}{% if c.designation and c.company %} · {% endif %}{{ c.company }}</p></div></div>
+
+<div class="card" style="max-width:720px">
+  <div class="au-row"><span>Owner</span><b>{% if c.user %}<a href="{% url 'appauth_web:detail' c.user.pk %}">{{ c.user.email }}</a>{% else %}—{% endif %}</b></div>
+  <div class="au-row"><span>Phones</span><b>{{ c.phones|join:", "|default:"—" }}</b></div>
+  <div class="au-row"><span>Emails</span><b>{{ c.emails|join:", "|default:"—" }}</b></div>
+  <div class="au-row"><span>Website</span><b>{{ c.website|default:"—" }}</b></div>
+  <div class="au-row"><span>Address</span><b>{{ c.address|default:"—" }}</b></div>
+  <div class="au-row"><span>LinkedIn</span><b>{{ c.linkedin_url|default:"—" }}</b></div>
+  <div class="au-row"><span>Twitter</span><b>{{ c.twitter_handle|default:"—" }}</b></div>
+  <div class="au-row"><span>Exhibition</span><b>{{ c.exhibition_name|default:"—" }}</b></div>
+  <div class="au-row"><span>Tags</span><b>{{ c.tags|join:", "|default:"—" }}</b></div>
+  <div class="au-row"><span>Favourite</span><b>{{ c.is_favorite|yesno:"Yes,No" }}</b></div>
+  <div class="au-row"><span>Created in app</span><b>{{ c.created_at_client|date:"d M Y, g:i a" }}</b></div>
+  <div class="au-row"><span>Last changed in app</span><b>{{ c.updated_at_client|date:"d M Y, g:i a" }}</b></div>
+  <div class="text-sm font-medium" style="margin:var(--space-3) 0 var(--space-1)">Notes</div>
+  <p class="text-sm" style="white-space:pre-wrap">{{ c.notes|default:"—" }}</p>
+</div>
+{% endblock %}
