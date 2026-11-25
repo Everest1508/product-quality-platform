@@ -982,3 +982,4 @@
   .cd-tbl td[data-label]::before{content:attr(data-label);display:block;color:var(--muted);font-size:var(--fs-xs);}
   .cd-text{max-width:none;}
 }
+.cd-check{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-sm);cursor:pointer;}

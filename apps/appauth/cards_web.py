@@ -17,7 +17,7 @@ from apps.appauth.web import _is_date, _safe_cell
 from apps.core.mixins import CompanyAdminRequiredMixin
 from apps.core.pagination import DEFAULT_PAGE_SIZE, PAGE_SIZES
 
-FILTERS = ("user", "exhibition", "from", "to")
+FILTERS = ("user", "exhibition", "from", "to", "multi")
 PER_PAGE_KEY = "appauth_cards_per_page"
 MAX_CHOICES = 300  # owner and exhibition lists in the filter bar
 
@@ -66,6 +66,8 @@ def _cards(request):
     exhibition = (g.get("exhibition") or "").strip()[:255]
     if exhibition:
         qs = qs.filter(exhibition_name=exhibition)
+    if g.get("multi") == "1":
+        qs = qs.filter(scan_count__gt=1)
     if _is_date(g.get("from", "")):
         qs = qs.filter(updated_at__date__gte=g["from"])
     if _is_date(g.get("to", "")):
@@ -82,7 +84,7 @@ def _chips(request, owner, exhibition):
     """Active filters as removable chips: each carries the URL with that one filter taken off."""
     g = request.GET
     names = {"user": f"Owner: {_label(owner)}" if owner else "Owner: unknown", "exhibition": f"Exhibition: {exhibition}",
-             "from": f"Changed from {g.get('from')}", "to": f"Changed to {g.get('to')}", "q": f"Search: {g.get('q', '').strip()}"}
+             "from": f"Changed from {g.get('from')}", "to": f"Changed to {g.get('to')}", "multi": "Scanned more than once", "q": f"Search: {g.get('q', '').strip()}"}
     chips = []
     for key, text in names.items():
         valid = _is_date(g.get(key, "")) if key in ("from", "to") else True

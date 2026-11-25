@@ -386,3 +386,70 @@ class CardsPageTest(TestCase):
             self.assertNotIn("CRM", main)
             self.assertNotIn("PQ", main)
             self.assertNotIn("PQ", r.content.decode().split("<title>")[1].split("</title>")[0])
+
+
+class ScanCountTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.u, self.c = make_client("ann@example.com")
+        self.c.post(CLOUD + "consent", {"enabled": True, "consent_version": 1}, format="json")
+
+    def put(self, **kw):
+        return self.c.put(CLOUD + "cards", {"cards": [card(**kw)]}, format="json")
+
+    def test_stored_returned_and_defaults_to_one(self):
+        cid = uuid.uuid4()
+        self.put(cid=cid, scan_count=3)
+        self.assertEqual(AppCard.objects.get().scan_count, 3)
+        self.assertEqual(self.c.get(CLOUD + "cards").data["cards"][0]["scan_count"], 3)
+        AppCard.objects.all().delete()
+        self.put()  # not sent: a new card counts as scanned once
+        self.assertEqual(AppCard.objects.get().scan_count, 1)
+
+    def test_bad_values_keep_the_stored_one(self):
+        cid, t = uuid.uuid4(), timezone.now() - timedelta(hours=5)
+        self.put(cid=cid, scan_count=4, at=t)
+        for i, bad in enumerate((0, -2, 10001, "5", 2.5, True, None, [3])):
+            r = self.put(cid=cid, scan_count=bad, name=f"Edit{i}", at=t + timedelta(minutes=i + 1))
+            self.assertEqual(r.status_code, 200, bad)
+            row = AppCard.objects.get()
+            self.assertEqual((row.scan_count, row.name), (4, f"Edit{i}"), bad)  # other fields still saved
+        AppCard.objects.all().delete()
+        self.put(scan_count=0)  # invalid on a new card: the default
+        self.assertEqual(AppCard.objects.get().scan_count, 1)
+
+    def test_limits_are_accepted(self):
+        for n in (1, 10000):
+            AppCard.objects.all().delete()
+            self.put(scan_count=n)
+            self.assertEqual(AppCard.objects.get().scan_count, n)
+
+    def test_last_write_wins(self):
+        cid, t = uuid.uuid4(), timezone.now() - timedelta(hours=5)
+        self.put(cid=cid, scan_count=2, at=t)
+        self.put(cid=cid, scan_count=5, at=t + timedelta(hours=1))
+        self.put(cid=cid, scan_count=9, at=t - timedelta(hours=1))  # stale: ignored
+        self.assertEqual(AppCard.objects.get().scan_count, 5)
+
+    def test_admin_shows_count_badge_and_filter(self):
+        from apps.accounts.models import Company, Membership
+        staff = get_user_model().objects.create_user("staff", "s@example.com", "pw-staff-1")
+        Membership.objects.create(user=staff, company=Company.objects.create(name="Acme", slug="acme"), role="owner")
+        self.put(name="Once", scan_count=1)
+        self.put(name="Many", scan_count=3)
+        self.client.force_login(staff)
+        url = reverse("appauth_web:cards")
+        r = self.client.get(url, {"view": "cards"})
+        self.assertContains(r, "Scanned 1 time<")
+        self.assertContains(r, "Scanned 3 times")
+        self.assertEqual(r.content.decode().count('>Merged<'), 1)
+        r = self.client.get(url, {"multi": "1"})  # the filter alone switches to the card list
+        self.assertEqual([c.name for c in r.context["page"]], ["Many"])
+        self.assertEqual([c["label"] for c in r.context["chips"]], ["Scanned more than once"])
+        csv = self.client.get(reverse("appauth_web:cards_export"), {"multi": "1"}).content.decode()
+        self.assertIn("Many", csv)
+        self.assertNotIn("Once", csv)
+        row = AppCard.objects.get(name="Many")
+        d = self.client.get(reverse("appauth_web:card", args=[row.pk]))
+        self.assertContains(d, "Scanned 3 times")
+        self.assertContains(d, "Merged")

@@ -140,6 +140,7 @@ class AppCard(models.Model):
     tags = models.JSONField(default=list)
     is_favorite = models.BooleanField(default=False)
     exhibition_name = models.CharField(max_length=255, blank=True, default="")
+    scan_count = models.PositiveIntegerField(default=1)  # times the same card was scanned and merged in the app
     created_at_client = models.DateTimeField()
     updated_at_client = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)

@@ -18,13 +18,14 @@ MAX_BATCH = 200
 MAX_CARDS = 5000
 MAX_LIST = 20
 MAX_ITEM = 100
+MAX_SCANS = 10000
 MAX_BODY = 2 * 1024 * 1024
 CLOCK_SLACK = timedelta(minutes=5)
 
 TEXT = {"name": 255, "company": 255, "designation": 255, "website": 500, "address": 1000, "notes": 5000,
         "linkedin_url": 500, "twitter_handle": 100, "exhibition_name": 255}
 LISTS = ("phones", "emails", "tags")
-FIELDS = [*TEXT, *LISTS, "is_favorite", "created_at_client", "updated_at_client"]
+FIELDS = [*TEXT, *LISTS, "is_favorite", "scan_count", "created_at_client", "updated_at_client"]
 OUT = ["client_id", *FIELDS]  # Anything else a client sends (photos included) is dropped, never stored.
 
 
@@ -58,6 +59,9 @@ def clean(raw, i, now):
             raise bad(i, f"{f} must be a list of at most {MAX_LIST} items of at most {MAX_ITEM} characters")
         out[f] = v
     out["is_favorite"] = raw.get("is_favorite") is True
+    n = raw.get("scan_count")
+    if isinstance(n, int) and not isinstance(n, bool) and 1 <= n <= MAX_SCANS:
+        out["scan_count"] = n  # anything else is left out, so a stored value stays and a new card gets 1
     out["updated_at_client"] = _when(raw.get("updated_at_client"), now, i, "updated_at_client")
     out["created_at_client"] = (_when(raw["created_at_client"], now, i, "created_at_client")
                                 if raw.get("created_at_client") else out["updated_at_client"])
@@ -97,7 +101,8 @@ def upsert(user, raw_cards):
             # A pending-deletion row that is uploaded again is wanted again, whatever its age.
             if c["updated_at_client"] > row.updated_at_client or row.deletion_requested_at:
                 for f in FIELDS:
-                    setattr(row, f, c[f])
+                    if f in c:
+                        setattr(row, f, c[f])
                 row.deletion_requested_at, row.updated_at = None, now
                 changed.append(row)
         AppCard.objects.bulk_create([AppCard(user=user, **c) for c in new])

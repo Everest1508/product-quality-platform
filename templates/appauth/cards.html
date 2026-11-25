@@ -35,6 +35,7 @@
   {% if f.sort %}<input type="hidden" name="sort" value="{{ f.sort }}">{% endif %}
   {% dropdown "user" owner_choices|default:"" owner.pk|default:"" placeholder="Any owner" label="Owner" empty_value="" searchable=True submit=True %}
   {% dropdown "exhibition" exhibition_choices f.exhibition|default:"" placeholder="Any exhibition" label="Exhibition" empty_value="" searchable=True submit=True %}
+  <label class="cd-check"><input type="checkbox" name="multi" value="1"{% if f.multi == "1" %} checked{% endif %} onchange="this.form.submit()"> Scanned more than once</label>
   <input type="date" name="from" value="{{ f.from|default:'' }}" class="form-input" aria-label="Changed from">
   <input type="date" name="to" value="{{ f.to|default:'' }}" class="form-input" aria-label="Changed to">
   {% endif %}
@@ -79,7 +80,7 @@
   <tbody>
   {% for c in page %}
     <tr class="clickable-row" onclick="if(!event.target.closest('a'))window.location='{% url 'appauth_web:card' c.pk %}'" style="cursor:pointer">
-      <td class="task"><a href="{% url 'appauth_web:card' c.pk %}" class="cd-who"><span class="kt-av">{{ c.initials }}</span><span style="min-width:0"><b>{{ c.name|default:"(no name)" }}</b>{% if c.designation %}<span class="cd-sub">{{ c.designation }}</span>{% endif %}</span></a></td>
+      <td class="task"><a href="{% url 'appauth_web:card' c.pk %}" class="cd-who"><span class="kt-av">{{ c.initials }}</span><span style="min-width:0"><b>{{ c.name|default:"(no name)" }}{% if c.scan_count > 1 %} <span class="bdg bdg-blue">Merged</span>{% endif %}</b>{% if c.designation %}<span class="cd-sub">{{ c.designation }}</span>{% endif %}<span class="cd-sub">Scanned {{ c.scan_count }} time{{ c.scan_count|pluralize }}</span></span></a></td>
       <td data-label="Company">{% if c.company %}{{ c.company }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
       <td data-label="Contact">{% if c.phones or c.emails %}<span class="cd-sub cd-text">{{ c.phones.0|default:"—" }}</span><span class="cd-sub cd-text">{{ c.emails.0|default:"—" }}</span>{% if c.more_contacts %}<span class="bdg bdg-outline">+{{ c.more_contacts }}</span>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}</td>
       <td data-label="Owner">{% if c.user %}<a href="{% url 'appauth_web:detail' c.user.pk %}" class="cd-who"><span style="min-width:0"><b>{{ c.user.name|default:c.user.email }}</b>{% if c.user.name %}<span class="cd-sub">{{ c.user.email }}</span>{% endif %}</span></a>{% else %}<span class="text-muted">Deleted user</span>{% endif %}</td>

@@ -100,9 +100,9 @@ requests per minute per user (`429 rate_limited`). The app must show its consent
 
 **Card fields** (same names in and out; `client_id` is the app's own card UUID): `client_id`, `name` (255), `company` (255),
 `designation` (255), `phones` (list), `emails` (list), `website` (500), `address` (1000), `notes` (5000), `linkedin_url`
-(500), `twitter_handle` (100), `tags` (list), `is_favorite` (bool), `exhibition_name` (255), `created_at_client`,
+(500), `twitter_handle` (100), `tags` (list), `is_favorite` (bool), `exhibition_name` (255), `scan_count` (whole number 1 to 10000: how many times the card was scanned and merged; default 1), `created_at_client`,
 `updated_at_client` (ISO date-times **with a time zone**; `updated_at_client` is required). Lists hold at most 20 items of
-at most 100 characters. Any other field (photos included) is ignored and never stored.
+at most 100 characters. `scan_count` outside 1 to 10000, or not a whole number, is ignored: the stored value stays (a new card gets 1). Any other field (photos included) is ignored and never stored.
 
 **Behaviour**
 - **Last write wins.** Cards are matched on `client_id`. An upload with an `updated_at_client` that is not newer than the stored one is

@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.88.0] "Vulture" — 2026-11-25 · see how many times a card was scanned
+
+> In short: Backed-up cards now remember how many times each card was scanned, and the team can see it and find cards scanned more than once.
+
+### New
+
+- **Scan counts are backed up.** CardSnap sends how many times a card was scanned and merged, and it comes back when the cards are restored.
+- **Scanned N times, and a Merged badge.** The cards list and each card page show the count, with a small badge on cards scanned more than once.
+- **A Scanned more than once filter.** Narrow the list to merged cards, and the filter carries into the CSV download.
+
 ## [1.87.1] "Upupa" — 2026-11-25 · backed-up cards, person by person, with filters and export
 
 > In short: The Backed-up cards page now opens with one row per person, and the card list is easier to read, filter, sort and download.

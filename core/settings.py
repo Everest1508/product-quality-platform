@@ -164,7 +164,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # tags in this repo, so `git describe` yields only a commit hash, which is not
 # something to show a user. Bump this when cutting a release, and start a new
 # "## [Unreleased]" block in CHANGELOG.md above the one you just closed.
-APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.87.1")
+APP_VERSION = os.environ.get("DJANGO_APP_VERSION", "1.88.0")
 # CardSnap cloud backup: days erased cards wait before purge_cardsnap_cards removes them; the consent text version
 # the app must have shown; days the staff-access log is kept.
 CARDSNAP_RETENTION_DAYS = int(os.environ.get("CARDSNAP_RETENTION_DAYS", "30"))
