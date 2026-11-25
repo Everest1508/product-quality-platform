@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.appauth.models import AppCard, AppCardAccessLog
+from apps.appauth.models import AppCard, AppCardAccessLog, ScanFeedback
 
 CHUNK = 1000
 
@@ -21,7 +21,8 @@ def _delete_in_chunks(qs):
 
 class Command(BaseCommand):
     help = ("Erase backed-up cards whose deletion was requested more than CARDSNAP_RETENTION_DAYS ago "
-            "(default 30), and staff-access log rows older than CARDSNAP_AUDIT_RETENTION_DAYS. "
+            "(default 30), staff-access log rows older than CARDSNAP_AUDIT_RETENTION_DAYS (default 365), and "
+            "scan-feedback rows older than SCAN_FEEDBACK_RETENTION_DAYS (default 400). "
             "SCHEDULE THIS DAILY (cron or a systemd timer): until it runs, requested erasures are only hidden.")
 
     def handle(self, *args, **opts):
@@ -30,4 +31,6 @@ class Command(BaseCommand):
             deletion_requested_at__lt=now - timedelta(days=settings.CARDSNAP_RETENTION_DAYS)))
         logs = _delete_in_chunks(AppCardAccessLog.objects.filter(
             created_at__lt=now - timedelta(days=settings.CARDSNAP_AUDIT_RETENTION_DAYS)))
-        self.stdout.write(f"Purged {cards} cards and {logs} access-log rows.")
+        scans = _delete_in_chunks(ScanFeedback.objects.filter(
+            received_at__lt=now - timedelta(days=settings.SCAN_FEEDBACK_RETENTION_DAYS)))
+        self.stdout.write(f"Purged {cards} cards, {logs} access-log rows and {scans} scan-feedback rows.")

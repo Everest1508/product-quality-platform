@@ -1243,3 +1243,8 @@ decided what and strike the item** rather than deleting it.
 - A `pre_delete` signal on `AppUser` hides the person's cards (`deletion_requested_at`) however the account is erased. Read cards only through `AppCard.objects.live()`.
 - **`manage.py purge_cardsnap_cards` must be scheduled daily** (cron/systemd). Until it runs, erasures are hidden but not gone. It also trims the staff access log (`CARDSNAP_AUDIT_RETENTION_DAYS`, 365).
 - Deliberately not done: a tombstone for single-card deletes, so an edit on a second phone after a delete on the first brings the card back.
+
+## 2026-11-25 (scan feedback, 1.89.0 "Wryneck")
+- `POST /api/app-auth/scan-feedback` (`apps/appauth/scanfeedback.py`): strict allow-lists, 4 KB cap, 120/min per user. The row has **no user, no IP, no card text**; one status + confidence column per field so the admin page is one aggregate query. Retention `SCAN_FEEDBACK_RETENTION_DAYS` (400) in `purge_cardsnap_cards`.
+- Admin `/app-users/scan-quality/` (`quality_web.py`): overall fix rate = all fixes / all field results; compare shows version B minus A (green = lower).
+- The privacy wording ("Improving scanning", "Settings > Help improve scanning") was written from the brief; check it against the app's own privacy screen before release.

@@ -115,6 +115,29 @@ at most 100 characters. `scan_count` outside 1 to 10000, or not a whole number, 
 - On 403 `backup_off` stop uploading and show the backup switch as off. On 403 `consent_required` show the consent screen
   again, then call `cloud/consent`.
 
+## Scan feedback (which fields people fix)
+
+`POST scan-feedback`: needs `Authorization: Bearer <access_token>`. Send it after the person saves a scanned card. Limit: 120
+per minute per user (`429 rate_limited`). The report is **not linked to the user** (only the rate limit sees who sent it),
+and it never carries card text or photos. Success: `200 {"ok": true}`.
+
+```json
+{"app_version": "1.0.38", "scan_mode": "front", "parser": "local",
+ "fields": {"name": "ok", "company": "edited", "phones": "fixed_format"},
+ "confidence": {"company": 0.41}}
+```
+
+| Field | Rules |
+|---|---|
+| `app_version` | required; letters, digits and `. _ + -`, at most 20 characters, else `400 invalid_request` |
+| `scan_mode` | `front` or `front+back`; any other value is dropped |
+| `parser` | `local`, `ai` or `import`; any other value is dropped |
+| `fields` | keys `name`, `company`, `designation`, `phones`, `emails`, `website`, `address`; values `ok`, `edited`, `added`, `removed`, `fixed_format`. `fixed_format` counts only for `phones`. Missing fields are fine |
+| `confidence` | same keys, a number from 0 to 1; kept only for a field that also has a status |
+
+Unknown keys and values are ignored, never stored. A body over 4 KB, or not a JSON object, is `400 invalid_request`. A body
+with no valid field is accepted and stores nothing. Rows older than 400 days are deleted by the daily purge command.
+
 ## Google Sign-In
 Flutter (`google_sign_in`): create the sign-in with `serverClientId: <GOOGLE_WEB_CLIENT_ID>`, read
 `(await account.authentication).idToken`, and POST it as `id_token`. The server verifies signature (Google JWKS), `iss`,
@@ -124,6 +147,7 @@ token, never from the client. A Google email that matches an existing account li
 ## Admin
 Staff only (Django `is_staff`): `/app-users/` list, stats, signups chart, filters, CSV export; `/app-users/<id>/` detail with
 Revoke (with reason), Restore, Force logout, Delete (soft), Delete permanently. Every action writes an `app_auth_events` row.
+`/app-users/scan-quality/` shows the scan feedback: per-field fix rate (worst first), average confidence, filters by version, dates, scan mode and parser, a two-version compare, and a CSV export.
 `/app-users/cards/` is a read-only list of backed-up cards (search name, company, email, phone; filter by user; detail at
 `/app-users/cards/<id>/`). Cards waiting for erasure never show. Every visit writes an `app_card_access_log` row (who, whose
 cards, when). Each app user's page shows backup on/off and "Backed-up cards (N)".

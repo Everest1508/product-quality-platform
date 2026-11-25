@@ -184,3 +184,37 @@ class AppCardAccessLog(models.Model):
 def _hide_cards_of_erased_user(sender, instance, **kwargs):
     """However an account is erased (self-delete, admin purge), its cards are hidden before the FK goes NULL."""
     AppCard.objects.live().filter(user=instance).update(deletion_requested_at=timezone.now())
+
+
+class ScanFeedback(models.Model):
+    """One saved scan: which parts of card scanning the person had to fix. No person, no card text, no photos.
+
+    One column pair per field (status, scanner confidence) keeps the admin statistics to a single aggregate query.
+    An empty status means the app did not report that field."""
+
+    FIELD_KEYS = ("name", "company", "designation", "phones", "emails", "website", "address")
+    STATUSES = ("ok", "edited", "added", "removed", "fixed_format")  # fixed_format is valid for phones only
+    MODES = ("front", "front+back")
+    PARSERS = ("local", "ai", "import")
+
+    received_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    app_version = models.CharField(max_length=20, db_index=True)
+    scan_mode = models.CharField(max_length=10, blank=True, default="")
+    parser = models.CharField(max_length=6, blank=True, default="")
+    name_status = models.CharField(max_length=12, blank=True, default="")
+    name_conf = models.FloatField(null=True, blank=True)
+    company_status = models.CharField(max_length=12, blank=True, default="")
+    company_conf = models.FloatField(null=True, blank=True)
+    designation_status = models.CharField(max_length=12, blank=True, default="")
+    designation_conf = models.FloatField(null=True, blank=True)
+    phones_status = models.CharField(max_length=12, blank=True, default="")
+    phones_conf = models.FloatField(null=True, blank=True)
+    emails_status = models.CharField(max_length=12, blank=True, default="")
+    emails_conf = models.FloatField(null=True, blank=True)
+    website_status = models.CharField(max_length=12, blank=True, default="")
+    website_conf = models.FloatField(null=True, blank=True)
+    address_status = models.CharField(max_length=12, blank=True, default="")
+    address_conf = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        db_table = "app_scan_feedback"

@@ -10,6 +10,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.89.0] "Wryneck" — 2026-11-25 · see which parts of card scanning people have to fix
+
+> In short: CardSnap can now tell us which fields people corrected after a scan, so the team can see where scanning is weak and whether a new version improved it.
+
+### New
+
+- **Scan quality page.** Under App users, see for each field how often it was right or had to be edited, added, removed or reformatted, with the worst fields first and the scanner's average confidence beside them.
+- **Compare two app versions.** Pick two versions side by side to see whether the fix rate went down (green) or up (red).
+- **Filter and download.** Narrow by app version, dates, one or both sides scanned, and how the card was read, then export what you see to a spreadsheet.
+
+### Security
+
+- **Nothing personal is collected.** The report holds no card text, names, numbers or photos and is not linked to the person who sent it. The privacy page explains it, and reports are deleted after 400 days.
+
 ## [1.88.0] "Vulture" — 2026-11-25 · see how many times a card was scanned
 
 > In short: Backed-up cards now remember how many times each card was scanned, and the team can see it and find cards scanned more than once.

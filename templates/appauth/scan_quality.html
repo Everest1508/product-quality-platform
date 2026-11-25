@@ -1,0 +1,105 @@
+{% extends "core/base.html" %}
+{% load icon_tags dropdown_tags %}
+
+{% block title %}Scan quality{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs">
+  <a href="{% url 'appauth_web:users' %}">App users</a><span class="sep">/</span><span class="current">Scan quality</span>
+</nav>
+<div class="pg-head">
+  <div style="min-width:0">
+    <h1>Scan quality</h1>
+    <p class="sub">Which parts of card scanning people have to fix after a scan. Counts only: no card text, no names, no photos.</p>
+  </div>
+  {% if has_any %}
+  <div class="pg-actions">
+    <a href="{% url 'appauth_web:scan_quality_export' %}?{% if compare %}view=compare&amp;a={{ a|urlencode }}&amp;b={{ b|urlencode }}&amp;from={{ f.from|urlencode }}&amp;to={{ f.to|urlencode }}&amp;mode={{ f.mode|urlencode }}&amp;parser={{ f.parser|urlencode }}{% else %}{{ export_qs }}{% endif %}" class="btn">{% icon 'download' 'ic' %}Export CSV</a>
+  </div>
+  {% endif %}
+</div>
+
+<form method="get" class="toolbar">
+  <span class="seg">
+    <a href="{% url 'appauth_web:scan_quality' %}" class="{% if not compare %}is-on{% endif %}">Overview</a>
+    <a href="{% url 'appauth_web:scan_quality' %}?view=compare" class="{% if compare %}is-on{% endif %}">Compare versions</a>
+  </span>
+  {% if compare %}
+  <input type="hidden" name="view" value="compare">
+  {% dropdown "a" version_choices a placeholder="Version A" label="Version A" empty_value="" searchable=True %}
+  {% dropdown "b" version_choices b placeholder="Version B" label="Version B" empty_value="" searchable=True %}
+  {% else %}
+  {% dropdown "version" version_choices version placeholder="All versions" label="App version" empty_value="" searchable=True submit=True %}
+  {% endif %}
+  {% dropdown "mode" "front:Front only|front+back:Front and back"|opts f.mode|default:"" placeholder="Any scan mode" label="Scan mode" empty_value="" submit=True %}
+  {% dropdown "parser" "local:On phone|ai:AI|import:Import"|opts f.parser|default:"" placeholder="Any parser" label="Parser" empty_value="" submit=True %}
+  <input type="date" name="from" value="{{ f.from|default:'' }}" class="form-input" aria-label="From">
+  <input type="date" name="to" value="{{ f.to|default:'' }}" class="form-input" aria-label="To">
+  <button class="btn" type="submit">Apply</button>
+</form>
+
+{% if not has_any %}
+<div class="card"><div class="empty-state"><strong>No scan feedback yet</strong>It arrives when users save scanned cards.</div></div>
+{% elif compare %}
+  {% if rows %}
+  <div class="stat-strip" role="list">
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">{{ a }} · scans</span><span class="stat-strip-value">{{ a_scans }}</span></div>
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">{{ b }} · scans</span><span class="stat-strip-value">{{ b_scans }}</span></div>
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">{{ a }} · overall fix rate</span><span class="stat-strip-value">{% if a_rate is None %}—{% else %}{{ a_rate }}%{% endif %}</span></div>
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">{{ b }} · overall fix rate</span><span class="stat-strip-value">{% if b_rate is None %}—{% else %}{{ b_rate }}%{% endif %}</span></div>
+  </div>
+  <div class="card-flush"><div class="table-scroll">
+  <table class="tbl cd-tbl">
+    <thead><tr><th>Field</th><th>{{ a }} scans</th><th>{{ a }} fix rate</th><th>{{ b }} scans</th><th>{{ b }} fix rate</th><th>Change</th></tr></thead>
+    <tbody>
+    {% for x in rows %}
+      <tr>
+        <td class="task"><b>{{ x.label }}</b></td>
+        <td data-label="{{ a }} scans">{{ x.a.scans }}</td>
+        <td data-label="{{ a }} fix rate">{% if x.a.fix_rate is None %}—{% else %}{{ x.a.fix_rate }}%{% endif %}</td>
+        <td data-label="{{ b }} scans">{{ x.b.scans }}</td>
+        <td data-label="{{ b }} fix rate">{% if x.b.fix_rate is None %}—{% else %}{{ x.b.fix_rate }}%{% endif %}</td>
+        <td data-label="Change">{% if x.change is None %}<span class="text-muted">—</span>{% else %}<span class="{% if x.tone %}sq-{{ x.tone }}{% endif %}">{% if x.change > 0 %}+{% endif %}{{ x.change }} pts</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div></div>
+  <p class="text-sm text-muted" style="margin-top:var(--space-3)">Change is version B minus version A. Green means fewer fixes, red means more.</p>
+  {% else %}
+  <div class="card"><div class="empty-state"><strong>Pick two versions</strong>Choose version A and version B, then press Apply.</div></div>
+  {% endif %}
+{% else %}
+  <div class="stat-strip" role="list">
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Scans in range</span><span class="stat-strip-value">{{ scans }}</span></div>
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Overall fix rate</span><span class="stat-strip-value">{% if rate is None %}—{% else %}{{ rate }}%{% endif %}</span></div>
+    <div class="stat-strip-item" role="listitem"><span class="stat-strip-label">Scans per app version</span>
+      <span class="sq-vers">{% for v in per_version %}<span class="bdg bdg-outline">{{ v.app_version }} · {{ v.n }}</span>{% empty %}<span class="text-muted">—</span>{% endfor %}</span></div>
+  </div>
+  {% if scans %}
+  <div class="card-flush"><div class="table-scroll">
+  <table class="tbl cd-tbl">
+    <thead><tr><th>Field</th><th>Scans</th><th>Correct</th><th>Edited</th><th>Added</th><th>Removed</th><th>Reformatted</th><th>Fix rate</th><th>Avg confidence</th></tr></thead>
+    <tbody>
+    {% for x in rows %}
+      <tr>
+        <td class="task"><b>{{ x.label }}</b></td>
+        <td data-label="Scans">{{ x.scans }}</td>
+        <td data-label="Correct">{{ x.ok }}</td>
+        <td data-label="Edited">{{ x.edited }}</td>
+        <td data-label="Added">{{ x.added }}</td>
+        <td data-label="Removed">{{ x.removed }}</td>
+        <td data-label="Reformatted">{{ x.fixed_format }}</td>
+        <td data-label="Fix rate">{% if x.fix_rate is None %}<span class="text-muted">—</span>{% else %}<span class="sq-bar{% if x.fix_rate >= 30 %} bad{% elif x.fix_rate >= 15 %} warn{% endif %}" role="img" aria-label="{{ x.fix_rate }} percent"><i style="width:{{ x.fix_rate|floatformat:0 }}%"></i></span>{{ x.fix_rate }}%{% endif %}</td>
+        <td data-label="Avg confidence">{% if x.conf is None %}<span class="text-muted">—</span>{% else %}{{ x.conf|floatformat:2 }}{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div></div>
+  <p class="text-sm text-muted" style="margin-top:var(--space-3)">Fix rate = (edited + added + removed + reformatted) ÷ scans that reported the field. Worst first.</p>
+  {% else %}
+  <div class="card"><div class="empty-state"><strong>No scans match</strong>Clear a filter or widen the dates.</div></div>
+  {% endif %}
+{% endif %}
+{% endblock %}

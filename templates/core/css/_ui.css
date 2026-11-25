@@ -983,3 +983,12 @@
   .cd-text{max-width:none;}
 }
 .cd-check{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-sm);cursor:pointer;}
+
+/* appauth/scan_quality.html: fix-rate bars and compare tones. */
+.sq-bar{display:inline-block;vertical-align:middle;width:96px;height:8px;border-radius:99px;background:var(--border);overflow:hidden;margin-right:var(--space-2);}
+.sq-bar i{display:block;height:100%;background:var(--accent);}
+.sq-bar.warn i{background:var(--orange);}
+.sq-bar.bad i{background:var(--red);}
+.sq-good{color:var(--green);font-weight:600;}
+.sq-bad{color:var(--red);font-weight:600;}
+.sq-vers{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-1);}

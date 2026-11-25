@@ -10,7 +10,7 @@ import uuid
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from apps.appauth import apple, cloud, google, service
+from apps.appauth import apple, cloud, google, scanfeedback, service
 from apps.appauth.models import AppUser
 from apps.appauth.service import AuthError, normalize_email
 
@@ -291,3 +291,13 @@ class CloudDataView(CloudBase):
         user.save(update_fields=["cloud_backup_enabled", "cloud_consent_off_at"])
         service.log_event(user, "cloud_delete_data", request)
         return Response({"purge_on": purge_on})
+
+
+class ScanFeedbackView(Base):
+    """Which fields people had to fix after a scan. The user only counts toward the rate limit; nothing links the row to them."""
+    authentication_classes = [AppBearerAuthentication]
+
+    def post(self, request):
+        service.throttle("scanfb", str(request.user.id), 120, window=60)
+        scanfeedback.save(request.body)
+        return Response({"ok": True})

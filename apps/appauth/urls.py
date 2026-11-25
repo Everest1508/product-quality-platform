@@ -18,6 +18,7 @@ urlpatterns = [
     path("resend-verification", views.ResendVerificationView.as_view()),
     path("verify-reset-otp", views.VerifyResetOtpView.as_view()),
     path("me", views.MeView.as_view()),
+    path("scan-feedback", views.ScanFeedbackView.as_view()),
     path("cloud/consent", views.CloudConsentView.as_view()),
     path("cloud/cards", views.CloudCardsView.as_view()),
     path("cloud/cards/<uuid:client_id>", views.CloudCardView.as_view()),

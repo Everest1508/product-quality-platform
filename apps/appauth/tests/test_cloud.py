@@ -453,3 +453,184 @@ class ScanCountTest(TestCase):
         d = self.client.get(reverse("appauth_web:card", args=[row.pk]))
         self.assertContains(d, "Scanned 3 times")
         self.assertContains(d, "Merged")
+
+
+from apps.appauth.models import ScanFeedback  # noqa: E402
+
+SCAN = BASE + "scan-feedback"
+
+
+def fb(version="1.0.38", mode="front", parser="local", fields=None, conf=None):
+    return {"app_version": version, "scan_mode": mode, "parser": parser, "fields": fields or {}, **({"confidence": conf} if conf else {})}
+
+
+def seed(version, **statuses):
+    kw = {"app_version": version}
+    for f, st in statuses.items():
+        kw[f"{f}_status"] = st
+    return ScanFeedback.objects.create(**kw)
+
+
+class ScanFeedbackApiTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.u, self.c = make_client("ann@example.com")
+
+    def test_valid_body_is_saved_and_never_linked_to_the_user(self):
+        r = self.c.post(SCAN, fb(fields={"name": "ok", "company": "edited", "phones": "fixed_format"}, conf={"company": 0.41}), format="json")
+        self.assertEqual((r.status_code, r.data), (200, {"ok": True}))
+        row = ScanFeedback.objects.get()
+        self.assertEqual((row.app_version, row.scan_mode, row.parser), ("1.0.38", "front", "local"))
+        self.assertEqual((row.name_status, row.company_status, row.phones_status, row.emails_status), ("ok", "edited", "fixed_format", ""))
+        self.assertEqual((row.company_conf, row.name_conf), (0.41, None))
+        self.assertIsNotNone(row.received_at)
+        names = {f.name for f in ScanFeedback._meta.get_fields()}
+        self.assertFalse(names & {"user", "user_id", "app_user", "email", "ip"})  # nothing identifies the sender
+
+    def test_bad_values_are_dropped_not_stored(self):
+        body = fb(mode="sideways", parser="magic",
+                  fields={"name": "ok", "company": "great", "designation": "fixed_format", "emails": "fixed_format", "ssn": "ok",
+                          "website": 7, "address": ["ok"], "phones": "added"},
+                  conf={"name": 1.5, "company": -0.1, "phones": True, "emails": "0.5", "address": 0.2, "ssn": 0.9})
+        body["notes"] = "Asha Rao +91 99999 00000"
+        self.assertEqual(self.c.post(SCAN, body, format="json").status_code, 200)
+        row = ScanFeedback.objects.values().get()
+        self.assertEqual((row["scan_mode"], row["parser"]), ("", ""))
+        self.assertEqual({k: v for k, v in row.items() if k.endswith("_status") and v}, {"name_status": "ok", "phones_status": "added"})
+        self.assertEqual({k: v for k, v in row.items() if k.endswith("_conf") and v is not None}, {})
+        self.assertNotIn("Asha", str(row))
+
+    def test_nan_confidence_is_dropped(self):
+        raw = '{"app_version": "1.0.38", "fields": {"name": "ok"}, "confidence": {"name": NaN}}'
+        self.assertEqual(self.c.post(SCAN, raw, content_type="application/json").status_code, 200)
+        self.assertIsNone(ScanFeedback.objects.get().name_conf)
+
+    def test_missing_fields_are_fine_and_empty_reports_store_nothing(self):
+        self.assertEqual(self.c.post(SCAN, fb(fields={"name": "ok"}), format="json").status_code, 200)
+        self.assertEqual(self.c.post(SCAN, {"app_version": "1.0.38"}, format="json").status_code, 200)
+        self.assertEqual(self.c.post(SCAN, fb(fields={"x": "ok"}), format="json").status_code, 200)
+        self.assertEqual(ScanFeedback.objects.count(), 1)
+
+    def test_invalid_requests(self):
+        for body in ({"fields": {"name": "ok"}}, fb(version="x" * 21), fb(version="1 0"), fb(version=5), [1], "text"):
+            r = self.c.post(SCAN, body, format="json")
+            self.assertEqual((r.status_code, r.data["code"]), (400, "invalid_request"), body)
+        self.assertEqual(self.c.post(SCAN, "{not json", content_type="application/json").status_code, 400)
+        self.assertEqual(ScanFeedback.objects.count(), 0)
+
+    def test_oversize_body_is_rejected(self):
+        body = fb(fields={"name": "ok"})
+        body["padding"] = "a" * 5000
+        r = self.c.post(SCAN, body, format="json")
+        self.assertEqual((r.status_code, r.data["code"]), (400, "invalid_request"))
+        self.assertEqual(ScanFeedback.objects.count(), 0)
+
+    def test_needs_sign_in_and_is_rate_limited(self):
+        self.assertEqual(APIClient().post(SCAN, fb(fields={"name": "ok"}), format="json").status_code, 401)
+        for _ in range(120):
+            self.assertEqual(self.c.post(SCAN, fb(fields={"name": "ok"}), format="json").status_code, 200)
+        r = self.c.post(SCAN, fb(fields={"name": "ok"}), format="json")
+        self.assertEqual((r.status_code, r.data["code"]), (429, "rate_limited"))
+        _, other = make_client("bob@example.com")  # the limit is per person
+        self.assertEqual(other.post(SCAN, fb(fields={"name": "ok"}), format="json").status_code, 200)
+
+    def test_old_rows_are_purged_after_400_days(self):
+        old, recent = seed("1.0.1", name="ok"), seed("1.0.2", name="ok")
+        ScanFeedback.objects.filter(pk=old.pk).update(received_at=timezone.now() - timedelta(days=401))
+        ScanFeedback.objects.filter(pk=recent.pk).update(received_at=timezone.now() - timedelta(days=399))
+        call_command("purge_cardsnap_cards", stdout=StringIO())
+        self.assertEqual(list(ScanFeedback.objects.values_list("pk", flat=True)), [recent.pk])
+
+
+class ScanQualityPageTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        U = get_user_model()
+        from apps.accounts.models import Company, Membership
+        co = Company.objects.create(name="Acme", slug="acme")
+        self.staff = U.objects.create_user("staff", "s@example.com", "pw-staff-1")
+        Membership.objects.create(user=self.staff, company=co, role="owner")
+        self.viewer = U.objects.create_user("v", "v@example.com", "pw-v-123")
+        Membership.objects.create(user=self.viewer, company=co, role="viewer")
+        # 1.0.37: company edited 3 of 4 (confidence 0.4); phones: 2 edited, 1 fixed_format, 1 ok.
+        for co, ph in (("edited", "edited"), ("edited", "edited"), ("edited", "fixed_format"), ("ok", "ok")):
+            ScanFeedback.objects.create(app_version="1.0.37", company_status=co, company_conf=0.4, phones_status=ph)
+        for st in ("edited", "ok", "ok", "ok"):
+            seed("1.0.38", company=st, name="ok")
+        self.client.force_login(self.staff)
+        self.url = reverse("appauth_web:scan_quality")
+
+    def row(self, r, field):
+        return next(x for x in r.context["rows"] if x["field"] == field)
+
+    def test_fix_rate_maths_and_order(self):
+        r = self.client.get(self.url)
+        self.assertEqual(r.context["scans"], 8)
+        co = self.row(r, "company")
+        self.assertEqual((co["scans"], co["ok"], co["edited"], co["fixes"], co["fix_rate"]), (8, 4, 4, 4, 50.0))
+        ph = self.row(r, "phones")
+        self.assertEqual((ph["scans"], ph["edited"], ph["fixed_format"], ph["ok"], ph["fix_rate"]), (4, 2, 1, 1, 75.0))
+        self.assertEqual(self.row(r, "name")["fix_rate"], 0.0)
+        self.assertIsNone(self.row(r, "address")["fix_rate"])  # never reported
+        self.assertEqual([x["field"] for x in r.context["rows"]][:4], ["phones", "company", "name", "address"])  # worst first, unreported last
+        self.assertEqual(r.context["rate"], round(100 * (4 + 3 + 0) / (8 + 4 + 4), 1))  # fixes / all field results
+        self.assertAlmostEqual(self.row(r, "company")["conf"], 0.4)
+
+    def test_filters(self):
+        r = self.client.get(self.url, {"version": "1.0.38"})
+        self.assertEqual((r.context["scans"], self.row(r, "company")["fix_rate"]), (4, 25.0))
+        self.assertEqual(self.client.get(self.url, {"version": "9.9"}).context["scans"], 8)  # unknown version: ignored
+        ScanFeedback.objects.filter(app_version="1.0.38").update(scan_mode="front+back", parser="ai")
+        self.assertEqual(self.client.get(self.url, {"mode": "front+back"}).context["scans"], 4)
+        self.assertEqual(self.client.get(self.url, {"parser": "ai", "mode": "front"}).context["scans"], 0)
+        today = timezone.localdate().isoformat()
+        self.assertEqual(self.client.get(self.url, {"from": today, "to": today}).context["scans"], 8)
+        self.assertEqual(self.client.get(self.url, {"to": "2020-01-01"}).context["scans"], 0)
+        self.assertEqual({v["app_version"]: v["n"] for v in self.client.get(self.url).context["per_version"]}, {"1.0.37": 4, "1.0.38": 4})
+
+    def test_compare_two_versions(self):
+        r = self.client.get(self.url, {"view": "compare", "a": "1.0.37", "b": "1.0.38"})
+        co = next(x for x in r.context["rows"] if x["label"] == "Company")
+        self.assertEqual((co["a"]["fix_rate"], co["b"]["fix_rate"], co["change"], co["tone"]), (75.0, 25.0, -50.0, "good"))
+        self.assertContains(r, "sq-good")
+        r = self.client.get(self.url, {"view": "compare", "a": "1.0.38", "b": "1.0.37"})
+        self.assertEqual(next(x for x in r.context["rows"] if x["label"] == "Company")["tone"], "bad")
+        self.assertContains(r, "sq-bad")
+        self.assertEqual(self.client.get(self.url, {"view": "compare", "a": "1.0.37"}).context.get("rows"), None)  # needs both
+
+    def test_csv_export(self):
+        r = self.client.get(reverse("appauth_web:scan_quality_export"))
+        lines = r.content.decode().strip().splitlines()
+        self.assertEqual(lines[0], "field,app_version,scans,ok,edited,added,removed,fixed_format,fix_rate,avg_confidence")
+        self.assertEqual(len(lines), 8)
+        self.assertIn("phones,all,4,1,2,0,0,1,75.0,", "\n".join(lines))
+        one = self.client.get(reverse("appauth_web:scan_quality_export"), {"version": "1.0.38"}).content.decode()
+        self.assertIn("company,1.0.38,4,3,1,0,0,0,25.0,", one)
+        both = self.client.get(reverse("appauth_web:scan_quality_export"), {"view": "compare", "a": "1.0.37", "b": "1.0.38"}).content.decode()
+        self.assertEqual(len(both.strip().splitlines()), 15)
+
+    def test_staff_only(self):
+        self.client.force_login(self.viewer)
+        for name in ("scan_quality", "scan_quality_export"):
+            self.assertEqual(self.client.get(reverse(f"appauth_web:{name}")).status_code, 403)
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+    def test_empty_state_and_no_internal_names(self):
+        ScanFeedback.objects.all().delete()
+        r = self.client.get(self.url)
+        self.assertContains(r, "No scan feedback yet")
+        self.assertContains(r, "It arrives when users save scanned cards.")
+        seed("1.0.38", name="ok")
+        for params in ({}, {"view": "compare"}):
+            r = self.client.get(self.url, params)
+            main = r.content.decode().split('class="breadcrumbs"')[1].split("</main>")[0]
+            self.assertNotIn("CRM", main)
+            self.assertNotIn("PQ", main)
+            self.assertNotIn("PQ", r.content.decode().split("<title>")[1].split("</title>")[0])
+
+    def test_privacy_page_explains_it(self):
+        body = self.client.get("/cardsnap/privacy").content.decode()
+        self.assertIn("Improving scanning", body)
+        self.assertIn("Help improve scanning", body)
+        self.assertNotIn("CRM", body)

@@ -24,6 +24,8 @@ _PRIVACY = """<p>CardSnap scans business cards and keeps them in a contact book 
 <li><b>Who can see it:</b> only you, and authorised staff at Beforth who run the service. Each time staff open backed-up cards, the visit is recorded in an access log.</li>
 <li><b>Withdraw consent:</b> turn backup off in the app at any time. To erase what was uploaded, choose delete cloud data in the app. Your cards disappear from view at once and are permanently erased within 30 days.</li>
 <li><b>Single cards:</b> deleting one card in the app removes its backup straight away.</li></ul>
+<h2>Improving scanning</h2>
+<p>After you save a scanned card, the app can tell us which parts of the scan were right and which you had to fix. It sends, for each of name, company, job title, phones, emails, website and address, whether it was correct, edited, added, removed or reformatted, how confident the scanner was, the app version and whether you scanned one side or both. It <b>never</b> sends card text, names, numbers or photos, and the report is not linked to your account. We use it only to find the weak parts of scanning. You can turn it off any time in <b>Settings &gt; Help improve scanning</b>.</p>
 <h2>Optional AI parsing</h2><p>If you turn on AI parsing and enter your own API key, the text read from a card is sent from your phone straight to the AI provider you chose (for example Groq or OpenAI) to be sorted into fields. The key stays on your phone in secure storage. We never see the key or that text. The provider's own privacy policy applies to it.</p>
 <h2>Permissions</h2><ul>
 <li><b>Camera</b> to photograph cards.</li>
