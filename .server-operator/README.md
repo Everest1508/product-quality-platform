@@ -6,7 +6,7 @@ square brackets starts a command, and the lines under it are what runs, in order
 | File | What is in it |
 |---|---|
 | `deploy.serop` | `[Deploy Full]`: pull, take everything down, build and start again |
-| `maintenance.serop` | `[Logs]`, `[Backup Database]`, the three scheduled jobs run by hand, and `[Shell]` |
+| `maintenance.serop` | `[Logs]`, `[Backup Database]`, the four scheduled jobs run by hand, and `[Shell]` |
 
 ## Deploying
 
@@ -35,6 +35,10 @@ the server's crontab (`-T` because cron has no terminal):
 */5  * * * * cd /path/to/product-quality-platform && docker compose exec -T web python manage.py evaluate_rules
 0 9  * * *   cd /path/to/product-quality-platform && docker compose exec -T web python manage.py notify_todos
 ```
+
+CardSnap erasures need no cron line: the server itself checks every 6 hours and erases cards (and old scan feedback and
+staff-access log rows) once their waiting time is over. `[Purge CardSnap Data]` does the same check right now and prints
+how many rows it removed. Set `CARDSNAP_AUTO_PURGE=0` only if you would rather run it from cron yourself.
 
 ## Other notes
 

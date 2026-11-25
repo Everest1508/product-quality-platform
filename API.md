@@ -152,6 +152,8 @@ Revoke (with reason), Restore, Force logout, Delete (soft), Delete permanently. 
 `/app-users/cards/<id>/`). Cards waiting for erasure never show. Every visit writes an `app_card_access_log` row (who, whose
 cards, when). Each app user's page shows backup on/off and "Backed-up cards (N)".
 
-**Scheduled job:** run `manage.py purge_cardsnap_cards` daily (cron or systemd timer). It erases cards whose erasure was
-requested more than `CARDSNAP_RETENTION_DAYS` (default 30) ago, and access-log rows older than
-`CARDSNAP_AUDIT_RETENTION_DAYS` (default 365).
+**Automatic erasure:** nothing to schedule. The server checks every 6 hours (`apps/appauth/purge.py`, started from
+`core/asgi.py`) and erases cards whose erasure was requested more than `CARDSNAP_RETENTION_DAYS` (default 30) ago, access-log
+rows older than `CARDSNAP_AUDIT_RETENTION_DAYS` (default 365) and scan feedback older than `SCAN_FEEDBACK_RETENTION_DAYS`
+(default 400). `manage.py purge_cardsnap_cards` runs the same check by hand. `CARDSNAP_AUTO_PURGE=0` turns the built-in
+check off (then schedule the command yourself).

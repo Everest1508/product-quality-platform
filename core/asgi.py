@@ -27,6 +27,11 @@ from django.urls import path  # noqa: E402
 from apps.presence.consumers import PresenceConsumer  # noqa: E402
 from apps.serop.routing import websocket_urlpatterns as serop_urls  # noqa: E402
 
+# Requested CardSnap erasures finish by themselves once their waiting time is over; no cron needed.
+from apps.appauth.purge import start_background_purge  # noqa: E402
+
+start_background_purge()
+
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": URLRouter([

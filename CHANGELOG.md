@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Each release sta
 with a line beginning `> In short:` that says what it is about in one sentence, then
 New, Better, Fixed and Security lists. Older releases are below the newest.
 
+## [1.89.1] "Yellowlegs" — 2026-11-25 · deleted CardSnap data now erases itself
+
+> In short: When someone deletes their cloud backup or account, their cards are now erased automatically after 30 days, with nothing for the team to schedule.
+
+### Better
+
+- **Erasure happens on its own.** The server checks every few hours and removes cards whose 30 days are up, along with old scan reports and old team-access records.
+
 ## [1.89.0] "Wryneck" — 2026-11-25 · see which parts of card scanning people have to fix
 
 > In short: CardSnap can now tell us which fields people corrected after a scan, so the team can see where scanning is weak and whether a new version improved it.

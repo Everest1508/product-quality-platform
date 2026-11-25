@@ -15,5 +15,8 @@ sudo docker compose exec web python manage.py evaluate_rules
 [Notify Overdue Todos]
 sudo docker compose exec web python manage.py notify_todos
 
+[Purge CardSnap Data]
+sudo docker compose exec web python manage.py purge_cardsnap_cards
+
 [Shell]
 sudo docker compose exec web python manage.py shell

@@ -634,3 +634,59 @@ class ScanQualityPageTest(TestCase):
         self.assertIn("Improving scanning", body)
         self.assertIn("Help improve scanning", body)
         self.assertNotIn("CRM", body)
+
+
+class AutoPurgeTest(TestCase):
+    def test_run_purge_erases_only_what_is_due(self):
+        from apps.appauth import purge
+        u, _ = make_client("ann@example.com")
+        now = timezone.now()
+        mk = lambda days: AppCard.objects.create(user=u, client_id=uuid.uuid4(), created_at_client=now, updated_at_client=now,  # noqa: E731
+                                                  deletion_requested_at=None if days is None else now - timedelta(days=days))
+        mk(31), mk(29), mk(None)
+        old = seed("1.0.1", name="ok")
+        ScanFeedback.objects.filter(pk=old.pk).update(received_at=now - timedelta(days=401))
+        AppCardAccessLog.objects.create(staff_email="s@e.com", action="list")
+        AppCardAccessLog.objects.update(created_at=now - timedelta(days=366))
+        self.assertEqual(purge.run_purge(), (1, 1, 1))
+        self.assertEqual(AppCard.objects.count(), 2)
+        self.assertEqual(purge.run_purge(), (0, 0, 0))  # repeatable
+        self.assertEqual(purge.run_purge(now + timedelta(days=2)), (1, 0, 0))  # the 29-day card is due two days later
+
+    def test_background_thread_starts_once_and_can_be_turned_off(self):
+        from unittest import mock
+
+        from django.test import override_settings
+
+        from apps.appauth import purge
+        purge._started = False
+        try:
+            with mock.patch.object(purge.threading, "Thread") as thread:
+                with override_settings(CARDSNAP_AUTO_PURGE=False):
+                    self.assertFalse(purge.start_background_purge())
+                self.assertTrue(purge.start_background_purge())
+                self.assertFalse(purge.start_background_purge())  # a second worker call does nothing
+                self.assertEqual(thread.call_count, 1)
+                self.assertTrue(thread.call_args.kwargs["daemon"])
+        finally:
+            purge._started = False
+
+    def test_loop_survives_a_failed_run(self):
+        from unittest import mock
+
+        from apps.appauth import purge
+        calls = []
+
+        def boom():
+            calls.append(1)
+            if len(calls) == 2:
+                raise SystemExit  # stop the otherwise endless loop after the second run
+            raise RuntimeError("db busy")
+
+        with mock.patch.object(purge, "run_purge", boom), mock.patch.object(purge.time, "sleep"):
+            with self.assertRaises(SystemExit):
+                purge._loop()
+        self.assertEqual(len(calls), 2)  # the first failure did not end the loop
+
+    def test_asgi_entry_starts_it(self):
+        self.assertIn("start_background_purge()", open("core/asgi.py").read())

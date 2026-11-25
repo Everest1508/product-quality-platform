@@ -1241,7 +1241,7 @@ decided what and strike the item** rather than deleting it.
 - `apps/appauth`: `AppCard` (text only, never photos), `AppCardAccessLog`, consent fields on `AppUser`. API under `/api/app-auth/cloud/` (consent, cards PUT/GET, cards/<client_id> DELETE, data DELETE); logic in `cloud.py`.
 - Low load by design: an upload of up to 200 cards is 6 queries (select, count, bulk insert, bulk update); restore is keyset-paged (`after`, `limit`, `since`) and reads raw rows; per-user cache throttle.
 - A `pre_delete` signal on `AppUser` hides the person's cards (`deletion_requested_at`) however the account is erased. Read cards only through `AppCard.objects.live()`.
-- **`manage.py purge_cardsnap_cards` must be scheduled daily** (cron/systemd). Until it runs, erasures are hidden but not gone. It also trims the staff access log (`CARDSNAP_AUDIT_RETENTION_DAYS`, 365).
+- **Erasure runs by itself:** `apps/appauth/purge.py` is started as a daemon thread from `core/asgi.py` (every 6 h, idempotent, chunked), so no cron is needed; `manage.py purge_cardsnap_cards` runs the same code by hand; `CARDSNAP_AUTO_PURGE=0` turns it off. Only the ASGI entry starts it, never tests or management commands. It also trims the staff access log (`CARDSNAP_AUDIT_RETENTION_DAYS`, 365).
 - Deliberately not done: a tombstone for single-card deletes, so an edit on a second phone after a delete on the first brings the card back.
 
 ## 2026-11-25 (scan feedback, 1.89.0 "Wryneck")
