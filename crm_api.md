@@ -140,7 +140,7 @@ call `Ticket.transition_to()` (this also writes the DSR entry).
 | `GET /app-users/scan-quality/` (overview: `version`, `from`, `to`, `mode`, `parser`; compare: `view=compare&a=&b=`; returns tiles, per-field rows with fix rate and average confidence, version choices), `GET /app-users/scan-quality/export/` (CSV of the same view) | `app-users/scan-quality/` |
 | `GET /app-users/cards/<id>/` (card, owner, owner's other card count), `GET /app-users/cards/export/` (CSV of the same filters) | `app-users/cards/<id>/`, `cards/export.csv` |
 
-Every one of the three card endpoints writes an `AppCardAccessLog` row (who, whose cards, when, filters). The React app must call them like any other: **never cache them client-side across visits**, or the access log undercounts. Cards waiting for erasure (`deletion_requested_at` set) never appear: read through `AppCard.objects.live()`. The card payload carries `scan_count` and `exhibition_name`; the "Merged" badge is `scan_count > 1`.
+The three card endpoints (list, detail and CSV export) each write an `AppCardAccessLog` row (who, whose cards, when, filters). The scan-quality endpoints do not: they return counts only, no card text. The React app must call them like any other: **never cache them client-side across visits**, or the access log undercounts. Cards waiting for erasure (`deletion_requested_at` set) never appear: read through `AppCard.objects.live()`. The card payload carries `scan_count` and `exhibition_name`; the "Merged" badge is `scan_count > 1`.
 | `GET /meta/` version, changelog, enums (statuses, priorities, roles) so React does not hardcode them | `api/v1/version\|changelog/` |
 
 Left as they are: `/api/v1/*` (SDK ingestion), `/api/serop/*`, `/oauth/*`, `/api/app-auth/*`, the lead webhook, and the
